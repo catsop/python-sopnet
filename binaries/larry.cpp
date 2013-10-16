@@ -14,9 +14,9 @@
 #include <util/exceptions.h>
 #include <gui/VerticalPlacing.h>
 #include <imageprocessing/gui/ImageView.h>
-#include <imageprocessing/io/ImageReader.h>
+#include <imageprocessing/io/ImageHttpReader.h>
 #include <util/ProgramOptions.h>
-#include <util/httpclient.h>
+#include <ImageMagick/Magick++.h>
 
 using std::cout;
 using std::endl;
@@ -45,10 +45,17 @@ void handleException(boost::exception& e) {
 int main(int optionc, char** optionv)
 {
 	
-	HttpClient::response res = HttpClient::get("http://www.google.com");
+	//HttpClient::response res = HttpClient::get("http://distilleryimage4.s3.amazonaws.com/5a32ffbc365a11e38b1f22000a9f135b_8.jpg");
+	
+	//LOG_USER(out) << "Response string " << res.body << std::endl;
+	//Magick::Blob blob(res.body.c_str(), res.body.size());
+	//Magick::Image image(blob);
+	//image.magick("JPEG");
+	//image.write("/home/larry/test.jpg");
 	
 	util::ProgramOptions::init(optionc, optionv);
-	std::string fileName = "/home/larry/Images/Series/VolumeJosef/test.tiff";
+	//std::string fileName = "/home/larry/Images/Series/VolumeJosef/test.tiff";
+	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
 	
     try
     {
@@ -63,7 +70,7 @@ int main(int optionc, char** optionv)
 
         boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
 
-        boost::shared_ptr<ImageReader> imageReader = boost::make_shared<ImageReader>(fileName.c_str());
+        boost::shared_ptr<ImageHttpReader> imageReader = boost::make_shared<ImageHttpReader>(url);
 
         mainContainer->addInput(imageView->getOutput("painter"));
         zoomView->setInput(mainContainer->getOutput());
