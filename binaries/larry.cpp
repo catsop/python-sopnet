@@ -16,6 +16,7 @@
 #include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/io/ImageReader.h>
 #include <util/ProgramOptions.h>
+#include <util/httpclient.h>
 
 using std::cout;
 using std::endl;
@@ -43,6 +44,8 @@ void handleException(boost::exception& e) {
 
 int main(int optionc, char** optionv)
 {
+	
+	HttpClient::response res = HttpClient::get("http://www.google.com");
 	
 	util::ProgramOptions::init(optionc, optionv);
 	std::string fileName = "/home/larry/Images/Series/VolumeJosef/test.tiff";
