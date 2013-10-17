@@ -1,6 +1,6 @@
 [submodule "modules/util"]
 	path = modules/util
-	url = git://github.com/funkey/util.git
+	url = git://github.com/larrylindsey/util.git
 [submodule "modules/signals"]
 	path = modules/signals
 	url = git://github.com/funkey/signals.git
@@ -12,7 +12,7 @@
 	url = git://github.com/funkey/gui.git
 [submodule "modules/imageprocessing"]
 	path = modules/imageprocessing
-	url = git://github.com/funkey/imageprocessing.git
+	url = git://github.com/larrylindsey/imageprocessing.git
 [submodule "cmake"]
 	path = cmake
-	url = http://github.com/funkey/cmake
+	url = http://github.com/larrylindsey/cmake
