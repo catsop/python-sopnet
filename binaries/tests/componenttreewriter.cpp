@@ -15,7 +15,7 @@
 
 #include <imageprocessing/ComponentTreeDownSampler.h>
 #include <imageprocessing/Mser.h>
-#include <imageprocessing/io/ImageReader.h>
+#include <imageprocessing/io/ImageFileReader.h>
 #include <imageprocessing/io/ComponentTreeHdf5Writer.h>
 
 using std::cout;
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 			H5::Group componentsGroup = hdf5file.createGroup("/connected_components");
 
 			// create image reader
-			boost::shared_ptr<ImageReader> reader = boost::make_shared<ImageReader>(imagename);
+			boost::shared_ptr<ImageFileReader> reader = boost::make_shared<ImageFileReader>(imagename);
 
 			// create Mser
 			boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
