@@ -7,6 +7,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/progress.hpp>
 
+#include <pipeline/all.h>
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/Window.h>
@@ -15,8 +16,11 @@
 #include <gui/VerticalPlacing.h>
 #include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/io/ImageHttpReader.h>
+#include <imageprocessing/io/ImageFileReader.h>
 #include <util/ProgramOptions.h>
 #include <ImageMagick/Magick++.h>
+#include <catmaidsopnet/Block.h>
+#include <imageprocessing/io/ImageBlockFileReader.h>
 
 using std::cout;
 using std::endl;
@@ -53,9 +57,12 @@ int main(int optionc, char** optionv)
 	//image.magick("JPEG");
 	//image.write("/home/larry/test.jpg");
 	
+	unsigned int id = 1;
+	
 	util::ProgramOptions::init(optionc, optionv);
-	//std::string fileName = "/home/larry/Images/Series/VolumeJosef/test.tiff";
+	std::string fileName = "/nfs/data0/home/larry/Series/test.png";
 	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
+	boost::shared_ptr<pipeline::Wrap<Block> > block = boost::make_shared<pipeline::Wrap<Block> >(Block(id, 0, 0, 0, 1024, 1024, 1024));
 	
     try
     {
@@ -70,7 +77,10 @@ int main(int optionc, char** optionv)
 
         boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
 
-        boost::shared_ptr<ImageHttpReader> imageReader = boost::make_shared<ImageHttpReader>(url);
+        //boost::shared_ptr<ImageHttpReader> imageReader = boost::make_shared<ImageHttpReader>(url);
+		//boost::shared_ptr<ImageFileReader> imageReader = boost::make_shared<ImageFileReader>(fileName);
+		boost::shared_ptr<ImageBlockFileReader> imageReader = boost::make_shared<ImageBlockFileReader>(fileName, 0);
+		imageReader->setInput("block", block);
 
         mainContainer->addInput(imageView->getOutput("painter"));
         zoomView->setInput(mainContainer->getOutput());
