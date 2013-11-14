@@ -8,6 +8,7 @@
 #include <boost/progress.hpp>
 
 #include <pipeline/all.h>
+#include <pipeline/Value.h>
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/Window.h>
@@ -15,8 +16,10 @@
 #include <util/exceptions.h>
 #include <gui/VerticalPlacing.h>
 #include <imageprocessing/gui/ImageView.h>
+#include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageHttpReader.h>
 #include <imageprocessing/io/ImageFileReader.h>
+#include <imageprocessing/io/ImageBlockStackReader.h>
 #include <util/ProgramOptions.h>
 #include <ImageMagick/Magick++.h>
 #include <catmaidsopnet/Block.h>
@@ -62,7 +65,8 @@ int main(int optionc, char** optionv)
 	util::ProgramOptions::init(optionc, optionv);
 	std::string fileName = "/nfs/data0/home/larry/Series/test.png";
 	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
-	boost::shared_ptr<pipeline::Wrap<Block> > block = boost::make_shared<pipeline::Wrap<Block> >(Block(id, 0, 0, 0, 1024, 1024, 1024));
+	std::string seriesDirectory = "/nfs/data0/home/larry/Series/VolumeImages/";
+	boost::shared_ptr<pipeline::Wrap<Block> > block = boost::make_shared<pipeline::Wrap<Block> >(Block(id, 0, 0, 0, 1024, 1024, 16));
 	
     try
     {
@@ -75,18 +79,36 @@ int main(int optionc, char** optionv)
 
         boost::shared_ptr<ContainerView<VerticalPlacing> > mainContainer = boost::make_shared<ContainerView<VerticalPlacing> >();
 
-        boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
+		boost::shared_ptr<ImageStackView> imageStackView = boost::make_shared<ImageStackView>();
+
+		//boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
+		cout << "A" << std::endl;
+		ImageBlockFileFactory *factory = new ImageBlockFileFactory(seriesDirectory);
+		cout << "B" << std::endl;
+		ImageBlockStackReader *stackReader = new ImageBlockStackReader(factory);
+		cout << "C" << std::endl;
+		
+		//boost::shared_ptr<ImageBlockStackReader> stackReader =
+		//	boost::make_shared<ImageBlockStackReader>(factory);
 
         //boost::shared_ptr<ImageHttpReader> imageReader = boost::make_shared<ImageHttpReader>(url);
 		//boost::shared_ptr<ImageFileReader> imageReader = boost::make_shared<ImageFileReader>(fileName);
-		boost::shared_ptr<ImageBlockFileReader> imageReader = boost::make_shared<ImageBlockFileReader>(fileName, 0);
-		imageReader->setInput("block", block);
-
-        mainContainer->addInput(imageView->getOutput("painter"));
+		//boost::shared_ptr<ImageBlockFileReader> imageReader = boost::make_shared<ImageBlockFileReader>(fileName, 0);
+		//imageReader->setInput("block", block);
+		stackReader->setInput("block", block);
+		cout << "D" << std::endl;
+		imageStackView->setInput(stackReader->getOutput("stack"));
+		mainContainer->addInput(imageStackView->getOutput("painter"));
+        //mainContainer->addInput(imageView->getOutput("painter"));
         zoomView->setInput(mainContainer->getOutput());
-
-        imageView->setInput("image", imageReader->getOutput());
+		
+        //imageView->setInput("image", imageReader->getOutput());
+		//pipeline::Value<ImageStack> stackValue;
+		//pipeline::Value<ImageStack> output = stackReader->getOutput("stack");
+		//*stackValue = *output;
         
+		cout << "Yup. Got this far. Dammit." << std::endl;
+		
         window->processEvents();
         while(!window->closed())
         {
