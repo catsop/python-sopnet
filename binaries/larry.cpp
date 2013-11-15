@@ -66,7 +66,7 @@ int main(int optionc, char** optionv)
 	std::string fileName = "/nfs/data0/home/larry/Series/test.png";
 	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
 	std::string seriesDirectory = "/nfs/data0/home/larry/Series/VolumeImages/";
-	boost::shared_ptr<pipeline::Wrap<Block> > block = boost::make_shared<pipeline::Wrap<Block> >(Block(id, 0, 0, 16, 1024, 1024, 16));
+	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, 0, 0, 16, 1024, 1024, 16);
 	
     try
     {
@@ -83,9 +83,9 @@ int main(int optionc, char** optionv)
 
 		//boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
 		cout << "A" << std::endl;
-		boost::shared_ptr<ImageBlockFileFactory> factory = boost::make_shared<ImageBlockFileFactory>(seriesDirectory);
+		boost::shared_ptr<ImageBlockFactory> factory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
 		cout << "B" << std::endl;
-		boost::shared_ptr<ImageBlockStackReader> stackReader = boost::make_shared<ImageBlockStackReader>(factory);
+		boost::shared_ptr<ImageBlockStackReader> stackReader = boost::make_shared<ImageBlockStackReader>();
 		cout << "C" << std::endl;
 		
 		//boost::shared_ptr<ImageBlockStackReader> stackReader =
@@ -95,6 +95,8 @@ int main(int optionc, char** optionv)
 		//boost::shared_ptr<ImageFileReader> imageReader = boost::make_shared<ImageFileReader>(fileName);
 		//boost::shared_ptr<ImageBlockFileReader> imageReader = boost::make_shared<ImageBlockFileReader>(fileName, 0);
 		//imageReader->setInput("block", block);
+		
+		stackReader->setInput("factory", factory);
 		stackReader->setInput("block", block);
 		cout << "D" << std::endl;
 		imageStackView->setInput(stackReader->getOutput("stack"));
