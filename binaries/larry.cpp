@@ -24,8 +24,9 @@
 #include <ImageMagick/Magick++.h>
 #include <sopnet/sopnet/block/Block.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
-#include <sopnet/block/Point3.h>
+#include <util/point3.hpp>
 
+using util::point3;
 using std::cout;
 using std::endl;
 using namespace gui;
@@ -67,7 +68,7 @@ int main(int optionc, char** optionv)
 	std::string fileName = "/nfs/data0/home/larry/Series/test.png";
 	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
 	std::string seriesDirectory = "/nfs/data0/home/larry/Series/VolumeImages/";
-	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, Point3<int>::ptrTo(0,0,0), Point3<int>::ptrTo(1024, 1024, 16));
+	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0,0,0), util::ptrTo(1024, 1024, 16));
 	
     try
     {

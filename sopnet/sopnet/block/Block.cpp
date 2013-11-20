@@ -1,8 +1,8 @@
 #include "Block.h"
 #include <boost/concept_check.hpp>
 
-Block::Block(unsigned int id, boost::shared_ptr<Point3<int> > loc,
-			boost::shared_ptr<Point3<int> > size,
+Block::Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
+			boost::shared_ptr<point3<int> > size,
 			boost::shared_ptr<BlockManager> manager) : _id(id),
 			_location(loc), _size(size), _manager(manager)
 {
@@ -15,24 +15,24 @@ Block::getId() const
     return _id;
 }
 
-boost::shared_ptr<Point3<int> >
+boost::shared_ptr<point3<int> >
 Block::size()
 {    
     return _size;
 }
 
-boost::shared_ptr<Point3<int> >
+boost::shared_ptr<point3<int> >
 Block::location()
 {
 	return _location;
 }
 
 bool
-Block::contains(const boost::shared_ptr<Point3<int> >& loc)
+Block::contains(const boost::shared_ptr<point3<int> >& loc)
 {
-	Point3<int> point = *loc - *_location;
+	point3<int> point = *loc - *_location;
 	
-	bool positive = point >= Point3<int>();;
+	bool positive = point >= point3<int>();;
 	bool contained = point < *_size;
 	
 	return positive && contained;
@@ -45,27 +45,19 @@ Block::contains(int z)
 }
 
 bool
-Block::getSlicesFlag()
+Block::setSlicesFlag(bool flag)
 {
-	return _slicesExtracted;
+	bool outFlag = _slicesExtracted;
+	_slicesExtracted = flag;
+	return outFlag;
 }
 
 bool
-Block::getSegmentsFlag()
-{
-	return _segmentsExtracted;
-}
-
-void
-Block::setSlicesFlag(bool flag)
-{
-	_slicesExtracted = flag;
-}
-
-void
 Block::setSegmentsFlag(bool flag)
 {
+	bool outFlag = _segmentsExtracted;
 	_segmentsExtracted = flag;
+	return outFlag;
 }
 
 
