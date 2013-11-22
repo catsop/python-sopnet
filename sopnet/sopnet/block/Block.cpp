@@ -16,19 +16,19 @@ Block::getId() const
 }
 
 boost::shared_ptr<point3<int> >
-Block::size()
+Block::size() const
 {    
     return _size;
 }
 
 boost::shared_ptr<point3<int> >
-Block::location()
+Block::location() const
 {
 	return _location;
 }
 
 bool
-Block::contains(const boost::shared_ptr<point3<int> >& loc)
+Block::contains(const boost::shared_ptr<point3<int> >& loc) const
 {
 	point3<int> point = *loc - *_location;
 	
@@ -39,7 +39,7 @@ Block::contains(const boost::shared_ptr<point3<int> >& loc)
 }
 
 bool
-Block::contains(int z)
+Block::contains(int z) const
 {
 	return z >= _location->z && (z - _location->z) < _size->z;
 }
@@ -60,4 +60,20 @@ Block::setSegmentsFlag(bool flag)
 	return outFlag;
 }
 
+bool
+Block::operator==(const Block& other) const
+{
+	return *_location == *(other._location) && *_size == *(other._size);
+}
+
+std::size_t hash_value(const Block& block)
+{
+	std::size_t seed = 0;
+	boost::shared_ptr<point3<int> > location = block.location();
+	boost::shared_ptr<point3<int> > size = block.size();
+	boost::hash_combine(seed, util::hash_value(*location));
+	boost::hash_combine(seed, util::hash_value(*size));
+
+	return seed;
+}
 
