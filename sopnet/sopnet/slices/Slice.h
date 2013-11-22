@@ -45,7 +45,9 @@ public:
 	 * a single connected component any longer.
 	 */
 	void intersect(const Slice& other);
-
+	
+	bool operator==(const Slice& other) const;
+	
 private:
 
 	unsigned int _id;
@@ -54,6 +56,8 @@ private:
 
 	boost::shared_ptr<ConnectedComponent> _component;
 };
+
+std::size_t hash_value(const Slice& slice);
 
 #endif // CELLTRACKER_CELL_H__
 
