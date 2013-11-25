@@ -41,6 +41,21 @@ public:
 	boost::shared_ptr<ConnectedComponent> getComponent() const;
 
 	/**
+	 * Set the wholeness flag on this slice. If set false, this slice is
+	 * marked as one that has been split across a sub-image boundary.
+	 * 
+	 * @param isWhole true to set this as a whole slice, false otherwise
+	 */
+	void setWhole(bool isWhole);
+
+	/**
+	 * Retrns the wholeness flag, which indicates whether this flag is whole,
+	 * or has been split across a sub-image boundary.
+	 */
+	bool isWhole() const;
+
+
+	/**
 	 * Intersect this slice with another one. Note that the result might not be
 	 * a single connected component any longer.
 	 */
@@ -53,6 +68,8 @@ private:
 	unsigned int _id;
 
 	unsigned int _section;
+
+	bool _isWhole;
 
 	boost::shared_ptr<ConnectedComponent> _component;
 };

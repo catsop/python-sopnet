@@ -10,7 +10,8 @@ Slice::Slice(
 		boost::shared_ptr<ConnectedComponent> component) :
 	_id(id),
 	_section(section),
-	_component(component) {}
+	_component(component),
+	_isWhole(true){}
 
 unsigned int
 Slice::getId() const {
@@ -41,6 +42,19 @@ Slice::operator==(const Slice& other) const
 {
 	//TODO: == operator should be based on geometry
 	return getId() == other.getId();
+}
+
+void
+Slice::setWhole(bool isWhole)
+{
+	_isWhole = isWhole;
+}
+
+
+bool
+Slice::isWhole() const
+{
+	return _isWhole;
 }
 
 
