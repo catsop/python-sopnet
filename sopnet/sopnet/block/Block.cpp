@@ -27,6 +27,13 @@ Block::location() const
 	return _location;
 }
 
+boost::shared_ptr<BlockManager>
+Block::getManager() const
+{
+	return _manager;
+}
+
+
 bool
 Block::contains(const boost::shared_ptr<point3<int> >& loc) const
 {

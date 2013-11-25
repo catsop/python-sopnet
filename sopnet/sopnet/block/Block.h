@@ -22,6 +22,7 @@ public:
 
     boost::shared_ptr<point3<int> > location() const;
 	boost::shared_ptr<point3<int> > size() const;
+	boost::shared_ptr<BlockManager> getManager() const;
 	
     unsigned int getId() const;
 

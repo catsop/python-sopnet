@@ -35,7 +35,7 @@ public:
 	 * For example, to get the Block just above the one in hand, one might call
 	 * blockAtOffset(block, point3&ltint&gt::ptrTo(0, 0, 1));
 	 */
-    virtual boost::shared_ptr<Block> blockAtOffset(const boost::shared_ptr<Block>& block,
+    virtual boost::shared_ptr<Block> blockAtOffset(const Block& block,
 										   const boost::shared_ptr<point3<int> >& offset);
 	
 	/**
