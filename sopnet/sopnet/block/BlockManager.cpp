@@ -30,3 +30,17 @@ BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<i
 		boost::make_shared<point3<int> >((*(block.location()) / *_blockSize) + *offset);
 	return blockAtCoordinates(blockCoordinates);
 }
+
+boost::shared_ptr<util::point3<int> >
+BlockManager::blockSize()
+{
+	return _blockSize;
+}
+
+boost::shared_ptr<util::point3<int> >
+BlockManager::stackSize()
+{
+	return _stackSize;
+}
+
+

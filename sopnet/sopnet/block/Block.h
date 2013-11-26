@@ -17,8 +17,7 @@ class Block : public pipeline::Data
 {
 public:
     Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
-            boost::shared_ptr<point3<int> > size,
-			boost::shared_ptr<BlockManager> manager = boost::shared_ptr<BlockManager>());
+			boost::shared_ptr<BlockManager> manager);
 
     boost::shared_ptr<point3<int> > location() const;
 	boost::shared_ptr<point3<int> > size() const;

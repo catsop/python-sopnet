@@ -42,6 +42,16 @@ public:
 	 * Returns a shared_ptr to a Block at the given block coordinates.
 	 */
     virtual boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<int> >& coordinates) = 0;
+
+	/**
+	 * Returns the size of a block in pixels.
+	 */
+	virtual boost::shared_ptr<point3<int> > blockSize();
+
+	/**
+	 * Returns the size of the stack in pixels.
+	 */
+	virtual boost::shared_ptr<point3<int> > stackSize();
 	
 protected:
     boost::shared_ptr<point3<int> > _stackSize, _blockSize;

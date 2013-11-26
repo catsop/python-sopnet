@@ -23,7 +23,7 @@ LocalBlockManager::blockAtCoordinates(const boost::shared_ptr<point3<int> >& coo
 	{
 		// modular math, taking advantage of the modular properaties of int divide.
 		boost::shared_ptr<point3<int> > corner = boost::make_shared<point3<int> >((*coordinates) * (*_blockSize));
-		boost::shared_ptr<Block> block = boost::make_shared<Block>(_lastId++, coordinates, _blockSize, shared_from_this());
+		boost::shared_ptr<Block> block = boost::make_shared<Block>(_lastId++, coordinates, shared_from_this());
 		
 		(*_blockMap)[*corner] = block;
 		
