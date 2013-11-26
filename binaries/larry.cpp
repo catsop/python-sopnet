@@ -23,8 +23,15 @@
 #include <util/ProgramOptions.h>
 #include <ImageMagick/Magick++.h>
 #include <sopnet/sopnet/block/Block.h>
+#include <sopnet/sopnet/block/BlockManager.h>
+#include <sopnet/sopnet/block/LocalBlockManager.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
 #include <util/point3.hpp>
+#include <catmaidsopnet/SliceGuarantorParameters.h>
+#include <catmaidsopnet/SliceGuarantor.h>
+#include <catmaidsopnet/SliceStore.h>
+#include <catmaidsopnet/LocalSliceStore.h>
+
 
 using util::point3;
 using std::cout;
@@ -65,53 +72,40 @@ int main(int optionc, char** optionv)
 	unsigned int id = 1;
 	
 	util::ProgramOptions::init(optionc, optionv);
-	std::string fileName = "/nfs/data0/home/larry/Series/test.png";
-	std::string url = "http://www.smbc-comics.com/comics/20131016.png";
-	std::string seriesDirectory = "/nfs/data0/home/larry/Series/VolumeImages/";
-	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0,0,0), util::ptrTo(1024, 1024, 16));
+	std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024, 1024, 20), util::ptrTo(256, 256, 2));
+	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0,0,0), blockManager);
 	
     try
     {
 		LogManager::init();
-		        
+
+		// gui
         boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("larry");
-
         boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
-        window->setInput(zoomView->getOutput());
-
         boost::shared_ptr<ContainerView<VerticalPlacing> > mainContainer = boost::make_shared<ContainerView<VerticalPlacing> >();
-
 		boost::shared_ptr<ImageStackView> imageStackView = boost::make_shared<ImageStackView>();
 
-		//boost::shared_ptr<ImageView> imageView = boost::make_shared<ImageView>();
-		cout << "A" << std::endl;
-		boost::shared_ptr<ImageBlockFactory> factory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
-		cout << "B" << std::endl;
-		boost::shared_ptr<ImageBlockStackReader> stackReader = boost::make_shared<ImageBlockStackReader>();
-		cout << "C" << std::endl;
+		//data
+		boost::shared_ptr<ImageBlockFactory> imageBlockFactory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
+		boost::shared_ptr<pipeline::Wrap<bool> > nope = boost::make_shared<pipeline::Wrap<bool> >(false);
+		boost::shared_ptr<SliceGuarantorParameters> params = boost::make_shared<SliceGuarantorParameters>();
+		boost::shared_ptr<SliceStore> store = boost::shared_ptr<SliceStore>(new LocalSliceStore());
+		boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
 		
-		//boost::shared_ptr<ImageBlockStackReader> stackReader =
-		//	boost::make_shared<ImageBlockStackReader>(factory);
-
-        //boost::shared_ptr<ImageHttpReader> imageReader = boost::make_shared<ImageHttpReader>(url);
-		//boost::shared_ptr<ImageFileReader> imageReader = boost::make_shared<ImageFileReader>(fileName);
-		//boost::shared_ptr<ImageBlockFileReader> imageReader = boost::make_shared<ImageBlockFileReader>(fileName, 0);
-		//imageReader->setInput("block", block);
-		
-		stackReader->setInput("factory", factory);
-		stackReader->setInput("block", block);
-		cout << "D" << std::endl;
-		imageStackView->setInput(stackReader->getOutput("stack"));
+		window->setInput(zoomView->getOutput());
 		mainContainer->addInput(imageStackView->getOutput("painter"));
-        //mainContainer->addInput(imageView->getOutput("painter"));
         zoomView->setInput(mainContainer->getOutput());
+
+		params->guaranteeAllSlices = true;
 		
-        //imageView->setInput("image", imageReader->getOutput());
-		//pipeline::Value<ImageStack> stackValue;
-		//pipeline::Value<ImageStack> output = stackReader->getOutput("stack");
-		//*stackValue = *output;
-        
-		cout << "Yup. Got this far. Dammit." << std::endl;
+		guarantor->setInput("block", block);
+		guarantor->setInput("store", store);
+		guarantor->setInput("block factory", imageBlockFactory);
+		guarantor->setInput("force explanation", nope);
+		guarantor->setInput("parameters", params);
+		
+		guarantor->guaranteeSlices();
 		
         window->processEvents();
         while(!window->closed())
