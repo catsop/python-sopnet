@@ -10,11 +10,7 @@
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
 #include <util/exceptions.h>
-#include <gui/ContainerView.h>
-#include <gui/Window.h>
-#include <gui/ZoomView.h>
 #include <util/exceptions.h>
-#include <gui/VerticalPlacing.h>
 #include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageHttpReader.h>
@@ -80,22 +76,34 @@ int main(int optionc, char** optionv)
     {
 		LogManager::init();
 
+		
+		/*LOG_USER(out) << "Initing gui stuffs" << endl;
+		
 		// gui
         boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("larry");
         boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
         boost::shared_ptr<ContainerView<VerticalPlacing> > mainContainer = boost::make_shared<ContainerView<VerticalPlacing> >();
-		boost::shared_ptr<ImageStackView> imageStackView = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> imageStackView = boost::make_shared<ImageStackView>();*/
 
+		LOG_USER(out) << "Initing data stuffs" << endl;
+		
 		//data
+		LOG_USER(out) << "Initing ImageBlockFactory" << endl;
 		boost::shared_ptr<ImageBlockFactory> imageBlockFactory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
+		LOG_USER(out) << "Initing Nope" << endl;
 		boost::shared_ptr<pipeline::Wrap<bool> > nope = boost::make_shared<pipeline::Wrap<bool> >(false);
+		LOG_USER(out) << "Initing Params" << endl;
 		boost::shared_ptr<SliceGuarantorParameters> params = boost::make_shared<SliceGuarantorParameters>();
+		LOG_USER(out) << "Initing SliceStore" << endl;
 		boost::shared_ptr<SliceStore> store = boost::shared_ptr<SliceStore>(new LocalSliceStore());
+		LOG_USER(out) << "Initing SliceGuarantor" << endl;
 		boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
 		
-		window->setInput(zoomView->getOutput());
+		LOG_USER(out) << "Setting up pipeline inputs and such" << endl;
+		
+		/*window->setInput(zoomView->getOutput());
 		mainContainer->addInput(imageStackView->getOutput("painter"));
-        zoomView->setInput(mainContainer->getOutput());
+        zoomView->setInput(mainContainer->getOutput());*/
 
 		params->guaranteeAllSlices = true;
 		
@@ -104,15 +112,17 @@ int main(int optionc, char** optionv)
 		guarantor->setInput("block factory", imageBlockFactory);
 		guarantor->setInput("force explanation", nope);
 		guarantor->setInput("parameters", params);
-		
+
+		LOG_USER(out) << "Guaranteeing some slices." << endl;
 		guarantor->guaranteeSlices();
+		LOG_USER(out) << "Guaranteed some slices." << endl;
 		
-        window->processEvents();
+        /*window->processEvents();
         while(!window->closed())
         {
 			window->processEvents();
 			usleep(1000);
-		}
+		}*/
 	}
     catch (Exception& e)
     {
