@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <string>
+#include <fstream>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
@@ -25,8 +26,9 @@
 #include <util/point3.hpp>
 #include <catmaidsopnet/SliceGuarantorParameters.h>
 #include <catmaidsopnet/SliceGuarantor.h>
-#include <catmaidsopnet/SliceStore.h>
-#include <catmaidsopnet/LocalSliceStore.h>
+#include <catmaidsopnet/persistence/SliceStore.h>
+#include <catmaidsopnet/persistence/LocalSliceStore.h>
+#include <catmaidsopnet/persistence/SliceReader.h>
 
 
 using util::point3;
@@ -54,6 +56,30 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
+class InputPusher : public pipeline::SimpleProcessNode<>
+{
+private:
+	pipeline::Input<Block> _in;
+	pipeline::Output<Block> _out;
+public:
+	
+	InputPusher()
+	{
+		registerInput(_in, "in");
+		registerOutput(_out, "out");
+	}
+	
+	void updateOutputs()
+	{
+		*_out = *_in;
+	}
+	
+	void addInputTo(const boost::shared_ptr<ProcessNode>& node, const std::string& name)
+	{
+		node->addInput(name, _in);
+	}
+};
+
 int main(int optionc, char** optionv)
 {
 	
@@ -71,6 +97,7 @@ int main(int optionc, char** optionv)
 	std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024, 1024, 20), util::ptrTo(256, 256, 2));
 	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0,0,0), blockManager);
+	pipeline::Value<SliceStoreResult> sliceWriteCount;
 	
     try
     {
@@ -85,21 +112,15 @@ int main(int optionc, char** optionv)
         boost::shared_ptr<ContainerView<VerticalPlacing> > mainContainer = boost::make_shared<ContainerView<VerticalPlacing> >();
 		boost::shared_ptr<ImageStackView> imageStackView = boost::make_shared<ImageStackView>();*/
 
-		LOG_USER(out) << "Initing data stuffs" << endl;
-		
 		//data
-		LOG_USER(out) << "Initing ImageBlockFactory" << endl;
+		LOG_USER(out) << "Initting pipeline data" << endl;
 		boost::shared_ptr<ImageBlockFactory> imageBlockFactory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
-		LOG_USER(out) << "Initing Nope" << endl;
 		boost::shared_ptr<pipeline::Wrap<bool> > nope = boost::make_shared<pipeline::Wrap<bool> >(false);
-		LOG_USER(out) << "Initing Params" << endl;
 		boost::shared_ptr<SliceGuarantorParameters> params = boost::make_shared<SliceGuarantorParameters>();
-		LOG_USER(out) << "Initing SliceStore" << endl;
 		boost::shared_ptr<SliceStore> store = boost::shared_ptr<SliceStore>(new LocalSliceStore());
-		LOG_USER(out) << "Initing SliceGuarantor" << endl;
 		boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
 		
-		LOG_USER(out) << "Setting up pipeline inputs and such" << endl;
+		LOG_USER(out) << "Plugging the pipes into the other pipes" << endl;
 		
 		/*window->setInput(zoomView->getOutput());
 		mainContainer->addInput(imageStackView->getOutput("painter"));
@@ -114,8 +135,40 @@ int main(int optionc, char** optionv)
 		guarantor->setInput("parameters", params);
 
 		LOG_USER(out) << "Guaranteeing some slices." << endl;
-		guarantor->guaranteeSlices();
-		LOG_USER(out) << "Guaranteed some slices." << endl;
+		sliceWriteCount = guarantor->getOutput();;
+		LOG_USER(out) << "Guaranteed " << sliceWriteCount->count << " slices." << endl;
+		
+		LOG_USER(out) << "Let's read them back out" << endl;
+		boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
+		pipeline::Value<Slices> slices;
+		
+		sliceReader->setInput("store", store);
+		sliceReader->setInput("block", block);
+		
+		LOG_USER(out) << "Attempting to read slices" << endl;
+		
+		slices = sliceReader->getOutput();
+
+		LOG_USER(out) << "Read " << slices->size() << " slices" << endl;
+		
+		std::ofstream sliceFile;
+		sliceFile.open("slices.txt");
+
+		LOG_USER(out) << "Writing slices to a text file in Matlab format. Slices are [-1 -1] terminated." << endl;
+		
+		foreach (boost::shared_ptr<Slice> slice, *slices)
+		{
+			foreach (const util::point<unsigned int>& pt, (slice->getComponent()->getPixels()))
+			{
+				sliceFile << pt.x << ", " << pt.y << ";" << std::endl;
+			}
+			sliceFile << -1 << ", " << -1 << ";" << std::endl;
+		}
+		
+		LOG_USER(out) << "Donesies." << endl;
+		
+		sliceFile.close();
+		
 		
         /*window->processEvents();
         while(!window->closed())
