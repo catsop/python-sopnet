@@ -1,6 +1,11 @@
 #include "Block.h"
 #include <boost/concept_check.hpp>
 
+Block::Block()
+{
+	//invalid block
+}
+
 Block::Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
 			boost::shared_ptr<BlockManager> manager) : _id(id),
 			_location(loc), _size(manager->blockSize()), _manager(manager)

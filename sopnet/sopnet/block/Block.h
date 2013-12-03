@@ -16,6 +16,8 @@ class BlockManager;
 class Block : public pipeline::Data
 {
 public:
+	Block();
+	
     Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
 			boost::shared_ptr<BlockManager> manager);
 
