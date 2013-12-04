@@ -18,14 +18,14 @@ public:
 	 * Creates a BlockManager for a stack with size stackSize in pixels and blocks of size
 	 * blockSize, also in pixels.
 	 */
-    BlockManager(boost::shared_ptr<point3<int> > stackSize,
-                 boost::shared_ptr<point3<int> > blockSize);
+    BlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
+                 boost::shared_ptr<point3<unsigned int> > blockSize);
 
 	/**
 	 * Returns a shared_ptr to a Block at the given location, in pixels.
 	 */
-    virtual boost::shared_ptr<Block> blockAtLocation(int x, int y, int z);
-	virtual boost::shared_ptr<Block> blockAtLocation(const boost::shared_ptr<point3<int> >& location);
+    virtual boost::shared_ptr<Block> blockAtLocation(unsigned int x, unsigned int y, unsigned int z);
+	virtual boost::shared_ptr<Block> blockAtLocation(const boost::shared_ptr<point3<unsigned int> >& location);
     
 	/**
 	 * Returns a shared_ptr to a Block at the given block-offset from the given Block.
@@ -41,20 +41,20 @@ public:
 	/**
 	 * Returns a shared_ptr to a Block at the given block coordinates.
 	 */
-    virtual boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<int> >& coordinates) = 0;
+    virtual boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<unsigned int> >& coordinates) = 0;
 
 	/**
 	 * Returns the size of a block in pixels.
 	 */
-	virtual boost::shared_ptr<point3<int> > blockSize();
+	virtual boost::shared_ptr<point3<unsigned int> > blockSize();
 
 	/**
 	 * Returns the size of the stack in pixels.
 	 */
-	virtual boost::shared_ptr<point3<int> > stackSize();
+	virtual boost::shared_ptr<point3<unsigned int> > stackSize();
 	
 protected:
-    boost::shared_ptr<point3<int> > _stackSize, _blockSize;
+    boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;
 
 };
 

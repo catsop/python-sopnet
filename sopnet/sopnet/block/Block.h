@@ -18,16 +18,17 @@ class Block : public pipeline::Data
 public:
 	Block();
 	
-    Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
+    Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
 			boost::shared_ptr<BlockManager> manager);
 
-    boost::shared_ptr<point3<int> > location() const;
-	boost::shared_ptr<point3<int> > size() const;
+    boost::shared_ptr<point3<unsigned int> > location() const;
+	boost::shared_ptr<point3<unsigned int> > size() const;
 	boost::shared_ptr<BlockManager> getManager() const;
 	
     unsigned int getId() const;
 
-	bool contains(const boost::shared_ptr<point3<int> >& loc) const;
+	bool contains(const boost::shared_ptr<util::point<unsigned int> >& loc) const;
+	bool contains(const boost::shared_ptr<point3<unsigned int> >& loc) const;
 	bool contains(int z) const;
 	
 	bool setSlicesFlag(bool flag);
@@ -39,7 +40,7 @@ public:
 	bool operator==(const Block& other) const;
 
 private:
-	boost::shared_ptr<point3<int> > _location, _size;
+	boost::shared_ptr<point3<unsigned int> > _location, _size;
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
 	bool _slicesExtracted, _segmentsExtracted;

@@ -11,7 +11,7 @@
 
 using util::point3;
 
-typedef boost::unordered_map<point3<int>, boost::shared_ptr<Block> > PointBlockMap;
+typedef boost::unordered_map<point3<unsigned int>, boost::shared_ptr<Block> > PointBlockMap;
 
 /**
  * A Local-only BlockManager. This class is intended to be used for testing the Catmaid-Sopnet
@@ -21,10 +21,10 @@ typedef boost::unordered_map<point3<int>, boost::shared_ptr<Block> > PointBlockM
 class LocalBlockManager : public BlockManager, public boost::enable_shared_from_this<LocalBlockManager>
 {
 public:
-	LocalBlockManager(boost::shared_ptr<point3<int> > stackSize,
-					  boost::shared_ptr<point3<int> > blockSize);
+	LocalBlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
+					  boost::shared_ptr<point3<unsigned int> > blockSize);
 	
-	boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<int> >& coordinates);
+	boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<unsigned int> >& coordinates);
 
 private:
 	boost::shared_ptr<PointBlockMap> _blockMap;

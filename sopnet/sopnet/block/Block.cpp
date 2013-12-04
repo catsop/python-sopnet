@@ -6,7 +6,7 @@ Block::Block()
 	//invalid block
 }
 
-Block::Block(unsigned int id, boost::shared_ptr<point3<int> > loc,
+Block::Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
 			boost::shared_ptr<BlockManager> manager) : _id(id),
 			_location(loc), _size(manager->blockSize()), _manager(manager)
 {
@@ -19,13 +19,13 @@ Block::getId() const
     return _id;
 }
 
-boost::shared_ptr<point3<int> >
+boost::shared_ptr<point3<unsigned int> >
 Block::size() const
 {    
     return _size;
 }
 
-boost::shared_ptr<point3<int> >
+boost::shared_ptr<point3<unsigned int> >
 Block::location() const
 {
 	return _location;
@@ -39,15 +39,30 @@ Block::getManager() const
 
 
 bool
-Block::contains(const boost::shared_ptr<point3<int> >& loc) const
+Block::contains(const boost::shared_ptr< util::point3< unsigned int > >& loc) const
 {
-	point3<int> point = *loc - *_location;
+	point3<unsigned int> point = *loc - *_location;
 	
-	bool positive = point >= point3<int>();;
+	bool positive = point >= point3<unsigned int>();;
 	bool contained = point < *_size;
 	
 	return positive && contained;
 }
+
+bool
+Block::contains(const boost::shared_ptr< util::point< unsigned int > >& loc) const
+{
+	
+	util::point<unsigned int> location = *_location;
+	util::point<unsigned int> size = *_size;
+	util::point<unsigned int> point = *loc - location;
+	
+	bool positive = point.x > 0 && point.y > 0;
+	bool contained = point.x < size.x && point.y < size.y;
+	
+	return positive && contained;
+}
+
 
 bool
 Block::contains(int z) const
@@ -80,8 +95,8 @@ Block::operator==(const Block& other) const
 std::size_t hash_value(const Block& block)
 {
 	std::size_t seed = 0;
-	boost::shared_ptr<point3<int> > location = block.location();
-	boost::shared_ptr<point3<int> > size = block.size();
+	boost::shared_ptr<point3<unsigned int> > location = block.location();
+	boost::shared_ptr<point3<unsigned int> > size = block.size();
 	boost::hash_combine(seed, util::hash_value(*location));
 	boost::hash_combine(seed, util::hash_value(*size));
 
