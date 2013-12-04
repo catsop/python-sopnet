@@ -61,6 +61,12 @@ public:
 	 */
 	void intersect(const Slice& other);
 	
+	/**
+	 * Translate this Slice
+	 * @param pt a point representing the translation to perform.
+	 */
+	void translate(const util::point<unsigned int>& pt);
+	
 	bool operator==(const Slice& other) const;
 	
 private:

@@ -37,6 +37,12 @@ Slice::intersect(const Slice& other) {
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->intersect(*other.getComponent()));
 }
 
+void
+Slice::translate(const util::point<unsigned int>& pt)
+{
+	_component = boost::make_shared<ConnectedComponent>(getComponent()->translate(pt));
+}
+
 bool
 Slice::operator==(const Slice& other) const
 {
