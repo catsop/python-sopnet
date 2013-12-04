@@ -95,8 +95,8 @@ int main(int optionc, char** optionv)
 	
 	util::ProgramOptions::init(optionc, optionv);
 	std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
-	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024, 1024, 20), util::ptrTo(256, 256, 2));
-	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0,0,0), blockManager);
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 2u));
+	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(256u,256u,0u), blockManager);
 	pipeline::Value<SliceStoreResult> sliceWriteCount;
 	
     try
@@ -158,11 +158,12 @@ int main(int optionc, char** optionv)
 		
 		foreach (boost::shared_ptr<Slice> slice, *slices)
 		{
+			double value = slice->getComponent()->getValue() - 1;
 			foreach (const util::point<unsigned int>& pt, (slice->getComponent()->getPixels()))
 			{
-				sliceFile << pt.x << ", " << pt.y << ";" << std::endl;
+				sliceFile << pt.x << ", " << pt.y << ", " << value << ";" << std::endl;
 			}
-			sliceFile << -1 << ", " << -1 << ";" << std::endl;
+			sliceFile << " -1, -1, -2;" << std::endl;
 		}
 		
 		LOG_USER(out) << "Donesies." << endl;
