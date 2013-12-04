@@ -37,33 +37,6 @@ Block::getManager() const
 	return _manager;
 }
 
-
-bool
-Block::contains(const boost::shared_ptr< util::point3< unsigned int > >& loc) const
-{
-	point3<unsigned int> point = *loc - *_location;
-	
-	bool positive = point >= point3<unsigned int>();;
-	bool contained = point < *_size;
-	
-	return positive && contained;
-}
-
-bool
-Block::contains(const boost::shared_ptr< util::point< unsigned int > >& loc) const
-{
-	
-	util::point<unsigned int> location = *_location;
-	util::point<unsigned int> size = *_size;
-	util::point<unsigned int> point = *loc - location;
-	
-	bool positive = point.x > 0 && point.y > 0;
-	bool contained = point.x < size.x && point.y < size.y;
-	
-	return positive && contained;
-}
-
-
 bool
 Block::contains(int z) const
 {

@@ -26,10 +26,34 @@ public:
 	boost::shared_ptr<BlockManager> getManager() const;
 	
     unsigned int getId() const;
+	
+	template<typename T>
+	bool contains(const util::point<T>& loc) const
+	{
+		util::point<unsigned int> location = *_location;
+		util::point<unsigned int> size = *_size;
+		util::point<unsigned int> point = loc - location;
+		
+		bool positive = point.x >= 0 && point.y >= 0;
+		bool contained = point.x < size.x && point.y < size.y;
+		
+		return positive && contained;
+	}
+	
+	template<typename T>
+	bool contains(const point3<T>& loc) const
+	{
+		point3<unsigned int> point = loc - *_location;
 
-	bool contains(const boost::shared_ptr<util::point<unsigned int> >& loc) const;
-	bool contains(const boost::shared_ptr<point3<unsigned int> >& loc) const;
+		bool positive = point >= point3<unsigned int>();;
+		bool contained = point < *_size;
+
+		return positive && contained;
+	}
+	
 	bool contains(int z) const;
+	
+	
 	
 	bool setSlicesFlag(bool flag);
 	bool setSegmentsFlag(bool flag);
