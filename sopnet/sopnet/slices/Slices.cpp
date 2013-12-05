@@ -124,3 +124,22 @@ Slices::find(const util::point<double>& center, double distance) {
 
 	return found;
 }
+
+void Slices::addConflictsFromSlices(const Slices& slices)
+{
+	
+	foreach (conflicts_type::value_type conflict, slices._conflicts)
+	{
+		const unsigned int id = conflict.first;
+		
+		_conflicts[id].reserve(_conflicts[id].size() + conflict.second.size());
+		
+		_conflicts[id].insert(_conflicts[id].end(), conflict.second.begin(), conflict.second.end());
+		
+		/*foreach (unsigned int otherId, conflict.second)
+		{
+			_conflicts[id].push_back(otherId);
+		}*/
+	}
+	
+}

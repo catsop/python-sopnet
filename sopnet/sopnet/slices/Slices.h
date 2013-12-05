@@ -9,6 +9,8 @@
 #include <pipeline/all.h>
 #include "Slice.h"
 
+typedef std::map<unsigned int, std::vector<unsigned int> > conflicts_type;
+
 /**
  * An adaptor class to use std::vector<boost::shared_ptr<Slice> > in a
  * nanoflann kd-tree.
@@ -142,7 +144,9 @@ public:
 					_conflicts[id].push_back(otherId);
 		}
 	}
-
+	
+	void addConflictsFromSlices(const Slices& slices);
+	
 	/**
 	 * Check, whether to slices (given by their id) are in conflict.
 	 */
@@ -183,7 +187,7 @@ private:
 	slices_type _slices;
 
 	// map from ids of slices to all ids of conflicting slices
-	std::map<unsigned int, std::vector<unsigned int> > _conflicts;
+	conflicts_type _conflicts;
 
 	// nanoflann vector adaptor
 	SliceVectorAdaptor* _adaptor;
