@@ -20,6 +20,7 @@
 #include <util/ProgramOptions.h>
 #include <ImageMagick/Magick++.h>
 #include <sopnet/sopnet/block/Block.h>
+#include <sopnet/sopnet/block/Blocks.h>
 #include <sopnet/sopnet/block/BlockManager.h>
 #include <sopnet/sopnet/block/LocalBlockManager.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
@@ -96,8 +97,8 @@ int main(int optionc, char** optionv)
 	util::ProgramOptions::init(optionc, optionv);
 	std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 2u));
-	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(256u,256u,0u), blockManager);
-	pipeline::Value<SliceStoreResult> sliceWriteCount;
+	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0u,256u,0u), blockManager);
+	
 	
     try
     {
@@ -119,6 +120,7 @@ int main(int optionc, char** optionv)
 		boost::shared_ptr<SliceGuarantorParameters> params = boost::make_shared<SliceGuarantorParameters>();
 		boost::shared_ptr<SliceStore> store = boost::shared_ptr<SliceStore>(new LocalSliceStore());
 		boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
+		pipeline::Value<Blocks> blocks;
 		
 		LOG_USER(out) << "Plugging the pipes into the other pipes" << endl;
 		
@@ -135,8 +137,9 @@ int main(int optionc, char** optionv)
 		guarantor->setInput("parameters", params);
 
 		LOG_USER(out) << "Guaranteeing some slices." << endl;
-		sliceWriteCount = guarantor->getOutput();;
-		LOG_USER(out) << "Guaranteed " << sliceWriteCount->count << " slices." << endl;
+		blocks = guarantor->getOutput();;
+		//LOG_USER(out) << "Guaranteed " << sliceWriteCount->count << " slices." << endl;
+		LOG_USER(out) << "Found " << blocks->size() << " blocks to submit to fix border issues" << endl;
 		
 		LOG_USER(out) << "Let's read them back out" << endl;
 		boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
