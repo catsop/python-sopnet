@@ -1,4 +1,8 @@
 #include "BlockManager.h"
+#include <util/Logger.h>
+
+logger::LogChannel blockmanagerlog("blockmanagerlog", "[BlockManager] ");
+
 
 /**
  * Creates an instance of a basic implementation of BlockManager, which exists only locally.
@@ -26,9 +30,20 @@ BlockManager::blockAtLocation(const boost::shared_ptr<point3<unsigned int> >& lo
 boost::shared_ptr<Block>
 BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<int> >& offset)
 {
-    boost::shared_ptr<point3<unsigned int> > blockCoordinates =
-		boost::make_shared<point3<unsigned int> >((*(block.location()) / *_blockSize) + *offset);
-	return blockAtCoordinates(blockCoordinates);
+	point3<int> signedBlockCoordinates = *offset + (*(block.location()) / *_blockSize);
+	
+	// TODO: check upper boundary, too.
+	if (signedBlockCoordinates >= point3<int>(0,0,0))
+	{
+		boost::shared_ptr<point3<unsigned int> > blockCoordinates =
+			boost::make_shared<point3<unsigned int> >(signedBlockCoordinates);
+
+		return blockAtCoordinates(blockCoordinates);
+	}
+	else
+	{
+		return boost::shared_ptr<Block>();
+	}
 }
 
 boost::shared_ptr<util::point3<unsigned int> >

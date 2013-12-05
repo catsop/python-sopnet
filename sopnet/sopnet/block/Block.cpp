@@ -1,5 +1,7 @@
 #include "Block.h"
 #include <boost/concept_check.hpp>
+#include <util/Logger.h>
+logger::LogChannel blocklog("blocklog", "[Block] ");
 
 Block::Block()
 {
