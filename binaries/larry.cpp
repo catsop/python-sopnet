@@ -95,10 +95,10 @@ int main(int optionc, char** optionv)
 	unsigned int id = 1;
 	
 	util::ProgramOptions::init(optionc, optionv);
-	std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
+	std::string seriesDirectory = "/home/larry/smb/code/sopnet/data/testmembrane";
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 2u));
 	boost::shared_ptr<Block> block = boost::make_shared<Block>(id, util::ptrTo(0u,256u,0u), blockManager);
-	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize = boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 64);
+	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize = boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 256 * 64);
 	
 	
     try
@@ -136,6 +136,7 @@ int main(int optionc, char** optionv)
 		guarantor->setInput("block factory", imageBlockFactory);
 		guarantor->setInput("force explanation", nope);
 		guarantor->setInput("parameters", params);
+		guarantor->setInput("maximum area", maxSize);
 
 		LOG_USER(out) << "Guaranteeing some slices." << endl;
 		blocks = guarantor->getOutput();;
