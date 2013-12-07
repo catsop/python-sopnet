@@ -6,14 +6,16 @@
 #include <pipeline/Data.h>
 #include <util/point3.hpp>
 #include <sopnet/sopnet/block/BlockManager.h>
+#include <imageprocessing/ConnectedComponent.h>
 #include <vector>
+#include "Box.h"
 
 using util::point3;
 
 class Block;
 class BlockManager;
 
-class Block : public pipeline::Data
+class Block : public Box<unsigned int>
 {
 public:
 	Block();
@@ -27,33 +29,7 @@ public:
 	
     unsigned int getId() const;
 	
-	template<typename T>
-	bool contains(const util::point<T>& loc) const
-	{
-		util::point<unsigned int> location = *_location;
-		util::point<unsigned int> size = *_size;
-		util::point<unsigned int> point = loc - location;
-		
-		bool positive = point.x >= 0 && point.y >= 0;
-		bool contained = point.x < size.x && point.y < size.y;
-		
-		return positive && contained;
-	}
-	
-	template<typename T>
-	bool contains(const point3<T>& loc) const
-	{
-		point3<unsigned int> point = loc - *_location;
-
-		bool positive = point >= point3<unsigned int>();;
-		bool contained = point < *_size;
-
-		return positive && contained;
-	}
-	
-	bool contains(int z) const;
-	
-	
+	bool overlaps(const boost::shared_ptr<ConnectedComponent>& component);
 	
 	bool setSlicesFlag(bool flag);
 	bool setSegmentsFlag(bool flag);
@@ -62,9 +38,14 @@ public:
 	 * Block equality is determined by size and location.
 	 */
 	bool operator==(const Block& other) const;
+	
+	/**
+	* Return the bounding box representing this Block in XY
+	*/
+	util::rect<int> getBoundingBox();
+	
 
 private:
-	boost::shared_ptr<point3<unsigned int> > _location, _size;
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
 	bool _slicesExtracted, _segmentsExtracted;

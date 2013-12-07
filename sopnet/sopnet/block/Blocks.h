@@ -6,10 +6,10 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Block.h"
+#include "Box.h"
 
 
-
-class Blocks : public pipeline::Data
+class Blocks : public Box<unsigned int>
 {
 public:
 	typedef std::vector<boost::shared_ptr<Block> >::iterator       iterator;
@@ -18,9 +18,15 @@ public:
 	
 	Blocks();
 	
+	Blocks(const boost::shared_ptr<Block>& block);
+	
+	Blocks(const boost::shared_ptr<Blocks>& blocks);
+	
 	bool contains(const boost::shared_ptr<Block>& block);
 	
 	void add(const boost::shared_ptr<Block>& block);
+	
+	void addAll(const std::vector<boost::shared_ptr<Block> >& blocks);
 	
 	void remove(const boost::shared_ptr<Block>& block);
 	
@@ -32,10 +38,25 @@ public:
 
 	iterator end() { return _blocks.end(); }
 
-	unsigned int size() const { return _blocks.size(); }
+	unsigned int length() const { return _blocks.size(); }
+	
+	void dilateXY();
+	
+	void expand(boost::shared_ptr<point3<int> > direction);
+	
+	boost::shared_ptr<BlockManager> getManager();
+	
+	std::vector<boost::shared_ptr<Block> > getBlocks();
+	
 	
 private:
+	bool internalAdd(const boost::shared_ptr<Block>& block);
+	
+	void updateBox();
+	
 	std::vector<boost::shared_ptr<Block> > _blocks;
+	
+	boost::shared_ptr<BlockManager> _blockManager;
 };
 
 #endif //BLOCKS_H__
