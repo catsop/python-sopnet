@@ -48,6 +48,8 @@ public:
 	
 	std::vector<boost::shared_ptr<Block> > getBlocks();
 	
+	bool overlaps(const boost::shared_ptr<ConnectedComponent>& component);
+	
 	
 private:
 	bool internalAdd(const boost::shared_ptr<Block>& block);

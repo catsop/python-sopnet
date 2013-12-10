@@ -3,14 +3,17 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <sopnet/sopnet/block/Block.h>
+#include <sopnet/block/Block.h>
+#include <sopnet/block/Box.h>
 #include <util/point3.hpp>
+#include <pipeline/Data.h>
 
 using util::point3;
 
 class Block;
+class Blocks;
 
-class BlockManager
+class BlockManager : public pipeline::Data
 {
 public:
 
@@ -52,6 +55,12 @@ public:
 	 * Returns the size of the stack in pixels.
 	 */
 	virtual boost::shared_ptr<point3<unsigned int> > stackSize();
+	
+	/**
+	 * Returns a Blocks containing all Block's overlapped by the given Box.
+	 * @param box the box for which Blocks have been requested.
+	 */
+	virtual boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<unsigned int> >& box);
 	
 protected:
     boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;

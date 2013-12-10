@@ -153,6 +153,19 @@ void Blocks::updateBox()
 	}
 }
 
+bool Blocks::overlaps(const boost::shared_ptr< ConnectedComponent >& component)
+{
+	foreach (boost::shared_ptr<Block> block, _blocks)
+	{
+		if (block->overlaps(component))
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 std::vector< boost::shared_ptr< Block > > Blocks::getBlocks()
 {
 	return _blocks;
