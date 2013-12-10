@@ -23,8 +23,6 @@ public:
     Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
 			boost::shared_ptr<BlockManager> manager);
 
-    boost::shared_ptr<point3<unsigned int> > location() const;
-	boost::shared_ptr<point3<unsigned int> > size() const;
 	boost::shared_ptr<BlockManager> getManager() const;
 	
     unsigned int getId() const;

@@ -26,21 +26,21 @@ BlockManager::blockAtLocation(unsigned int x, unsigned int y, unsigned int z)
 boost::shared_ptr<Block>
 BlockManager::blockAtLocation(const boost::shared_ptr<point3<unsigned int> >& location)
 {
-    boost::shared_ptr<point3<unsigned int> > blockCoordinates = boost::make_shared<point3<unsigned int> >(*location / *_blockSize);
+    boost::shared_ptr<point3<unsigned int> > blockCoordinates =
+		boost::make_shared<point3<unsigned int> >(*location / *_blockSize);
 	return blockAtCoordinates(blockCoordinates);
 }
 
 boost::shared_ptr<Block>
 BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<int> >& offset)
 {
-	point3<int> signedBlockCoordinates = *offset + (*(block.location()) / *_blockSize);
+	point3<int> signedBlockCoordinates = *offset + (block.location() / *_blockSize);
 	point3<unsigned int> maxBlockCoordinates = *stackSize() / *blockSize();
 	
 	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < maxBlockCoordinates)
 	{
 		boost::shared_ptr<point3<unsigned int> > blockCoordinates =
 			boost::make_shared<point3<unsigned int> >(signedBlockCoordinates);
-
 		return blockAtCoordinates(blockCoordinates);
 	}
 	else

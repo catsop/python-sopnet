@@ -10,7 +10,7 @@ Block::Block()
 
 Block::Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
 			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, manager->blockSize()),
-			_id(id), _manager(manager)
+			_id(id), _manager(manager), _slicesExtracted(false), _segmentsExtracted(false)
 {
     
 }
@@ -19,18 +19,6 @@ unsigned int
 Block::getId() const
 {
     return _id;
-}
-
-boost::shared_ptr<point3<unsigned int> >
-Block::size() const
-{    
-    return _size;
-}
-
-boost::shared_ptr<point3<unsigned int> >
-Block::location() const
-{
-	return _location;
 }
 
 boost::shared_ptr<BlockManager>
@@ -80,8 +68,8 @@ util::rect<int> Block::getBoundingBox()
 std::size_t hash_value(const Block& block)
 {
 	std::size_t seed = 0;
-	boost::hash_combine(seed, util::hash_value(*block.location()));
-	boost::hash_combine(seed, util::hash_value(*block.size()));
+	boost::hash_combine(seed, util::hash_value(block.location()));
+	boost::hash_combine(seed, util::hash_value(block.size()));
 
 	return seed;
 }

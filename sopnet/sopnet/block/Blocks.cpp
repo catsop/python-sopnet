@@ -3,6 +3,9 @@
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <util/point3.hpp>
+#include <util/Logger.h>
+
+logger::LogChannel blockslog("blocks", "[Blocks] ");
 
 Blocks::Blocks() : _blockManager(boost::shared_ptr<BlockManager>())
 {
@@ -23,6 +26,7 @@ Blocks::Blocks(const boost::shared_ptr< Blocks >& blocks) :
 
 bool Blocks::internalAdd(const boost::shared_ptr< Block >& block)
 {
+	
 	if(block && !contains(block))
 	{
 		if (!_blockManager)
@@ -52,7 +56,7 @@ void Blocks::addAll(const std::vector<boost::shared_ptr<Block> >& blocks)
 	bool needUpdate = false;
 	foreach (boost::shared_ptr<Block> block, blocks)
 	{
-		needUpdate = needUpdate || internalAdd(block);
+		needUpdate = internalAdd(block) || needUpdate;
 	}
 	
 	if (needUpdate)
@@ -140,12 +144,12 @@ void Blocks::updateBox()
 	}
 	else
 	{
-		util::point3<unsigned int> minPoint(*_blocks[0]->location()), maxPoint(*_blocks[0]->location());
+		util::point3<unsigned int> minPoint(_blocks[0]->location()), maxPoint(_blocks[0]->location());
 		
 		foreach (boost::shared_ptr<Block> block, _blocks)
 		{
-			minPoint = minPoint.min(*block->location());
-			maxPoint = maxPoint.max(*block->location() + *block->size());
+			minPoint = minPoint.min(block->location());
+			maxPoint = maxPoint.max(block->location() + block->size());
 		}
 		
 		_location = boost::make_shared<util::point3<unsigned int> >(minPoint);

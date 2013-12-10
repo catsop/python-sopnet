@@ -13,7 +13,7 @@ using boost::make_shared;
 using util::point3;
 using util::point;
 
-template<class T>
+template<class T = unsigned int>
 class Box : public pipeline::Data
 {
 public:
