@@ -145,7 +145,27 @@ public:
 		}
 	}
 	
+	/**
+	 * Copy the conflicts from another Slices
+	 * @param slices a Slices object, from which conflict info will be copied.
+	 */
 	void addConflictsFromSlices(const Slices& slices);
+	
+	/**
+	 * Set the conflicts for a single slice.
+	 * 
+	 * @param id the id for the slice whose conflicts are to be set.
+	 * @param conflicts a vector containing the ids for conflicting Slice's. 
+	 */
+	void setConflicts(unsigned int id, std::vector<unsigned int> conflicts);
+
+	/**
+	 * Get the conflicts for a single slice.
+	 * 
+	 * @param id the id for the slice whose conflicts are desired.
+	 * @return a vector containing the ids of Slice's conflicting with the given Slice.
+	 */
+	std::vector<unsigned int> getConflicts(unsigned int id);
 	
 	/**
 	 * Check, whether to slices (given by their id) are in conflict.

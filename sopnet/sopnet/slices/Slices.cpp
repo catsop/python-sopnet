@@ -135,11 +135,28 @@ void Slices::addConflictsFromSlices(const Slices& slices)
 		_conflicts[id].reserve(_conflicts[id].size() + conflict.second.size());
 		
 		_conflicts[id].insert(_conflicts[id].end(), conflict.second.begin(), conflict.second.end());
-		
-		/*foreach (unsigned int otherId, conflict.second)
-		{
-			_conflicts[id].push_back(otherId);
-		}*/
 	}
 	
+}
+
+std::vector<unsigned int>
+Slices::getConflicts(unsigned int id)
+{
+	if (_conflicts.count(id))
+	{
+		return _conflicts[id];
+	}
+	else
+	{
+		return std::vector<unsigned int>();
+	}
+}
+
+void
+Slices::setConflicts(unsigned int id, std::vector<unsigned int> conflicts)
+{
+	if (!conflicts.empty())
+	{
+		_conflicts[id] = conflicts;
+	}
 }
