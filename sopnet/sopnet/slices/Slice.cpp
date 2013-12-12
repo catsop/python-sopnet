@@ -2,6 +2,7 @@
 
 #include <boost/functional/hash.hpp>
 #include <imageprocessing/ConnectedComponent.h>
+#include <iostream>
 #include "Slice.h"
 
 Slice::Slice(
@@ -11,7 +12,7 @@ Slice::Slice(
 	_id(id),
 	_section(section),
 	_component(component),
-	_isWhole(true){}
+	_isWhole(true) {}
 
 unsigned int
 Slice::getId() const {
@@ -46,8 +47,7 @@ Slice::translate(const util::point<unsigned int>& pt)
 bool
 Slice::operator==(const Slice& other) const
 {
-	//TODO: == operator should be based on geometry
-	return getId() == other.getId();
+	return getSection() == other.getSection() && (*getComponent()) == (*other.getComponent());
 }
 
 void
@@ -63,12 +63,17 @@ Slice::isWhole() const
 	return _isWhole;
 }
 
+std::size_t
+Slice::hashValue() const
+{
+	std::size_t seed = getComponent()->getHashValue();
+	boost::hash_combine(seed, boost::hash_value(getSection()));
+	return seed;
+}
 
-/**
- * Simple hash function for Slice, over the Slice's unique id.
- */
+
 std::size_t hash_value(const Slice& slice)
 {
-	return boost::hash_value(slice.getId());
+	return slice.hashValue();
 }
 

@@ -62,6 +62,12 @@ public:
 	void intersect(const Slice& other);
 	
 	/**
+	 * Computes a hash value for this Slice over its section id, and the geometry of its
+	 * underlying ConnectedComponent.
+	 */
+	std::size_t hashValue() const;
+	
+	/**
 	 * Translate this Slice
 	 * @param pt a point representing the translation to perform.
 	 */
@@ -80,6 +86,9 @@ private:
 	boost::shared_ptr<ConnectedComponent> _component;
 };
 
+/**
+ * Returns slice.hashValue()
+ */
 std::size_t hash_value(const Slice& slice);
 
 #endif // CELLTRACKER_CELL_H__
