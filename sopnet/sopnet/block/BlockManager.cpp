@@ -75,10 +75,12 @@ BlockManager::blocksInBox(const boost::shared_ptr< Box<unsigned int> >& box)
 			for (unsigned int x = corner.x; x - corner.x < size.x; x += blockSize()->x)
 			{
 				util::point3<unsigned int> coords = point3<unsigned int>(x, y, z) / *blockSize();
-				blocks->add(blockAtCoordinates(util::ptrTo(coords.x, coords.y, coords.z)));
+				boost::shared_ptr<Block> block = blockAtCoordinates(util::ptrTo(coords.x, coords.y, coords.z));
+				blocks->add(block);
 			}
 		}
 	}
+
 	return blocks;
 }
 
