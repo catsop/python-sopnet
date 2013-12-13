@@ -60,6 +60,8 @@ public:
 	std::vector<boost::shared_ptr<Slice> > getSourceSlices() const;
 
 	std::vector<boost::shared_ptr<Slice> > getTargetSlices() const;
+	
+	bool operator== (const Segment& other) const;
 
 private:
 
@@ -80,6 +82,8 @@ private:
 	// the number of the inter-section interval this segment lives in
 	unsigned int _interSectionInterval;
 };
+
+std::size_t hash_value(const Segment& segment);
 
 #endif // CELLTRACKER_TRACKLET_H__
 

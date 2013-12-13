@@ -1,4 +1,5 @@
 #include "Segment.h"
+#include <boost/functional/hash.hpp>
 
 Segment::Segment(
 		unsigned int id,
@@ -76,6 +77,63 @@ Segment::getTargetSlices() const {
 			targetSlices.push_back(slice);
 
 	return targetSlices;
+}
+
+bool
+Segment::operator==(const Segment& other) const
+{
+	if (getDirection() == other.getDirection() &&
+		getSlices().size() == other.getSlices().size())
+	{
+		// Worst-case O(N * N), but N is at most 3.
+		// Typical-case O(N)
+		
+		foreach (boost::shared_ptr<Slice> slice, getSlices())
+		{
+			bool contains = false;
+			foreach (boost::shared_ptr<Slice> otherSlice, other.getSlices())
+			{
+				if (*otherSlice == *slice)
+				{
+					contains = true;
+					break;
+				}
+			}
+			
+			if (!contains)
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+std::size_t hash_value(const Segment& segment)
+{
+	std::size_t seed = 0;
+	
+	if (segment.getDirection() == Left)
+	{
+		boost::hash_combine(seed, boost::hash_value(2));
+	}
+	else if(segment.getDirection() == Right)
+	{
+		boost::hash_combine(seed, boost::hash_value(8));
+	}
+	
+	foreach(boost::shared_ptr<Slice> slice, segment.getSlices())
+	{
+		boost::hash_combine(seed, hash_value(slice));
+	}
+	
+	return seed;
 }
 
 
