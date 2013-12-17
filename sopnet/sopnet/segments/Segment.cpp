@@ -1,6 +1,10 @@
 #include "Segment.h"
 #include <boost/functional/hash.hpp>
 
+#include <util/Logger.h>
+
+logger::LogChannel segmentlog("segmentlog", "[Segment] ");
+
 Segment::Segment(
 		unsigned int id,
 		Direction direction,
@@ -44,6 +48,12 @@ Segment::getInterSectionInterval() const {
 
 	return _interSectionInterval;
 }
+
+std::vector< boost::shared_ptr< Slice > > Segment::getSlices() const
+{
+	LOG_USER(segmentlog) << "Segment: This method should never have been called." << std::endl;
+}
+
 
 std::vector<boost::shared_ptr<Slice> >
 Segment::getSourceSlices() const {
