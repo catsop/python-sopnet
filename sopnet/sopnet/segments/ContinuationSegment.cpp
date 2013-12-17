@@ -38,3 +38,9 @@ ContinuationSegment::getSlices() const {
 
 	return slices;
 }
+
+SegmentType
+ContinuationSegment::getType() const
+{
+    return ContinuationSegmentType;
+}

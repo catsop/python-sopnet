@@ -16,6 +16,14 @@ enum Direction {
 	Right
 };
 
+enum SegmentType {
+	
+	EndSegmentType,
+	ContinuationSegmentType,
+	BranchSegmentType,
+	BaseSegmentType
+};
+
 /**
  * A segment represents the connection of slices between sections. Subclasses
  * implement one-to-one segments (continuations), one-to-two segments
@@ -62,6 +70,8 @@ public:
 	std::vector<boost::shared_ptr<Slice> > getTargetSlices() const;
 	
 	bool operator== (const Segment& other) const;
+	
+	virtual SegmentType getType() const;
 
 private:
 

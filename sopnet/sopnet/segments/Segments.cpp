@@ -72,6 +72,36 @@ Segments::resize(int numInterSectionInterval) {
 		_branchTreeDirty.resize(numInterSectionInterval, true);
 }
 
+void Segments::add(boost::shared_ptr<Segment> segment)
+{
+	switch (segment->getType())
+	{
+		case EndSegmentType:
+			{
+				boost::shared_ptr<EndSegment> end =
+					boost::static_pointer_cast<EndSegment>(segment);
+				add(end);
+			}
+			break;
+		case ContinuationSegmentType:
+			{
+				boost::shared_ptr<ContinuationSegment> continuation = 
+					boost::static_pointer_cast<ContinuationSegment>(segment);
+				add(continuation);
+			}
+			break;
+		case BranchSegmentType:
+			{
+				boost::shared_ptr<BranchSegment> branch = 
+					boost::static_pointer_cast<BranchSegment>(segment);
+				add(branch);
+			}
+			break;
+		// Don't do anything for BaseSegmentType, which we should never see.
+	}
+}
+
+
 void
 Segments::add(boost::shared_ptr<EndSegment> end) {
 

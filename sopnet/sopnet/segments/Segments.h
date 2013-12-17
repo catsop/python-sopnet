@@ -102,6 +102,12 @@ public:
 	void clear();
 
 	/**
+	 * Add a single Segment of any type to this set of segments.
+	 * This method uses a static_cast. Whee.
+	 */
+	void add(boost::shared_ptr<Segment> segment);
+	
+	/**
 	 * Add a single end segment to this set of segments.
 	 */
 	void add(boost::shared_ptr<EndSegment> end);

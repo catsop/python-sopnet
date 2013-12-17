@@ -23,3 +23,9 @@ EndSegment::getSlices() const {
 
 	return slices;
 }
+
+SegmentType
+EndSegment::getType() const
+{
+    return EndSegmentType;
+}

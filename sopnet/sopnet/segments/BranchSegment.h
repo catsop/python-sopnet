@@ -24,6 +24,8 @@ public:
 	boost::shared_ptr<Slice> getTargetSlice2() const;
 
 	std::vector<boost::shared_ptr<Slice> > getSlices() const;
+	
+	SegmentType getType() const;
 
 private:
 

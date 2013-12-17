@@ -48,3 +48,10 @@ BranchSegment::getSlices() const {
 
 	return slices;
 }
+
+SegmentType
+BranchSegment::getType() const
+{
+    return BranchSegmentType;
+}
+

@@ -124,6 +124,12 @@ Segment::operator==(const Segment& other) const
 	}
 }
 
+SegmentType Segment::getType() const
+{
+	return BaseSegmentType;
+}
+
+
 
 std::size_t hash_value(const Segment& segment)
 {
