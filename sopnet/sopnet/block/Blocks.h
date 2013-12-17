@@ -9,7 +9,7 @@
 #include "Box.h"
 
 
-class Blocks : public Box<unsigned int>
+class Blocks : public Box<>
 {
 public:
 	typedef std::vector<boost::shared_ptr<Block> >::iterator       iterator;
@@ -24,9 +24,17 @@ public:
 	
 	bool contains(const boost::shared_ptr<Block>& block);
 	
+	template<typename S>
+	bool contains(const util::rect<S>& rect)
+	{
+		return Box<>::contains<S>(rect);
+	}
+	
 	void add(const boost::shared_ptr<Block>& block);
 	
 	void addAll(const std::vector<boost::shared_ptr<Block> >& blocks);
+	
+	void addAll(const boost::shared_ptr<Blocks>& blocks);
 	
 	void remove(const boost::shared_ptr<Block>& block);
 	

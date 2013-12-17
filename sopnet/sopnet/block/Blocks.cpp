@@ -65,6 +65,11 @@ void Blocks::addAll(const std::vector<boost::shared_ptr<Block> >& blocks)
 	}
 }
 
+void Blocks::addAll(const boost::shared_ptr< Blocks >& blocks)
+{
+	addAll(blocks->_blocks);
+}
+
 
 void Blocks::remove(const boost::shared_ptr<Block>& otherBlock)
 {

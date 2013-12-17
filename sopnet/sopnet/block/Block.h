@@ -32,6 +32,10 @@ public:
 	bool setSlicesFlag(bool flag);
 	bool setSegmentsFlag(bool flag);
 	
+	bool getSlicesFlag();
+	
+	bool getSegmentsFlag();
+	
 	/**
 	 * Block equality is determined by size and location.
 	 */

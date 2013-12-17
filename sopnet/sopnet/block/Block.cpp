@@ -44,6 +44,19 @@ Block::setSegmentsFlag(bool flag)
 }
 
 bool
+Block::getSegmentsFlag()
+{
+	return _segmentsExtracted;
+}
+
+bool
+Block::getSlicesFlag()
+{
+	return _slicesExtracted;
+}
+
+
+bool
 Block::operator==(const Block& other) const
 {
 	return *_location == *(other._location) && *_size == *(other._size);
