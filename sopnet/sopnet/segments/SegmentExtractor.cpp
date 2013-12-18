@@ -61,7 +61,7 @@ SegmentExtractor::SegmentExtractor() :
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
-	registerInput(_prevLinearConstraints, "previous linear constraints");
+	registerInput(_prevLinearConstraints, "previous linear constraints", pipeline::Optional);
 	registerInput(_nextLinearConstraints, "next linear constraints", pipeline::Optional);
 
 	registerOutput(_segments, "segments");
@@ -87,15 +87,14 @@ SegmentExtractor::onLinearConstraintsModified(const pipeline::Modified&) {
 
 void
 SegmentExtractor::updateOutputs() {
-
+	
+	
 	if (_slicesChanged) {
-
 		extractSegments();
 		_slicesChanged = false;
 	}
-
-	if (_linearCosntraintsChanged) {
-
+	
+	if (_prevLinearConstraints && _linearCosntraintsChanged) {
 		assembleLinearConstraints();
 		_linearCosntraintsChanged = false;
 	}
