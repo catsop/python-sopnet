@@ -49,12 +49,6 @@ Segment::getInterSectionInterval() const {
 	return _interSectionInterval;
 }
 
-std::vector< boost::shared_ptr< Slice > > Segment::getSlices() const
-{
-	LOG_USER(segmentlog) << "Segment: This method should never have been called." << std::endl;
-}
-
-
 std::vector<boost::shared_ptr<Slice> >
 Segment::getSourceSlices() const {
 
