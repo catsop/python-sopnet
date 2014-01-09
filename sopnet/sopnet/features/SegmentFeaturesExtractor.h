@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
+#include <util/point3.hpp>
 #include "Features.h"
 
 // forward declaration
@@ -34,10 +35,14 @@ private:
 	};
 
 	void onInputSet(const pipeline::InputSetBase& signal);
+	
+	void onOffsetSet(const pipeline::InputSetBase&);
 
 	pipeline::Input<Segments> _segments;
 
 	pipeline::Input<ImageStack> _rawSections;
+	
+	pipeline::Input<util::point3<unsigned int> > _cropOffset;
 
 	boost::shared_ptr<GeometryFeatureExtractor>  _geometryFeatureExtractor;
 

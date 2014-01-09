@@ -11,11 +11,13 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 
 	registerInput(_segments, "segments");
 	registerInput(_rawSections, "raw sections");
+	registerInput(_cropOffset, "crop offset");
 
 	registerOutput(_featuresAssembler->getOutput("all features"), "all features");
 
 	_segments.registerBackwardCallback(&SegmentFeaturesExtractor::onInputSet, this);
 	_rawSections.registerBackwardCallback(&SegmentFeaturesExtractor::onInputSet, this);
+	_cropOffset.registerBackwardCallback(&SegmentFeaturesExtractor::onOffsetSet, this);
 
 	_featuresAssembler->addInput(_geometryFeatureExtractor->getOutput());
 	_featuresAssembler->addInput(_histogramFeatureExtractor->getOutput());
@@ -31,6 +33,13 @@ SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 		_histogramFeatureExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
 	}
 }
+
+void
+SegmentFeaturesExtractor::onOffsetSet(const pipeline::InputSetBase&)
+{
+	_histogramFeatureExtractor->setInput("crop offset", _cropOffset);
+}
+
 
 SegmentFeaturesExtractor::FeaturesAssembler::FeaturesAssembler() {
 

@@ -12,6 +12,7 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 
 	registerInput(_segments, "segments");
 	registerInput(_sections, "raw sections");
+	registerInput(_cropOffset, "crop offset", pipeline::Optional);
 	registerOutput(_features, "features");
 }
 
@@ -105,15 +106,18 @@ HistogramFeatureExtractor::getFeatures(const BranchSegment& branch, std::vector<
 std::vector<double>
 HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
+	util::point3<unsigned int> offset = _cropOffset ? *_cropOffset : util::point3<unsigned int>(0, 0, 0);
+	util::point<unsigned int> offset2D = offset;
+
 	std::vector<double> histogram(_numBins, 0);
 
-	unsigned int section = slice.getSection();
+	unsigned int section = slice.getSection() - offset.z;
 
 	Image& image = *(*_sections)[section];
 
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
-		double value = image(pixel.x, pixel.y);
+		double value = image(pixel.x - offset.x, pixel.y - offset.y);
 
 		unsigned int bin = std::min(_numBins - 1, (unsigned int)(value*_numBins));
 

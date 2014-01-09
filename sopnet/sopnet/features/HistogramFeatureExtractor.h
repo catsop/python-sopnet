@@ -5,6 +5,7 @@
 #include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
+#include <util/point3.hpp>
 
 class HistogramFeatureExtractor : public pipeline::SimpleProcessNode<> {
 
@@ -27,6 +28,8 @@ private:
 	pipeline::Input<Segments> _segments;
 
 	pipeline::Input<ImageStack> _sections;
+	
+	pipeline::Input<util::point3<unsigned int> > _cropOffset;
 
 	pipeline::Output<Features> _features;
 
