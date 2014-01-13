@@ -19,6 +19,7 @@ SegmentationCostFunction::SegmentationCostFunction() :
 
 	registerInput(_membranes, "membranes");
 	registerInput(_parameters, "parameters");
+	registerInput(_cropOffset, "crop offset", pipeline::Optional);
 
 	registerOutput(_costFunction, "cost function");
 }
@@ -175,7 +176,10 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	if (_sliceSegmentationCosts.count(slice.getId()))
 		return _sliceSegmentationCosts[slice.getId()];
 
-	unsigned int section = slice.getSection();
+	util::point3<unsigned int> offset = _cropOffset ? *_cropOffset :
+		util::point3<unsigned int>(0, 0, 0);
+	
+	unsigned int section = slice.getSection() - offset.z;
 
 	double costs = 0.0;
 
@@ -183,7 +187,8 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
 		// get the membrane data probability p(x|y=membrane)
-		double probMembrane = (*(*_membranes)[section])(pixel.x, pixel.y)/255.0;
+		double probMembrane =
+			(*(*_membranes)[section])(pixel.x - offset.x, pixel.y - offset.y)/255.0;
 
 		if (optionInvertMembraneMaps)
 			probMembrane = 1.0 - probMembrane;
