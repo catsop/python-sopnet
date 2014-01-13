@@ -23,6 +23,8 @@
 #include <sopnet/sopnet/block/Box.h>
 #include <sopnet/sopnet/block/BlockManager.h>
 #include <sopnet/sopnet/block/LocalBlockManager.h>
+#include <sopnet/inference/SegmentationCostFunctionParameters.h>
+
 #include <imageprocessing/io/ImageBlockFileReader.h>
 #include <util/point3.hpp>
 #include <catmaidsopnet/SliceGuarantorParameters.h>
