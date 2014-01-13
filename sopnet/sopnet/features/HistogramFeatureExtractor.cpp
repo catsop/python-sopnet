@@ -6,6 +6,10 @@
 #include <sopnet/segments/BranchSegment.h>
 #include "HistogramFeatureExtractor.h"
 
+#include <util/Logger.h>
+
+logger::LogChannel histogramfeaturelog("histogramfeaturelog", "[HistogramFeature] ");
+
 HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 	_features(boost::make_shared<Features>()),
 	_numBins(numBins) {
@@ -20,6 +24,9 @@ void
 HistogramFeatureExtractor::updateOutputs() {
 
 	_features->clear();
+	
+	LOG_DEBUG(histogramfeaturelog) << "Got images of size" << (*_sections)[0]->width() << " x " <<
+		(*_sections)[0]->height() << std::endl;
 
 	for (unsigned int i = 0; i < _numBins; i++)
 		_features->addName("histogram " + boost::lexical_cast<std::string>(i));
@@ -110,6 +117,9 @@ HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 	util::point<unsigned int> offset2D = offset;
 
 	std::vector<double> histogram(_numBins, 0);
+	
+	LOG_DEBUG(histogramfeaturelog) << "Offset: " << offset << ", section: " << slice.getSection() << 
+		", bounding box: " << slice.getComponent()->getBoundingBox() << std::endl;
 
 	unsigned int section = slice.getSection() - offset.z;
 

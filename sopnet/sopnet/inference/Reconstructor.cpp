@@ -26,6 +26,9 @@ Reconstructor::updateReconstruction() {
 	// remove all previous segment in the reconstruction
 	_reconstruction->clear();
 
+	LOG_DEBUG(reconstructorlog) << "Got " << _segments->size() << " segments in total" << std::endl;
+	LOG_DEBUG(reconstructorlog) << "Solution contains " << _solution->size() << " things" << std::endl;
+	
 	LOG_ALL(reconstructorlog) << "Solution consists of segments: ";
 
 	_currentSegmentNum = 0;
@@ -39,6 +42,8 @@ Reconstructor::updateReconstruction() {
 	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
 		probe(segment);
 
+	LOG_DEBUG(reconstructorlog) << "Reconstruction contains " << _reconstruction->size() << std::endl;
+	
 	LOG_ALL(reconstructorlog) << std::endl;
 }
 

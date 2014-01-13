@@ -56,17 +56,17 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 
 	foreach (boost::shared_ptr<Features> features, _features) {
 
-		LOG_ALL(segmentfeaturesextractorlog) << "processing feature group" << std::endl << std::endl << *features << std::endl;
+		LOG_DEBUG(segmentfeaturesextractorlog) << "processing feature group" << std::endl << std::endl << *features << std::endl;
 
 		foreach (const std::string& name, features->getNames()) {
 
-			LOG_ALL(segmentfeaturesextractorlog) << "adding name " << name << std::endl;
+			LOG_DEBUG(segmentfeaturesextractorlog) << "adding name " << name << std::endl;
 			_allFeatures->addName(name);
 		}
 
 		if (_allFeatures->size() == 0) {
 
-			LOG_ALL(segmentfeaturesextractorlog) << "initialising all features with " << features->size() << " feature vectors from current feature group" << std::endl;
+			LOG_DEBUG(segmentfeaturesextractorlog) << "initialising all features with " << features->size() << " feature vectors from current feature group" << std::endl;
 
 			unsigned int numFeatures = (features->size() > 0  ? (*features)[0].size() : 0);
 
@@ -81,7 +81,7 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 
 		} else {
 
-			LOG_ALL(segmentfeaturesextractorlog) << "appending " << features->size() << " features from current feature group" << std::endl;
+			LOG_DEBUG(segmentfeaturesextractorlog) << "appending " << features->size() << " features from current feature group" << std::endl;
 
 			unsigned int i = 0;
 			foreach (const std::vector<double>& feature, *features) {
@@ -97,7 +97,7 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 			}
 		}
 
-		LOG_ALL(segmentfeaturesextractorlog) << "all features are now:" << std::endl << std::endl << *_allFeatures << std::endl;
+		LOG_DEBUG(segmentfeaturesextractorlog) << "all features are now:" << std::endl << std::endl << *_allFeatures << std::endl;
 	}
 
 	// the new features should have the same segment ids map like every features
