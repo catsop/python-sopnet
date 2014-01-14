@@ -65,24 +65,15 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
-int main(int optionc, char** optionv)
+void testBlockPipeline()
 {
-	
-	//HttpClient::response res = HttpClient::get("http://distilleryimage4.s3.amazonaws.com/5a32ffbc365a11e38b1f22000a9f135b_8.jpg");
-	
-	//LOG_USER(out) << "Response string " << res.body << std::endl;
-	//Magick::Blob blob(res.body.c_str(), res.body.size());
-	//Magick::Image image(blob);
-	//image.magick("JPEG");
-	//image.write("/home/larry/test.jpg");
-	
 	unsigned int id = 1;
 	
-	util::ProgramOptions::init(optionc, optionv);
+	
 	
     try
     {
-		LogManager::init();
+		
 
 		LOG_USER(out) << "Start" << endl;
 		
@@ -90,8 +81,8 @@ int main(int optionc, char** optionv)
 		
 		std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
 		std::string rawDirectory = "/nfs/data0/home/larry/code/sopnet/data/raw";
-		boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 2u));
-		boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::ptrTo(256u, 768u, 2u), util::ptrTo(512u, 256u, 2u));
+		boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 5u));
+		boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::ptrTo(256u, 768u, 0u), util::ptrTo(512u, 256u, 10u));
 		boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize = boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 256 * 64);
 		
 		LOG_USER(out) << "Initting pipeline data" << endl;
@@ -111,7 +102,8 @@ int main(int optionc, char** optionv)
 		boost::shared_ptr<BlockSolver> blockSolver = boost::make_shared<BlockSolver>();
 		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
 			boost::make_shared<SegmentationCostFunctionParameters>();
-		
+		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+			boost::make_shared<PriorCostFunctionParameters>();
 		
 		pipeline::Value<SliceStoreResult> sliceResult;
 		pipeline::Value<SegmentStoreResult> segmentResult;
@@ -186,9 +178,12 @@ int main(int optionc, char** optionv)
 		segmentationCostParameters->weight = 0;
 		segmentationCostParameters->priorForeground = 0.2;
 		
+		priorCostFunctionParameters->priorContinuation = -100;
+		priorCostFunctionParameters->priorBranch = -100;
+		
 		LOG_USER(out) << "Setting up block solver" << std::endl;
 		blockSolver->setInput("prior cost parameters",
-							  boost::make_shared<PriorCostFunctionParameters>());
+							  priorCostFunctionParameters);
 		blockSolver->setInput("segmentation cost parameters", segmentationCostParameters);
 		LOG_USER(out) << "blocks" << std::endl;
 		blockSolver->setInput("blocks", blocks);
@@ -210,4 +205,92 @@ int main(int optionc, char** optionv)
     {
 		handleException(e);
 	}
+}
+
+
+int main(int optionc, char** optionv)
+{
+	util::ProgramOptions::init(optionc, optionv);
+	LogManager::init();
+	
+	try
+	{
+		std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
+		std::string rawDirectory = "/nfs/data0/home/larry/code/sopnet/data/raw";
+		
+		// Block management variables
+		boost::shared_ptr<BlockManager> blockManager =
+			boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u),
+												util::ptrTo(256u, 256u, 5u));
+		boost::shared_ptr<Box<> > box =
+			boost::make_shared<Box<> >(util::ptrTo(256u, 768u, 0u), util::ptrTo(512u, 256u, 10u));
+		boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
+			boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 256 * 64);
+		
+		// Block pipeline variables
+		boost::shared_ptr<ImageBlockFactory> imageBlockFactory =
+			boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
+		boost::shared_ptr<ImageBlockFactory> rawBlockFactory =
+			boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(rawDirectory));
+		boost::shared_ptr<pipeline::Wrap<bool> > yep =
+			boost::make_shared<pipeline::Wrap<bool> >(true);
+		boost::shared_ptr<SliceStore> sliceStore =
+			boost::shared_ptr<SliceStore>(new LocalSliceStore());
+		boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
+		boost::shared_ptr<SegmentGuarantor> segmentGuarantor =
+			boost::make_shared<SegmentGuarantor>();
+		boost::shared_ptr<SegmentStore> segmentStore =
+			boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
+		boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+		boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
+		boost::shared_ptr<BlockSolver> blockSolver = boost::make_shared<BlockSolver>();
+		
+		// Solver parameters
+		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
+			boost::make_shared<SegmentationCostFunctionParameters>();
+		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+			boost::make_shared<PriorCostFunctionParameters>();
+		
+		// Result Values
+		pipeline::Value<SliceStoreResult> sliceResult;
+		pipeline::Value<SegmentStoreResult> segmentResult;
+		
+		// pipeline
+		
+		sliceGuarantor->setInput("box", box);
+		sliceGuarantor->setInput("store", sliceStore);
+		sliceGuarantor->setInput("block manager", blockManager);
+		sliceGuarantor->setInput("block factory", imageBlockFactory);
+		sliceGuarantor->setInput("force explanation", yep);
+		sliceGuarantor->setInput("maximum area", maxSize);
+		
+		segmentGuarantor->setInput("box", box);
+		segmentGuarantor->setInput("segment store", segmentStore);
+		segmentGuarantor->setInput("slice store", sliceStore);
+		segmentGuarantor->setInput("block manager", blockManager);
+		
+		segmentationCostParameters->weightPotts = 0;
+		segmentationCostParameters->weight = 0;
+		segmentationCostParameters->priorForeground = 0.2;
+		
+		priorCostFunctionParameters->priorContinuation = -100;
+		priorCostFunctionParameters->priorBranch = -100;
+		
+		sliceResult = sliceGuarantor->getOutput();
+		
+		LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
+		
+		segmentResult = segmentGuarantor->getOutput();
+		
+		LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
+		
+		
+	}
+	catch (Exception& e)
+	{
+		handleException(e);
+	}
+	
+	
+	
 }
