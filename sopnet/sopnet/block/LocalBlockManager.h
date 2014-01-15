@@ -25,6 +25,8 @@ public:
 					  boost::shared_ptr<point3<unsigned int> > blockSize);
 	
 	boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<unsigned int> >& coordinates);
+	
+	bool isValidZ(unsigned int z);
 
 private:
 	boost::shared_ptr<PointBlockMap> _blockMap;

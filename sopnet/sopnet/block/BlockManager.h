@@ -62,6 +62,8 @@ public:
 	 */
 	virtual boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<unsigned int> >& box);
 	
+	virtual bool isValidZ(unsigned int z) = 0;
+	
 protected:
     boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;
 
