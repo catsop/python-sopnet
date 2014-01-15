@@ -8,6 +8,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/progress.hpp>
 
+#include <imageprocessing/ImageStack.h>
+
+#include <sopnet/Sopnet.h>
+
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
 #include <util/exceptions.h>
@@ -16,6 +20,7 @@
 #include <imageprocessing/io/ImageHttpReader.h>
 #include <imageprocessing/io/ImageFileReader.h>
 #include <imageprocessing/io/ImageBlockStackReader.h>
+#include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <util/ProgramOptions.h>
 #include <ImageMagick/Magick++.h>
 #include <sopnet/sopnet/block/Block.h>
@@ -65,148 +70,131 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
-void testBlockPipeline()
+pipeline::Value<SegmentTrees>
+sopnetSolver(const std::string& membranePath, const std::string& rawPath,
+	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
+	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
+	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
+	const boost::shared_ptr<Segments>& segmentsOut)
 {
-	unsigned int id = 1;
+	boost::shared_ptr<ImageStackDirectoryReader> membraneReader =
+		boost::make_shared<ImageStackDirectoryReader>(membranePath);
+	boost::shared_ptr<ImageStackDirectoryReader> rawReader =
+		boost::make_shared<ImageStackDirectoryReader>(rawPath);
+	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("woo hoo");
+	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	
+	pipeline::Value<SegmentTrees> neurons;
+	pipeline::Value<Segments> segments;
 	
+	sopnet->setInput("raw sections", rawReader->getOutput());
+	sopnet->setInput("membranes", membraneReader->getOutput());
+	sopnet->setInput("slices", membraneReader->getOutput());
+	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
+	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
+	sopnet->setInput("force explanation", forceExplanation);
+	neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
 	
-    try
-    {
-		
-
-		LOG_USER(out) << "Start" << endl;
-		
-		boost::unordered_set<Slice> sliceSet = boost::unordered_set<Slice>();
-		
-		std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
-		std::string rawDirectory = "/nfs/data0/home/larry/code/sopnet/data/raw";
-		boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u), util::ptrTo(256u, 256u, 5u));
-		boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::ptrTo(256u, 768u, 0u), util::ptrTo(512u, 256u, 10u));
-		boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize = boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 256 * 64);
-		
-		LOG_USER(out) << "Initting pipeline data" << endl;
-		boost::shared_ptr<ImageBlockFactory> imageBlockFactory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
-		boost::shared_ptr<ImageBlockFactory> rawBlockFactory = boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(rawDirectory));
-		boost::shared_ptr<pipeline::Wrap<bool> > nope = boost::make_shared<pipeline::Wrap<bool> >(true);
-		boost::shared_ptr<SliceStore> sliceStore = boost::shared_ptr<SliceStore>(new LocalSliceStore());
-		boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-		boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
-		boost::shared_ptr<SegmentStore> segmentStore = boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
-		boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-		boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
-		boost::shared_ptr<ConsistencyConstraintExtractor> constraintExtractor = 
-			boost::make_shared<ConsistencyConstraintExtractor>();
-		boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
-		LOG_USER(out) << "initting block solver" << std::endl;
-		boost::shared_ptr<BlockSolver> blockSolver = boost::make_shared<BlockSolver>();
-		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
-			boost::make_shared<SegmentationCostFunctionParameters>();
-		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
-			boost::make_shared<PriorCostFunctionParameters>();
-		
-		pipeline::Value<SliceStoreResult> sliceResult;
-		pipeline::Value<SegmentStoreResult> segmentResult;
-		pipeline::Value<Slices> slices;
-		pipeline::Value<Segments> segments;
-		pipeline::Value<LinearConstraints> constraints;
-		pipeline::Value<SegmentTrees> neurons;
-		
-		sliceGuarantor->setInput("box", box);
-		sliceGuarantor->setInput("store", sliceStore);
-		sliceGuarantor->setInput("block manager", blockManager);
-		sliceGuarantor->setInput("block factory", imageBlockFactory);
-		sliceGuarantor->setInput("force explanation", nope);
-		sliceGuarantor->setInput("maximum area", maxSize);
-
-		LOG_USER(out) << "Guaranteeing some slices." << endl;
-		sliceResult = sliceGuarantor->getOutput();
-		LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices." << endl;
-		
-		
-		LOG_USER(out) << "Let's read them back out" << endl;
-
-		
-		sliceReader->setInput("block manager", blockManager);
-		sliceReader->setInput("store", sliceStore);
-		sliceReader->setInput("box", box);
-		
-		LOG_USER(out) << "Attempting to read slices" << endl;
-		
-		slices = sliceReader->getOutput();
-
-		LOG_USER(out) << "Read " << slices->size() << " slices" << endl;
-		
-		unsigned int minZ = (*slices)[0]->getSection();
-		unsigned int maxZ = minZ;
-		
-		foreach (boost::shared_ptr<Slice> zSlice, *slices)
-		{
-			unsigned int section = zSlice->getSection();
-			minZ = minZ > section ? section : minZ;
-			maxZ = maxZ < section ? section : maxZ;
-		}
-		
-		LOG_USER(out) << "Requested box with minZ " << box->location().z << " and z-depth " << box->size().z
-			<< ", got slices from " << minZ << " to " << maxZ << std::endl;
-		
-		segmentGuarantor->setInput("box", box);
-		segmentGuarantor->setInput("segment store", segmentStore);
-		segmentGuarantor->setInput("slice store", sliceStore);
-		segmentGuarantor->setInput("block manager", blockManager);
-		
-		segmentResult = segmentGuarantor->getOutput();
-		
-		LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
-		
-		segmentReader->setInput("box", box);
-		segmentReader->setInput("block manager", blockManager);
-		segmentReader->setInput("store", segmentStore);
-		
-		segments = segmentReader->getOutput();
-		
-		LOG_USER(out) << "Read back " << segments->size() << " segments" << std::endl;
-		
-		constraintExtractor->setInput("slices", sliceReader->getOutput());
-		constraintExtractor->setInput("segments", segmentReader->getOutput());
-		
-		constraints = constraintExtractor->getOutput();
-		
-		LOG_USER(out) << "Extracted " << constraints->size() << " constraints" << std::endl;
-		
-		segmentationCostParameters->weightPotts = 0;
-		segmentationCostParameters->weight = 0;
-		segmentationCostParameters->priorForeground = 0.2;
-		
-		priorCostFunctionParameters->priorContinuation = -100;
-		priorCostFunctionParameters->priorBranch = -100;
-		
-		LOG_USER(out) << "Setting up block solver" << std::endl;
-		blockSolver->setInput("prior cost parameters",
-							  priorCostFunctionParameters);
-		blockSolver->setInput("segmentation cost parameters", segmentationCostParameters);
-		LOG_USER(out) << "blocks" << std::endl;
-		blockSolver->setInput("blocks", blocks);
-		LOG_USER(out) << "segment store" << std::endl;
-		blockSolver->setInput("segment store", segmentStore);
-		LOG_USER(out) << "slice store" << std::endl;
-		blockSolver->setInput("slice store", sliceStore);
-		LOG_USER(out) << "raw factory" << std::endl;
-		blockSolver->setInput("raw image factory", rawBlockFactory);
-		LOG_USER(out) << "membrane factory" << std::endl;
-		blockSolver->setInput("membrane factory", imageBlockFactory);
-		LOG_USER(out) << "Attempting to get output" << std::endl;
-		neurons = blockSolver->getOutput();
-		
-		LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
-
-	}
-    catch (Exception& e)
-    {
-		handleException(e);
-	}
+	neurons = neuronExtractor->getOutput();
+	segments = sopnet->getOutput("segments");
+	
+	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
+	
+	segmentsOut->addAll(segments);
+	
+	return neurons;
 }
 
+pipeline::Value<SegmentTrees>
+blockSolver(const std::string& membranePath, const std::string& rawPath,
+	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
+	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
+	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
+	const boost::shared_ptr<Segments>& segmentsOut)
+{
+		// Block management variables
+	boost::shared_ptr<BlockManager> blockManager =
+		boost::make_shared<LocalBlockManager>(util::ptrTo(512u, 512u, 5u),
+											util::ptrTo(512u, 512u, 5u));
+	boost::shared_ptr<Box<> > box =
+		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), util::ptrTo(512u, 512u, 5u));
+	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
+		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	
+	// Block pipeline variables
+	boost::shared_ptr<ImageBlockFactory> membraneBlockFactory =
+		boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(membranePath));
+	boost::shared_ptr<ImageBlockFactory> rawBlockFactory =
+		boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(rawPath));
+	boost::shared_ptr<SliceStore> sliceStore =
+		boost::shared_ptr<SliceStore>(new LocalSliceStore());
+	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
+	boost::shared_ptr<SegmentGuarantor> segmentGuarantor =
+		boost::make_shared<SegmentGuarantor>();
+	boost::shared_ptr<SegmentStore> segmentStore =
+		boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
+	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
+	boost::shared_ptr<BlockSolver> blockSolver = boost::make_shared<BlockSolver>();
+	
+	// Result Values
+	pipeline::Value<SliceStoreResult> sliceResult;
+	pipeline::Value<SegmentStoreResult> segmentResult;
+	pipeline::Value<SegmentTrees> neurons;
+	pipeline::Value<Segments> segments;
+	
+	// pipeline
+	
+	sliceGuarantor->setInput("box", blocks);
+	sliceGuarantor->setInput("block manager", blockManager);
+	sliceGuarantor->setInput("store", sliceStore);
+	sliceGuarantor->setInput("block factory", membraneBlockFactory);
+	sliceGuarantor->setInput("force explanation", forceExplanation);
+	sliceGuarantor->setInput("maximum area", maxSize);
+	
+	segmentGuarantor->setInput("box", blocks);
+	segmentGuarantor->setInput("block manager", blockManager);
+	segmentGuarantor->setInput("segment store", segmentStore);
+	segmentGuarantor->setInput("slice store", sliceStore);
+	
+	sliceResult = sliceGuarantor->getOutput();
+	
+	LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
+	
+	segmentResult = segmentGuarantor->getOutput();
+	
+	LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
+	
+	
+	LOG_USER(out) << "Setting up block solver" << std::endl;
+	blockSolver->setInput("prior cost parameters",
+							priorCostFunctionParameters);
+	blockSolver->setInput("segmentation cost parameters", segmentationCostParameters);
+	blockSolver->setInput("blocks", blocks);
+	blockSolver->setInput("segment store", segmentStore);
+	blockSolver->setInput("slice store", sliceStore);
+	blockSolver->setInput("raw image factory", rawBlockFactory);
+	blockSolver->setInput("membrane factory", membraneBlockFactory);
+	
+	neurons = blockSolver->getOutput("neurons");
+	segments = blockSolver->getProblemAssembler()->getOutput("segments");
+	
+	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
+	
+	segmentsOut->addAll(segments);
+	
+	return neurons;
+}
+
+void segmentNotFoundOutput(const boost::shared_ptr<EndSegment>& end)
+{
+	LOG_USER(out) << "Missing segment: " << (end->getDirection() == Left ? "left: " : "right: ");
+	
+	LOG_USER(out) << end->getSlice()->getSection() << " ";
+	
+	LOG_USER(out) << end->getSlice()->getComponent()->getBoundingBox() << std::endl;
+}
 
 int main(int optionc, char** optionv)
 {
@@ -215,59 +203,19 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
-		std::string seriesDirectory = "/nfs/data0/home/larry/code/sopnet/data/testmembrane";
-		std::string rawDirectory = "/nfs/data0/home/larry/code/sopnet/data/raw";
-		
-		// Block management variables
-		boost::shared_ptr<BlockManager> blockManager =
-			boost::make_shared<LocalBlockManager>(util::ptrTo(1024u, 1024u, 20u),
-												util::ptrTo(256u, 256u, 5u));
-		boost::shared_ptr<Box<> > box =
-			boost::make_shared<Box<> >(util::ptrTo(256u, 768u, 0u), util::ptrTo(512u, 256u, 10u));
-		boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
-			boost::make_shared<pipeline::Wrap<unsigned int> >(256 * 256 * 64);
-		
-		// Block pipeline variables
-		boost::shared_ptr<ImageBlockFactory> imageBlockFactory =
-			boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(seriesDirectory));
-		boost::shared_ptr<ImageBlockFactory> rawBlockFactory =
-			boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(rawDirectory));
-		boost::shared_ptr<pipeline::Wrap<bool> > yep =
-			boost::make_shared<pipeline::Wrap<bool> >(true);
-		boost::shared_ptr<SliceStore> sliceStore =
-			boost::shared_ptr<SliceStore>(new LocalSliceStore());
-		boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-		boost::shared_ptr<SegmentGuarantor> segmentGuarantor =
-			boost::make_shared<SegmentGuarantor>();
-		boost::shared_ptr<SegmentStore> segmentStore =
-			boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
-		boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-		boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
-		boost::shared_ptr<BlockSolver> blockSolver = boost::make_shared<BlockSolver>();
-		
-		// Solver parameters
+		SegmentSet segmentSet;
 		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
 			boost::make_shared<SegmentationCostFunctionParameters>();
 		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 			boost::make_shared<PriorCostFunctionParameters>();
-		
-		// Result Values
-		pipeline::Value<SliceStoreResult> sliceResult;
-		pipeline::Value<SegmentStoreResult> segmentResult;
-		
-		// pipeline
-		
-		sliceGuarantor->setInput("box", box);
-		sliceGuarantor->setInput("store", sliceStore);
-		sliceGuarantor->setInput("block manager", blockManager);
-		sliceGuarantor->setInput("block factory", imageBlockFactory);
-		sliceGuarantor->setInput("force explanation", yep);
-		sliceGuarantor->setInput("maximum area", maxSize);
-		
-		segmentGuarantor->setInput("box", box);
-		segmentGuarantor->setInput("segment store", segmentStore);
-		segmentGuarantor->setInput("slice store", sliceStore);
-		segmentGuarantor->setInput("block manager", blockManager);
+		boost::shared_ptr<pipeline::Wrap<bool> > yep =
+			boost::make_shared<pipeline::Wrap<bool> >(true);
+		pipeline::Value<SegmentTrees> blockNeurons, sopnetNeurons;
+		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
+		boost::shared_ptr<Segments> blockSolverSegments = boost::make_shared<Segments>();
+			
+		std::string membranePath = "/nfs/data0/home/larry/code/sopnet/data/cropstack/membrane";
+		std::string rawPath = "/nfs/data0/home/larry/code/sopnet/data/cropstack/raw";
 		
 		segmentationCostParameters->weightPotts = 0;
 		segmentationCostParameters->weight = 0;
@@ -275,14 +223,26 @@ int main(int optionc, char** optionv)
 		
 		priorCostFunctionParameters->priorContinuation = -100;
 		priorCostFunctionParameters->priorBranch = -100;
+
+		blockNeurons = blockSolver(membranePath, rawPath, segmentationCostParameters,
+								   priorCostFunctionParameters, yep, blockSolverSegments);
+		sopnetNeurons = sopnetSolver(membranePath, rawPath, segmentationCostParameters,
+									 priorCostFunctionParameters, yep, sopnetSegments);
+		LOG_USER(out) << "Block solver produced " << blockNeurons->size() << " neurons." << std::endl;
+		LOG_USER(out) << "Sopnet solver produced " << sopnetNeurons->size() << " neurons." << std::endl;
+
+		foreach (boost::shared_ptr<EndSegment> end, blockSolverSegments->getEnds())
+		{
+			segmentSet.insert(end);
+		}
 		
-		sliceResult = sliceGuarantor->getOutput();
-		
-		LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
-		
-		segmentResult = segmentGuarantor->getOutput();
-		
-		LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
+		foreach (boost::shared_ptr<EndSegment> end, sopnetSegments->getEnds())
+		{
+			if (segmentSet.find(end) == segmentSet.end())
+			{
+				segmentNotFoundOutput(end);
+			}
+		}
 		
 		
 	}
@@ -290,7 +250,4 @@ int main(int optionc, char** optionv)
 	{
 		handleException(e);
 	}
-	
-	
-	
 }

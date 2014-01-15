@@ -27,6 +27,9 @@ Reconstructor::updateReconstruction() {
 	_reconstruction->clear();
 
 	LOG_DEBUG(reconstructorlog) << "Got " << _segments->size() << " segments in total" << std::endl;
+	LOG_DEBUG(reconstructorlog) << _segments->getEnds().size() << " ends, " <<
+		_segments->getContinuations().size() << " continuations, and " << 
+		_segments->getBranches().size() << " branches." << std::endl;
 	LOG_DEBUG(reconstructorlog) << "Solution contains " << _solution->size() << " things" << std::endl;
 	
 	LOG_ALL(reconstructorlog) << "Solution consists of segments: ";
