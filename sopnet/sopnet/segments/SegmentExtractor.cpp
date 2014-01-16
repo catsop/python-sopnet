@@ -100,6 +100,8 @@ SegmentExtractor::updateOutputs() {
 	}
 
 	_distance.clearCache();
+	
+	//LOG_DEBUG(segmentextractorlog) << "
 }
 
 void
@@ -214,6 +216,9 @@ SegmentExtractor::extractSegments() {
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
+ 	LOG_DEBUG(segmentextractorlog) << "by type: " << _segments->getEnds().size() << " ends, " << 
+		_segments->getContinuations().size() << " continuations, and " << 
+		_segments->getBranches().size() << " branches." << std::endl;
 }
 
 void

@@ -117,9 +117,6 @@ HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 	util::point<unsigned int> offset2D = offset;
 
 	std::vector<double> histogram(_numBins, 0);
-	
-	LOG_DEBUG(histogramfeaturelog) << "Offset: " << offset << ", section: " << slice.getSection() << 
-		", bounding box: " << slice.getComponent()->getBoundingBox() << std::endl;
 
 	unsigned int section = slice.getSection() - offset.z;
 
