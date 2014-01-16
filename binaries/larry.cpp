@@ -113,11 +113,12 @@ blockSolver(const std::string& membranePath, const std::string& rawPath,
 	const boost::shared_ptr<Segments>& segmentsOut)
 {
 		// Block management variables
+	boost::shared_ptr<util::point3<unsigned int> > stackSize = util::ptrTo(179u, 168u, 5u);
+	boost::shared_ptr<util::point3<unsigned int> > blockSize = stackSize;
 	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(util::ptrTo(512u, 512u, 5u),
-											util::ptrTo(512u, 512u, 5u));
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), util::ptrTo(512u, 512u, 5u));
+		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), blockSize);
 	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
 		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
@@ -214,8 +215,8 @@ int main(int optionc, char** optionv)
 		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
 		boost::shared_ptr<Segments> blockSolverSegments = boost::make_shared<Segments>();
 			
-		std::string membranePath = "/nfs/data0/home/larry/code/sopnet/data/cropstack/membrane";
-		std::string rawPath = "/nfs/data0/home/larry/code/sopnet/data/cropstack/raw";
+		std::string membranePath = "/nfs/data0/home/larry/code/sopnet/data/membranes";
+		std::string rawPath = "/nfs/data0/home/larry/code/sopnet/data/raw";
 		
 		segmentationCostParameters->weightPotts = 0;
 		segmentationCostParameters->weight = 0;
@@ -231,18 +232,18 @@ int main(int optionc, char** optionv)
 		LOG_USER(out) << "Block solver produced " << blockNeurons->size() << " neurons." << std::endl;
 		LOG_USER(out) << "Sopnet solver produced " << sopnetNeurons->size() << " neurons." << std::endl;
 
-		foreach (boost::shared_ptr<EndSegment> end, blockSolverSegments->getEnds())
-		{
-			segmentSet.insert(end);
-		}
+// 		foreach (boost::shared_ptr<EndSegment> end, blockSolverSegments->getEnds())
+// 		{
+// 			segmentSet.insert(end);
+// 		}
 		
-		foreach (boost::shared_ptr<EndSegment> end, sopnetSegments->getEnds())
-		{
-			if (segmentSet.find(end) == segmentSet.end())
-			{
-				segmentNotFoundOutput(end);
-			}
-		}
+// 		foreach (boost::shared_ptr<EndSegment> end, sopnetSegments->getEnds())
+// 		{
+// 			if (segmentSet.find(end) == segmentSet.end())
+// 			{
+// 				segmentNotFoundOutput(end);
+// 			}
+// 		}
 		
 		
 	}
