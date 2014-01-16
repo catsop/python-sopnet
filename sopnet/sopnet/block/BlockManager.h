@@ -62,7 +62,15 @@ public:
 	 */
 	virtual boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<unsigned int> >& box);
 	
+	/**
+	 * Determines whether a z-coordinate represents a valid section
+	 */
 	virtual bool isValidZ(unsigned int z) = 0;
+	
+	/**
+	 * Determines whether a z-coordinate represents the final section in the stack represented by this block manager.
+	 */
+	virtual bool isUpperBound(unsigned int z) = 0;
 	
 protected:
     boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;

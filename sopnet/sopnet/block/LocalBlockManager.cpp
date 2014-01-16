@@ -34,7 +34,12 @@ LocalBlockManager::blockAtCoordinates(const boost::shared_ptr<point3<unsigned in
 bool
 LocalBlockManager::isValidZ(unsigned int z)
 {
-	return z <= _stackSize->z;
+	return z < _stackSize->z;
 }
 
+bool
+LocalBlockManager::isUpperBound(unsigned int z)
+{
+	return z == _stackSize->z - 1;
+}
 
