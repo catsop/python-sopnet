@@ -38,6 +38,7 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	registerInput(_filter->getInput("force explanation"), "force explanation");
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_filter->getOutput("linear constraints"), "linear constraints");
+	registerOutput(_downSampler->getOutput(), "component tree");
 
 	_mserParameters.registerBackwardCallback(&SliceExtractor<Precision>::onInputSet, this);
 
