@@ -177,6 +177,7 @@ blockSolver(const std::string& membranePath, const std::string& rawPath,
 	blockSolver->setInput("slice store", sliceStore);
 	blockSolver->setInput("raw image factory", rawBlockFactory);
 	blockSolver->setInput("membrane factory", membraneBlockFactory);
+	blockSolver->setInput("force explanation", forceExplanation);
 	
 	neurons = blockSolver->getOutput("neurons");
 	segments = blockSolver->getProblemAssembler()->getOutput("segments");
@@ -225,8 +226,10 @@ int main(int optionc, char** optionv)
 		priorCostFunctionParameters->priorContinuation = -100;
 		priorCostFunctionParameters->priorBranch = -100;
 
+		LOG_USER(out) << "BLOCK SOLVE!!!!" << std::endl;
 		blockNeurons = blockSolver(membranePath, rawPath, segmentationCostParameters,
 								   priorCostFunctionParameters, yep, blockSolverSegments);
+		LOG_USER(out) << "SOPNET SOLVE!!!!" << std::endl;
 		sopnetNeurons = sopnetSolver(membranePath, rawPath, segmentationCostParameters,
 									 priorCostFunctionParameters, yep, sopnetSegments);
 		LOG_USER(out) << "Block solver produced " << blockNeurons->size() << " neurons." << std::endl;
