@@ -48,6 +48,9 @@ public:
 	
 
 private:
+	static boost::shared_ptr<point3<unsigned int> > blockSize(
+		const boost::shared_ptr<BlockManager>& blockManager,
+		const boost::shared_ptr<point3<unsigned int> >& location);
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
 	bool _slicesExtracted, _segmentsExtracted;
