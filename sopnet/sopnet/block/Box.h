@@ -113,4 +113,16 @@ protected:
 };
 
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Box<T>& box)
+{
+	util::point3<T> loc = box.location();
+	util::point3<T> size = box.size();
+	
+	os << "[" << loc.x << ", " << loc.y << ", " << loc.z << "; "
+	   << size.x + loc.x << ", " << size.y + loc.y << ", " << size.z + loc.z << "]";
+
+	return os;
+}
+
 #endif //BOX_H__
