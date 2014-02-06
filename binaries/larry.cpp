@@ -114,11 +114,11 @@ blockSolver(const std::string& membranePath, const std::string& rawPath,
 {
 		// Block management variables
 	boost::shared_ptr<util::point3<unsigned int> > stackSize = util::ptrTo(179u, 168u, 5u);
-	boost::shared_ptr<util::point3<unsigned int> > blockSize = stackSize;
+	boost::shared_ptr<util::point3<unsigned int> > blockSize = util::ptrTo(179u, 84u, 5u);
 	boost::shared_ptr<BlockManager> blockManager =
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), blockSize);
+		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
 	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
 		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
