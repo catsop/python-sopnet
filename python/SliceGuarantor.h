@@ -2,6 +2,7 @@
 #define SOPNET_PYTHON_SLICE_GUARANTOR_H__
 
 #include <sopnet/block/Block.h>
+#include "SliceGuarantorParameters.h"
 #include "ProjectConfiguration.h"
 
 namespace python {
@@ -10,7 +11,10 @@ class SliceGuarantor {
 
 public:
 
-	void fill(const Block& block, const ProjectConfiguration& configuration);
+	/**
+	 * Request the extraction and storage of slices in a block.
+	 */
+	void fill(const Block& block, const SliceGuarantorParameters& paramters, const ProjectConfiguration& configuration);
 };
 
 } // namespace python

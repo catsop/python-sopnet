@@ -19,6 +19,13 @@ BOOST_PYTHON_MODULE(pysopnet) {
 			.def_readwrite("y", &util::point3<unsigned int>::y)
 			.def_readwrite("z", &util::point3<unsigned int>::z);
 
+	// SliceGuarantorParameters
+	boost::python::class_<SliceGuarantorParameters>("SliceGuarantorParameters")
+			.def("setForceExplanation", &SliceGuarantorParameters::setForceExplanation)
+			.def("getForceExplanation", &SliceGuarantorParameters::getForceExplanation)
+			.def("setMaxSliceSize", &SliceGuarantorParameters::setMaxSliceSize)
+			.def("getMaxSliceSize", &SliceGuarantorParameters::getMaxSliceSize);
+
 	// ProjectConfiguration
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
 			.def("setDjangoUrl", &ProjectConfiguration::setDjangoUrl)
