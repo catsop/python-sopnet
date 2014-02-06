@@ -32,6 +32,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(modules)
 add_subdirectory(sopnet)
+add_subdirectory(python)
 add_subdirectory(binaries)
 
 #####################
