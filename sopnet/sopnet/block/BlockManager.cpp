@@ -14,7 +14,10 @@ BlockManager::BlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
 							boost::shared_ptr<point3<unsigned int> > blockSize ) :
 							_stackSize(stackSize), _blockSize(blockSize)
 {
-    
+    _maxBlockCoordinates =
+		(*stackSize + *blockSize - point3<unsigned int>(1u, 1u, 1u)) / *blockSize;
+	LOG_DEBUG(blockmanagerlog) << "Limit: " << *stackSize << " / " << *blockSize << " => " <<
+		_maxBlockCoordinates << std::endl;
 }
 
 boost::shared_ptr<Block>
@@ -37,7 +40,7 @@ BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<i
 	point3<int> signedBlockCoordinates = *offset + (block.location() / *_blockSize);
 	point3<unsigned int> maxBlockCoordinates = *stackSize() / *blockSize();
 	
-	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < maxBlockCoordinates)
+	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < _maxBlockCoordinates)
 	{
 		boost::shared_ptr<point3<unsigned int> > blockCoordinates =
 			boost::make_shared<point3<unsigned int> >(signedBlockCoordinates);
@@ -45,6 +48,8 @@ BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<i
 	}
 	else
 	{
+		LOG_ALL(blockmanagerlog) << "Invalid block coordinates: " << *offset << std::endl;
+		LOG_ALL(blockmanagerlog) << "Max block coordinates: " << _maxBlockCoordinates << std::endl;
 		return boost::shared_ptr<Block>();
 	}
 }
