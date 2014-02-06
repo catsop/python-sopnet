@@ -18,7 +18,8 @@ util::ProgramOption optionMaxGoldStandardDistance(
 
 GoldStandardExtractor::GoldStandardExtractor() :
 	_goldStandard(boost::make_shared<Segments>()),
-	_negativeSamples(boost::make_shared<Segments>()) {
+	_negativeSamples(boost::make_shared<Segments>()),
+	_overlap(false, false) {
 
 	_maxEndDistance          = optionMaxGoldStandardDistance;
 	_maxContinuationDistance = optionMaxGoldStandardDistance;
@@ -29,6 +30,7 @@ GoldStandardExtractor::GoldStandardExtractor() :
 
 	registerOutput(_goldStandard, "gold standard");
 	registerOutput(_negativeSamples, "negative samples");
+	registerOutput(_groundTruthScore, "ground truth score");
 }
 
 void
@@ -83,9 +85,10 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 				continue;
 
 			// normalized, non-aligned set difference
-			float similarity = _setDifference(*end1->getSlice(), *end2->getSlice(), true, false);
+			float similarity = normalizedSetDifference(*end1->getSlice(), *end2->getSlice());
 
 			endPairs.push_back(Pair<EndSegment>(similarity, end1, end2));
+			(*_groundTruthScore)[end2->getId()] = similarity;
 		}
 
 	LOG_ALL(goldstandardextractorlog)
@@ -98,10 +101,11 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			// mean of the two normalized set differences
 			float similarity =
-					(_setDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice(), true, false) +
-					 _setDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice(), true, false))/2.0;
+					(normalizedSetDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice()) +
+					 normalizedSetDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice()))/2.0;
 
 			continuationPairs.push_back(Pair<ContinuationSegment>(similarity, continuation1, continuation2));
+			(*_groundTruthScore)[continuation2->getId()] = similarity;
 		}
 
 	LOG_ALL(goldstandardextractorlog)
@@ -114,11 +118,12 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			// mean of the three normalized set differences
 			float similarity =
-					(_setDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice(),  true, false)  +
-					 _setDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1(), true, false) +
-					 _setDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2(), true, false))/3.0;
+					(normalizedSetDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice()) +
+					 normalizedSetDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1()) +
+					 normalizedSetDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2()))/3.0;
 
 			branchPairs.push_back(Pair<BranchSegment>(similarity, branch1, branch2));
+			(*_groundTruthScore)[branch2->getId()] = similarity;
 		}
 
 	LOG_ALL(goldstandardextractorlog) << "sorting found paris..." << std::endl;
@@ -234,8 +239,12 @@ GoldStandardExtractor::probe(
 
 		// check if a segment for any of these slices has been found already
 		foreach (const Slice* slice, gtSlices)
-			if (_remainingSlices.count(slice) == 0)
+			if (_remainingSlices.count(slice) == 0) {
+
+				// this is a negative sample
+				(*_groundTruthScore)[gsSegment->getId()] = -1;
 				return;
+			}
 
 		// otherwise, we can accept the gsSegment to be part of the gold
 		// standard
@@ -250,16 +259,25 @@ GoldStandardExtractor::probe(
 		foreach (const Slice* slice, gsSlices) {
 
 			foreach (boost::shared_ptr<EndSegment> negative, _endSegments[slice])
-				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment)) {
+
+					(*_groundTruthScore)[negative->getId()] = -1;
 					_negativeSamples->add(negative);
+				}
 
 			foreach (boost::shared_ptr<ContinuationSegment> negative, _continuationSegments[slice])
-				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment)) {
+
+					(*_groundTruthScore)[negative->getId()] = -1;
 					_negativeSamples->add(negative);
+				}
 
 			foreach (boost::shared_ptr<BranchSegment> negative, _branchSegments[slice])
-				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment)) {
+
+					(*_groundTruthScore)[negative->getId()] = -1;
 					_negativeSamples->add(negative);
+				}
 		}
 }
 
@@ -343,3 +361,12 @@ GoldStandardExtractor::slicesToSegments(const std::vector<boost::shared_ptr<Segm
 	return slices;
 }
 
+double
+GoldStandardExtractor::normalizedSetDifference(const Slice& slice1, const Slice& slice2) {
+
+	unsigned int overlap = _overlap(slice1, slice2);
+	unsigned int size1   = slice1.getComponent()->getSize();
+	unsigned int size2   = slice2.getComponent()->getSize();
+
+	return ((size1 - overlap) + (size2 - overlap))/(size1 + size2);
+}

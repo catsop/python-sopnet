@@ -1,66 +1,155 @@
 #ifndef SOPNET_EVALUATION_ERRORS_H__
 #define SOPNET_EVALUATION_ERRORS_H__
 
-#include <pipeline/all.h>
+#include "Cell.h"
 
-class Errors : public pipeline::Data {
+/**
+ * Representation of split and merge (and optionally false positive and false 
+ * negative) errors between a ground truth and a reconstruction. All errors are 
+ * evaluated based on a mapping of Cells from a ground truth label to a 
+ * reconstruction label. A cell represents a set of image locations and is in 
+ * this context the atomic unit to be labelled.
+ */
+class Errors {
 
 public:
 
-	unsigned int numFalsePositives() const { return _falsePositives.size(); }
-	unsigned int numFalseNegatives() const { return _falseNegatives.size(); }
-	unsigned int numFalseSplits()    const { return _falseSplits.size(); }
-	unsigned int numFalseMerges()    const { return _falseMerges.size(); }
+	typedef Cell<float>                                                cell_t;
+	typedef boost::shared_ptr<std::vector<cell_t> >                    cells_t;
+	typedef std::map<float, std::map<float, std::set<unsigned int> > > cell_map_t;
 
-	int total() {
+	/**
+	 * Create an empty errors data structure without using a background label, 
+	 * i.e., without false positives and false negatives.
+	 */
+	Errors();
 
-		return
-				numFalsePositives() +
-				numFalseNegatives() +
-				numFalseSplits() +
-				numFalseMerges();
-	}
+	/**
+	 * Create an empty errors data structure for the given background labels.
+	 *
+	 * @param gtBackgroundLabel
+	 *             The background label in the ground truth.
+	 *
+	 * @param recBackgroundLabel
+	 *             The background label in the reconstruction.
+	 */
+	Errors(float gtBackgroundLabel, float recBackgroundLabel);
 
-	std::set<int>& falsePositives() { return _falsePositives; }
-	std::set<int>& falseNegatives() { return _falseNegatives; }
+	/**
+	 * Set the list of cells this errors data structure is working on. This has 
+	 * to be done before calling addMapping() or getOverlap().
+	 *
+	 * @param cells
+	 *             A list of cells (sets of image locations) that partitions the 
+	 *             ground truth and reconstruction volumes. Each cell has a 
+	 *             ground truth label and can be mapped via addMapping() to an 
+	 *             arbitrary reconstruction label.
+	 */
+	void setCells(cells_t cells);
 
-	std::set<std::pair<int, int> >& falseSplits() { return _falseSplits; }
-	std::set<std::pair<int, int> >& falseMerges() { return _falseMerges; }
+	/**
+	 * Clear the label mappings and error counts.
+	 */
+	void clear();
 
-	const std::set<int>& falsePositives() const { return _falsePositives; }
-	const std::set<int>& falseNegatives()  const{ return _falseNegatives; }
+	/**
+	 * Register a mapping from a cell to a reconstruction label.
+	 * 
+	 * @param cellIndex
+	 *             The index of the cell in the cell list.
+	 *
+	 * @param recLabel
+	 *             The reconstruction label of the cell.
+	 */
+	void addMapping(unsigned int cellIndex, float recLabel);
 
-	const std::set<std::pair<int, int> >& falseSplits() const { return _falseSplits; }
-	const std::set<std::pair<int, int> >& falseMerges() const { return _falseMerges; }
+	/**
+	 * Get all reconstruction labels that map to the given ground truth label.
+	 */
+	std::vector<float> getReconstructionLabels(float gtLabel);
 
-	Errors operator+(const Errors& other) const {
+	/**
+	 * Get all ground truth labels that map to the given reconstruction label.
+	 */
+	std::vector<float> getGroundTruthLabels(float recLabel);
 
-		Errors result;
+	/**
+	 * Get the number of locations shared by the given ground truth and 
+	 * reconstruction label.
+	 */
+	unsigned int getOverlap(float gtLabel, float recLabel);
 
-		result.falsePositives() = falsePositives();
-		result.falseNegatives() = falseNegatives();
-		result.falseSplits()    = falseSplits();
-		result.falseMerges()    = falseMerges();
-		result.falsePositives().insert(other.falsePositives().begin(), other.falsePositives().end());
-		result.falseNegatives().insert(other.falseNegatives().begin(), other.falseNegatives().end());
-		result.falseSplits().insert(other.falseSplits().begin(), other.falseSplits().end());
-		result.falseMerges().insert(other.falseMerges().begin(), other.falseMerges().end());
+	unsigned int getNumSplits();
+	unsigned int getNumMerges();
+	unsigned int getNumFalsePositives();
+	unsigned int getNumFalseNegatives();
 
-		return result;
-	}
+	/**
+	 * Get all ground truth labels that got split in the reconstruction.
+	 */
+	std::set<float> getSplitLabels();
+
+	/**
+	 * Get all reconstruction labels that merge multiple ground truh labels.
+	 */
+	std::set<float> getMergeLabels();
+
+	/**
+	 * Get all cells that split the given ground truth label.
+	 */
+	const cell_map_t::mapped_type& getSplits(float gtLabel);
+
+	/**
+	 * Get all cells that the given reconstruction label merges.
+	 */
+	const cell_map_t::mapped_type& getMerges(float recLabel);
+
+	/**
+	 * Get all cells that are false positives.
+	 */
+	const cell_map_t::mapped_type& getFalsePositives();
+
+	/**
+	 * Get all cells that are false negatives.
+	 */
+	const cell_map_t::mapped_type& getFalseNegatives();
 
 private:
 
-	// the slice ids of the false positives and negatives
-	std::set<int> _falsePositives;
-	std::set<int> _falseNegatives;
+	void addEntry(cell_map_t& map, float a, float b, unsigned int v);
 
-	// pairs of slice ids of the false splits and merges
-	std::set<std::pair<int, int> > _falseSplits;
-	std::set<std::pair<int, int> > _falseMerges;
+	void updateErrorCounts();
+
+	void findSplits(
+			const cell_map_t& cellMap,
+			cell_map_t&       splits,
+			unsigned int&     numSplits,
+			unsigned int&     numFalsePositives,
+			float             backgroundLabel);
+
+	// a list of cells partitioning the image
+	cells_t _cells;
+
+	// sparse representation of groundtruth to reconstruction confusion matrix
+	cell_map_t _cellsByRecToGtLabel;
+	cell_map_t _cellsByGtToRecLabel;
+
+	// subset of the confusion matrix without one-to-one mappings
+	cell_map_t _splits;
+	cell_map_t _merges;
+
+	unsigned int _numSplits;
+	unsigned int _numMerges;
+	unsigned int _numFalsePositives;
+	unsigned int _numFalseNegatives;
+
+	bool _haveBackgroundLabel;
+
+	float _gtBackgroundLabel;
+	float _recBackgroundLabel;
+
+	bool _dirty;
 };
-
-std::ostream& operator<<(std::ostream& os, const Errors& errors);
 
 #endif // SOPNET_EVALUATION_ERRORS_H__
 

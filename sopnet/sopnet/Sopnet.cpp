@@ -2,8 +2,6 @@
 #include <boost/filesystem.hpp>
 
 #include <imageprocessing/ImageStack.h>
-#include <imageprocessing/ImageExtractor.h>
-#include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearSolver.h>
 #include <pipeline/Process.h>
@@ -16,25 +14,48 @@
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/SubproblemsExtractor.h>
 #include <sopnet/inference/SubproblemsSolver.h>
+#include <sopnet/inference/LinearCostFunction.h>
+#include <sopnet/inference/io/LinearCostFunctionParametersReader.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunction.h>
 #include <sopnet/inference/PriorCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 #include <sopnet/inference/Reconstructor.h>
-#include <sopnet/segments/SegmentExtractor.h>
-#include <sopnet/slices/SliceExtractor.h>
-#include <sopnet/slices/StackSliceExtractor.h>
+#include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/RandomForestTrainer.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
 
+util::ProgramOption optionLinearCostFunction(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "linearCostFunction",
+		util::_description_text = "Use the linear cost function for segments.",
+		util::_default_value    = true);
+
+util::ProgramOption optionRandomForestCostFunction(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "rfCostFunction",
+		util::_description_text = "Use the random forest cost function for segments.",
+		util::_default_value    = true);
+
+util::ProgramOption optionSegmentationCostFunction(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationCostFunction",
+		util::_description_text = "Use the segmentation cost function (based on membrane probabilites) for segments.");
+
 util::ProgramOption optionRandomForestFile(
-		util::_module           = "sopnet",
+		util::_module           = "sopnet.inference",
 		util::_long_name        = "segmentRandomForest",
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
+
+util::ProgramOption optionLinearCostFunctionParametersFile(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "linearCostFunctionParameters",
+		util::_description_text = "Path to a file containing the weights for the linear cost function.",
+		util::_default_value    = "./feature_weights.dat");
 
 util::ProgramOption optionDecomposeProblem(
 		util::_module           = "sopnet.inference",
@@ -42,20 +63,12 @@ util::ProgramOption optionDecomposeProblem(
 		util::_description_text = "Decompose the problem into overlapping subproblems and solve them using SCALAR.",
 		util::_default_value    = false);
 
-util::ProgramOption optionDisableSegmentationCosts(
-		util::_module           = "sopnet.inference",
-		util::_long_name        = "disableSegmentationCosts",
-		util::_description_text = "Disable the segmentation costs in the objective.");
-
 Sopnet::Sopnet(
 		const std::string& projectDirectory,
 		boost::shared_ptr<ProcessNode> problemWriter) :
-	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
-	_randomForestCostFunction(boost::make_shared<RandomForestCostFunction>()),
-	_segmentationCostFunction(boost::make_shared<SegmentationCostFunction>()),
 	_priorCostFunction(boost::make_shared<PriorCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
@@ -68,18 +81,30 @@ Sopnet::Sopnet(
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes, "membranes");
-	registerInput(_slices, "slices");
-	registerInput(_sliceStackDirectories, "slice stack directories");
+	registerInput(_neuronSlices, "neuron slices");
+	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories");
+	registerInput(_mitochondriaSlices, "mitochondria slices");
+	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories");
+	registerInput(_synapseSlices, "synapse slices");
+	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
-	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_slices.registerBackwardSlot(_update);
-	_sliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_sliceStackDirectories.registerBackwardSlot(_update);
+	_neuronSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_neuronSlices.registerBackwardSlot(_update);
+	_neuronSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_neuronSliceStackDirectories.registerBackwardSlot(_update);
+	_mitochondriaSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_mitochondriaSlices.registerBackwardSlot(_update);
+	_mitochondriaSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_mitochondriaSliceStackDirectories.registerBackwardSlot(_update);
+	_synapseSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_synapseSlices.registerBackwardSlot(_update);
+	_synapseSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_synapseSliceStackDirectories.registerBackwardSlot(_update);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -95,6 +120,7 @@ Sopnet::Sopnet(
 	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
 	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
+	registerOutput(_segmentRfTrainer->getOutput("ground truth score"), "ground truth score");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 }
 
@@ -143,7 +169,13 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (
+			!_membranes ||
+			!(_neuronSlices || _neuronSliceStackDirectories) ||
+			!_rawSections ||
+			!_segmentationCostFunctionParameters ||
+			!_priorCostFunctionParameters ||
+			!_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -162,96 +194,50 @@ Sopnet::createBasicPipeline() {
 	LOG_DEBUG(sopnetlog) << "re-creating basic part..." << std::endl;
 
 	// clear previous pipeline
-	_sliceExtractors.clear();
-	_segmentExtractors.clear();
-	_problemAssembler->clearInputs("segments");
-	_problemAssembler->clearInputs("linear constraints");
-
-	unsigned int numSections = 0;
-
-	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
+	_problemAssembler->clearInputs("neuron segments");
+	_problemAssembler->clearInputs("neuron linear constraints");
+	_problemAssembler->clearInputs("mitochondria segments");
+	_problemAssembler->clearInputs("mitochondria linear constraints");
+	_problemAssembler->clearInputs("synapse segments");
+	_problemAssembler->clearInputs("synapse linear constraints");
 
 	// make sure relevant input information is available
 	_update();
 
-	if (_sliceStackDirectories) {
+	if (_neuronSliceStackDirectories)
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories, !_problemWriter);
+	else
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices, _forceExplanation, !_problemWriter);
 
-		// for every stack directory
-		foreach (std::string directory, *_sliceStackDirectories) {
+	_mitochondriaSegmentExtractorPipeline.reset();
+	if (_mitochondriaSliceStackDirectories)
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories, !_problemWriter);
+	else if (_mitochondriaSlices)
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, false, !_problemWriter);
 
-			if (boost::filesystem::is_directory(directory)) {
+	_synapseSegmentExtractorPipeline.reset();
+	if (_synapseSliceStackDirectories)
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories, !_problemWriter);
+	else if (_synapseSlices)
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices, false, !_problemWriter);
 
-				numSections++;
-
-				LOG_DEBUG(sopnetlog) << "creating stack reader for " << directory << std::endl;
-
-				// create a new image stack reader
-				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory);
-
-				stackSliceReaders.push_back(reader);
-			}
-		}
-
-	} else {
-
-		numSections = _slices->size();
-
-		// let the internal image extractor know where to look for the image stack
-		_sliceImageExtractor->setInput(_slices.getAssignedOutput());
-	}
-
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
-
-	// for every section
-	for (unsigned int section = 0; section < numSections; section++) {
-
-		boost::shared_ptr<ProcessNode> sliceExtractor;
-
-		LOG_DEBUG(sopnetlog) << "creating pipeline for section " << section << std::endl;
-
-		if (_sliceStackDirectories) {
-
-			// create image stack slice extractor
-			sliceExtractor = boost::make_shared<StackSliceExtractor>(section);
-
-			// set its input
-			sliceExtractor->setInput("slices", stackSliceReaders[section]->getOutput());
-
-		} else {
-
-			// create a single image slice extractor
-			sliceExtractor = boost::make_shared<SliceExtractor<unsigned char> >(section);
-
-			// set its input
-			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));
-		}
-
-		sliceExtractor->setInput("force explanation", _forceExplanation);
-
-		// store it in the list of all slice extractors
-		_sliceExtractors.push_back(sliceExtractor);
-
-		if (_sliceExtractors.size() <= 1)
-			continue;
-
-		// get the previous slice file reader
-		boost::shared_ptr<ProcessNode> prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
-
-		// create a segment extractor
-		boost::shared_ptr<SegmentExtractor> segmentExtractor = boost::make_shared<SegmentExtractor>();
-
-		// connect current and previous slices to that
-		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
-		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
-		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == numSections - 1 && !_problemWriter) // only for the last pair of slices and only if we are not dumping the problem
-			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
-
-		_segmentExtractors.push_back(segmentExtractor);
+	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 
 		// add segments and linear constraints to problem assembler
-		_problemAssembler->addInput("segments", segmentExtractor->getOutput("segments"));
-		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
+		_problemAssembler->addInput("neuron segments", _neuronSegmentExtractorPipeline->getSegments(i));
+		_problemAssembler->addInput("neuron linear constraints", _neuronSegmentExtractorPipeline->getConstraints(i));
+
+		if (_mitochondriaSegmentExtractorPipeline) {
+
+			_problemAssembler->addInput("mitochondria segments", _mitochondriaSegmentExtractorPipeline->getSegments(i));
+			_problemAssembler->addInput("mitochondria linear constraints", _mitochondriaSegmentExtractorPipeline->getConstraints(i));
+		}
+
+		if (_synapseSegmentExtractorPipeline) {
+
+			_problemAssembler->addInput("synapse segments", _synapseSegmentExtractorPipeline->getSegments(i));
+			_problemAssembler->addInput("synapse linear constraints", _synapseSegmentExtractorPipeline->getConstraints(i));
+		}
 	}
 }
 
@@ -264,11 +250,42 @@ Sopnet::createInferencePipeline() {
 	_segmentFeaturesExtractor->setInput("segments", _problemAssembler->getOutput("segments"));
 	_segmentFeaturesExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
 
+	boost::shared_ptr<LinearCostFunction>       linearCostFunction;
+	boost::shared_ptr<RandomForestCostFunction> rfCostFunction;
+	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction;
+
 	// setup the segment evaluation functions
-	_randomForestCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
-	_randomForestCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
-	_segmentationCostFunction->setInput("membranes", _membranes);
-	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
+	if (optionLinearCostFunction) {
+
+		LOG_DEBUG(sopnetlog) << "creating linear segment cost function" << std::endl;
+
+		linearCostFunction = boost::make_shared<LinearCostFunction>();
+		boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+		boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(optionLinearCostFunctionParametersFile.as<std::string>());
+		reader->setInput(contentProvider->getOutput());
+		linearCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		linearCostFunction->setInput("parameters", reader->getOutput());
+
+	}
+
+	if (optionRandomForestCostFunction) {
+
+		LOG_DEBUG(sopnetlog) << "creating random forest segment cost function" << std::endl;
+
+		rfCostFunction = boost::make_shared<RandomForestCostFunction>();
+		rfCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		rfCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
+	}
+
+	if (optionSegmentationCostFunction) {
+
+		segmentationCostFunction = boost::make_shared<SegmentationCostFunction>();
+		segmentationCostFunction->setInput("membranes", _membranes);
+		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
+	}
+
 	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
 
 	if (_problemWriter) {
@@ -277,19 +294,25 @@ Sopnet::createInferencePipeline() {
 		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 		
-		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
-		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
+		// assuming one of the two was selected
+		if (rfCostFunction)
+			_problemWriter->setInput("segment cost function", rfCostFunction->getOutput("cost function"));
+		else
+			_problemWriter->setInput("segment cost function", linearCostFunction->getOutput("cost function"));
+
+		_problemWriter->setInput("segmentation cost function", segmentationCostFunction->getOutput("cost function"));
 		_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 
 	} else {
 
 		// feed all segments to objective generator
 		_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-		_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
-		_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
-
-		if (!optionDisableSegmentationCosts)
-			_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
+		if (rfCostFunction)
+			_objectiveGenerator->addInput("cost functions", rfCostFunction->getOutput("cost function"));
+		if (linearCostFunction)
+			_objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
+		if (segmentationCostFunction)
+			_objectiveGenerator->addInput("cost functions", segmentationCostFunction->getOutput("cost function"));
 
 		if (optionDecomposeProblem) {
 

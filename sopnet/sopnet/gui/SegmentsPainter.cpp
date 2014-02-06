@@ -46,9 +46,9 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 }
 
 void
-SegmentsPainter::setErrors(boost::shared_ptr<Errors> errors) {
+SegmentsPainter::setSliceErrors(boost::shared_ptr<SliceErrors> sliceErrors) {
 
-	_errors = errors;
+	_sliceErrors = sliceErrors;
 }
 
 void
@@ -186,6 +186,7 @@ SegmentsPainter::updateRecording() {
 	glCheck(glEnable(GL_LIGHTING));
 	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
+	glCheck(glDisable(GL_DEPTH_TEST));
 
 	// draw thicker lines and points
 	glLineWidth(5.0);
@@ -300,16 +301,16 @@ SegmentsPainter::drawSlice(
 
 	double z = _zScale*section;
 
-	if (_errors) {
+	if (_sliceErrors) {
 
-		if (_errors->falsePositives().count(slice->getId())) {
+		if (_sliceErrors->falsePositives().count(slice->getId())) {
 
 			red   = 1.0;
 			green = 0.0;
 			blue  = 1.0;
 		}
 
-		if (_errors->falseNegatives().count(slice->getId())) {
+		if (_sliceErrors->falseNegatives().count(slice->getId())) {
 
 			red   = 1.0;
 			green = 0.0;
@@ -317,7 +318,7 @@ SegmentsPainter::drawSlice(
 		}
 	}
 
-	glCheck(glColor4f(red, green, blue, 1.0));
+	glCheck(glColor4f(red, green, blue, 0.5));
 
 	_textures.get(slice->getId())->bind();
 
@@ -372,9 +373,9 @@ SegmentsPainter::drawLink(const Slice& slice1, const Slice& slice2, double red, 
 
 	LOG_ALL(segmentspainterlog) << "drawing link [" << prev.getId() << ", " << next.getId() << "]" << std::endl;
 
-	if (_errors) {
+	if (_sliceErrors) {
 
-		if (_errors->falseSplits().count(std::make_pair(prev.getId(), next.getId()))) {
+		if (_sliceErrors->falseSplits().count(std::make_pair(prev.getId(), next.getId()))) {
 
 			LOG_ALL(segmentspainterlog) << "this is a false split link" << std::endl;
 
@@ -383,7 +384,7 @@ SegmentsPainter::drawLink(const Slice& slice1, const Slice& slice2, double red, 
 			blue  = 1.0;
 		}
 
-		if (_errors->falseMerges().count(std::make_pair(prev.getId(), next.getId()))) {
+		if (_sliceErrors->falseMerges().count(std::make_pair(prev.getId(), next.getId()))) {
 
 			LOG_ALL(segmentspainterlog) << "this is a false merge link" << std::endl;
 

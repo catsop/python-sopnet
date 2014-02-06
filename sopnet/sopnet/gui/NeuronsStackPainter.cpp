@@ -8,6 +8,7 @@ static logger::LogChannel neuronsstackpainterlog("neuronsstackpainterlog", "[Neu
 NeuronsStackPainter::NeuronsStackPainter() :
 	_section(0),
 	_showSingleNeuron(false),
+	_showCompleteNeurons(true),
 	_currentNeuron(0),
 	_showEnds(true),
 	_showContinuations(true),
@@ -47,6 +48,13 @@ void
 NeuronsStackPainter::showAllNeurons() {
 
 	_showSingleNeuron = false;
+	_showCompleteNeurons = true;
+}
+
+void
+NeuronsStackPainter::showCompleteNeurons(bool show) {
+
+	_showCompleteNeurons = show;
 }
 
 void
@@ -98,7 +106,7 @@ NeuronsStackPainter::assignColors() {
 		double g;
 		double b;
 
-		if (neuron->getContinuations().size() <= 1) {
+		if (neuron->getContinuations().size() < 1) {
 
 			hsvToRgb(100, 0.5, 0.5, r, g, b);
 
@@ -131,26 +139,56 @@ NeuronsStackPainter::assignColors() {
 void
 NeuronsStackPainter::hsvToRgb(double h, double s, double v, double& r, double& g, double& b) {
 
-	double c = v*s;
-	double H = h/60.0;
-	double x = c*(1 - std::abs(fmod(H,2) - 1));
-	double m = v-c;
+	if(s < 0) s = 0;
+	if(s > 1) s = 1;
+	if(v < 0) v = 0;
+	if(v > 1) v = 1;
 
-	if (H < 1) {
-		r = c; g = x; b = 0;
-	} else if (H < 2) {
-		r = x; g = c; b = 0;
-	} else if (H < 2) {
-		r = 0; g = c; b = x;
-	} else if (H < 2) {
-		r = 0; g = x; b = c;
-	} else if (H < 2) {
-		r = x; g = 0; b = c;
-	} else {
-		r = c; g = 0; b = x;
+	if(s == 0) {
+		r = v;
+		g = v;
+		b = v;
 	}
 
-	r += m; b += m; g += m;
+	h = h - floorf(h/360.0); // want h to be in 0..1
+
+	unsigned int i = h*6;
+	double f = (h*6) - i;
+	double p = v*(1.0f - s); 
+	double q = v*(1.0f - s*f);
+	double t = v*(1.0f - s*(1.0f-f));
+	switch(i%6) {
+	case 0:
+		r = v;
+		g = t;
+		b = p;
+		return;
+	case 1:
+		r = q;
+		g = v;
+		b = p;
+		return;
+	case 2:
+		r = p;
+		g = v;
+		b = t;
+		return;
+	case 3:
+		r = p;
+		g = q;
+		b = v;
+		return;
+	case 4:
+		r = t;
+		g = p;
+		b = v;
+		return;
+	case 5:
+		r = v;
+		g = p;
+		b = q;
+		return;
+	}
 }
 
 void
@@ -274,6 +312,9 @@ NeuronsStackPainter::drawNeuron(
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
+
+	if (neuron.getContinuations().size() >= 1 && !_showCompleteNeurons)
+		return;
 
 	// set up lighting
 	GLfloat ambient[4] = { 0, 0, 0, 1 };
@@ -669,11 +710,11 @@ NeuronsStackPainter::drawMerge(
 void
 NeuronsStackPainter::setNextColor() {
 
-	glColor4f(0.9, 0.9, 1.0, 0.9);
+	glColor4f(0.9, 0.9, 1.0, _alpha);
 }
 
 void
 NeuronsStackPainter::setPrevColor() {
 
-	glColor4f(0.1, 0.1, 0.0, 0.9);
+	glColor4f(0.1, 0.1, 0.0, _alpha);
 }

@@ -15,7 +15,7 @@ util::ProgramOption optionInvertMembraneMaps(
 		                          "(not inverting) is: bright pixel = hight membrane probability.");
 
 SegmentationCostFunction::SegmentationCostFunction() :
-	_costFunction(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4)) {
+	_costFunction(boost::make_shared<costs_function_type>(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4))) {
 
 	registerInput(_membranes, "membranes");
 	registerInput(_parameters, "parameters");
@@ -47,6 +47,7 @@ SegmentationCostFunction::costs(
 				<< segmentCosts.size() << ", number of cached values "
 				<< _segmentationCosts.size() << ")" << std::endl;
 
+		_sliceSegmentationCosts.clear();
 		_segmentationCosts.clear();
 		_segmentationCosts.reserve(ends.size() + continuations.size() + branches.size());
 
@@ -187,8 +188,7 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
 		// get the membrane data probability p(x|y=membrane)
-		double probMembrane =
-			(*(*_membranes)[section])(pixel.x - offset.x, pixel.y - offset.y)/255.0;
+		double probMembrane = (*(*_membranes)[section])(pixel.x - offset.x, pixel.y - offset.y);
 
 		if (optionInvertMembraneMaps)
 			probMembrane = 1.0 - probMembrane;
