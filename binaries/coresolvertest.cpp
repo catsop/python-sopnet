@@ -113,8 +113,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 		boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(membranePath));
 	boost::shared_ptr<ImageBlockFactory> rawBlockFactory =
 		boost::shared_ptr<ImageBlockFactory>(new ImageBlockFileFactory(rawPath));
-	boost::shared_ptr<SliceStore> sliceStore =
-		boost::shared_ptr<SliceStore>(new LocalSliceStore());
+	boost::shared_ptr<LocalSliceStore> localSliceStore =
+		boost::shared_ptr<LocalSliceStore>(new LocalSliceStore());
+	boost::shared_ptr<SliceStore> sliceStore = localSliceStore;
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
 	boost::shared_ptr<SegmentGuarantor> segmentGuarantor =
 		boost::make_shared<SegmentGuarantor>();
@@ -191,6 +192,8 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	
 	segmentsOut->addAll(segments);
 	neuronsOut->addAll(neurons);
+	
+	//localSliceStore->dumpStore();
 }
 
 unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)

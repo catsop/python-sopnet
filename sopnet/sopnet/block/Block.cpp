@@ -3,13 +3,24 @@
 #include <util/Logger.h>
 logger::LogChannel blocklog("blocklog", "[Block] ");
 
+boost::shared_ptr<util::point3<unsigned int> >
+Block::blockSize(const boost::shared_ptr<BlockManager>& blockManager,
+				 const boost::shared_ptr<util::point3<unsigned int> >& location)
+{
+	point3<unsigned int> maxSize = *blockManager->stackSize() - *location;
+	boost::shared_ptr<point3<unsigned int> > size =
+		boost::make_shared<point3<unsigned int> >(blockManager->blockSize()->min(maxSize));
+	return size;
+}
+
+
 Block::Block()
 {
 	//invalid block
 }
 
 Block::Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
-			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, manager->blockSize()),
+			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, blockSize(manager, loc)),
 			_id(id), _manager(manager), _slicesExtracted(false), _segmentsExtracted(false)
 {
     
