@@ -74,6 +74,7 @@ public:
 	
 protected:
     boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;
+	point3<unsigned int> _maxBlockCoordinates;
 
 };
 
