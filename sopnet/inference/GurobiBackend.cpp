@@ -6,6 +6,7 @@
 
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
+#include <inference/LinearConstraint.h>
 #include "GurobiBackend.h"
 
 using namespace logger;
@@ -182,6 +183,11 @@ GurobiBackend::setObjective(const QuadraticObjective& objective) {
 void
 GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 
+	foreach (const LinearConstraint& constraint, constraints)
+	{
+		LOG_ALL(gurobilog) << constraint << std::endl;
+	}
+	
 	// remove previous constraints
 	foreach (GRBConstr constraint, _constraints)
 		_model.remove(constraint);

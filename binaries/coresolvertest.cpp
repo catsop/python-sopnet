@@ -1,6 +1,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/filesystem.hpp>
 
 #include <imageprocessing/ImageStack.h>
 #include <util/Logger.h>
@@ -24,13 +25,16 @@
 #include <catmaidsopnet/SliceGuarantor.h>
 #include <catmaidsopnet/persistence/LocalSegmentStore.h>
 #include <catmaidsopnet/persistence/LocalSliceStore.h>
-
+#include <sopnet/block/Box.h>
+#include <vigra/impex.hxx>
 
 using util::point3;
 using std::cout;
 using std::endl;
 using namespace logger;
 
+
+int experiment = 0;
 
 void handleException(boost::exception& e) {
 
@@ -49,6 +53,44 @@ void handleException(boost::exception& e) {
 	               << std::endl;
 
 	exit(-1);
+}
+
+void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory) {
+
+	unsigned int section = slice.getSection();
+	unsigned int id      = slice.getId();
+	util::rect<int> bbox = slice.getComponent()->getBoundingBox();
+
+	std::string filename = sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section) +
+		"_" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
+		"_" + boost::lexical_cast<std::string>(bbox.minY) + ".png";
+
+	vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()),
+					   vigra::ImageExportInfo(filename.c_str()));
+}
+
+void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
+					  const boost::shared_ptr<BlockManager>& manager)
+{
+	std::string path = "./experiment_" + boost::lexical_cast<std::string>(experiment++);
+	boost::filesystem::path dir(path);
+	pipeline::Value<Slices> slices;
+	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
+	
+	boost::filesystem::create_directory(dir);
+	
+	reader->setInput("store", store);
+	reader->setInput("block manager", manager);
+	reader->setInput("box", manager->blocksInBox(
+		boost::make_shared<Box<> >(util::ptrTo(0u,0u,0u), manager->stackSize())));
+	slices = reader->getOutput("slices");
+	
+	
+	
+	foreach (boost::shared_ptr<Slice>& slice, *slices)
+	{
+		writeSliceImage(*slice, path);
+	}
 }
 
 
@@ -129,6 +171,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	pipeline::Value<SegmentStoreResult> segmentResult;
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
+	pipeline::Value<Slices> slices;
 	
 	// pipeline
 
@@ -193,6 +236,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	neuronsOut->addAll(neurons);
 	
 	//localSliceStore->dumpStore();
+	
+	writeSliceImages(sliceStore, blockManager);
+	
 }
 
 unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)
@@ -350,7 +396,7 @@ int main(int optionc, char** optionv)
 			coreSolverNeuronsOvlpBoundSequential,
 			stackSize,
 			blockSize40,
-			true);
+			false);
 		
 		compareResults("full stack", sopnetSegments, sopnetNeurons, coreSolverSegments, coreSolverNeurons);
 		compareResults("half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsBlock, coreSolverNeuronsBlock);

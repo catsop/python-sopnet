@@ -51,6 +51,8 @@ QuadraticSolver::solve() {
 	double value;
 
 	std::string message;
+	
+	
 
 	if (_solver->solve(*_solution, value, message)) {
 
