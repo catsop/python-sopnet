@@ -119,8 +119,7 @@ blockSolver(const std::string& membranePath, const std::string& rawPath,
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
 		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
-	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
-		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
+	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	// Block pipeline variables
@@ -210,8 +209,7 @@ int main(int optionc, char** optionv)
 			boost::make_shared<SegmentationCostFunctionParameters>();
 		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 			boost::make_shared<PriorCostFunctionParameters>();
-		boost::shared_ptr<pipeline::Wrap<bool> > yep =
-			boost::make_shared<pipeline::Wrap<bool> >(true);
+		pipeline::Value<bool> yep(true);
 		pipeline::Value<SegmentTrees> blockNeurons, sopnetNeurons;
 		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
 		boost::shared_ptr<Segments> blockSolverSegments = boost::make_shared<Segments>();
