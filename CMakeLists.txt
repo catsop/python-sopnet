@@ -35,7 +35,14 @@ endif()
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 
+# does not include modules/catmaidsopnet
 add_subdirectory(modules)
+
 add_subdirectory(sopnet)
+
+# catmaidsopnet depends on sopnet
+add_subdirectory(modules/catmaidsopnet)
+
 add_subdirectory(python)
+
 add_subdirectory(binaries)
