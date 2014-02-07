@@ -26,4 +26,16 @@ ProjectConfiguration::getBlockSize() const {
 	return _blockSize;
 }
 
+void
+ProjectConfiguration::setVolumeSize(const util::point3<unsigned int>& volumeSize) {
+
+	_volumeSize = volumeSize;
+}
+
+const util::point3<unsigned int>&
+ProjectConfiguration::getVolumeSize() const {
+
+	return _volumeSize;
+}
+
 } // namespace python

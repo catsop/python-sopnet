@@ -49,6 +49,7 @@ private:
 	std::string _djangoUrl;
 
 	util::point3<unsigned int> _blockSize;
+	util::point3<unsigned int> _volumeSize;
 };
 
 } // namespace python
