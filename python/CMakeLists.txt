@@ -1,1 +1,1 @@
-define_module(pysopnet LIBRARY LINKS allsopnet boost-python)
+define_module(pysopnet LIBRARY LINKS allsopnet catmaidsopnet boost-python)

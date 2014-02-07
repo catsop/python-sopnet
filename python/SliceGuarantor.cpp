@@ -1,6 +1,8 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
 #include <catmaidsopnet/SliceGuarantor.h>
+#include <catmaidsopnet/persistence/StackStore.h>
+#include <catmaidsopnet/persistence/LocalStackStore.h>
 #include <catmaidsopnet/persistence/SliceStore.h>
 #include <catmaidsopnet/persistence/LocalSliceStore.h>
 #include <sopnet/block/BlockManager.h>
@@ -11,20 +13,16 @@
 namespace python {
 
 void
-SliceGuarantor::fill(const Block& block, const SliceGuarantorParameters& parameters, const ProjectConfiguration& configuration) {
+SliceGuarantor::fill(
+		const Block& block,
+		const SliceGuarantorParameters& parameters,
+		const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[SliceGuarantor] fill called for block " << block.location() << std::endl;
 
-	// instantiate block manager
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalBlockManager> blockManager(
-			LocalBlockManager(
-					boost::make_shared<util::point3<unsigned int> >(configuration.getVolumeSize()),
-					boost::make_shared<util::point3<unsigned int> >(configuration.getBlockSize())));
-
-	// instantiate slice store
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalSliceStore> sliceStore;
+	pipeline::Value<BlockManager> blockManager = createBlockManager(configuration);
+	pipeline::Value<StackStore>   stackStore   = createStackStore(configuration);
+	pipeline::Value<SliceStore>   sliceStore   = createSliceStore(configuration);
 
 	// instantiate image block factory
 	pipeline::Value<ImageBlockFactory> membraneBlockFactory;
@@ -41,6 +39,45 @@ SliceGuarantor::fill(const Block& block, const SliceGuarantorParameters& paramet
 	sliceGuarantor->setInput("block factory", membraneBlockFactory);
 	sliceGuarantor->setInput("force explanation", forceExplanation);
 	sliceGuarantor->setInput("maximum area", maxSliceSize);
+
+	// let it do what it was build for
+	sliceGuarantor->guaranteeSlices();
+}
+
+pipeline::Value<BlockManager>
+SliceGuarantor::createBlockManager(const ProjectConfiguration& configuration) {
+
+	LOG_USER(pylog) << "[SliceGuarantor] create local block manager" << std::endl;
+
+	// TODO: create one based on provided configuration
+	pipeline::Value<LocalBlockManager> localBlockManager(
+			LocalBlockManager(
+					boost::make_shared<util::point3<unsigned int> >(configuration.getVolumeSize()),
+					boost::make_shared<util::point3<unsigned int> >(configuration.getBlockSize())));
+
+	return localBlockManager;
+}
+
+pipeline::Value<StackStore>
+SliceGuarantor::createStackStore(const ProjectConfiguration& /*configuration*/) {
+
+	LOG_USER(pylog) << "[SliceGuarantor] create local stack store for membranes" << std::endl;
+
+	// TODO: create one based on provided configuration
+	pipeline::Value<LocalStackStore> localStackStore(LocalStackStore("./membranes"));
+
+	return localStackStore;
+}
+
+pipeline::Value<SliceStore>
+SliceGuarantor::createSliceStore(const ProjectConfiguration& /*configuration*/) {
+
+	LOG_USER(pylog) << "[SliceGuarantor] create local slice store" << std::endl;
+
+	// TODO: create one based on provided configuration
+	pipeline::Value<LocalSliceStore> localSliceStore;
+
+	return localSliceStore;
 }
 
 } // namespace python

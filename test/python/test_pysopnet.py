@@ -21,4 +21,5 @@ sliceGuarantor = ps.SliceGuarantor()
 
 print "Requesting a block"
 request = ps.Block()
-sliceGuarantor.fill(request, config)
+parameters = ps.SliceGuarantorParameters()
+sliceGuarantor.fill(request, parameters, config)
