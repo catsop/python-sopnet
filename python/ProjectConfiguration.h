@@ -34,6 +34,16 @@ public:
 	 */
 	const util::point3<unsigned int>& getBlockSize() const;
 
+	/**
+	 * Set the size of the whole volume in voxels.
+	 */
+	void setVolumeSize(const util::point3<unsigned int>& volumeSize);
+
+	/**
+	 * Get the size of a volume in voxels.
+	 */
+	const util::point3<unsigned int>& getVolumeSize() const;
+
 private:
 
 	std::string _djangoUrl;
