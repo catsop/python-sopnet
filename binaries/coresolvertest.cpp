@@ -27,6 +27,7 @@
 #include <catmaidsopnet/persistence/LocalSliceStore.h>
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
+#include <sopnet/slices/SliceExtractor.h>
 
 using util::point3;
 using std::cout;
@@ -55,6 +56,7 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
+
 void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory) {
 
 	unsigned int section = slice.getSection();
@@ -67,6 +69,26 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory)
 
 	vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()),
 					   vigra::ImageExportInfo(filename.c_str()));
+}
+
+
+void writeAllSlices(const boost::shared_ptr<ImageStack>& stack,
+		const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation)
+{
+	int i = 0;
+	
+	foreach (boost::shared_ptr<Image> image, *stack)
+	{
+		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
+			boost::make_shared<SliceExtractor<unsigned char> >(i);
+		pipeline::Value<Slices> slices;
+		extractor->setInput("membrane", image);
+		slices = extractor->getOutput("slices");
+		foreach (boost::shared_ptr<Slice> slice, *slices)
+		{
+			writeSliceImage(*slice, "./true_slices");
+		}
+	}
 }
 
 void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
@@ -97,7 +119,7 @@ void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
 void sopnetSolver(const std::string& membranePath, const std::string& rawPath,
 	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	pipeline::Value<bool> forceExplanation,
+	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
 	const boost::shared_ptr<Segments>& segmentsOut,
 	const boost::shared_ptr<SegmentTrees>& neuronsOut)
 {
@@ -133,7 +155,7 @@ void sopnetSolver(const std::string& membranePath, const std::string& rawPath,
 void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	pipeline::Value<bool> forceExplanation,
+	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
 	const boost::shared_ptr<Segments>& segmentsOut,
 	const boost::shared_ptr<SegmentTrees>& neuronsOut,
 	
@@ -146,7 +168,8 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
 		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
-	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
+	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
+		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	// Block pipeline variables
@@ -185,6 +208,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	segmentGuarantor->setInput("block manager", blockManager);
 	segmentGuarantor->setInput("segment store", segmentStore);
 	segmentGuarantor->setInput("slice store", sliceStore);
+	segmentGuarantor->setInput("force explanation", forceExplanation);
 
 	if (extractSimultaneousBlocks)
 	{
@@ -235,9 +259,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	segmentsOut->addAll(segments);
 	neuronsOut->addAll(neurons);
 	
-	//localSliceStore->dumpStore();
+	localSliceStore->dumpStore();
 	
-	writeSliceImages(sliceStore, blockManager);
+	//writeSliceImages(sliceStore, blockManager);
 	
 }
 
@@ -268,6 +292,7 @@ void compareResults(const std::string& title,
 	LOG_USER(out) << "Neurons: " << sopnetNeurons->size() << "\t" << blockNeurons->size() << endl;
 }
 
+
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
@@ -280,6 +305,7 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
+		cout << "go?" << endl;
 		std::string membranePath = "./membranes";
 		std::string rawPath = "./raw";
 		pipeline::Value<ImageStack> testStack;
@@ -289,7 +315,8 @@ int main(int optionc, char** optionv)
 			boost::make_shared<SegmentationCostFunctionParameters>();
 		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 			boost::make_shared<PriorCostFunctionParameters>();
-		pipeline::Value<bool> yep(true);
+		boost::shared_ptr<pipeline::Wrap<bool> > yep =
+			boost::make_shared<pipeline::Wrap<bool> >(true);
 		
 		boost::shared_ptr<ImageStackDirectoryReader> directoryStack =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
@@ -312,6 +339,9 @@ int main(int optionc, char** optionv)
 		nx = testStack->width();
 		ny = testStack->height();
 		nz = testStack->size();
+		
+// 		writeAllSlices(testStack, yep);
+		
 		testStack->clear();
 		
 		stackSize = util::ptrTo(nx, ny, nz);
