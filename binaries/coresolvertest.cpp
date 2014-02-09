@@ -73,7 +73,7 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory)
 
 
 void writeAllSlices(const boost::shared_ptr<ImageStack>& stack,
-		const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation)
+		const boost::shared_ptr<pipeline::Wrap<bool> >& /*forceExplanation*/)
 {
 	int i = 0;
 	
@@ -168,8 +168,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
 		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
-	boost::shared_ptr<pipeline::Wrap<unsigned int> > maxSize =
-		boost::make_shared<pipeline::Wrap<unsigned int> >(1024 * 1024 * 64);
+	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	// Block pipeline variables
@@ -259,7 +258,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	segmentsOut->addAll(segments);
 	neuronsOut->addAll(neurons);
 	
-	localSliceStore->dumpStore();
+	//localSliceStore->dumpStore();
 	
 	//writeSliceImages(sliceStore, blockManager);
 	
@@ -315,8 +314,7 @@ int main(int optionc, char** optionv)
 			boost::make_shared<SegmentationCostFunctionParameters>();
 		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 			boost::make_shared<PriorCostFunctionParameters>();
-		boost::shared_ptr<pipeline::Wrap<bool> > yep =
-			boost::make_shared<pipeline::Wrap<bool> >(true);
+		pipeline::Value<bool> yep(true);
 		
 		boost::shared_ptr<ImageStackDirectoryReader> directoryStack =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
