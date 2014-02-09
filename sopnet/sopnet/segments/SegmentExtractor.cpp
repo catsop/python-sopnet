@@ -111,6 +111,10 @@ SegmentExtractor::extractSegments() {
 			<< "previous sections contains " << _prevSlices->size() << " slices,"
 			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
 
+	LOG_DEBUG(segmentextractorlog) << "Branch overlap threshold: " << _branchOverlapThreshold << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "Branch size ratio threshold: " << _branchSizeRatioThreshold << std::endl;
+
+			
 	buildOverlapMap();
 
 	unsigned int oldSize = 0;
@@ -205,6 +209,8 @@ SegmentExtractor::extractSegments() {
 					const unsigned int overlap1 = _prevOverlaps[i][j1_index].first;
 					const unsigned int overlap2 = _prevOverlaps[i][j2_index].first;
 
+					LOG_DEBUG(segmentextractorlog) << "i, j1, j2: " << i << " " << j1 << " " << j2 << std::endl;
+					
 					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId())) {
 
 						extractSegment((*_nextSlices)[i], (*_prevSlices)[j1], (*_prevSlices)[j2], Left, overlap1, overlap2);
@@ -379,6 +385,8 @@ SegmentExtractor::extractSegment(
 
 	double normalizedOverlap = Overlap::normalize(*target1, *target2, *source, overlap1 + overlap2);
 
+	LOG_DEBUG(segmentextractorlog) << "Branch normalized overlap: " << normalizedOverlap << std::endl;
+	
 	if (normalizedOverlap > 1) {
 
 		LOG_DEBUG(segmentextractorlog) << normalizedOverlap << std::endl;
@@ -398,6 +406,8 @@ SegmentExtractor::extractSegment(
 
 	double sizeRatio = static_cast<double>(std::min(size1, size2))/std::max(size1, size2);
 
+	LOG_DEBUG(segmentextractorlog) << "Branch size ratio: " << sizeRatio << std::endl;
+	
 	if (sizeRatio < _branchSizeRatioThreshold)
 		return false;
 
