@@ -64,6 +64,12 @@ public:
 		return _size;
 	}
 	
+	operator rect<T>()
+	{
+		return util::rect<T>(_location->x, _location->y,
+							 _location->x + _size->x, _location->x + _size->y);
+	}
+	
 	template<typename S>
 	bool contains(const point<S>& loc) const
 	{
