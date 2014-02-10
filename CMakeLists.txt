@@ -43,6 +43,6 @@ add_subdirectory(sopnet)
 # catmaidsopnet depends on sopnet
 add_subdirectory(modules/catmaidsopnet)
 
-add_subdirectory(python)
+add_subdirectory(pysopnet)
 
 add_subdirectory(binaries)
