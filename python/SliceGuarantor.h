@@ -17,8 +17,20 @@ public:
 
 	/**
 	 * Request the extraction and storage of slices in a block.
+	 *
+	 * @param blockLocation
+	 *             The location of the requested block.
+	 *
+	 * @param parameters
+	 *             Slice extraction parameters.
+	 *
+	 * @param configuration
+	 *             Project specific configuration.
 	 */
-	void fill(const Block& block, const SliceGuarantorParameters& paramters, const ProjectConfiguration& configuration);
+	void fill(
+			const util::point3<unsigned int>& blockLocation,
+			const SliceGuarantorParameters& parameters,
+			const ProjectConfiguration& configuration);
 
 private:
 

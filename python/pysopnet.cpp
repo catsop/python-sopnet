@@ -21,8 +21,6 @@ BOOST_PYTHON_MODULE(pysopnet) {
 
 	// SliceGuarantorParameters
 	boost::python::class_<SliceGuarantorParameters>("SliceGuarantorParameters")
-			.def("setForceExplanation", &SliceGuarantorParameters::setForceExplanation)
-			.def("getForceExplanation", &SliceGuarantorParameters::getForceExplanation)
 			.def("setMaxSliceSize", &SliceGuarantorParameters::setMaxSliceSize)
 			.def("getMaxSliceSize", &SliceGuarantorParameters::getMaxSliceSize);
 

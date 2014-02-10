@@ -21,10 +21,10 @@ typedef boost::unordered_map<point3<unsigned int>, boost::shared_ptr<Block> > Po
 class LocalBlockManager : public BlockManager, public boost::enable_shared_from_this<LocalBlockManager>
 {
 public:
-	LocalBlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
-					  boost::shared_ptr<point3<unsigned int> > blockSize);
+	LocalBlockManager(const point3<unsigned int>& stackSize,
+					  const point3<unsigned int>& blockSize);
 	
-	boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<unsigned int> >& coordinates);
+	boost::shared_ptr<Block> blockAtCoordinates(const point3<unsigned int>& coordinates);
 	
 	bool isValidZ(unsigned int z);
 	

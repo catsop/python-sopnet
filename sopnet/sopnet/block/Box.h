@@ -29,15 +29,10 @@ template<class T = unsigned int>
 class Box : public pipeline::Data
 {
 public:
-	Box() : _location(make_shared<point3<T> >(0, 0, 0)), _size(make_shared<point3<T> >(0, 0, 0)) {}
+	Box() : _location(0, 0, 0), _size(0, 0, 0) {}
 	
-	Box(boost::shared_ptr<point3<T> > location, boost::shared_ptr<point3<T> > size) :
+	Box(const point3<T>& location, const point3<T>& size) :
 		_location(location), _size(size) {}
-
-	template<class S>
-	Box(const Box<S>& box) :
-		_location(make_shared<point3<T> >(box._location->x, box._location->y, box._location->z)),
-		_size(make_shared<point3<T> >(box._size->x, box._size->y, box._size->z)) {}
 	
 	/**
 	 * Create a Box that contains a rect for a given z-interval. This Box will be one unit
@@ -48,8 +43,8 @@ public:
 	 * @param depth the depth of the z-interval
 	 */
 	Box(const rect<T>& rect, T zMin, T depth) :
-		_location(make_shared<point3<T> >(rect.minX, rect.minY, zMin)), 
-	    _size(make_shared<point3<T> >(rect.width() + 1, rect.height() + 1, depth))
+		_location(rect.minX, rect.minY, zMin), 
+	    _size(rect.width() + 1, rect.height() + 1, depth)
 			{}
 
 	/**
@@ -57,7 +52,7 @@ public:
 	 */
 	const point3<T> location() const
 	{
-		return *_location;
+		return _location;
 	}
 	
 	/**
@@ -66,14 +61,14 @@ public:
 	 */
 	const point3<T> size() const
 	{
-		return *_size;
+		return _size;
 	}
 	
 	template<typename S>
 	bool contains(const point<S>& loc) const
 	{
-		point<T> location = *_location;
-		point<T> size = *_size;
+		point<T> location = _location;
+		point<T> size = _size;
 		point<T> point = loc - location;
 		
 		bool positive = point.x >= 0 && point.y >= 0;
@@ -85,7 +80,7 @@ public:
 	template<typename S>
 	bool contains(const point3<S>& loc) const
 	{
-		point3<T> point = loc - *_location;
+		point3<T> point = loc - _location;
 
 		bool positive = point >= point3<T>();
 		bool contained = point < *_size;
@@ -108,8 +103,8 @@ public:
 	}
 	
 protected:
-	boost::shared_ptr<point3<T> > _location;
-	boost::shared_ptr<point3<T> > _size;
+	point3<T> _location;
+	point3<T> _size;
 };
 
 

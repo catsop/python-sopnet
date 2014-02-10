@@ -106,19 +106,19 @@ Blocks::contains(const boost::shared_ptr<Block>& otherBlock)
 void Blocks::dilateXY()
 {
 	std::vector<boost::shared_ptr<Block> > blocks;
-	std::vector<boost::shared_ptr<util::point3<int> > > offsets;
-	offsets.push_back(boost::make_shared<util::point3<int> >(-1, -1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(0, -1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(1, -1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(1, 0, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(1, 1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(0, 1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(-1, 1, 0));
-	offsets.push_back(boost::make_shared<util::point3<int> >(-1, 0, 0));
+	std::vector<util::point3<int> > offsets;
+	offsets.push_back(util::point3<int>(-1, -1, 0));
+	offsets.push_back(util::point3<int>(0, -1, 0));
+	offsets.push_back(util::point3<int>(1, -1, 0));
+	offsets.push_back(util::point3<int>(1, 0, 0));
+	offsets.push_back(util::point3<int>(1, 1, 0));
+	offsets.push_back(util::point3<int>(0, 1, 0));
+	offsets.push_back(util::point3<int>(-1, 1, 0));
+	offsets.push_back(util::point3<int>(-1, 0, 0));
 	
 	foreach(boost::shared_ptr<Block> block, _blocks)
 	{
-		foreach (boost::shared_ptr<util::point3<int> > offset, offsets)
+		foreach (const util::point3<int>& offset, offsets)
 		{
 			blocks.push_back(_blockManager->blockAtOffset(*block, offset));
 		}
@@ -127,7 +127,7 @@ void Blocks::dilateXY()
 	addAll(blocks);
 }
 
-void Blocks::expand(boost::shared_ptr<util::point3<int > > direction)
+void Blocks::expand(const util::point3<int>& direction)
 {
 	std::vector<boost::shared_ptr<Block> > blocks;
 	
@@ -144,8 +144,8 @@ void Blocks::updateBox()
 {
 	if (_blocks.empty())
 	{
-		_location = boost::make_shared<util::point3<unsigned int> >(0,0,0);
-		_size = boost::make_shared<util::point3<unsigned int> >(0,0,0);
+		_location = util::point3<unsigned int>(0,0,0);
+		_size = util::point3<unsigned int>(0,0,0);
 	}
 	else
 	{
@@ -157,8 +157,8 @@ void Blocks::updateBox()
 			maxPoint = maxPoint.max(block->location() + block->size());
 		}
 		
-		_location = boost::make_shared<util::point3<unsigned int> >(minPoint);
-		_size = boost::make_shared<util::point3<unsigned int> >(maxPoint - minPoint);
+		_location = minPoint;
+		_size = maxPoint - minPoint;
 	}
 }
 

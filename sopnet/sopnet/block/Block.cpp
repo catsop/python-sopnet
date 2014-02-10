@@ -3,13 +3,12 @@
 #include <util/Logger.h>
 logger::LogChannel blocklog("blocklog", "[Block] ");
 
-boost::shared_ptr<util::point3<unsigned int> >
+util::point3<unsigned int>
 Block::blockSize(const boost::shared_ptr<BlockManager>& blockManager,
-				 const boost::shared_ptr<util::point3<unsigned int> >& location)
+				 const util::point3<unsigned int>& location)
 {
-	point3<unsigned int> maxSize = *blockManager->stackSize() - *location;
-	boost::shared_ptr<point3<unsigned int> > size =
-		boost::make_shared<point3<unsigned int> >(blockManager->blockSize()->min(maxSize));
+	point3<unsigned int> maxSize = blockManager->stackSize() - location;
+	point3<unsigned int> size = blockManager->blockSize().min(maxSize);
 	return size;
 }
 
@@ -19,7 +18,7 @@ Block::Block()
 	//invalid block
 }
 
-Block::Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
+Block::Block(unsigned int id, const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, blockSize(manager, loc)),
 			_id(id), _manager(manager), _slicesExtracted(false), _segmentsExtracted(false)
 {
@@ -70,7 +69,7 @@ Block::getSlicesFlag()
 bool
 Block::operator==(const Block& other) const
 {
-	return *_location == *(other._location) && *_size == *(other._size);
+	return _location == other._location && _size == other._size;
 }
 
 bool Block::overlaps(const boost::shared_ptr< ConnectedComponent >& component)
@@ -83,8 +82,8 @@ bool Block::overlaps(const boost::shared_ptr< ConnectedComponent >& component)
  */
 util::rect<int> Block::getBoundingBox()
 {
-	return util::rect<int>(_location->x, _location->y,
-		_location->x + _size->x - 1, _location->y + _size->y - 1);
+	return util::rect<int>(_location.x, _location.y,
+		_location.x + _size.x - 1, _location.y + _size.y - 1);
 }
 
 

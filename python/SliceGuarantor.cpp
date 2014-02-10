@@ -5,6 +5,7 @@
 #include <catmaidsopnet/persistence/LocalStackStore.h>
 #include <catmaidsopnet/persistence/SliceStore.h>
 #include <catmaidsopnet/persistence/LocalSliceStore.h>
+#include <sopnet/block/Blocks.h>
 #include <sopnet/block/BlockManager.h>
 #include <sopnet/block/LocalBlockManager.h>
 #include "SliceGuarantor.h"
@@ -14,30 +15,32 @@ namespace python {
 
 void
 SliceGuarantor::fill(
-		const Block& block,
+		const point3<unsigned int>& request,
 		const SliceGuarantorParameters& parameters,
 		const ProjectConfiguration& configuration) {
 
-	LOG_USER(pylog) << "[SliceGuarantor] fill called for block " << block.location() << std::endl;
+	LOG_USER(pylog) << "[SliceGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager> blockManager = createBlockManager(configuration);
-	pipeline::Value<StackStore>   stackStore   = createStackStore(configuration);
-	pipeline::Value<SliceStore>   sliceStore   = createSliceStore(configuration);
+	pipeline::Value<BlockManager> blockManager       = createBlockManager(configuration);
+	pipeline::Value<StackStore>   membraneStackStore = createStackStore(configuration);
+	pipeline::Value<SliceStore>   sliceStore         = createSliceStore(configuration);
 
-	// instantiate image block factory
-	pipeline::Value<ImageBlockFactory> membraneBlockFactory;
+	// create a valid request block
+	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
+
+	// wrap requested block into Blocks
+	pipeline::Value<Blocks> blocks;
+	blocks->add(requestBlock);
 
 	// slice extraction parameters
-	pipeline::Value<bool> forceExplanation(parameters.getForceExplanation());
 	pipeline::Value<unsigned int> maxSliceSize(parameters.getMaxSliceSize());
 
 	// create the SliceGuarantor process node
 	pipeline::Process< ::SliceGuarantor> sliceGuarantor;
 
-	sliceGuarantor->setInput("block manager", blockManager);
-	sliceGuarantor->setInput("store", sliceStore);
-	sliceGuarantor->setInput("block factory", membraneBlockFactory);
-	sliceGuarantor->setInput("force explanation", forceExplanation);
+	sliceGuarantor->setInput("blocks", blocks);
+	sliceGuarantor->setInput("membrane stack store", membraneStackStore);
+	sliceGuarantor->setInput("slice store", sliceStore);
 	sliceGuarantor->setInput("maximum area", maxSliceSize);
 
 	// let it do what it was build for
@@ -52,8 +55,8 @@ SliceGuarantor::createBlockManager(const ProjectConfiguration& configuration) {
 	// TODO: create one based on provided configuration
 	pipeline::Value<LocalBlockManager> localBlockManager(
 			LocalBlockManager(
-					boost::make_shared<util::point3<unsigned int> >(configuration.getVolumeSize()),
-					boost::make_shared<util::point3<unsigned int> >(configuration.getBlockSize())));
+					configuration.getVolumeSize(),
+					configuration.getBlockSize()));
 
 	return localBlockManager;
 }

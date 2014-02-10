@@ -104,7 +104,7 @@ void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
 	reader->setInput("store", store);
 	reader->setInput("block manager", manager);
 	reader->setInput("box", manager->blocksInBox(
-		boost::make_shared<Box<> >(util::ptrTo(0u,0u,0u), manager->stackSize())));
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0u,0u,0u), manager->stackSize())));
 	slices = reader->getOutput("slices");
 	
 	
@@ -159,15 +159,15 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	const boost::shared_ptr<Segments>& segmentsOut,
 	const boost::shared_ptr<SegmentTrees>& neuronsOut,
 	
-	const boost::shared_ptr<util::point3<unsigned int> >& stackSize,
-	const boost::shared_ptr<util::point3<unsigned int> >& blockSize,
+	const util::point3<unsigned int>& stackSize,
+	const util::point3<unsigned int>& blockSize,
 	const bool extractSimultaneousBlocks)
 {
 
 	boost::shared_ptr<BlockManager> blockManager =
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
 	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
@@ -309,7 +309,7 @@ int main(int optionc, char** optionv)
 		std::string rawPath = "./raw";
 		pipeline::Value<ImageStack> testStack;
 		unsigned int nx, ny, nz;
-		boost::shared_ptr<util::point3<unsigned int> > stackSize, blockSize50, blockSize40;
+		util::point3<unsigned int> stackSize, blockSize50, blockSize40;
 		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
 			boost::make_shared<SegmentationCostFunctionParameters>();
 		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
@@ -342,11 +342,11 @@ int main(int optionc, char** optionv)
 		
 		testStack->clear();
 		
-		stackSize = util::ptrTo(nx, ny, nz);
-		blockSize50 = util::ptrTo(fractionCeiling(nx, 1, 2), fractionCeiling(ny, 1, 2), nz);
+		stackSize = util::point3<unsigned int>(nx, ny, nz);
+		blockSize50 = util::point3<unsigned int>(fractionCeiling(nx, 1, 2), fractionCeiling(ny, 1, 2), nz);
 		// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
 		// The result should not change in this case.
-		blockSize40 = util::ptrTo(fractionCeiling(nx, 2, 5), fractionCeiling(ny, 2, 5), nz);
+		blockSize40 = util::point3<unsigned int>(fractionCeiling(nx, 2, 5), fractionCeiling(ny, 2, 5), nz);
 		
 		segmentationCostParameters->weightPotts = 0;
 		segmentationCostParameters->weight = 0;
@@ -355,7 +355,7 @@ int main(int optionc, char** optionv)
 		priorCostFunctionParameters->priorContinuation = -100;
 		priorCostFunctionParameters->priorBranch = -100;
 		
-		LOG_USER(out) << "Stack size: " << *stackSize << endl;
+		LOG_USER(out) << "Stack size: " << stackSize << endl;
 		
 		LOG_USER(out) << "SOPNET SOLVING POWER!!!!" << endl;
 		

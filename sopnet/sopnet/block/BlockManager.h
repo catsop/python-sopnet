@@ -21,14 +21,14 @@ public:
 	 * Creates a BlockManager for a stack with size stackSize in pixels and blocks of size
 	 * blockSize, also in pixels.
 	 */
-    BlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
-                 boost::shared_ptr<point3<unsigned int> > blockSize);
+    BlockManager(const point3<unsigned int>& stackSize,
+                 const point3<unsigned int>& blockSize);
 
 	/**
 	 * Returns a shared_ptr to a Block at the given location, in pixels.
 	 */
     virtual boost::shared_ptr<Block> blockAtLocation(unsigned int x, unsigned int y, unsigned int z);
-	virtual boost::shared_ptr<Block> blockAtLocation(const boost::shared_ptr<point3<unsigned int> >& location);
+	virtual boost::shared_ptr<Block> blockAtLocation(const point3<unsigned int>& location);
     
 	/**
 	 * Returns a shared_ptr to a Block at the given block-offset from the given Block.
@@ -39,22 +39,22 @@ public:
 	 * blockAtOffset(block, point3&ltint&gt::ptrTo(0, 0, 1));
 	 */
     virtual boost::shared_ptr<Block> blockAtOffset(const Block& block,
-										   const boost::shared_ptr<point3<int> >& offset);
+										   const point3<int>& offset);
 	
 	/**
 	 * Returns a shared_ptr to a Block at the given block coordinates.
 	 */
-    virtual boost::shared_ptr<Block> blockAtCoordinates(const boost::shared_ptr<point3<unsigned int> >& coordinates) = 0;
+    virtual boost::shared_ptr<Block> blockAtCoordinates(const point3<unsigned int>& coordinates) = 0;
 
 	/**
 	 * Returns the size of a block in pixels.
 	 */
-	virtual boost::shared_ptr<point3<unsigned int> > blockSize();
+	virtual const point3<unsigned int>& blockSize();
 
 	/**
 	 * Returns the size of the stack in pixels.
 	 */
-	virtual boost::shared_ptr<point3<unsigned int> > stackSize();
+	virtual const point3<unsigned int>& stackSize();
 	
 	/**
 	 * Returns a Blocks containing all Block's overlapped by the given Box.
@@ -73,7 +73,7 @@ public:
 	virtual bool isUpperBound(unsigned int z) = 0;
 	
 protected:
-    boost::shared_ptr<point3<unsigned int> > _stackSize, _blockSize;
+    point3<unsigned int> _stackSize, _blockSize;
 	point3<unsigned int> _maxBlockCoordinates;
 
 };

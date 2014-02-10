@@ -50,7 +50,8 @@ public:
 	
 	void dilateXY();
 	
-	void expand(boost::shared_ptr<point3<int> > direction);
+	void expand(const point3<int>& direction);
+
 	
 	boost::shared_ptr<BlockManager> getManager();
 	

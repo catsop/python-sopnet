@@ -20,7 +20,9 @@ class Block : public Box<unsigned int>
 public:
 	Block();
 	
-    Block(unsigned int id, boost::shared_ptr<point3<unsigned int> > loc,
+    Block(
+			unsigned int id,
+			const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager);
 
 	boost::shared_ptr<BlockManager> getManager() const;
@@ -48,9 +50,9 @@ public:
 	
 
 private:
-	static boost::shared_ptr<point3<unsigned int> > blockSize(
+	static point3<unsigned int> blockSize(
 		const boost::shared_ptr<BlockManager>& blockManager,
-		const boost::shared_ptr<point3<unsigned int> >& location);
+		const point3<unsigned int>& location);
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
 	bool _slicesExtracted, _segmentsExtracted;

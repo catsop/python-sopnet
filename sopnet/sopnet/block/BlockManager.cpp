@@ -10,57 +10,55 @@ logger::LogChannel blockmanagerlog("blockmanagerlog", "[BlockManager] ");
 /**
  * Creates an instance of a basic implementation of BlockManager, which exists only locally.
  */
-BlockManager::BlockManager(boost::shared_ptr<point3<unsigned int> > stackSize,
-							boost::shared_ptr<point3<unsigned int> > blockSize ) :
+BlockManager::BlockManager(const point3<unsigned int>& stackSize,
+							const point3<unsigned int>& blockSize ) :
 							_stackSize(stackSize), _blockSize(blockSize)
 {
     _maxBlockCoordinates =
-		(*stackSize + *blockSize - point3<unsigned int>(1u, 1u, 1u)) / *blockSize;
-	LOG_DEBUG(blockmanagerlog) << "Limit: " << *stackSize << " / " << *blockSize << " => " <<
+		(stackSize + blockSize - point3<unsigned int>(1u, 1u, 1u)) / blockSize;
+	LOG_DEBUG(blockmanagerlog) << "Limit: " << stackSize << " / " << blockSize << " => " <<
 		_maxBlockCoordinates << std::endl;
 }
 
 boost::shared_ptr<Block>
 BlockManager::blockAtLocation(unsigned int x, unsigned int y, unsigned int z)
 {
-	return blockAtLocation(util::ptrTo(x, y, z));
+	return blockAtLocation(util::point3<unsigned int>(x, y, z));
 }
 
 boost::shared_ptr<Block>
-BlockManager::blockAtLocation(const boost::shared_ptr<point3<unsigned int> >& location)
+BlockManager::blockAtLocation(const point3<unsigned int>& location)
 {
-    boost::shared_ptr<point3<unsigned int> > blockCoordinates =
-		boost::make_shared<point3<unsigned int> >(*location / *_blockSize);
+    point3<unsigned int> blockCoordinates = location / _blockSize;
 	return blockAtCoordinates(blockCoordinates);
 }
 
 boost::shared_ptr<Block>
-BlockManager::blockAtOffset(const Block& block, const boost::shared_ptr<point3<int> >& offset)
+BlockManager::blockAtOffset(const Block& block, const point3<int>& offset)
 {
-	point3<int> signedBlockCoordinates = *offset + (block.location() / *_blockSize);
-	point3<unsigned int> maxBlockCoordinates = *stackSize() / *blockSize();
+	point3<int> signedBlockCoordinates = offset + (block.location() / _blockSize);
+	point3<unsigned int> maxBlockCoordinates = stackSize() / blockSize();
 	
 	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < _maxBlockCoordinates)
 	{
-		boost::shared_ptr<point3<unsigned int> > blockCoordinates =
-			boost::make_shared<point3<unsigned int> >(signedBlockCoordinates);
+		point3<unsigned int> blockCoordinates = signedBlockCoordinates;
 		return blockAtCoordinates(blockCoordinates);
 	}
 	else
 	{
-		LOG_ALL(blockmanagerlog) << "Invalid block coordinates: " << *offset << std::endl;
+		LOG_ALL(blockmanagerlog) << "Invalid block coordinates: " << offset << std::endl;
 		LOG_ALL(blockmanagerlog) << "Max block coordinates: " << _maxBlockCoordinates << std::endl;
 		return boost::shared_ptr<Block>();
 	}
 }
 
-boost::shared_ptr<util::point3<unsigned int> >
+const util::point3<unsigned int>&
 BlockManager::blockSize()
 {
 	return _blockSize;
 }
 
-boost::shared_ptr<util::point3<unsigned int> >
+const util::point3<unsigned int>&
 BlockManager::stackSize()
 {
 	return _stackSize;
@@ -73,14 +71,14 @@ BlockManager::blocksInBox(const boost::shared_ptr< Box<unsigned int> >& box)
 	util::point3<unsigned int> size = box->size();
 	util::point3<unsigned int> currLoc = corner;
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
-	for (unsigned int z = corner.z; z - corner.z < size.z; z += blockSize()->z)
+	for (unsigned int z = corner.z; z - corner.z < size.z; z += blockSize().z)
 	{
-		for (unsigned int y = corner.y; y - corner.y < size.y; y += blockSize()->y)
+		for (unsigned int y = corner.y; y - corner.y < size.y; y += blockSize().y)
 		{
-			for (unsigned int x = corner.x; x - corner.x < size.x; x += blockSize()->x)
+			for (unsigned int x = corner.x; x - corner.x < size.x; x += blockSize().x)
 			{
-				util::point3<unsigned int> coords = point3<unsigned int>(x, y, z) / *blockSize();
-				boost::shared_ptr<Block> block = blockAtCoordinates(util::ptrTo(coords.x, coords.y, coords.z));
+				util::point3<unsigned int> coords = point3<unsigned int>(x, y, z) / blockSize();
+				boost::shared_ptr<Block> block = blockAtCoordinates(coords);
 				blocks->add(block);
 			}
 		}
