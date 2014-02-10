@@ -8,18 +8,10 @@ If you haven't done so already, make sure that all submodules are up-to-date:
 
   $ git submodule update --init
 
-Build System
-------------
-
-Create a build directory (e.g., ./build), change into it and type
-
-  $ cmake [path_to_sopnet_directory (e.g. '..')]
-
 Dependencies
 ------------
 
-cmake will try to find the required packages and tell you which ones are
-missing. All packages except for the vigra library and the Gurobi solver can be
+All packages except for the vigra library and the Gurobi solver can be
 installed using the default Ubuntu repositories:
 
   • libboost-all-dev (make sure libboost-timer-dev is included)
@@ -38,22 +30,12 @@ installed using the default Ubuntu repositories:
   • libtiff4-dev
   • libhdf5-serial-dev (optional)
 
-To get a recent version of vigra, perform the following steps:
+A recent version of vigra will be downloaded and compiled automatically.
 
-Vigra
------
+To compile the python wrappers (pysopnet), you need additionally:
 
-  Get vigra from
-
-    $ git clone git://github.com/ukoethe/vigra.git
-
-  or
-
-    http://hci.iwr.uni-heidelberg.de/vigra/vigra-1.8.0-src.tar.gz
-
-  and build it
-  (http://hci.iwr.uni-heidelberg.de/vigra/doc/vigra/Installation.html). Set the
-  Vigra_BUILD_DIR to the  directory where you built it.
+  • libboost-python
+  • libpython-dev
 
 Gurobi Solver
 -------------
@@ -66,13 +48,29 @@ Gurobi Solver
   in the gurobi bin directory from an academic domain to download the licence
   file (gurobi.lic). Make sure the environment variable GRB_LICENCE_FILE points
   to it. Set the cmake variable Gurobi_ROOT_DIR to the path containing the lib
-  and bin directory.
+  and bin directory or set the environment variable GUROBI_ROOT_DIR accordingly
+  before calling cmake.
 
+Compiling
+---------
 
-After cmake finished without errors, run
+If you are just interested in the python wrappers, it is enough to call
+
+  $ python setup.py install
+
+from the repository's main directory. This will launch cmake and install the
+wrappers, given that all dependencies are fulfilled. You might have to run the
+above command as root to install the wrappers in the python system directory.
+
+For a standard build, create a build directory (e.g., ./build), change into it
+and type
+
+  $ cmake [path_to_sopnet_directory (e.g. '..')]
+
+Cmake will try to find the required packages and tell you which ones are
+missing. After cmake finished without errors, run
 
   $ make
-
 
 Usage
 =====
