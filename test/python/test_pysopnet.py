@@ -20,6 +20,6 @@ print "Creating a SliceGuarantor"
 sliceGuarantor = ps.SliceGuarantor()
 
 print "Requesting a block"
-request = ps.Block()
+request = ps.point3(5,5,2)
 parameters = ps.SliceGuarantorParameters()
 sliceGuarantor.fill(request, parameters, config)
