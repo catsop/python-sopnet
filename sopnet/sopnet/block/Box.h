@@ -62,7 +62,7 @@ public:
 		return _size;
 	}
 	
-	operator rect<T>()
+	operator rect<T>() const
 	{
 		return util::rect<T>(_location.x, _location.y,
 							 _location.x + _size.x, _location.x + _size.y);
@@ -71,32 +71,21 @@ public:
 	template<typename S>
 	bool contains(const point<S>& loc) const
 	{
-		point<T> location = _location;
-		point<T> size = _size;
-		point<T> point = loc - location;
-		
-		bool positive = point.x >= 0 && point.y >= 0;
-		bool contained = point.x < size.x && point.y < size.y;
-		
-		return positive && contained;
+		return loc.x >= _location.x && loc.y >= _location.y &&
+			loc.x < _location.x + _size.x && loc.y < _location.y + _size.y;
 	}
 	
 	template<typename S>
 	bool contains(const point3<S>& loc) const
 	{
-		point3<T> point = loc - _location;
-
-		bool positive = point >= point3<T>();
-		bool contained = point < *_size;
-
-		return positive && contained;
+		return loc >= _location && loc < _location + _size;
 	}
 	
 	template <typename S>
 	bool contains(const rect<S>& rect) const
 	{
 		return contains(point<S>(rect.minX, rect.minY)) &&
-			contains(point<S>(rect.maxX, rect.maxY));
+			contains(point<S>(rect.maxX - 1 , rect.maxY - 1));
 	}
 	
 	template <typename S>
