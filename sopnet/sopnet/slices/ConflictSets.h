@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <pipeline/Data.h>
+#include <util/foreach.h>
 
 #include "ConflictSet.h"
 
@@ -19,6 +20,14 @@ public:
 	void add(const ConflictSet& conflictSet) {
 
 		_conflictSets.push_back(conflictSet);
+	}
+	
+	void addAll(const ConflictSets& conflictSets)
+	{
+		foreach (const ConflictSet& conflictSet, conflictSets)
+		{
+			add(conflictSet);
+		}
 	}
 
 	std::vector<ConflictSet>::iterator begin() {
