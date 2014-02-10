@@ -1,21 +1,21 @@
 [submodule "modules/util"]
 	path = modules/util
-	url = git://github.com/larrylindsey/util.git
+	url = https://github.com/larrylindsey/util.git
 [submodule "modules/signals"]
 	path = modules/signals
-	url = git://github.com/funkey/signals.git
+	url = https://github.com/funkey/signals.git
 [submodule "modules/pipeline"]
 	path = modules/pipeline
-	url = git://github.com/funkey/pipeline.git
+	url = https://github.com/funkey/pipeline.git
 [submodule "modules/gui"]
 	path = modules/gui
-	url = git://github.com/funkey/gui.git
+	url = https://github.com/funkey/gui.git
 [submodule "modules/imageprocessing"]
 	path = modules/imageprocessing
-	url = git://github.com/larrylindsey/imageprocessing.git
+	url = https://github.com/larrylindsey/imageprocessing.git
 [submodule "cmake"]
 	path = cmake
-	url = http://github.com/larrylindsey/cmake
+	url = https://github.com/larrylindsey/cmake
 [submodule "modules/catmaidsopnet"]
 	path = modules/catmaidsopnet
-	url = git@github.com:larrylindsey/catmaidsopnet.git
+	url = https://github.com/larrylindsey/catmaidsopnet.git
