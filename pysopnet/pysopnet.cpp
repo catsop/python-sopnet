@@ -8,10 +8,10 @@
 namespace python {
 
 /**
- * Defines all the python classes in the module pysopnet. Here we decide which 
- * functions and data members we wish to expose.
+ * Defines all the python classes in the module libpysopnet. Here we decide 
+ * which functions and data members we wish to expose.
  */
-BOOST_PYTHON_MODULE(pysopnet) {
+BOOST_PYTHON_MODULE(libpysopnet) {
 
 	// point3<unsigned int>
 	boost::python::class_<util::point3<unsigned int> >("point3", boost::python::init<unsigned int, unsigned int, unsigned int>())
