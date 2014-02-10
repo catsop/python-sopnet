@@ -35,16 +35,14 @@ public:
 		_location(location), _size(size) {}
 	
 	/**
-	 * Create a Box that contains a rect for a given z-interval. This Box will be one unit
-	 * greater in width and depth than the rect, since a rect is strictly closed. This makes
-	 * the most sense when T is an integer type.
+	 * Create a Box that contains a rect for a given z-interval.
 	 * @param rect the rect to contain
 	 * @param zMin the minimum z for the z-interval
 	 * @param depth the depth of the z-interval
 	 */
 	Box(const rect<T>& rect, T zMin, T depth) :
 		_location(rect.minX, rect.minY, zMin), 
-	    _size(rect.width() + 1, rect.height() + 1, depth)
+	    _size(rect.width(), rect.height(), depth)
 			{}
 
 	/**
@@ -62,6 +60,12 @@ public:
 	const point3<T> size() const
 	{
 		return _size;
+	}
+	
+	operator rect<T>()
+	{
+		return util::rect<T>(_location->x, _location->y,
+							 _location->x + _size->x, _location->x + _size->y);
 	}
 	
 	template<typename S>
