@@ -37,11 +37,10 @@ boost::shared_ptr<Block>
 BlockManager::blockAtOffset(const Block& block, const point3<int>& offset)
 {
 	point3<int> signedBlockCoordinates = offset + (block.location() / _blockSize);
-	point3<unsigned int> maxBlockCoordinates = stackSize() / blockSize();
+	point3<unsigned int> blockCoordinates = signedBlockCoordinates;
 	
-	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < _maxBlockCoordinates)
+	if (signedBlockCoordinates >= point3<int>(0,0,0) && blockCoordinates < _maxBlockCoordinates)
 	{
-		point3<unsigned int> blockCoordinates = signedBlockCoordinates;
 		return blockAtCoordinates(blockCoordinates);
 	}
 	else
@@ -69,7 +68,6 @@ BlockManager::blocksInBox(const boost::shared_ptr< Box<unsigned int> >& box)
 {
 	util::point3<unsigned int> corner = box->location();
 	util::point3<unsigned int> size = box->size();
-	util::point3<unsigned int> currLoc = corner;
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	for (unsigned int z = corner.z; z - corner.z < size.z; z += blockSize().z)
 	{

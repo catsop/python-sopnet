@@ -20,7 +20,7 @@ Block::Block()
 
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, blockSize(manager, loc)),
-			_id(id), _manager(manager), _slicesExtracted(false), _segmentsExtracted(false)
+			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false)
 {
     
 }
