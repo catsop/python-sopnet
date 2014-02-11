@@ -1,6 +1,8 @@
 #ifndef SOPNET_SLICES_CONFLICT_SET_H__
 #define SOPNET_SLICES_CONFLICT_SET_H__
 
+#include <util/foreach.h>
+
 #include <set>
 
 /**
@@ -33,6 +35,34 @@ public:
 
 		return _sliceIds;
 	}
+	
+	bool operator==(const ConflictSet& other) const{
+		
+		if (_sliceIds.size() != other._sliceIds.size())
+		{
+			return false;
+		}
+		
+		// Two ConflictSet's are equal if they contain each other.
+		foreach (const unsigned int id, _sliceIds)
+		{
+			if (!other._sliceIds.count(id))
+			{
+				return false;
+			}
+		}
+		
+		foreach (const unsigned int id, other._sliceIds)
+		{
+			if (!_sliceIds.count(id))
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 
 private:
 
