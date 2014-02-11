@@ -37,10 +37,10 @@ boost::shared_ptr<Block>
 BlockManager::blockAtOffset(const Block& block, const point3<int>& offset)
 {
 	point3<int> signedBlockCoordinates = offset + (block.location() / _blockSize);
+	point3<unsigned int> blockCoordinates = signedBlockCoordinates;
 	
-	if (signedBlockCoordinates >= point3<int>(0,0,0) && signedBlockCoordinates < _maxBlockCoordinates)
+	if (signedBlockCoordinates >= point3<int>(0,0,0) && blockCoordinates < _maxBlockCoordinates)
 	{
-		point3<unsigned int> blockCoordinates = signedBlockCoordinates;
 		return blockAtCoordinates(blockCoordinates);
 	}
 	else
