@@ -2,6 +2,7 @@
 #define SOPNET_SLICES_CONFLICT_SET_H__
 
 #include <util/foreach.h>
+#include <boost/functional/hash.hpp>
 
 #include <set>
 
@@ -62,12 +63,13 @@ public:
 		
 		return true;
 	}
-	
 
 private:
 
 	std::set<unsigned int> _sliceIds;
 };
+
+std::size_t hash_value(const ConflictSet& conflictSet);
 
 #endif // SOPNET_SLICES_CONFLICT_SET_H__
 
