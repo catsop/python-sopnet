@@ -34,7 +34,7 @@ A recent version of vigra will be downloaded and compiled automatically.
 
 To compile the python wrappers (pysopnet), you need additionally:
 
-  • libboost-python
+  • libboost-python-dev
   • libpython-dev
 
 Gurobi Solver
