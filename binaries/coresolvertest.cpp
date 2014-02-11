@@ -189,7 +189,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
 	
 	// Result Values
-	pipeline::Value<SliceStoreResult> sliceResult;
+	//pipeline::Value<SliceStoreResult> sliceResult;
 	pipeline::Value<SegmentStoreResult> segmentResult;
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
@@ -214,9 +214,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 		sliceGuarantor->setInput("box", blocks);
 		segmentGuarantor->setInput("box", blocks);
 		
-		sliceResult = sliceGuarantor->getOutput();
+		//sliceResult = sliceGuarantor->getOutput();
 		
-		LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
+		//LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
 		
 		segmentResult = segmentGuarantor->getOutput();
 		
@@ -229,9 +229,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 			sliceGuarantor->setInput("box", block);
 			segmentGuarantor->setInput("box", block);
 
-			sliceResult = sliceGuarantor->getOutput();
+			//sliceResult = sliceGuarantor->getOutput();
 
-			LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
+			//LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
 
 			segmentResult = segmentGuarantor->getOutput();
 
@@ -268,7 +268,7 @@ unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int deno
 {
 	unsigned int result = m * num / denom;
 	if (result * denom < m * num)
-	{
+	{	
 		result += 1;
 	}
 	return result;
