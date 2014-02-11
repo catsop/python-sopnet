@@ -11,10 +11,11 @@
 class Problems : public pipeline::Data {
 
 	typedef std::vector<boost::shared_ptr<Problem> > problems_type;
-	typedef problems_type::iterator                  iterator;
-	typedef problems_type::const_iterator            const_iterator;
 
 public:
+
+	typedef problems_type::iterator                  iterator;
+	typedef problems_type::const_iterator            const_iterator;
 
 	void addProblem(boost::shared_ptr<Problem> problem) {
 
@@ -36,22 +37,22 @@ public:
 		_problems.clear();
 	}
 
-	problems_type::iterator end() {
+	iterator end() {
 
 		return _problems.end();
 	}
 
-	problems_type::iterator begin() {
+	iterator begin() {
 
 		return _problems.begin();
 	}
 
-	problems_type::const_iterator end() const {
+	const_iterator end() const {
 
 		return _problems.end();
 	}
 
-	problems_type::const_iterator begin() const {
+	const_iterator begin() const {
 
 		return _problems.begin();
 	}
