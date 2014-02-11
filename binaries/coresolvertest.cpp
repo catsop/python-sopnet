@@ -20,11 +20,11 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
-#include <catmaidsopnet/CoreSolver.h>
-#include <catmaidsopnet/SegmentGuarantor.h>
-#include <catmaidsopnet/SliceGuarantor.h>
-#include <catmaidsopnet/persistence/LocalSegmentStore.h>
-#include <catmaidsopnet/persistence/LocalSliceStore.h>
+#include <catmaid/CoreSolver.h>
+#include <catmaid/SegmentGuarantor.h>
+#include <catmaid/SliceGuarantor.h>
+#include <catmaid/persistence/LocalSegmentStore.h>
+#include <catmaid/persistence/LocalSliceStore.h>
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
 #include <sopnet/slices/SliceExtractor.h>

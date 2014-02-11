@@ -1,1 +1,5 @@
-define_module(allsopnet OBJECT LINKS pipeline gui imageprocessing boost hdf5 gurobi cplex)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(external)
+add_subdirectory(inference)
+add_subdirectory(sopnet)
+add_subdirectory(catmaid)

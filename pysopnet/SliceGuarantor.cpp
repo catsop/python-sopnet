@@ -1,10 +1,10 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
-#include <catmaidsopnet/SliceGuarantor.h>
-#include <catmaidsopnet/persistence/StackStore.h>
-#include <catmaidsopnet/persistence/LocalStackStore.h>
-#include <catmaidsopnet/persistence/SliceStore.h>
-#include <catmaidsopnet/persistence/LocalSliceStore.h>
+#include <catmaid/SliceGuarantor.h>
+#include <catmaid/persistence/StackStore.h>
+#include <catmaid/persistence/LocalStackStore.h>
+#include <catmaid/persistence/SliceStore.h>
+#include <catmaid/persistence/LocalSliceStore.h>
 #include <sopnet/block/Blocks.h>
 #include <sopnet/block/BlockManager.h>
 #include <sopnet/block/LocalBlockManager.h>

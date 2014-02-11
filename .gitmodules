@@ -16,6 +16,3 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/larrylindsey/cmake
-[submodule "modules/catmaidsopnet"]
-	path = modules/catmaidsopnet
-	url = https://github.com/larrylindsey/catmaidsopnet.git

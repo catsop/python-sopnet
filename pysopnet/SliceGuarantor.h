@@ -4,8 +4,8 @@
 #include <pipeline/Value.h>
 #include <sopnet/block/Block.h>
 #include <sopnet/block/BlockManager.h>
-#include <catmaidsopnet/persistence/StackStore.h>
-#include <catmaidsopnet/persistence/SliceStore.h>
+#include <catmaid/persistence/StackStore.h>
+#include <catmaid/persistence/SliceStore.h>
 #include "SliceGuarantorParameters.h"
 #include "ProjectConfiguration.h"
 
