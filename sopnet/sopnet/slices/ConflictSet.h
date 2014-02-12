@@ -71,5 +71,7 @@ private:
 
 std::size_t hash_value(const ConflictSet& conflictSet);
 
+std::ostream& operator<<(std::ostream& os, const ConflictSet& conflictSet);
+
 #endif // SOPNET_SLICES_CONFLICT_SET_H__
 
