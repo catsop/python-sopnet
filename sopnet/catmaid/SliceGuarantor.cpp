@@ -157,8 +157,6 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	// Dilate once beforehand.
 	extractBlocks->dilateXY();
 
-	sliceExtractor->setInput("force explanation", pipeline::Value<bool>(true));
-
 	while (!okSlices && sizeOk(extractBlocks->size()))
 	{
 		util::rect<unsigned int> bound = *extractBlocks;
