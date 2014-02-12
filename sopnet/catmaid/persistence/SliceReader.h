@@ -23,7 +23,6 @@ private:
 				   boost::unordered_set<Slice>& set);
 
 	pipeline::Input<Blocks> _blocks;
-	pipeline::Input<BlockManager> _blockManager;
 	pipeline::Input<SliceStore> _store;
 	pipeline::Output<Slices> _slices;
 	pipeline::Output<ConflictSets> _conflictSets;

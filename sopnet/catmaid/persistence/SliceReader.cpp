@@ -9,7 +9,6 @@ SliceReader::SliceReader()
 {
 	registerInput(_blocks, "blocks");
 	registerInput(_store, "store");
-	registerInput(_blockManager, "block manager");
 	
 	registerOutput(_slices, "slices");
 	registerOutput(_conflictSets, "conflict sets");
