@@ -28,7 +28,14 @@ public:
 						   pipeline::Value<Block> block) = 0;
 
     /**
-     * Retrieve all slices that are at least partially contained in the given blocks.
+     * Retrieve all slices that are at least partially contained in the given blocks as well as
+	 * any slices that are in conflict with these.
+	 * 
+	 * In other words, slice conflict sets may traverse Block boundaries. Because of this, it is
+	 * possible for a Slice to be in conflict with another Slice that is not associated with 
+	 * the requested Block set. This Slice must also be retrieved in order for Segments to
+	 * be guaranteed and for solutions to be calculated.
+	 * 
      * @param blocks - the Blocks for which to retrieve all slices.
      */
     virtual pipeline::Value<Slices> retrieveSlices(pipeline::Value<Blocks> blocks) = 0;
