@@ -1,13 +1,7 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
 #include <catmaid/SliceGuarantor.h>
-#include <catmaid/persistence/StackStore.h>
-#include <catmaid/persistence/LocalStackStore.h>
-#include <catmaid/persistence/SliceStore.h>
-#include <catmaid/persistence/LocalSliceStore.h>
 #include <sopnet/block/Blocks.h>
-#include <sopnet/block/BlockManager.h>
-#include <sopnet/block/LocalBlockManager.h>
 #include "SliceGuarantor.h"
 #include "logging.h"
 
@@ -35,52 +29,21 @@ SliceGuarantor::fill(
 	// slice extraction parameters
 	pipeline::Value<unsigned int> maxSliceSize(parameters.getMaxSliceSize());
 
+	LOG_DEBUG(pylog) << "[SliceGuarantor] creating slice guarantor" << std::endl;
+
 	// create the SliceGuarantor process node
 	pipeline::Process< ::SliceGuarantor> sliceGuarantor;
 
 	sliceGuarantor->setInput("blocks", blocks);
-	sliceGuarantor->setInput("membrane stack store", membraneStackStore);
+	sliceGuarantor->setInput("stack store", membraneStackStore);
 	sliceGuarantor->setInput("slice store", sliceStore);
 	sliceGuarantor->setInput("maximum area", maxSliceSize);
 
 	// let it do what it was build for
-	sliceGuarantor->guaranteeSlices();
-}
+	// NOTE: doesn't work, yet
+	//sliceGuarantor->guaranteeSlices();
 
-pipeline::Value<BlockManager>
-SliceGuarantor::createBlockManager(const ProjectConfiguration& configuration) {
-
-	LOG_USER(pylog) << "[SliceGuarantor] create local block manager" << std::endl;
-
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalBlockManager> localBlockManager(
-			LocalBlockManager(
-					configuration.getVolumeSize(),
-					configuration.getBlockSize()));
-
-	return localBlockManager;
-}
-
-pipeline::Value<StackStore>
-SliceGuarantor::createStackStore(const ProjectConfiguration& /*configuration*/) {
-
-	LOG_USER(pylog) << "[SliceGuarantor] create local stack store for membranes" << std::endl;
-
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalStackStore> localStackStore(LocalStackStore("./membranes"));
-
-	return localStackStore;
-}
-
-pipeline::Value<SliceStore>
-SliceGuarantor::createSliceStore(const ProjectConfiguration& /*configuration*/) {
-
-	LOG_USER(pylog) << "[SliceGuarantor] create local slice store" << std::endl;
-
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalSliceStore> localSliceStore;
-
-	return localSliceStore;
+	LOG_DEBUG(pylog) << "[SliceGuarantor] done" << std::endl;
 }
 
 } // namespace python

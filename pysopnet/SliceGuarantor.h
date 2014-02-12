@@ -1,17 +1,13 @@
 #ifndef SOPNET_PYTHON_SLICE_GUARANTOR_H__
 #define SOPNET_PYTHON_SLICE_GUARANTOR_H__
 
-#include <pipeline/Value.h>
-#include <sopnet/block/Block.h>
-#include <sopnet/block/BlockManager.h>
-#include <catmaid/persistence/StackStore.h>
-#include <catmaid/persistence/SliceStore.h>
 #include "SliceGuarantorParameters.h"
 #include "ProjectConfiguration.h"
+#include "BackendClient.h"
 
 namespace python {
 
-class SliceGuarantor {
+class SliceGuarantor : public BackendClient {
 
 public:
 
@@ -31,12 +27,6 @@ public:
 			const util::point3<unsigned int>& blockLocation,
 			const SliceGuarantorParameters& parameters,
 			const ProjectConfiguration& configuration);
-
-private:
-
-	pipeline::Value<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
-	pipeline::Value<StackStore>   createStackStore(const ProjectConfiguration& configuration);
-	pipeline::Value<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 };
 
 } // namespace python
