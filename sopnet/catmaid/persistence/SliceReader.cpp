@@ -14,29 +14,18 @@ SliceReader::SliceReader()
 	registerOutput(_conflictSets, "conflict sets");
 }
 
-void
-SliceReader::addUnique(const boost::shared_ptr<Slices>& inSlices,
-					   const boost::shared_ptr<Slices>& recvSlices,
-					   boost::unordered::unordered_set<Slice>& set)
-{
-	foreach (const boost::shared_ptr<Slice>& slice, *inSlices)
-	{
-		if (!set.count(*slice))
-		{
-			set.insert(*slice);
-			recvSlices->add(slice);
-		}
-	}
-}
-
 void SliceReader::updateOutputs()
 {
 	pipeline::Value<Slices> slices;
+	pipeline::Value<ConflictSets> conflict;
 
 	LOG_DEBUG(slicereaderlog) << "Retrieving block slices" << std::endl;
 
 	slices = _store->retrieveSlices(_blocks);
+	conflict = _store->retrieveConflictSets(slices);
+	
 	*_slices = *slices;
+	*_conflictSets = *conflict;
 
-	LOG_DEBUG(slicereaderlog) << "Done." << std::endl;	
+	LOG_DEBUG(slicereaderlog) << "Done." << std::endl;
 }
