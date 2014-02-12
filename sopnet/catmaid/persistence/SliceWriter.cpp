@@ -4,6 +4,10 @@
 #include <boost/shared_ptr.hpp>
 #include <sopnet/slices/Slice.h>
 #include <util/foreach.h>
+#include <catmaid/persistence/SlicePointerHash.h>
+#include <util/Logger.h>
+
+logger::LogChannel slicewriterlog("slicewriterlog", "[SliceWriter] ");
 
 SliceWriter::SliceWriter()
 {
@@ -16,17 +20,28 @@ SliceWriter::SliceWriter()
 void
 SliceWriter::writeSlices()
 {
+	pipeline::Value<ConflictSets> slicesConflictSets;
+	pipeline::Value<Slices> writtenSlices;
+	SliceSet sliceSet;
 	updateInputs();
 	
 	foreach (boost::shared_ptr<Block> block, *_blocks)
 	{
 		pipeline::Value<Slices> blockSlices = collectSlicesByBlocks(block);
-		pipeline::Value<ConflictSets> slicesConflictSets = collectConflictBySlices(blockSlices);
-
 		_store->associate(blockSlices, pipeline::Value<Block>(*block));
-		_store->storeConflict(slicesConflictSets);
+		sliceSet.insert(blockSlices->begin(), blockSlices->end());
 	}
+
+	foreach (boost::shared_ptr<Slice> slice, sliceSet)
+	{
+		writtenSlices->add(slice);
+	}
+	
+	slicesConflictSets = collectConflictBySlices(writtenSlices);
+
+	_store->storeConflict(slicesConflictSets);
 }
+
 
 bool
 SliceWriter::containsAny(ConflictSet& conflictSet, pipeline::Value<Slices>& slices)
@@ -59,6 +74,8 @@ SliceWriter::collectConflictBySlices(pipeline::Value<Slices> slices)
 	
 	foreach (const ConflictSet conflictSet, conflictSetSet)
 	{
+		LOG_ALL(slicewriterlog) << "Collected conflict of size " << conflictSet.getSlices().size()
+			<< std::endl;
 		conflictSets->add(conflictSet);
 	}
 	
