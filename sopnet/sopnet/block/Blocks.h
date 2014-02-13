@@ -59,6 +59,8 @@ public:
 	
 	bool overlaps(const boost::shared_ptr<ConnectedComponent>& component);
 	
+	bool empty(){return _blocks.empty();}
+	
 	
 private:
 	bool internalAdd(const boost::shared_ptr<Block>& block);
