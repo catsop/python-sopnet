@@ -134,6 +134,11 @@ SliceGuarantor::guaranteeSlices()
 	
 	sliceWriter->writeSlices();
 	
+	foreach (boost::shared_ptr<Block> block, *_blocks)
+	{
+		block->setSlicesFlag(true);
+	}
+	
 	return pipeline::Value<Blocks>();
 }
 
