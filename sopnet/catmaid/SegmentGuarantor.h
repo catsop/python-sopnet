@@ -12,26 +12,20 @@ class SegmentGuarantor : public pipeline::SimpleProcessNode<>
 public:
 	SegmentGuarantor();
 	
-	void updateOutputs();
 	
-	void guaranteeSegments(const boost::shared_ptr<Blocks>& guaranteeBlocks,
-						   const boost::shared_ptr<Blocks>& sliceBlocks);
+	pipeline::Value<Blocks> guaranteeSegments();
 	
 private:
+	void updateOutputs();
+
 	boost::shared_ptr<Slices> collectSlicesByZ(const boost::shared_ptr<Slices>& slices,
 											   unsigned int z) const;
-	boost::shared_ptr<Slices> collectNecessarySlices(
-		const boost::shared_ptr<SliceReader>& sliceReader,
-		const boost::shared_ptr<Blocks>& sliceBlocks);
-	
+
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
 	pipeline::Input<Blocks> _blocks;
-	pipeline::Input<BlockManager> _blockManager;
-	pipeline::Input<bool> _forceExplanation;
-	
-	pipeline::Output<SegmentStoreResult> _result;
-	
+
+	pipeline::Output<Blocks> _needBlocks;
 };
 
 #endif //SEGMENT_GUARANTOR_H__
