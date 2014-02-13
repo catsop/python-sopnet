@@ -8,6 +8,7 @@
 #include <util/point3.hpp>
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
+#include <pipeline/Process.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/inference/PriorCostFunctionParameters.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
@@ -25,9 +26,15 @@
 #include <catmaid/SliceGuarantor.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
+#include <catmaid/persistence/LocalStackStore.h>
+#include <catmaid/persistence/SegmentReader.h>
+
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
 #include <sopnet/slices/SliceExtractor.h>
+#include <gui/Window.h>
+#include <imageprocessing/gui/ImageStackView.h>
+#include <neurons/NeuronExtractor.h>
 
 using util::point3;
 using std::cout;
@@ -92,7 +99,7 @@ void writeAllSlices(const boost::shared_ptr<ImageStack>& stack,
 }
 
 void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
-					  const boost::shared_ptr<BlockManager>& manager)
+					  const boost::shared_ptr<Blocks>& blocks)
 {
 	std::string path = "./experiment_" + boost::lexical_cast<std::string>(experiment++);
 	boost::filesystem::path dir(path);
@@ -102,12 +109,8 @@ void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
 	boost::filesystem::create_directory(dir);
 	
 	reader->setInput("store", store);
-	reader->setInput("block manager", manager);
-	reader->setInput("box", manager->blocksInBox(
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0u,0u,0u), manager->stackSize())));
+	reader->setInput("blocks", blocks);
 	slices = reader->getOutput("slices");
-	
-	
 	
 	foreach (boost::shared_ptr<Slice>& slice, *slices)
 	{
@@ -135,7 +138,7 @@ void sopnetSolver(const std::string& membranePath, const std::string& rawPath,
 	
 	sopnet->setInput("raw sections", rawReader->getOutput());
 	sopnet->setInput("membranes", membraneReader->getOutput());
-	sopnet->setInput("slices", membraneReader->getOutput());
+	sopnet->setInput("neuron slices", membraneReader->getOutput());
 	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
 	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
 	sopnet->setInput("force explanation", forceExplanation);
@@ -190,7 +193,6 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	
 	// Result Values
 	//pipeline::Value<SliceStoreResult> sliceResult;
-	pipeline::Value<SegmentStoreResult> segmentResult;
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
 	pipeline::Value<Slices> slices;
@@ -218,9 +220,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 		
 		//LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
 		
-		segmentResult = segmentGuarantor->getOutput();
-		
-		LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
+		segmentGuarantor->guaranteeSegments();
 	}
 	else
 	{
@@ -233,9 +233,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 
 			//LOG_USER(out) << "Guaranteed " << sliceResult->count << " slices" << std::endl;
 
-			segmentResult = segmentGuarantor->getOutput();
-
-			LOG_USER(out) << "Guaranteed " << segmentResult->count << " segments" << std::endl;
+			segmentGuarantor->guaranteeSegments();
 		}
 	}
 	
@@ -251,7 +249,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	coreSolver->setInput("force explanation", forceExplanation);
 	
 	neurons = coreSolver->getOutput("neurons");
-	segments = coreSolver->getProblemAssembler()->getOutput("segments");
+	segments = coreSolver->getOutput("segments");
 	
 	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
 	
@@ -291,11 +289,187 @@ void compareResults(const std::string& title,
 	LOG_USER(out) << "Neurons: " << sopnetNeurons->size() << "\t" << blockNeurons->size() << endl;
 }
 
+void testSliceGuarantor(const std::string& membranePath,
+						const util::point3<unsigned int>& stackSize,
+						const util::point3<unsigned int>& blockSize)
+{
+	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
+	boost::shared_ptr<BlockManager> blockManager =
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<Box<> > box =
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
+	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	pipeline::Value<Blocks> needBlocks;
+	
+	boost::shared_ptr<LocalSliceStore> localSliceStore =
+		boost::make_shared<LocalSliceStore>();
+	boost::shared_ptr<SliceStore> sliceStore = localSliceStore;
+	
+	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
+
+	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
+	pipeline::Value<Slices> readSlices;
+	
+	sliceGuarantor->setInput("slice store", sliceStore);
+	sliceGuarantor->setInput("stack store", stackStore);
+	
+	foreach (boost::shared_ptr<Block> block, *blocks)
+	{
+		boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
+		sliceGuarantor->setInput("blocks", singleBlock);
+		
+		LOG_USER(out) << "Block: " << *singleBlock << endl;
+		LOG_USER(out) << "Slice guarantor pipeline initialized, guaranteeing slices..." << endl;
+		
+		needBlocks = sliceGuarantor->guaranteeSlices();
+	
+		LOG_USER(out) << "guaranteeSlices() returned " << needBlocks->size() << " blocks." << endl;
+	}
+	
+// 	pipeline::Process<gui::Window> window("test");
+// 	pipeline::Process<ImageStackView> membraneView;
+// 	window->setInput(membraneView->getOutput());
+// 	membraneView->setInput(stackStore->getImageStack(*blocks));
+// 	window->processEvents();
+	
+	sliceReader->setInput("blocks", blocks);
+	sliceReader->setInput("store", sliceStore);
+	
+	readSlices = sliceReader->getOutput("slices");
+	
+	LOG_USER(out) << "Read " << readSlices->size() << " slices" << std::endl;
+	
+	writeSliceImages(sliceStore, blocks);
+	
+	//localSliceStore->dumpStore();
+	
+}
+
+void testSolver(const std::string& membranePath,
+					const std::string& rawPath,
+					const util::point3<unsigned int>& stackSize)
+{
+	util::point3<unsigned int>  blockSize50, blockSize40;
+	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
+		boost::make_shared<SegmentationCostFunctionParameters>();
+	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+		boost::make_shared<PriorCostFunctionParameters>();
+	pipeline::Value<bool> yep(true);
+	
+	boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> coreSolverSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> coreSolverSegmentsBlock = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> coreSolverSegmentsSequential = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> coreSolverSegmentsOvlpBound = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> coreSolverSegmentsOvlpBoundSequential = boost::make_shared<Segments>();
+	
+	boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> coreSolverNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> coreSolverNeuronsBlock = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> coreSolverNeuronsSequential = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBound = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBoundSequential = boost::make_shared<SegmentTrees>();
+	
+	blockSize50 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 1, 2),
+											 fractionCeiling(stackSize.y, 1, 2), stackSize.z);
+	// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
+	// The result should not change in this case.
+	blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
+											 fractionCeiling(stackSize.y, 2, 5), stackSize.z);
+	
+	segmentationCostParameters->weightPotts = 0;
+	segmentationCostParameters->weight = 0;
+	segmentationCostParameters->priorForeground = 0.2;
+	
+	priorCostFunctionParameters->priorContinuation = -100;
+	priorCostFunctionParameters->priorBranch = -100;
+	
+	LOG_USER(out) << "Stack size: " << stackSize << endl;
+	
+	LOG_USER(out) << "SOPNET SOLVING POWER!!!!" << endl;
+	
+	sopnetSolver(membranePath, rawPath,
+		segmentationCostParameters,
+		priorCostFunctionParameters,
+		yep,
+		sopnetSegments,
+		sopnetNeurons);
+	
+	LOG_USER(out) << "CORE SOLVING POWER!!!! With special full-stack magic" << endl;
+	
+	coreSolver(membranePath, rawPath,
+		segmentationCostParameters,
+		priorCostFunctionParameters,
+		yep,
+		coreSolverSegments,
+		coreSolverNeurons,
+		stackSize,
+		stackSize,
+		true);
+// 	
+// 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special multi-block magic" << endl;
+// 	
+// 	coreSolver(membranePath, rawPath,
+// 		segmentationCostParameters,
+// 		priorCostFunctionParameters,
+// 		yep,
+// 		coreSolverSegmentsBlock,
+// 		coreSolverNeuronsBlock,
+// 		stackSize,
+// 		blockSize50,
+// 		true);
+// 	
+// 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-block magic" << endl;
+// 	
+// 	coreSolver(membranePath, rawPath,
+// 		segmentationCostParameters,
+// 		priorCostFunctionParameters,
+// 		yep,
+// 		coreSolverSegmentsSequential,
+// 		coreSolverNeuronsSequential,
+// 		stackSize,
+// 		blockSize50,
+// 		false);
+// 	
+// 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special boundary-overlapping magic" << endl;
+// 	
+// 	coreSolver(membranePath, rawPath,
+// 		segmentationCostParameters,
+// 		priorCostFunctionParameters,
+// 		yep,
+// 		coreSolverSegmentsOvlpBound,
+// 		coreSolverNeuronsOvlpBound,
+// 		stackSize,
+// 		blockSize40,
+// 		true);
+// 	
+// 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-boundary-overlapping magic" << endl;
+// 	
+// 	coreSolver(membranePath, rawPath,
+// 		segmentationCostParameters,
+// 		priorCostFunctionParameters,
+// 		yep,
+// 		coreSolverSegmentsOvlpBoundSequential,
+// 		coreSolverNeuronsOvlpBoundSequential,
+// 		stackSize,
+// 		blockSize40,
+// 		false);
+	
+	compareResults("full stack", sopnetSegments, sopnetNeurons, coreSolverSegments, coreSolverNeurons);
+	compareResults("half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsBlock, coreSolverNeuronsBlock);
+	compareResults("sequential half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsSequential, coreSolverNeuronsSequential);
+	compareResults("40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBound, coreSolverNeuronsOvlpBound);
+	compareResults("sequential 40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBoundSequential, coreSolverNeuronsOvlpBoundSequential);
+
+}
 
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
 	LogManager::init();
+	
+	LOG_DEBUG(out) << "what?" << std::endl;
 	
 	/*
 	 * Assumes membrane path is ./membranes and raw image path is ./raw 
@@ -309,130 +483,36 @@ int main(int optionc, char** optionv)
 		std::string rawPath = "./raw";
 		pipeline::Value<ImageStack> testStack;
 		unsigned int nx, ny, nz;
-		util::point3<unsigned int> stackSize, blockSize50, blockSize40;
-		boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
-			boost::make_shared<SegmentationCostFunctionParameters>();
-		boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
-			boost::make_shared<PriorCostFunctionParameters>();
-		pipeline::Value<bool> yep(true);
+		util::point3<unsigned int> stackSize;
+		util::point3<unsigned int>  blockSize50, blockSize40;
 		
 		boost::shared_ptr<ImageStackDirectoryReader> directoryStack =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
-			
-		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> coreSolverSegments = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> coreSolverSegmentsBlock = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> coreSolverSegmentsSequential = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> coreSolverSegmentsOvlpBound = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> coreSolverSegmentsOvlpBoundSequential = boost::make_shared<Segments>();
-		
-		boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> coreSolverNeurons = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> coreSolverNeuronsBlock = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> coreSolverNeuronsSequential = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBound = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBoundSequential = boost::make_shared<SegmentTrees>();
 		
 		testStack = directoryStack->getOutput();
 		nx = testStack->width();
 		ny = testStack->height();
 		nz = testStack->size();
 		
+		stackSize = point3<unsigned int>(nx, ny, nz);
+		
+		blockSize50 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 1, 2),
+									fractionCeiling(stackSize.y, 1, 2), stackSize.z);
+		// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
+		// The result should not change in this case.
+		blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
+									fractionCeiling(stackSize.y, 2, 5), stackSize.z);
+		
 // 		writeAllSlices(testStack, yep);
 		
 		testStack->clear();
 		
-		stackSize = util::point3<unsigned int>(nx, ny, nz);
-		blockSize50 = util::point3<unsigned int>(fractionCeiling(nx, 1, 2), fractionCeiling(ny, 1, 2), nz);
-		// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
-		// The result should not change in this case.
-		blockSize40 = util::point3<unsigned int>(fractionCeiling(nx, 2, 5), fractionCeiling(ny, 2, 5), nz);
 		
-		segmentationCostParameters->weightPotts = 0;
-		segmentationCostParameters->weight = 0;
-		segmentationCostParameters->priorForeground = 0.2;
+		testSliceGuarantor(membranePath, stackSize, blockSize40);
 		
-		priorCostFunctionParameters->priorContinuation = -100;
-		priorCostFunctionParameters->priorBranch = -100;
-		
-		LOG_USER(out) << "Stack size: " << stackSize << endl;
-		
-		LOG_USER(out) << "SOPNET SOLVING POWER!!!!" << endl;
-		
-		sopnetSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			sopnetSegments,
-			sopnetNeurons);
-		
-		LOG_USER(out) << "CORE SOLVING POWER!!!! With special full-stack magic" << endl;
-		
-		coreSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			coreSolverSegments,
-			coreSolverNeurons,
-			stackSize,
-			stackSize,
-			true);
-		
-		LOG_USER(out) << "CORE SOLVING POWER!!!! With special multi-block magic" << endl;
-		
-		coreSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			coreSolverSegmentsBlock,
-			coreSolverNeuronsBlock,
-			stackSize,
-			blockSize50,
-			true);
-		
-		LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-block magic" << endl;
-		
-		coreSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			coreSolverSegmentsSequential,
-			coreSolverNeuronsSequential,
-			stackSize,
-			blockSize50,
-			false);
-		
-		LOG_USER(out) << "CORE SOLVING POWER!!!! With special boundary-overlapping magic" << endl;
-		
-		coreSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			coreSolverSegmentsOvlpBound,
-			coreSolverNeuronsOvlpBound,
-			stackSize,
-			blockSize40,
-			true);
-		
-		LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-boundary-overlapping magic" << endl;
-		
-		coreSolver(membranePath, rawPath,
-			segmentationCostParameters,
-			priorCostFunctionParameters,
-			yep,
-			coreSolverSegmentsOvlpBoundSequential,
-			coreSolverNeuronsOvlpBoundSequential,
-			stackSize,
-			blockSize40,
-			false);
-		
-		compareResults("full stack", sopnetSegments, sopnetNeurons, coreSolverSegments, coreSolverNeurons);
-		compareResults("half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsBlock, coreSolverNeuronsBlock);
-		compareResults("sequential half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsSequential, coreSolverNeuronsSequential);
-		compareResults("40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBound, coreSolverNeuronsOvlpBound);
-		compareResults("sequential 40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBoundSequential, coreSolverNeuronsOvlpBoundSequential);
-
-		
+		testSolver(membranePath,
+					 rawPath,
+					 stackSize);
 	}
 	catch (Exception& e)
 	{
