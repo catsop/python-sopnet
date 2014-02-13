@@ -6,14 +6,7 @@
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
 #include <pipeline/Data.h>
-
-class SegmentStoreResult : public pipeline::Data
-{
-public:
-	SegmentStoreResult() : count(0) {}
-	
-	int count;
-};
+#include <pipeline/Value.h>
 
 /**
  * Abstract Data class that handles the practicalities of storing and retrieving Segments from a store.
@@ -26,19 +19,16 @@ public:
      * @param segment - the segment to store.
      * @param block - the block containing the segment.
      */
-    virtual void associate(const boost::shared_ptr<Segment>& segment, const boost::shared_ptr<Block>& block) = 0;
+    virtual void associate(pipeline::Value<Segments> segments,
+						   pipeline::Value<Block> block) = 0;
 
     /**
      * Retrieve all segments that are at least partially contained in the given block.
      * @param block - the Block for which to retrieve all segments.
      */
-    virtual boost::shared_ptr<Segments> retrieveSegments(const boost::shared_ptr<Block>& block) = 0;
+    virtual pipeline::Value<Segments> retrieveSegments(pipeline::Value<Blocks> blocks) = 0;
 
-	virtual void disassociate(const boost::shared_ptr<Segment>& segment, const boost::shared_ptr<Block>& block) = 0;
-
-	virtual void removeSegment(const boost::shared_ptr<Segment>& segments) = 0;
-
-	virtual boost::shared_ptr<Blocks> getAssociatedBlocks(const boost::shared_ptr<Segment>& segment) = 0;
+	virtual pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment) = 0;
 
 };
 

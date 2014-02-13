@@ -5,28 +5,29 @@ SegmentWriter::SegmentWriter()
 	registerInput(_segments, "segments");
 	registerInput(_blocks, "blocks");
 	registerInput(_store, "store");
-	
-	registerOutput(_result, "count");
 }
 
 
-void SegmentWriter::updateOutputs()
+void SegmentWriter::writeSegments()
 {
-	boost::shared_ptr<SegmentStoreResult> result = boost::make_shared<SegmentStoreResult>();
+	updateInputs();
 	
 	foreach(boost::shared_ptr<Block> block, *_blocks)
 	{
+		pipeline::Value<Block> valueBlock;
+		pipeline::Value<Segments> segments;
+		*valueBlock = *block;
+		
 		foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
 		{
 			if (associated(segment, block))
 			{
-				_store->associate(segment, block);
-				result->count += 1;
+				segments->add(segment);
 			}
 		}
+		
+		_store->associate(segments, valueBlock);
 	}
-	
-	*_result = *result;
 }
 
 bool

@@ -27,20 +27,16 @@ public:
      * @param segment - the segment to store.
      * @param block - the block containing the segment.
      */
-    void associate(const boost::shared_ptr<Segment>& segmentIn,
-				   const boost::shared_ptr<Block>& block);
+    void associate(pipeline::Value<Segments> segmentsIn,
+				   pipeline::Value<Block> block);
 
     /**
      * Retrieve all segments that are at least partially contained in the given block.
      * @param block - the Block for which to retrieve all segments.
      */
-    boost::shared_ptr<Segments> retrieveSegments(const boost::shared_ptr<Block>& block);
+    pipeline::Value<Segments> retrieveSegments(pipeline::Value<Blocks> blocks);
 
-	void disassociate(const boost::shared_ptr<Segment>& segment, const boost::shared_ptr<Block>& block);
-
-	void removeSegment(const boost::shared_ptr<Segment>& segments);
-
-	boost::shared_ptr<Blocks> getAssociatedBlocks(const boost::shared_ptr<Segment>& segment);
+	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment);
 	
 private:
 	void mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
@@ -57,9 +53,9 @@ private:
 	boost::shared_ptr<Segments> getSegments(const boost::shared_ptr<Block>& block,
 		const boost::shared_ptr<Segment>& segment);
 	
-	boost::shared_ptr<SegmentBlockMap> _segmentBlockMap;
-	boost::shared_ptr<BlockSegmentMap> _blockSegmentMap;
-	boost::shared_ptr<IdSegmentMap> _idSegmentMap;
+	SegmentBlockMap _segmentBlockMap;
+	BlockSegmentMap _blockSegmentMap;
+	IdSegmentMap _idSegmentMap;
 	
 	SegmentSet _segmentMasterList;
 
