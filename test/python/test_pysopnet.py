@@ -41,3 +41,16 @@ missing = segmentGuarantor.fill(request, segmentGuarantorParameters, config);
 print "Missing points:"
 for p in missing:
   print "[" + str(p.x) + ", " + str(p.y) + ", " + str(p.z) + "]"
+
+print "Creating a SolutionGuarantor"
+
+solutionGuarantor           = ps.SolutionGuarantor()
+
+print "Requesting a block"
+
+solutionGuarantorParameters = ps.SolutionGuarantorParameters()
+missing = solutionGuarantor.fill(request, solutionGuarantorParameters, config);
+
+print "Missing points:"
+for p in missing:
+  print "[" + str(p.x) + ", " + str(p.y) + ", " + str(p.z) + "]"

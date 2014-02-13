@@ -6,6 +6,7 @@
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
+#include <catmaid/persistence/SolutionStore.h>
 #include "ProjectConfiguration.h"
 
 namespace python {
@@ -25,6 +26,8 @@ protected:
 	pipeline::Value<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
 	pipeline::Value<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
+
+	pipeline::Value<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
 };
 
 } // namespace python

@@ -2,6 +2,7 @@
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
+#include <catmaid/persistence/LocalSolutionStore.h>
 #include "BackendClient.h"
 #include "logging.h"
 
@@ -52,6 +53,17 @@ BackendClient::createSegmentStore(const ProjectConfiguration& /*configuration*/)
 	pipeline::Value<LocalSegmentStore> localSegmentStore;
 
 	return localSegmentStore;
+}
+
+pipeline::Value<SolutionStore>
+BackendClient::createSolutionStore(const ProjectConfiguration& /*configuration*/) {
+
+	LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
+
+	// TODO: create one based on provided configuration
+	pipeline::Value<LocalSolutionStore> localSolutionStore;
+
+	return localSolutionStore;
 }
 
 } // namespace python
