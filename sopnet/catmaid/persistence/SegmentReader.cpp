@@ -19,7 +19,9 @@ SegmentReader::updateOutputs()
 {
 	pipeline::Value<Segments> segments;
 
+	LOG_DEBUG(segmentreaderlog) << "Reading segments from " << *_blocks << std::endl;
 	segments = _store->retrieveSegments(_blocks);
+	LOG_DEBUG(segmentreaderlog) << "Read " << segments->size() << " segments" << std::endl;
 
 	*_segments = *segments;
 }
