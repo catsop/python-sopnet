@@ -28,7 +28,7 @@ private:
 	private:
 		void updateOutputs();
 		
-		void assembleConstraint(const ConflictSet& conflictSet,
+		boost::shared_ptr<LinearConstraint> assembleConstraint(const ConflictSet& conflictSet,
 						std::map<unsigned int, std::vector<unsigned int> >& sliceSegmentMap);
 		
 		pipeline::Input<Segments> _segments;

@@ -71,7 +71,7 @@ CoreSolver::ConstraintAssembler::ConstraintAssembler()
 }
 
 
-void
+boost::shared_ptr<LinearConstraint>
 CoreSolver::ConstraintAssembler::assembleConstraint(const ConflictSet& conflictSet,
 									 map<unsigned int, vector<unsigned int> >& sliceSegmentsMap)
 {
@@ -79,7 +79,7 @@ CoreSolver::ConstraintAssembler::assembleConstraint(const ConflictSet& conflictS
 	boost::shared_ptr<LinearConstraint> constraint = boost::make_shared<LinearConstraint>();
 
 	// for each slice in the constraint
-	typedef map<unsigned int, double>::value_type pair_t;
+	//typedef map<unsigned int, double>::value_type pair_t;
 	foreach (unsigned int sliceId, conflictSet.getSlices())
 	{
 		// for all the segments that involve this slice
@@ -101,26 +101,41 @@ CoreSolver::ConstraintAssembler::assembleConstraint(const ConflictSet& conflictS
 	}
 
 	constraint->setValue(1);
-
+	
 	LOG_ALL(coresolverlog) << "created constraint " << *constraint << std::endl;
+	
+	return constraint;
 }
 
 void CoreSolver::ConstraintAssembler::updateOutputs()
 {
 	map<unsigned int, vector<unsigned int> > sliceSegmentMap;
+	boost::shared_ptr<LinearConstraints> constraints = boost::make_shared<LinearConstraints>();
 	
 	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
 	{
-		foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+		if (segment->getDirection() == Right)
 		{
-			sliceSegmentMap[slice->getId()].push_back(segment->getId());
+			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+			{
+				sliceSegmentMap[slice->getId()].push_back(segment->getId());
+			}
+		}
+		else
+		{
+			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+			{
+				sliceSegmentMap[slice->getId()].push_back(segment->getId());
+			}
 		}
 	}
 	
 	foreach (const ConflictSet conflictSet, *_conflictSets)
 	{
-		assembleConstraint(conflictSet, sliceSegmentMap);
+		constraints->add(*assembleConstraint(conflictSet, sliceSegmentMap));
 	}
+	
+	*_constraints = *constraints;
 }
 
 CoreSolver::EndExtractor::EndExtractor()
@@ -136,6 +151,9 @@ void CoreSolver::EndExtractor::updateOutputs()
 	SegmentSet segmentSet;
 	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
 	
+	LOG_DEBUG(coresolverlog) << "End extractor recieved " << outputSegments->size() <<
+		" segments" << std::endl;
+	
 	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
 	{
 		if (slice->getSection() > z)
@@ -144,32 +162,43 @@ void CoreSolver::EndExtractor::updateOutputs()
 		}
 	}
 	
-	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
-	{
-		if (slice->getSection() == z)
-		{
-			boost::shared_ptr<EndSegment> rightEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Right,
-											   slice);
-			boost::shared_ptr<EndSegment> leftEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Left,
-											   slice);
-			segmentSet.insert(rightEnd);
-			segmentSet.insert(leftEnd);
-		}
-	}
-	
+	LOG_DEBUG(coresolverlog) << " End extractor: max z is " << z << std::endl;
+
 	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
 	{
 		segmentSet.insert(segment);
 	}
+
+	
+	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
+	{
+		if (slice->getSection() == z)
+		{
+			int begSize = segmentSet.size();
+			boost::shared_ptr<EndSegment> rightEnd =
+				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
+											   Left,
+											   slice);
+			boost::shared_ptr<EndSegment> leftEnd =
+				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
+											   Right,
+											   slice);
+			
+			segmentSet.insert(rightEnd);
+			segmentSet.insert(leftEnd);
+			
+			LOG_ALL(coresolverlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
+		}
+	}
+	
 	
 	foreach (boost::shared_ptr<Segment> segment, segmentSet)
 	{
 		outputSegments->add(segment);
 	}
+	
+	LOG_DEBUG(coresolverlog) << "End extractor returning " << outputSegments->size() <<
+		" segments" << std::endl;
 	
 	*_allSegments = *outputSegments;
 }
@@ -252,15 +281,15 @@ CoreSolver::updateOutputs()
 	LOG_DEBUG(coresolverlog) << "D" << std::endl;
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
-	if (_segmentationCostFunctionParameters)
-	{
-		LOG_DEBUG(coresolverlog) << "D.5" << std::endl;
-		segmentationCostFunction->setInput("membranes", _membraneStore->getImageStack(*boundingBlocks));
-		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
-		segmentationCostFunction->setInput("crop offset", offset);
-		objectiveGenerator->addInput("cost functions",
-									  segmentationCostFunction->getOutput("cost function"));
-	}
+// 	if (_segmentationCostFunctionParameters)
+// 	{
+// 		LOG_DEBUG(coresolverlog) << "D.5" << std::endl;
+// 		segmentationCostFunction->setInput("membranes", _membraneStore->getImageStack(*boundingBlocks));
+// 		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
+// 		segmentationCostFunction->setInput("crop offset", offset);
+// 		objectiveGenerator->addInput("cost functions",
+// 									  segmentationCostFunction->getOutput("cost function"));
+// 	}
 
 	LOG_DEBUG(coresolverlog) << "E" << std::endl;
 	
