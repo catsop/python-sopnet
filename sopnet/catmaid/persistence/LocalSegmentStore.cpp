@@ -39,6 +39,7 @@ pipeline::Value<Segments>
 LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 {
 	pipeline::Value<Segments> segments;
+	std::vector<boost::shared_ptr<Segment> > segmentVector;
 	SegmentSet segmentSet;
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
@@ -63,7 +64,12 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 	
 	LOG_DEBUG(localsegmentstorelog) << "Retrieved " << segmentSet.size() << " unique segments" << std::endl;
 	
-	foreach (boost::shared_ptr<Segment> segment, segmentSet)
+	// Sort the segments.
+	segmentVector.insert(segmentVector.begin(), segmentSet.begin(), segmentSet.end());
+	std::sort(segmentVector.begin(), segmentVector.end(), LocalSegmentStore::compareSegments);
+	
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentVector)
 	{
 		segments->add(segment);
 	}

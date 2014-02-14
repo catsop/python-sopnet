@@ -53,6 +53,12 @@ private:
 	boost::shared_ptr<Segments> getSegments(const boost::shared_ptr<Block>& block,
 		const boost::shared_ptr<Segment>& segment);
 	
+	static bool compareSegments(const boost::shared_ptr<Segment> segment1,
+								const boost::shared_ptr<Segment> segment2)
+	{
+		return segment1->getId() < segment2->getId();
+	}
+	
 	SegmentBlockMap _segmentBlockMap;
 	BlockSegmentMap _blockSegmentMap;
 	IdSegmentMap _idSegmentMap;
