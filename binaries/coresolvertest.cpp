@@ -79,15 +79,14 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory)
 }
 
 
-void writeAllSlices(const boost::shared_ptr<ImageStack>& stack,
-		const boost::shared_ptr<pipeline::Wrap<bool> >& /*forceExplanation*/)
+void writeAllSlices(const boost::shared_ptr<ImageStack>& stack)
 {
 	int i = 0;
 	
 	foreach (boost::shared_ptr<Image> image, *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
-			boost::make_shared<SliceExtractor<unsigned char> >(i);
+			boost::make_shared<SliceExtractor<unsigned char> >(i++);
 		pipeline::Value<Slices> slices;
 		extractor->setInput("membrane", image);
 		slices = extractor->getOutput("slices");
@@ -522,7 +521,7 @@ int main(int optionc, char** optionv)
 		blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
 									fractionCeiling(stackSize.y, 2, 5), stackSize.z);
 		
-// 		writeAllSlices(testStack, yep);
+		//writeAllSlices(testStack);
 		
 		testStack->clear();
 		
