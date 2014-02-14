@@ -14,10 +14,10 @@
 
 class LocalSliceStore : public SliceStore
 {
-	typedef boost::unordered_map<Slice, pipeline::Value<Blocks> > SliceBlockMap;
-	typedef boost::unordered_map<Block, pipeline::Value<Slices> > BlockSliceMap;
-	typedef boost::unordered_map<unsigned int, boost::shared_ptr<Slice> > IdSliceMap;
-	typedef boost::unordered_map<unsigned int, pipeline::Value<ConflictSets> > IdConflictsMap;
+	typedef std::map<Slice, pipeline::Value<Blocks> > SliceBlockMap;
+	typedef std::map<Block, pipeline::Value<Slices> > BlockSliceMap;
+	typedef std::map<unsigned int, boost::shared_ptr<Slice> > IdSliceMap;
+	typedef std::map<unsigned int, pipeline::Value<ConflictSets> > IdConflictsMap;
 
 public:
 	LocalSliceStore();
