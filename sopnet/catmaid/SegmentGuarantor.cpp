@@ -67,6 +67,8 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	// Note that we don't have to go searching around for Slices in other Block's, because
 	// the SliceReader guarantees (by way of the guarantee provided at the SliceStore level)
 	// that it will return fully-populated conflict-set cliques of Slices.
+	sliceReader->setInput("blocks", sliceBlocks);
+	sliceReader->setInput("store", _sliceStore);
 	slices = sliceReader->getOutput("slices");
 	
 	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() << " slices." << std::endl;
