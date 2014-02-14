@@ -75,6 +75,11 @@ public:
 	
 	bool operator==(const Slice& other) const;
 	
+	bool operator<(const Slice& other) const
+	{
+		return _id < other._id;
+	}
+	
 private:
 
 	unsigned int _id;
