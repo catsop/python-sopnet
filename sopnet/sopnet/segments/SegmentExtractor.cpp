@@ -61,7 +61,7 @@ SegmentExtractor::SegmentExtractor() :
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
-	registerInput(_prevConflictSets, "previous conflict sets");
+	registerInput(_prevConflictSets, "previous conflict sets", pipeline::Optional);
 	registerInput(_nextConflictSets, "next conflict sets", pipeline::Optional);
 	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
 
@@ -95,7 +95,7 @@ SegmentExtractor::updateOutputs() {
 		_slicesChanged = false;
 	}
 
-	if (_conflictSetsChanged) {
+	if (_conflictSetsChanged && _prevConflictSets) {
 
 		assembleLinearConstraints();
 		_conflictSetsChanged = false;
