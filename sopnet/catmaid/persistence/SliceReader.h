@@ -18,6 +18,9 @@ public:
 private:
 	void updateOutputs();
 	
+	static bool slicePtrComparator(const boost::shared_ptr<Slice> slice1,
+								   const boost::shared_ptr<Slice> slice2);
+	
 	pipeline::Input<Blocks> _blocks;
 	pipeline::Input<SliceStore> _store;
 	pipeline::Output<Slices> _slices;
