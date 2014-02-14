@@ -38,8 +38,22 @@ private:
 		pipeline::Output<LinearConstraints> _constraints;
 	};
 	
+	class EndExtractor : public pipeline::SimpleProcessNode<>
+	{
+	public:
+		EndExtractor();
+		
+	private:
+		void updateOutputs();
+		
+		pipeline::Input<Segments> _eeSegments;
+		pipeline::Input<Slices> _eeSlices;
+		
+		pipeline::Output<Segments> _allSegments;
+	};
+	
 	void updateOutputs();
-	boost::shared_ptr<Blocks> computeBound(
+	pipeline::Value<Blocks> computeBound(
 		const boost::shared_ptr<ProblemAssembler> problemAssembler);
 	
 	pipeline::Input<PriorCostFunctionParameters> _priorCostFunctionParameters;

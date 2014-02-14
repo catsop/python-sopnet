@@ -1,24 +1,28 @@
 #include <boost/make_shared.hpp>
 
+
+#include <catmaid/persistence/SegmentPointerHash.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <features/SegmentFeaturesExtractor.h>
-#include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearConstraint.h>
 #include <inference/LinearConstraints.h>
+#include <inference/LinearCostFunction.h>
 #include <inference/LinearSolver.h>
 #include <inference/LinearSolverParameters.h>
 #include <inference/ObjectiveGenerator.h>
 #include <inference/PriorCostFunction.h>
 #include <inference/PriorCostFunctionParameters.h>
-#include <inference/RandomForestCostFunction.h>
 #include <inference/Reconstructor.h>
 #include <inference/SegmentationCostFunction.h>
+#include <io/FileContentProvider.h>
 #include <neurons/NeuronExtractor.h>
 #include <pipeline/Value.h>
 #include <util/foreach.h>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
+
+#include <inference/io/LinearCostFunctionParametersReader.h>
 
 
 #include "CoreSolver.h"
@@ -27,6 +31,12 @@ using std::vector;
 using std::map;
 
 logger::LogChannel coresolverlog("coresolverlog", "[CoreSolver] ");
+
+util::ProgramOption optionLinearCostFunctionParametersFileBlock(
+		util::_module           = "blockSolver",
+		util::_long_name        = "linearCostFunctionParameters",
+		util::_description_text = "Path to a file containing the weights for the linear cost function.",
+		util::_default_value    = "./feature_weights.dat");
 
 util::ProgramOption optionRandomForestFileBlock(
 		util::_module           = "blockSolver",
@@ -113,6 +123,57 @@ void CoreSolver::ConstraintAssembler::updateOutputs()
 	}
 }
 
+CoreSolver::EndExtractor::EndExtractor()
+{
+	registerInput(_eeSegments, "segments");
+	registerInput(_eeSlices, "slices");
+	registerOutput(_allSegments, "segments");
+}
+
+void CoreSolver::EndExtractor::updateOutputs()
+{
+	unsigned int z = 0;
+	SegmentSet segmentSet;
+	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
+	
+	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
+	{
+		if (slice->getSection() > z)
+		{
+			z = slice->getSection();
+		}
+	}
+	
+	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
+	{
+		if (slice->getSection() == z)
+		{
+			boost::shared_ptr<EndSegment> rightEnd =
+				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
+											   Right,
+											   slice);
+			boost::shared_ptr<EndSegment> leftEnd =
+				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
+											   Left,
+											   slice);
+			segmentSet.insert(rightEnd);
+			segmentSet.insert(leftEnd);
+		}
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
+	{
+		segmentSet.insert(segment);
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentSet)
+	{
+		outputSegments->add(segment);
+	}
+	
+	*_allSegments = *outputSegments;
+}
+
 
 void
 CoreSolver::updateOutputs()
@@ -121,12 +182,6 @@ CoreSolver::updateOutputs()
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
-	boost::shared_ptr<SegmentFeaturesExtractor> segmentFeaturesExtractor =
-		boost::make_shared<SegmentFeaturesExtractor>();
-	boost::shared_ptr<PriorCostFunction> priorCostFunction =
-		boost::make_shared<PriorCostFunction>();
-	boost::shared_ptr<RandomForestCostFunction> randomForestCostFunction = 
-		boost::make_shared<RandomForestCostFunction>();
 	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
 		boost::make_shared<ObjectiveGenerator>();
 	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction =
@@ -136,29 +191,40 @@ CoreSolver::updateOutputs()
 	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
 		boost::make_shared<ConstraintAssembler>();
-	boost::shared_ptr<RandomForestHdf5Reader> randomForestHDF5Reader =
-		boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFileBlock.as<std::string>());
+	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();;
+	boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(
+					optionLinearCostFunctionParametersFileBlock.as<std::string>());
+	boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+	boost::shared_ptr<SegmentFeaturesExtractor> segmentFeaturesExtractor =
+		boost::make_shared<SegmentFeaturesExtractor>();
+	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 
 	// inputs and outputs
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
-	boost::shared_ptr<Blocks> boundingBlocks;
+	pipeline::Value<Blocks> boundingBlocks;
 	pipeline::Value<Segments> segments;
 
-
+	LOG_DEBUG(coresolverlog) << "Variables instantiated, setting up pipeline" << std::endl;
+	
 	segmentReader->setInput("blocks", _blocks);
 	sliceReader->setInput("blocks", _blocks);
 	
 	segmentReader->setInput("store", _segmentStore);
 	sliceReader->setInput("store", _sliceStore);
 	
-	constraintAssembler->setInput("segments", segmentReader->getOutput("segments"));
+	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
+	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
+	
+	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
 	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
 	constraintAssembler->setInput("force explanation", _forceExplanation);
 	
-	problemAssembler->addInput("segments", segmentReader->getOutput("segments"));
-	problemAssembler->addInput("linear constraints", constraintAssembler->getOutput("linear constraints"));
+	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
+	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
 	
 
 	// Use problem assembler output to compute the bounding box we need to contain all
@@ -167,44 +233,53 @@ CoreSolver::updateOutputs()
 	boundingBlocks = computeBound(problemAssembler);
 	pipeline::Value<util::point3<unsigned int> > offset(boundingBlocks->location());;
 	
-	segmentFeaturesExtractor->setInput("crop offset", offset);
-	segmentFeaturesExtractor->setInput("segments", problemAssembler->getOutput("segments"));
-	segmentFeaturesExtractor->setInput("raw sections", _rawImageStore->getImageStack(*boundingBlocks));
-	
-	priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
-	
-	randomForestCostFunction->setInput("random forest",
-										randomForestHDF5Reader->getOutput("random forest"));
-	randomForestCostFunction->setInput("features",
-										segmentFeaturesExtractor->getOutput("all features"));
-	
+	LOG_DEBUG(coresolverlog) << "Segment bound computed" << *boundingBlocks << std::endl;
+	LOG_DEBUG(coresolverlog) << "A" << std::endl;
 	
 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-	objectiveGenerator->setInput("segment cost function",
-								  randomForestCostFunction->getOutput("cost function"));
-	objectiveGenerator->addInput("additional cost functions",
-								  priorCostFunction->getOutput("cost function"));
+	
+	LOG_DEBUG(coresolverlog) << "B" << std::endl;
+		
+	segmentFeaturesExtractor->setInput("segments", problemAssembler->getOutput("segments"));
+	segmentFeaturesExtractor->setInput("raw sections", _rawImageStore->getImageStack(*boundingBlocks));
+	segmentFeaturesExtractor->setInput("crop offset", offset);
+	
+	LOG_DEBUG(coresolverlog) << "C" << std::endl;
+	
+	reader->setInput(contentProvider->getOutput());
+	linearCostFunction->setInput("features", segmentFeaturesExtractor->getOutput("all features"));
+	linearCostFunction->setInput("parameters", reader->getOutput());
+	LOG_DEBUG(coresolverlog) << "D" << std::endl;
+	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
 	if (_segmentationCostFunctionParameters)
 	{
+		LOG_DEBUG(coresolverlog) << "D.5" << std::endl;
 		segmentationCostFunction->setInput("membranes", _membraneStore->getImageStack(*boundingBlocks));
 		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 		segmentationCostFunction->setInput("crop offset", offset);
-		objectiveGenerator->addInput("additional cost functions",
+		objectiveGenerator->addInput("cost functions",
 									  segmentationCostFunction->getOutput("cost function"));
 	}
 
+	LOG_DEBUG(coresolverlog) << "E" << std::endl;
+	
+	
 	
 	linearSolver->setInput("objective", objectiveGenerator->getOutput());
 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
 	linearSolver->setInput("parameters", binarySolverParameters);
 	
+	LOG_DEBUG(coresolverlog) << "F" << std::endl;
+	
 	reconstructor->setInput("segments", problemAssembler->getOutput("segments"));
 	reconstructor->setInput("solution", linearSolver->getOutput());
 
+	LOG_DEBUG(coresolverlog) << "G" << std::endl;
+	
 	neuronExtractor->setInput("segments", reconstructor->getOutput());
 	
-	std::cout << " GO! " << std::endl;
+	LOG_DEBUG(coresolverlog) << "Pipeline is setup, extracting neurons" << std::endl;
 	
 	neurons = neuronExtractor->getOutput();
 	segments = problemAssembler->getOutput("segments");
@@ -213,17 +288,17 @@ CoreSolver::updateOutputs()
 	*_neurons = *neurons;
 }
 
-boost::shared_ptr<Blocks>
+pipeline::Value<Blocks>
 CoreSolver::computeBound(const boost::shared_ptr<ProblemAssembler> problemAssembler)
 {
-	pipeline::Value<Segments> segments = problemAssembler->getOutput("segments");
+		pipeline::Value<Segments> segments = problemAssembler->getOutput("segments");
 	if (segments->size() > 0)
 	{
 		util::rect<int> bound =
 			segments->getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
 		boost::shared_ptr<Box<> > box;
-		boost::shared_ptr<Blocks> boundBlocks;
-			
+		pipeline::Value<Blocks> boundBlocks;
+		
 		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 		{
 			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
@@ -235,12 +310,14 @@ CoreSolver::computeBound(const boost::shared_ptr<ProblemAssembler> problemAssemb
 		
 		box = boost::make_shared<Box<> >(bound, _blocks->location().z, _blocks->size().z);
 		
-		boundBlocks = _blocks->getManager()->blocksInBox(box);
+		*boundBlocks = *(_blocks->getManager()->blocksInBox(box));
+		
 		boundBlocks->expand(util::point3<int>(0,0,1));
 		return boundBlocks;
 	}
 	else
 	{
+		LOG_DEBUG(coresolverlog) << "No segments, returning request bound." << std::endl;
 		return _blocks;
 	}
 }
