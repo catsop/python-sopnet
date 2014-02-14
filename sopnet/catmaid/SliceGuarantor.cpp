@@ -78,6 +78,9 @@ SliceGuarantor::guaranteeSlices()
 	
 	updateInputs();
 	
+	
+	LOG_DEBUG(sliceguarantorlog) << "Guaranteeing slices for region " << *_blocks << std::endl;
+	
 	if (checkSlices())
 	{
 		LOG_DEBUG(sliceguarantorlog) << "All blocks have already been extracted" << std::endl;
@@ -148,7 +151,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 							  const shared_ptr<ConflictSets> conflictSets,
 							  const shared_ptr<Blocks> extractBlocks)
 {
-	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline" << std::endl;
+	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline for section " << z << std::endl;
 	shared_ptr<Blocks> nbdBlocks;	
 	
 	bool okSlices = false;
