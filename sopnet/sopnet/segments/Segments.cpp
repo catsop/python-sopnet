@@ -97,6 +97,8 @@ void Segments::add(boost::shared_ptr<Segment> segment)
 				add(branch);
 			}
 			break;
+		default:
+			std::cout << "AAAAAH!!! NEVER SHOULD HAVE HAPPENED!" << std::endl;
 		// Don't do anything for BaseSegmentType, which we should never see.
 	}
 }
