@@ -45,9 +45,14 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 	{
 		if (_blockSegmentMap.count(*block))
 		{
+			LOG_DEBUG(localsegmentstorelog) << "Retrieving segments for " << *block << std::endl;
 			boost::shared_ptr<Segments> blockSegments = _blockSegmentMap[*block];
-			segmentSet.insert(blockSegments->getSegments().begin(),
-							  blockSegments->getSegments().end()); 
+			LOG_DEBUG(localsegmentstorelog) << "Retrieved " << blockSegments->size() <<
+				" segments" << std::endl;
+			foreach (boost::shared_ptr<Segment> segment, blockSegments->getSegments())
+			{
+				segmentSet.insert(segment);
+			}
 		}
 		else
 		{
@@ -56,10 +61,14 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 		}
 	}
 	
+	LOG_DEBUG(localsegmentstorelog) << "Retrieved " << segmentSet.size() << " unique segments" << std::endl;
+	
 	foreach (boost::shared_ptr<Segment> segment, segmentSet)
 	{
 		segments->add(segment);
 	}
+	
+	LOG_DEBUG(localsegmentstorelog) << "returning" << std::endl;
 	
 	return segments;
 }
