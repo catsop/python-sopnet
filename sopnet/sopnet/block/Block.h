@@ -43,6 +43,26 @@ public:
 	 */
 	bool operator==(const Block& other) const;
 	
+	bool operator<(const Block& other) const
+	{
+		if (_location.z < other._location.z)
+		{
+			return true;
+		}
+		
+		if (_location.y < other._location.y)
+		{
+			return true;
+		}
+		
+		if (_location.x < other._location.x)
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
 	/**
 	* Return the bounding box representing this Block in XY
 	*/
