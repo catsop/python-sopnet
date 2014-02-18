@@ -175,3 +175,25 @@ LocalSegmentStore::equivalentSegment(const boost::shared_ptr<Segment>& segment)
 		return segment;
 	}
 }
+
+void LocalSegmentStore::dumpStore()
+{
+	foreach (boost::shared_ptr<Segment> segment, _segmentMasterList)
+	{
+		LOG_ALL(localsegmentstorelog) << segment->getId();
+		
+		foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+		{
+			LOG_ALL(localsegmentstorelog) << " " << slice->getId();
+		}
+		
+		LOG_ALL(localsegmentstorelog) << " :";
+		
+		foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+		{
+			LOG_ALL(localsegmentstorelog) << " " << slice->getId();
+		}
+		
+		LOG_ALL(localsegmentstorelog) << std::endl;
+	}
+}

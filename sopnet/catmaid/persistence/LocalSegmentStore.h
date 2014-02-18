@@ -38,6 +38,8 @@ public:
 
 	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment);
 	
+	void dumpStore();
+	
 private:
 	void mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
 						   const boost::shared_ptr<Block>& block);

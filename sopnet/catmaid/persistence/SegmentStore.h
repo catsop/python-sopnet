@@ -30,6 +30,7 @@ public:
 
 	virtual pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment) = 0;
 
+	virtual void dumpStore() = 0;
 };
 
 
