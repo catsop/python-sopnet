@@ -37,6 +37,8 @@ To compile the python wrappers (pysopnet), you need additionally:
   • libboost-python-dev
   • libpython-dev
 
+The build process is managed by cmake of which you need at least version 2.8.8.
+
 Gurobi Solver
 -------------
 
