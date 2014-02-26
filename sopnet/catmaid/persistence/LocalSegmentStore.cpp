@@ -52,7 +52,7 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 				" segments" << std::endl;
 			foreach (boost::shared_ptr<Segment> segment, blockSegments->getSegments())
 			{
-				segmentSet.insert(segment);
+				segmentSet.add(segment);
 			}
 		}
 		else
@@ -149,31 +149,28 @@ LocalSegmentStore::mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
 void
 LocalSegmentStore::addSegmentToMasterList(const boost::shared_ptr<Segment>& segment)
 {
-	if (_segmentMasterList.count(segment))
+	if (_segmentMasterList.find(segment))
 	{
-		unsigned int existingId = (*_segmentMasterList.find(segment))->getId();
+		unsigned int existingId = _segmentMasterList.find(segment)->getId();
 		_idSegmentMap[segment->getId()] = _idSegmentMap[existingId];
 	}
 	else
 	{
 		_idSegmentMap[segment->getId()] = segment;
-		_segmentMasterList.insert(segment);
+		_segmentMasterList.add(segment);
 	}
 }
 
 boost::shared_ptr<Segment>
 LocalSegmentStore::equivalentSegment(const boost::shared_ptr<Segment>& segment)
 {
-	if (_segmentMasterList.count(segment))
+	if (_segmentMasterList.contains(segment))
 	{
-		unsigned int id = (*_segmentMasterList.find(segment))->getId();
+		unsigned int id = _segmentMasterList.find(segment)->getId();
 		boost::shared_ptr<Segment> eqSegment = _idSegmentMap[id];
 		return eqSegment;
 	}
-	else
-	{
-		return segment;
-	}
+	return segment;
 }
 
 void LocalSegmentStore::dumpStore()

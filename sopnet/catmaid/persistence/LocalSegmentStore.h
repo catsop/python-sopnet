@@ -9,7 +9,8 @@
 #include <sopnet/segments/Segments.h>
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
-#include "SegmentPointerHash.h"
+#include <sopnet/segments/SegmentSet.h>
+#include <catmaid/persistence/SegmentPointerHash.h>
 
 
 class LocalSegmentStore : public SegmentStore

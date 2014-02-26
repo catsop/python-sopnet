@@ -8,7 +8,7 @@ class SegmentPointerHash
 public:
 	size_t operator()(const boost::shared_ptr<Segment>& segment) const
 	{
-		return hash_value(*segment);
+		return segment->hashValue();
 	}
 };
 
@@ -23,6 +23,6 @@ public:
 };
 
 typedef boost::unordered_set<boost::shared_ptr<Segment>, SegmentPointerHash, SegmentPointerEquals >
-	SegmentSet;
+	SegmentSetType;
 
 #endif //SEGMENT_POINTER_HASH_H__

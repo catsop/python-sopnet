@@ -1,7 +1,6 @@
 #include <boost/make_shared.hpp>
 
 
-#include <catmaid/persistence/SegmentPointerHash.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <features/SegmentFeaturesExtractor.h>
@@ -18,6 +17,7 @@
 #include <io/FileContentProvider.h>
 #include <neurons/NeuronExtractor.h>
 #include <pipeline/Value.h>
+#include <sopnet/segments/SegmentSet.h>
 #include <util/foreach.h>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
@@ -166,7 +166,7 @@ void CoreSolver::EndExtractor::updateOutputs()
 
 	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
 	{
-		segmentSet.insert(segment);
+		segmentSet.add(segment);
 	}
 
 	
@@ -184,8 +184,8 @@ void CoreSolver::EndExtractor::updateOutputs()
 											   Right,
 											   slice);
 			
-			segmentSet.insert(rightEnd);
-			segmentSet.insert(leftEnd);
+			segmentSet.add(rightEnd);
+			segmentSet.add(leftEnd);
 			
 			LOG_ALL(coresolverlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
 		}
