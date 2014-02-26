@@ -121,6 +121,7 @@ SliceGuarantor::guaranteeSlices()
 	// If all sections yielded empty images, then we need to regenerate the image stack.
 	if (allBad)
 	{
+		LOG_DEBUG(sliceguarantorlog) << "No images found from which to extract slices" << std::endl;
 		return extractBlocks;
 	}
 	
@@ -129,6 +130,8 @@ SliceGuarantor::guaranteeSlices()
 		slices->addAll(*slicesVector[i]);
 		conflictSets->addAll(*conflictSetsVector[i]);
 	}
+	
+	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " to " << extractBlocks->length() << " blocks" << std::endl;
 	
 	sliceWriter->setInput("blocks", extractBlocks);
 	sliceWriter->setInput("slices", slices);
@@ -141,6 +144,8 @@ SliceGuarantor::guaranteeSlices()
 	{
 		block->setSlicesFlag(true);
 	}
+	
+	LOG_DEBUG(sliceguarantorlog) << "Done." << std::endl;
 	
 	return pipeline::Value<Blocks>();
 }
@@ -172,12 +177,14 @@ SliceGuarantor::extractSlices(const unsigned int z,
 		Box<> box(bound, z, 1);
 		shared_ptr<Image> image = (*_stackStore->getImageStack(box))[0];
 		
+		LOG_ALL(sliceguarantorlog) << "Processing over " << bound << std::endl;
+		
 		if (image->width() * image->height() == 0)
 		{
 			return false;
 		}
 		
-		nbdBlocks = make_shared<Blocks>(_blocks);
+		nbdBlocks = make_shared<Blocks>(extractBlocks);
 
 		sliceExtractor->setInput("membrane", image);
 
@@ -202,9 +209,16 @@ SliceGuarantor::extractSlices(const unsigned int z,
 			}
 		}
 		
+		LOG_ALL(sliceguarantorlog) << "Extract: " << *extractBlocks << ", Neighbor: " << *nbdBlocks << std::endl; 
+		
 		if (!(okSlices = extractBlocks->size() == nbdBlocks->size()))
 		{
+			LOG_ALL(sliceguarantorlog) << "Need to expand" << std::endl;
 			extractBlocks->addAll(nbdBlocks);
+		}
+		else
+		{
+			LOG_ALL(sliceguarantorlog) << "Done for section " << z << std::endl;
 		}
 	}
 	
