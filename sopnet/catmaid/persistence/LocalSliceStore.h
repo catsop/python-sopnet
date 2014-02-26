@@ -35,12 +35,12 @@ public:
 	void dumpStore();
 private:
 	
-	void mapSliceToBlock(const boost::shared_ptr<Slice>& slice,
-						 const boost::shared_ptr<Block>& block);
-	void mapBlockToSlice(const boost::shared_ptr<Block>& block,
-						 const boost::shared_ptr<Slice>& slice);
+	void mapSliceToBlock(const boost::shared_ptr<Slice> slice,
+						 const boost::shared_ptr<Block> block);
+	void mapBlockToSlice(const boost::shared_ptr<Block> block,
+						 const boost::shared_ptr<Slice> slice);
 
-	boost::shared_ptr<Slice> equivalentSlice(const boost::shared_ptr<Slice>& slice);
+	boost::shared_ptr<Slice> equivalentSlice(const boost::shared_ptr<Slice> slice);
 	
 	SliceSet _sliceMasterSet;
 	SliceBlockMap _sliceBlockMap;
