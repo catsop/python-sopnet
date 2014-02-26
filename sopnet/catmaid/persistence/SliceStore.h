@@ -56,6 +56,8 @@ public:
 	
 	virtual pipeline::Value<ConflictSets>
 		retrieveConflictSets(pipeline::Value<Slices> slices) = 0;
+
+	virtual void dumpStore() = 0;
 };
 
 #endif //SLICE_STORE_H__
