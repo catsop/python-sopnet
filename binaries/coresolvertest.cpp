@@ -1,4 +1,6 @@
 #include <string>
+#include <fstream>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/filesystem.hpp>
@@ -28,6 +30,7 @@
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/SegmentReader.h>
+#include <sopnet/segments/SegmentSet.h>
 
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
@@ -37,9 +40,8 @@
 #include <neurons/NeuronExtractor.h>
 
 using util::point3;
-using std::cout;
-using std::endl;
 using namespace logger;
+using namespace std;
 
 
 int experiment = 0;
@@ -64,7 +66,7 @@ void handleException(boost::exception& e) {
 }
 
 
-void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory) {
+void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory, ofstream& file) {
 
 	unsigned int section = slice.getSection();
 	unsigned int id      = slice.getId();
@@ -74,6 +76,8 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory)
 		"_" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
 		"_" + boost::lexical_cast<std::string>(bbox.minY) + ".png";
 
+	file << id << ", " << slice.hashValue() << ";" << endl;
+		
 	vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()),
 					   vigra::ImageExportInfo(filename.c_str()));
 }
@@ -82,6 +86,9 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory)
 void writeAllSlices(const boost::shared_ptr<ImageStack>& stack)
 {
 	int i = 0;
+
+	ofstream sliceFile;
+	sliceFile.open("./true_slices/sliceids.txt");
 	
 	foreach (boost::shared_ptr<Image> image, *stack)
 	{
@@ -92,20 +99,27 @@ void writeAllSlices(const boost::shared_ptr<ImageStack>& stack)
 		slices = extractor->getOutput("slices");
 		foreach (boost::shared_ptr<Slice> slice, *slices)
 		{
-			writeSliceImage(*slice, "./true_slices");
+			writeSliceImage(*slice, "./true_slices", sliceFile);
 		}
 	}
+	
+	sliceFile.close();
 }
 
 void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
 					  const boost::shared_ptr<Blocks>& blocks)
 {
-	std::string path = "./experiment_" + boost::lexical_cast<std::string>(experiment++);
+	std::string path = "./experiment_" + boost::lexical_cast<std::string>(experiment);
 	boost::filesystem::path dir(path);
 	pipeline::Value<Slices> slices;
 	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
 	
+	ofstream sliceFile;
+	string slicelog = path + "/sliceids.txt";
 	boost::filesystem::create_directory(dir);
+	
+	LOG_USER(out) << "Writing slice ids to " << path << "/sliceids.txt" << std::endl;
+	sliceFile.open(slicelog.c_str());
 	
 	reader->setInput("store", store);
 	reader->setInput("blocks", blocks);
@@ -113,8 +127,10 @@ void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
 	
 	foreach (boost::shared_ptr<Slice>& slice, *slices)
 	{
-		writeSliceImage(*slice, path);
+		writeSliceImage(*slice, path, sliceFile);
 	}
+	
+	sliceFile.close();
 }
 
 
@@ -274,10 +290,9 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	segmentsOut->addAll(segments);
 	neuronsOut->addAll(neurons);
 	
-	//localSliceStore->dumpStore();
+	localSliceStore->dumpStore();
 	
-	//writeSliceImages(sliceStore, blockManager);
-	
+	writeSliceImages(sliceStore, blocks);
 }
 
 unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)
@@ -290,12 +305,119 @@ unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int deno
 	return result;
 }
 
-void compareResults(const std::string& title,
-					const boost::shared_ptr<Segments>& sopnetSegments,
-					const boost::shared_ptr<SegmentTrees>& sopnetNeurons,
-					const boost::shared_ptr<Segments>& blockSegments,
-					const boost::shared_ptr<SegmentTrees>& blockNeurons)
+bool segmentVectorContains(vector<boost::shared_ptr<Segment> >& segments, const boost::shared_ptr<Segment> segment)
 {
+	foreach (boost::shared_ptr<Segment> vSeg, segments)
+	{
+		if (*segment == *vSeg)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool segmentSetContains(SegmentSet& segments, const boost::shared_ptr<Segment> segment)
+{
+// 	foreach (boost::shared_ptr<Segment> vSeg, segments)
+// 	{
+// 		if (*segment == *vSeg)
+// 		{
+// 			return true;
+// 		}
+// 	}
+// 	
+// 	return false;
+
+	return segments.contains(segment);
+}
+
+void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment, const string& prefix)
+{
+	int i = 0;
+	
+	switch (segment->getType())
+	{
+		case EndSegmentType:
+			file << "0 ";
+			break;
+		case ContinuationSegmentType:
+			file << "1 ";
+			break;
+		case BranchSegmentType:
+			file << "2 ";
+			break;
+		default:
+			file << "-1 ";
+	}
+	
+	file << prefix.c_str() << " ";
+	
+	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+	{
+		++i;
+		file << slice->hashValue() << " ";
+	}
+	
+	for (int j = i; j < 3; ++j)
+	{
+		file << "0 ";
+	}
+	
+	file << endl;
+}
+
+void compareSegments(const boost::shared_ptr<Segments> segments1,
+					 const boost::shared_ptr<Segments> segments2,
+					 std::string path)
+{
+	vector<boost::shared_ptr<Segment> > segmentVector1 = segments1->getSegments();
+	vector<boost::shared_ptr<Segment> > segmentVector2 = segments2->getSegments();
+	
+	LOG_USER(out) << "Writing segment comparison to " << path << std::endl;
+	
+	ofstream file;
+	file.open(path.c_str());
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentVector1)
+	{
+		writeSegment(file, segment, "-1");
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentVector2)
+	{
+		writeSegment(file, segment, "-2");
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentVector1)
+	{
+		if (!segmentVectorContains(segmentVector2, segment))
+		{
+			writeSegment(file, segment, "0");
+		}
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segmentVector2)
+	{
+		if (! segmentVectorContains(segmentVector1, segment))
+		{
+			writeSegment(file, segment, "1");
+		}
+	}
+	
+	file.close();
+}
+
+void compareResults(const std::string& title,
+					const boost::shared_ptr<Segments> sopnetSegments,
+					const boost::shared_ptr<SegmentTrees> sopnetNeurons,
+					const boost::shared_ptr<Segments> blockSegments,
+					const boost::shared_ptr<SegmentTrees> blockNeurons,
+					int exp)
+{
+	std::string path;
+	
 	LOG_USER(out) << "For " << title << ": (Sopnet / Core)" << endl;
 	LOG_USER(out) << "Segments:" << endl;
 	LOG_USER(out) << "    Ends:          " << sopnetSegments->getEnds().size() << "\t" <<
@@ -305,6 +427,11 @@ void compareResults(const std::string& title,
 	LOG_USER(out) << "    Branches:      " << sopnetSegments->getBranches().size() << "\t" <<
 		blockSegments->getBranches().size() << endl;
 	LOG_USER(out) << "Neurons: " << sopnetNeurons->size() << "\t" << blockNeurons->size() << endl;
+
+	path = "./experiment_" + boost::lexical_cast<std::string>(exp) + "/sopnet_block_seg_diff.txt";
+	
+	compareSegments(sopnetSegments, blockSegments, path);
+	
 }
 
 void testSliceGuarantor(const std::string& membranePath,
@@ -389,8 +516,8 @@ void testSolver(const std::string& membranePath,
 	boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBound = boost::make_shared<SegmentTrees>();
 	boost::shared_ptr<SegmentTrees> coreSolverNeuronsOvlpBoundSequential = boost::make_shared<SegmentTrees>();
 	
-	blockSize50 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 1, 2),
-											 fractionCeiling(stackSize.y, 1, 2), stackSize.z);
+	blockSize50 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 1, 4),
+											 fractionCeiling(stackSize.y, 1, 4), stackSize.z);
 	// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
 	// The result should not change in this case.
 	blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
@@ -400,7 +527,7 @@ void testSolver(const std::string& membranePath,
 	segmentationCostParameters->weight = 0;
 	segmentationCostParameters->priorForeground = 0.2;
 	
-	priorCostFunctionParameters->priorContinuation = -100;
+	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
 	LOG_USER(out) << "Stack size: " << stackSize << endl;
@@ -425,6 +552,7 @@ void testSolver(const std::string& membranePath,
 		stackSize,
 		stackSize,
 		true);
+	++experiment;
 	
 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special multi-block magic" << endl;
 	
@@ -437,6 +565,8 @@ void testSolver(const std::string& membranePath,
 		stackSize,
 		blockSize50,
 		true);
+	++experiment;
+
 	
 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-block magic" << endl;
 	
@@ -449,6 +579,7 @@ void testSolver(const std::string& membranePath,
 		stackSize,
 		blockSize50,
 		false);
+	++experiment;
 	
 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special boundary-overlapping magic" << endl;
 	
@@ -461,6 +592,7 @@ void testSolver(const std::string& membranePath,
 		stackSize,
 		blockSize40,
 		true);
+	++experiment;
 	
 	LOG_USER(out) << "CORE SOLVING POWER!!!! With special sequential-boundary-overlapping magic" << endl;
 	
@@ -473,12 +605,14 @@ void testSolver(const std::string& membranePath,
 		stackSize,
 		blockSize40,
 		false);
+	++experiment;
+
 	
-	compareResults("full stack", sopnetSegments, sopnetNeurons, coreSolverSegments, coreSolverNeurons);
-	compareResults("half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsBlock, coreSolverNeuronsBlock);
-	compareResults("sequential half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsSequential, coreSolverNeuronsSequential);
-	compareResults("40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBound, coreSolverNeuronsOvlpBound);
-	compareResults("sequential 40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBoundSequential, coreSolverNeuronsOvlpBoundSequential);
+	compareResults("full stack", sopnetSegments, sopnetNeurons, coreSolverSegments, coreSolverNeurons, 0);
+	compareResults("half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsBlock, coreSolverNeuronsBlock, 1);
+	compareResults("sequential half blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsSequential, coreSolverNeuronsSequential, 2);
+	compareResults("40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBound, coreSolverNeuronsOvlpBound, 3);
+	compareResults("sequential 40% blocks", sopnetSegments, sopnetNeurons, coreSolverSegmentsOvlpBoundSequential, coreSolverNeuronsOvlpBoundSequential, 4);
 
 }
 
@@ -521,12 +655,12 @@ int main(int optionc, char** optionv)
 		blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
 									fractionCeiling(stackSize.y, 2, 5), stackSize.z);
 		
-		//writeAllSlices(testStack);
+		writeAllSlices(testStack);
 		
 		testStack->clear();
 		
 		
-		testSliceGuarantor(membranePath, stackSize, blockSize40);
+		//testSliceGuarantor(membranePath, stackSize, blockSize40);
 		
 		testSolver(membranePath,
 					 rawPath,
