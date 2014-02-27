@@ -6,7 +6,7 @@ EndSegment::EndSegment(
 		Direction direction,
 		boost::shared_ptr<Slice> slice) :
 	Segment(id, direction, slice->getComponent()->getCenter(), slice->getSection() + (direction == Left ? 0 : 1)),
-	_slice(slice) {}
+	_slice(slice) { setHash(); }
 
 boost::shared_ptr<Slice>
 EndSegment::getSlice() const {

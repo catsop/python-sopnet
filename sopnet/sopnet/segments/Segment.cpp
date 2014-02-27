@@ -106,6 +106,10 @@ Segment::operator==(const Segment& other) const
 			
 			if (!contains)
 			{
+				if (_hashValue == other._hashValue)
+				{
+					LOG_ALL(segmentlog) << "equals returns false for equivalent segments (B): " << _hashValue << std::endl;
+				}
 				return false;
 			}
 		}
@@ -114,36 +118,66 @@ Segment::operator==(const Segment& other) const
 	}
 	else
 	{
+		if (_hashValue == other._hashValue)
+		{
+			LOG_ALL(segmentlog) << "equals returns false for equivalent segments (A): " << _hashValue << std::endl;
+			LOG_ALL(segmentlog) << "this of type " << typeString(getType()) <<
+				", that of type " << typeString(other.getType()) << std::endl;
+			
+		}
 		return false;
 	}
 }
 
-SegmentType Segment::getType() const
+std::string Segment::typeString(const SegmentType type)
 {
-	return BaseSegmentType;
+	switch (type)
+	{
+		case EndSegmentType:
+			return "end";
+		case ContinuationSegmentType:
+			return "continuation";
+		case BranchSegmentType:
+			return "branch";
+		default:
+			return "unknown";
+	}
+}
+
+
+std::size_t
+Segment::hashValue() const
+{
+	return _hashValue;
+}
+
+void
+Segment::setHash()
+{
+	std::size_t seed = 0;
+	
+	if (getDirection() == Left)
+	{
+		boost::hash_combine(seed, boost::hash_value(37));
+	}
+	else if(getDirection() == Right)
+	{
+		boost::hash_combine(seed, boost::hash_value(61));
+	}
+	
+	foreach(boost::shared_ptr<Slice> slice, getSlices())
+	{
+		boost::hash_combine(seed, hash_value(slice));
+	}
+	
+	_hashValue = seed;
 }
 
 
 
 std::size_t hash_value(const Segment& segment)
 {
-	std::size_t seed = 0;
-	
-	if (segment.getDirection() == Left)
-	{
-		boost::hash_combine(seed, boost::hash_value(2));
-	}
-	else if(segment.getDirection() == Right)
-	{
-		boost::hash_combine(seed, boost::hash_value(8));
-	}
-	
-	foreach(boost::shared_ptr<Slice> slice, segment.getSlices())
-	{
-		boost::hash_combine(seed, hash_value(slice));
-	}
-	
-	return seed;
+	return segment.hashValue();
 }
 
 

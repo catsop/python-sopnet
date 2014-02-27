@@ -62,6 +62,8 @@ public:
 	 * Get the next available segment id.
 	 */
 	static unsigned int getNextSegmentId();
+	
+	static std::string typeString(const SegmentType type);
 
 	virtual std::vector<boost::shared_ptr<Slice> > getSlices() const = 0;
 
@@ -71,8 +73,15 @@ public:
 	
 	bool operator== (const Segment& other) const;
 	
-	virtual SegmentType getType() const;
+	virtual SegmentType getType() const = 0;
+	
+	std::size_t hashValue() const;
 
+protected:
+	std::size_t _hashValue;
+	
+	void setHash();
+	
 private:
 
 	static unsigned int NextSegmentId;
@@ -91,6 +100,8 @@ private:
 
 	// the number of the inter-section interval this segment lives in
 	unsigned int _interSectionInterval;
+	
+	
 };
 
 std::size_t hash_value(const Segment& segment);

@@ -17,7 +17,7 @@ BranchSegment::BranchSegment(
 			sourceSlice->getSection() + (direction == Left ? 0 : 1)),
 	_sourceSlice(sourceSlice),
 	_targetSlice1(targetSlice1),
-	_targetSlice2(targetSlice2) {}
+	_targetSlice2(targetSlice2) { setHash(); }
 
 boost::shared_ptr<Slice>
 BranchSegment::getSourceSlice() const {
