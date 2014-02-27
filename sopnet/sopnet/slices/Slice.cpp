@@ -66,11 +66,10 @@ Slice::isWhole() const
 std::size_t
 Slice::hashValue() const
 {
-	std::size_t seed = getComponent()->getHashValue();
+	std::size_t seed = getComponent()->hashValue();
 	boost::hash_combine(seed, boost::hash_value(getSection()));
 	return seed;
 }
-
 
 std::size_t hash_value(const Slice& slice)
 {
