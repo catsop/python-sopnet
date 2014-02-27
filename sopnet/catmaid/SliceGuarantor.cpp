@@ -131,7 +131,7 @@ SliceGuarantor::guaranteeSlices()
 		conflictSets->addAll(*conflictSetsVector[i]);
 	}
 	
-	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " to " << extractBlocks->length() << " blocks" << std::endl;
+	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " slices to " << extractBlocks->length() << " blocks" << std::endl;
 	
 	sliceWriter->setInput("blocks", extractBlocks);
 	sliceWriter->setInput("slices", slices);
