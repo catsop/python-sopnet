@@ -1,6 +1,6 @@
 #include <string>
 #include <fstream>
-#include <bits/slice_array.h>
+#include <iostream>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -86,13 +86,6 @@ util::ProgramOption optionCoreTestWriteDebugFiles(
 	util::_module = 			"core",
 	util::_long_name = 			"writeDebugFiles",
 	util::_description_text = 	"Write debug files");
-
-
-util::ProgramOption optionCoreTestMembranesPath(
-	util::_module = 			"core",
-	util::_long_name = 			"writeTextInfo",
-	util::_description_text = 	"Write text debug output");
-
 
 std::string sopnetOutputPath = "./out-sopnet";
 std::string blockwiseOutputPath = "./out-blockwise";
@@ -688,7 +681,7 @@ int sliceContains(const boost::shared_ptr<Slices> slices,
 }
 
 boost::shared_ptr<ConflictSets> mapConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
-												const std::map<unsigned int, unsigned int>& idMap)
+												std::map<unsigned int, unsigned int>& idMap)
 {
 	boost::shared_ptr<ConflictSets> mappedSets = boost::make_shared<ConflictSets>();
 	foreach (ConflictSet conflictSet, *conflictSets)
@@ -723,6 +716,7 @@ bool conflictSetContains(const boost::shared_ptr<ConflictSets> conflictSets,
 bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
+	int i = 0;
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	
 	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
@@ -743,13 +737,13 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		slices = extractor->getOutput("slices");
 		conflictSets = extractor->getOutput("conflict sets");
 		
-		sopnetSlices->addAll(slices);
+		sopnetSlices->addAll(*slices);
 		sopnetConflictSets->addAll(*conflictSets);
 	}
 	
 	// Blockwise variables
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<BlockManager>(stackSize,
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
 																					blockSize);
 	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
@@ -829,7 +823,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	foreach (boost::shared_ptr<Slice> blockwiseSlice, *blockwiseSlices)
 	{
-		int id = sliceContains(blockwiseSlice, sopnetSlices);
+		int id = sliceContains(sopnetSlices, blockwiseSlice);
 		
 		if (id < 0)
 		{
@@ -845,7 +839,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	foreach (boost::shared_ptr<Slice> sopnetSlice, *sopnetSlices)
 	{
-		int id = sliceContains(sopnetSlice, blockwiseSlices);
+		int id = sliceContains(blockwiseSlices, sopnetSlice);
 		
 		if (id < 0)
 		{
@@ -857,13 +851,13 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	if (!ok)
 	{
 		LOG_DEBUG(coretestlog) << "Slices found in Blockwise output but not Sopnet:" << endl;
-		foreach (boost::shared_ptr<Slice> slice, bsSlicesSetDiff)
+		foreach (boost::shared_ptr<Slice> slice, *bsSlicesSetDiff)
 		{
 			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
 		}
 		
 		LOG_DEBUG(coretestlog) << "Slices found in Sopnet output but not Blockwise:" << endl;
-		foreach (boost::shared_ptr<Slice> slice, sbSlicesSetDiff)
+		foreach (boost::shared_ptr<Slice> slice, *sbSlicesSetDiff)
 		{
 			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
 		}
@@ -877,7 +871,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		
 		foreach (ConflictSet blockwiseConflict, *blockwiseConflictSetsSopnetIds)
 		{
-			if (!conflictSetContains(blockwiseConflict, sopnetConflictSets))
+			if (!conflictSetContains(sopnetConflictSets, blockwiseConflict))
 			{
 				bsConflictSetDiff->add(blockwiseConflict);
 				ok = false;
@@ -886,7 +880,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		
 		foreach (ConflictSet sopnetConflict, *sopnetConflictSets)
 		{
-			if (!conflictSetContains(sopnetConflict, blockwiseConflictSetsSopnetIds))
+			if (!conflictSetContains(blockwiseConflictSetsSopnetIds, sopnetConflict))
 			{
 				
 				sbConflictSetDiff->add(sopnetConflict);
@@ -897,13 +891,13 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		if (!ok)
 		{
 			LOG_DEBUG(coretestlog) << "ConflictSets found in Blockwise output but not Sopnet:" << endl;
-			foreach (ConflictSet conflictSet, bsConflictSetDiff)
+			foreach (ConflictSet conflictSet, *bsConflictSetDiff)
 			{
 				LOG_DEBUG(coretestlog) << conflictSet << endl;
 			}
 			
 			LOG_DEBUG(coretestlog) << "ConflictSets found in Sopnet output but not Blockwise:" << endl;
-			foreach (ConflictSet conflictSet, sbConflictSetDiff)
+			foreach (ConflictSet conflictSet, *sbConflictSetDiff)
 			{
 				LOG_DEBUG(coretestlog) << conflictSet << endl;
 			}
@@ -931,9 +925,11 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	return ok;
 }
 
-void testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
+	int i = 0;
+	bool segExtraction = false;
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	
 	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
@@ -951,10 +947,11 @@ void testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		extractor->setInput("membrane", image);
 		nextSlices = extractor->getOutput("slices");
 		
-		if (prevSlices)
+		if (segExtraction)
 		{
+			bool bfe = optionCoreTestForceExplanation;
 			pipeline::Value<bool> forceExplanation =
-				pipeline::Value<bool>(optionCoreTestForceExplanation);
+				pipeline::Value<bool>(bfe);
 			boost::shared_ptr<SegmentExtractor> segmentExtractor =
 				boost::make_shared<SegmentExtractor>();
 			pipeline::Value<Segments> segments;
@@ -967,39 +964,41 @@ void testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 			sopnetSegments->addAll(segments);
 		}
 		
+		segExtraction = true;
 		prevSlices = nextSlices;
 	}
+	
+	
+	return true;
 }
 
 util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stackSize)
 {
-	std::vector<std::string> strToks;
-	std::stringstream ss(optionCoreTestBlockSizeFraction.as<std::string>());
+	std::string blockSizeFraction = optionCoreTestBlockSizeFraction.as<std::string>();
     std::string item;
 	util::point3<unsigned int> blockSize;
 	int num, denom;
+
+	std::size_t slashPos = blockSizeFraction.find("/");
 	
-    while (std::getline(ss, item, "/"))
+	if (slashPos == std::string::npos)
 	{
-        strToks.push_back(item);
-    }
-	
-	if (strToks.size() == 2)
+		LOG_ALL(coretestlog) << "Got no fraction in block size parameter, setting to stack size" <<
+			endl;
+		blockSize = stackSize;
+	}
+	else
 	{
-		num = boost::lexical_cast<int>(strToks[0]);
-		denom = boost::lexical_cast<int>(strToks[1]);
-	
-		LOG_ALL(coretestlog) << "Got numerator " << num << ", denominator " << denom << endl;
+		std::string numStr = blockSizeFraction.substr(0, slashPos);
+		std::string denomStr = blockSizeFraction.substr(slashPos + 1, std::string::npos);
+		
+		LOG_ALL(coretestlog) << "Got numerator " << numStr << ", denominator " << denomStr << endl;
+		num = boost::lexical_cast<int>(numStr);
+		denom = boost::lexical_cast<int>(denomStr);
 		
 		blockSize = util::point3<unsigned int>(fractionCeiling(stackSize.x, num, denom),
 										fractionCeiling(stackSize.y, num, denom),
 										stackSize.z);
-	}
-	else
-	{
-		LOG_ALL(coretestlog) << "found " << strToks.size() <<
-			" tokens, using stacksize for blocksize" << endl;
-		blockSize = stackSize;
 	}
 
 	LOG_DEBUG(coretestlog) << "Stack size: " << stackSize << ", block size: " << blockSize << endl;
@@ -1063,10 +1062,10 @@ int main(int optionc, char** optionv)
 			return -2;
 		}
 		
-		if (!testSolutions(stackSize, blockSize))
-		{
-			return -3;
-		}
+// 		if (!testSolutions(stackSize, blockSize))
+// 		{
+// 			return -3;
+// 		}
 		
 		return 0;
 	}
