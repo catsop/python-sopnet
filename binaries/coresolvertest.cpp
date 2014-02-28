@@ -183,168 +183,6 @@ void writeSlices(const boost::shared_ptr<Slices> slices,
 	}
 }
 
-
-void sopnetSolver(const std::string& membranePath, const std::string& rawPath,
-	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
-	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
-	const boost::shared_ptr<Segments>& segmentsOut,
-	const boost::shared_ptr<SegmentTrees>& neuronsOut)
-{
-	boost::shared_ptr<ImageStackDirectoryReader> membraneReader =
-		boost::make_shared<ImageStackDirectoryReader>(membranePath);
-	boost::shared_ptr<ImageStackDirectoryReader> rawReader =
-		boost::make_shared<ImageStackDirectoryReader>(rawPath);
-	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("woo hoo");
-	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
-	
-	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Segments> segments;
-	
-	sopnet->setInput("raw sections", rawReader->getOutput());
-	sopnet->setInput("membranes", membraneReader->getOutput());
-	sopnet->setInput("neuron slices", membraneReader->getOutput());
-	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
-	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
-	sopnet->setInput("force explanation", forceExplanation);
-	neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
-	
-	neurons = neuronExtractor->getOutput();
-	segments = sopnet->getOutput("segments");
-	
-	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
-	
-	segmentsOut->addAll(segments);
-	neuronsOut->addAll(neurons);
-}
-
-void mockGuaranteePipeline(const boost::shared_ptr<Blocks> blocks,
-						   const boost::shared_ptr<StackStore> stackStore,
-						   const boost::shared_ptr<SliceStore> sliceStore,
-						   const boost::shared_ptr<SegmentStore> segmentStore)
-{
-	bool done = false;
-	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
-
-	
-	while (!done)
-	{
-		pipeline::Value<Blocks> segmentNeedBlocks;
-		pipeline::Value<Blocks> sliceNeedBlocks;
-		
-		segmentGuarantor->setInput("blocks", blocks);
-		segmentGuarantor->setInput("segment store", segmentStore);
-		segmentGuarantor->setInput("slice store", sliceStore);
-
-		segmentNeedBlocks = segmentGuarantor->guaranteeSegments();
-		
-		if (segmentNeedBlocks->empty())
-		{
-			LOG_USER(out) << "Segments are guaranteed" << std::endl;
-			done = true;
-		}
-		else
-		{
-			LOG_USER(out) << "Segment guarantor said it needs slices from " <<
-				*segmentNeedBlocks << std::endl;
-			sliceGuarantor->setInput("blocks", segmentNeedBlocks);
-			sliceGuarantor->setInput("slice store", sliceStore);
-			sliceGuarantor->setInput("stack store", stackStore);
-			
-			sliceNeedBlocks = sliceGuarantor->guaranteeSlices();
-			
-			if (!sliceNeedBlocks->empty())
-			{
-				LOG_USER(out) << "Slice gaurantor says it couldn't extract from blocks in " <<
-					*sliceNeedBlocks << std::endl;
-				return;
-			}
-			
-		}
-	}
-}
-
-void coreSolver(const std::string& membranePath, const std::string& rawPath,
-	const boost::shared_ptr<SegmentationCostFunctionParameters>& segmentationCostParameters,
-	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	const boost::shared_ptr<pipeline::Wrap<bool> >& forceExplanation,
-	const boost::shared_ptr<Segments>& segmentsOut,
-	const boost::shared_ptr<SegmentTrees>& neuronsOut,
-	
-	const util::point3<unsigned int>& stackSize,
-	const util::point3<unsigned int>& blockSize,
-	const bool extractSimultaneousBlocks)
-{
-
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
-	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
-	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
-	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
-	
-	// Block pipeline variables
-	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
-	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
-	boost::shared_ptr<LocalSliceStore> localSliceStore =
-		boost::shared_ptr<LocalSliceStore>(new LocalSliceStore());
-	boost::shared_ptr<SliceStore> sliceStore = localSliceStore;
-	boost::shared_ptr<SegmentStore> segmentStore =
-		boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
-	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
-	boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
-	
-	// Result Values
-	//pipeline::Value<SliceStoreResult> sliceResult;
-	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Segments> segments;
-	pipeline::Value<Slices> slices;
-	
-	// pipeline
-
-
-
-	if (extractSimultaneousBlocks)
-	{
-		mockGuaranteePipeline(blocks, membraneStackStore, sliceStore, segmentStore);
-	}
-	else
-	{
-		foreach (const boost::shared_ptr<Block> block, *blocks)
-		{
-			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
-			mockGuaranteePipeline(singleBlock, membraneStackStore, sliceStore, segmentStore);
-		}
-	}
-	
-	LOG_USER(out) << "Setting up block solver" << std::endl;
-	coreSolver->setInput("prior cost parameters",
-							priorCostFunctionParameters);
-	coreSolver->setInput("segmentation cost parameters", segmentationCostParameters);
-	coreSolver->setInput("blocks", blocks);
-	coreSolver->setInput("segment store", segmentStore);
-	coreSolver->setInput("slice store", sliceStore);
-	coreSolver->setInput("raw image store", rawStackStore);
-	coreSolver->setInput("membrane image store", membraneStackStore);
-	coreSolver->setInput("force explanation", forceExplanation);
-	
-	LOG_USER(out) << "Inputs are set" << endl;
-	
-	neurons = coreSolver->getOutput("neurons");
-	segments = coreSolver->getOutput("segments");
-	
-	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
-	
-	segmentsOut->addAll(segments);
-	neuronsOut->addAll(neurons);
-	
-	localSliceStore->dumpStore();
-	
-// 	writeSliceImages(sliceStore, blocks);
-}
-
 unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)
 {
 	unsigned int result = m * num / denom;
@@ -355,35 +193,7 @@ unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int deno
 	return result;
 }
 
-bool segmentVectorContains(vector<boost::shared_ptr<Segment> >& segments, const boost::shared_ptr<Segment> segment)
-{
-	foreach (boost::shared_ptr<Segment> vSeg, segments)
-	{
-		if (*segment == *vSeg)
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool segmentSetContains(SegmentSet& segments, const boost::shared_ptr<Segment> segment)
-{
-// 	foreach (boost::shared_ptr<Segment> vSeg, segments)
-// 	{
-// 		if (*segment == *vSeg)
-// 		{
-// 			return true;
-// 		}
-// 	}
-// 	
-// 	return false;
-
-	return segments.contains(segment);
-}
-
-void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment, const string& prefix)
+void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment)
 {
 	int i = 0;
 	
@@ -402,8 +212,6 @@ void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment, cons
 			file << "-1 ";
 	}
 	
-	file << prefix.c_str() << " ";
-	
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
 		++i;
@@ -418,46 +226,23 @@ void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment, cons
 	file << endl;
 }
 
-void compareSegments(const boost::shared_ptr<Segments> segments1,
-					 const boost::shared_ptr<Segments> segments2,
-					 std::string path)
+void writeSegments(const boost::shared_ptr<Segments> segments,
+				   const std::string path)
 {
-	vector<boost::shared_ptr<Segment> > segmentVector1 = segments1->getSegments();
-	vector<boost::shared_ptr<Segment> > segmentVector2 = segments2->getSegments();
+	boost::filesystem::path dir(path);
 	
-	LOG_USER(out) << "Writing segment comparison to " << path << std::endl;
+	ofstream segmentFile;
+	std::string segmentlog = path + "/segments.txt";
+
+	segmentFile.open(segmentlog.c_str());
 	
-	ofstream file;
-	file.open(path.c_str());
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentVector1)
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
-		writeSegment(file, segment, "-1");
+		writeSegment(segmentFile, segment);
 	}
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentVector2)
-	{
-		writeSegment(file, segment, "-2");
-	}
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentVector1)
-	{
-		if (!segmentVectorContains(segmentVector2, segment))
-		{
-			writeSegment(file, segment, "0");
-		}
-	}
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentVector2)
-	{
-		if (! segmentVectorContains(segmentVector1, segment))
-		{
-			writeSegment(file, segment, "1");
-		}
-	}
-	
-	file.close();
+
 }
+
 
 void compareResults(const std::string& title,
 					const boost::shared_ptr<Segments> sopnetSegments,
@@ -480,64 +265,7 @@ void compareResults(const std::string& title,
 
 	path = "./experiment_" + boost::lexical_cast<std::string>(exp) + "/sopnet_block_seg_diff.txt";
 	
-	compareSegments(sopnetSegments, blockSegments, path);
-	
-}
-
-void testSliceGuarantor(const std::string& membranePath,
-						const util::point3<unsigned int>& stackSize,
-						const util::point3<unsigned int>& blockSize)
-{
-	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
-	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
-	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
-	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
-	pipeline::Value<Blocks> needBlocks;
-	
-	boost::shared_ptr<LocalSliceStore> localSliceStore =
-		boost::make_shared<LocalSliceStore>();
-	boost::shared_ptr<SliceStore> sliceStore = localSliceStore;
-	
-	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
-
-	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	pipeline::Value<Slices> readSlices;
-	
-	sliceGuarantor->setInput("slice store", sliceStore);
-	sliceGuarantor->setInput("stack store", stackStore);
-	
-	foreach (boost::shared_ptr<Block> block, *blocks)
-	{
-		boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
-		sliceGuarantor->setInput("blocks", singleBlock);
-		
-		LOG_USER(out) << "Block: " << *singleBlock << endl;
-		LOG_USER(out) << "Slice guarantor pipeline initialized, guaranteeing slices..." << endl;
-		
-		needBlocks = sliceGuarantor->guaranteeSlices();
-	
-		LOG_USER(out) << "guaranteeSlices() returned " << needBlocks->size() << " blocks." << endl;
-	}
-	
-// 	pipeline::Process<gui::Window> window("test");
-// 	pipeline::Process<ImageStackView> membraneView;
-// 	window->setInput(membraneView->getOutput());
-// 	membraneView->setInput(stackStore->getImageStack(*blocks));
-// 	window->processEvents();
-	
-	sliceReader->setInput("blocks", blocks);
-	sliceReader->setInput("store", sliceStore);
-	
-	readSlices = sliceReader->getOutput("slices");
-	
-	LOG_USER(out) << "Read " << readSlices->size() << " slices" << std::endl;
-	
-// 	writeSliceImages(sliceStore, blocks);
-	
-	//localSliceStore->dumpStore();
+// 	compareSegments(sopnetSegments, blockSegments, path);
 	
 }
 
@@ -713,6 +441,20 @@ bool conflictSetContains(const boost::shared_ptr<ConflictSets> conflictSets,
 	return false;
 }
 
+bool segmentsContains(const boost::shared_ptr<Segments> segments,
+					  const boost::shared_ptr<Segment> segment)
+{
+	foreach (boost::shared_ptr<Segment> otherSegment, segments->getSegments())
+	{
+		if (*otherSegment == *segment)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
@@ -811,15 +553,19 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	// Compare outputs
 	bool ok;
-	// Maps blockwise ids to sopnet ids.
-	std::map<unsigned int, unsigned int> blockwiseSopnetIDMap;
+	
 	// Slices in blockwiseSlices that are not in sopnetSlices
 	boost::shared_ptr<Slices> bsSlicesSetDiff = boost::make_shared<Slices>();
 	// vice-versa
 	boost::shared_ptr<Slices> sbSlicesSetDiff = boost::make_shared<Slices>();
 	boost::shared_ptr<ConflictSets> bsConflictSetDiff = boost::make_shared<ConflictSets>();
 	boost::shared_ptr<ConflictSets> sbConflictSetDiff = boost::make_shared<ConflictSets>();
+	// Here, we will store blockwise conflict sets in which the slice ids are mapped to the
+	// equivalent slide id in the sopnet slices. This allows us to compare conflict sets by their
+	// == operator.
 	boost::shared_ptr<ConflictSets> blockwiseConflictSetsSopnetIds;
+	// Maps blockwise ids to sopnet ids.
+	std::map<unsigned int, unsigned int> blockwiseSopnetIDMap;
 	
 	foreach (boost::shared_ptr<Slice> blockwiseSlice, *blockwiseSlices)
 	{
@@ -850,13 +596,15 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	if (!ok)
 	{
-		LOG_DEBUG(coretestlog) << "Slices found in Blockwise output but not Sopnet:" << endl;
+		LOG_DEBUG(coretestlog) << bsSlicesSetDiff->size() <<
+			" slices were found in the blockwise output but not sopnet: " << endl;
 		foreach (boost::shared_ptr<Slice> slice, *bsSlicesSetDiff)
 		{
 			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
 		}
 		
-		LOG_DEBUG(coretestlog) << "Slices found in Sopnet output but not Blockwise:" << endl;
+		LOG_DEBUG(coretestlog) << bsSlicesSetDiff->size() <<
+			" slices were found in the sopnet output but not blockwise: " << endl;
 		foreach (boost::shared_ptr<Slice> slice, *sbSlicesSetDiff)
 		{
 			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
@@ -890,13 +638,15 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		
 		if (!ok)
 		{
-			LOG_DEBUG(coretestlog) << "ConflictSets found in Blockwise output but not Sopnet:" << endl;
+			LOG_DEBUG(coretestlog) << bsConflictSetDiff->size() <<
+				" ConflictSets were found in the blockwise output but not sopnet:" << endl;
 			foreach (ConflictSet conflictSet, *bsConflictSetDiff)
 			{
 				LOG_DEBUG(coretestlog) << conflictSet << endl;
 			}
 			
-			LOG_DEBUG(coretestlog) << "ConflictSets found in Sopnet output but not Blockwise:" << endl;
+			LOG_DEBUG(coretestlog) << sbConflictSetDiff->size() <<
+				" ConflictSets were found in the sopnet output but not blockwise:" << endl;
 			foreach (ConflictSet conflictSet, *sbConflictSetDiff)
 			{
 				LOG_DEBUG(coretestlog) << conflictSet << endl;
@@ -925,11 +675,80 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	return ok;
 }
 
+void guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
+	const boost::shared_ptr<SliceStore> sliceStore,
+	const boost::shared_ptr<SegmentStore> segmentStore,
+	const boost::shared_ptr<StackStore> stackStore)
+{
+	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
+	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
+	boost::shared_ptr<BlockManager> blockManager = blocks->getManager();
+	
+	sliceGuarantor->setInput("slice store", sliceStore);
+	sliceGuarantor->setInput("stack store", stackStore);
+	segmentGuarantor->setInput("segment store", segmentStore);
+	segmentGuarantor->setInput("slice store", sliceStore);
+	
+	if (optionCoreTestSequential)
+	{
+		foreach (const boost::shared_ptr<Block> block, *blocks)
+		{
+			int count = 0;
+			bool keepGoing = true;
+			pipeline::Value<Blocks> needBlocks;
+			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
+			segmentGuarantor->setInput("blocks", singleBlock);
+			
+			do
+			{
+				needBlocks = segmentGuarantor->guaranteeSegments();
+				if (!needBlocks->empty())
+				{
+					sliceGuarantor->setInput("blocks", needBlocks);
+					sliceGuarantor->guaranteeSlices();
+				}
+				++count;
+				
+				// If we have run more times than there are blocks in the block manager, then there
+				// is definitely something wrong.
+				if (count > blocks->length())
+				{
+					LOG_DEBUG(coretestlog) << "SegmentGuarantor test: too many iterations" << endl;
+					return false;
+				}
+			} while(!needBlocks->empty());
+		}
+	}
+	else
+	{
+		pipeline::Value<Blocks> needBlocks;
+		
+		LOG_DEBUG(coretestlog) << "Extracting slices from entire stack" << endl;
+		
+		sliceGuarantor->setInput("blocks", blocks);
+		segmentGuarantor->setInput("blocks", blocks);
+		
+		sliceGuarantor->guaranteeSlices();
+		needBlocks = segmentGuarantor->guaranteeSegments();
+		
+		if (!needBlocks->empty())
+		{
+			LOG_DEBUG(coretestlog) << "SegmentGuarantor says it needs slices for " <<
+				needBlocks->length() << ", but we extracted slices for all of them" << endl;
+			foreach (boost::shared_ptr<Block> block, *needBlocks)
+			{
+				LOG_DEBUG(coretestlog) << "\t" << *block << endl;
+			}
+			return false;
+		}
+	}
+}
+
 bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
 	int i = 0;
-	bool segExtraction = false;
+	bool segExtraction = false, ok = true;
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	
 	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
@@ -949,6 +768,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		
 		if (segExtraction)
 		{
+			// bfe: Bool Force Explanation
 			bool bfe = optionCoreTestForceExplanation;
 			pipeline::Value<bool> forceExplanation =
 				pipeline::Value<bool>(bfe);
@@ -968,9 +788,241 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		prevSlices = nextSlices;
 	}
 	
+	// Blockwise variables
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
+																					blockSize);
+	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+															   stackSize);
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
+	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
+	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
 	
-	return true;
+	boost::shared_ptr<SliceReader> segmentReader = boost::make_shared<SegmentReader>();
+	
+	pipeline::Value<Segments> blockwiseSegments;
+	
+	// Now, do it blockwise
+	guaranteeSegments(blocks, sliceStore, segmentStore, stackStore);
+	
+	
+	segmentReader->setInput("blocks", blocks);
+	segmentReader->setInput("store", sliceStore);
+	
+	blockwiseSegments = segmentReader->getOutput("slices");
+	
+	// Now, check for differences
+	
+	// Segments that appear in the blockwise segments, but not the sopnet segments
+	boost::shared_ptr<Segments> bsSegmentSetDiff = boost::make_shared<Segments>();
+	// vice-versa
+	boost::shared_ptr<Segments> sbSegmentSetDiff = boost::make_shared<Segments>();
+
+	foreach (boost::shared_ptr<Segment> blockWiseSegment, blockWiseSegments->getSegments())
+	{
+		if (!segmentsContains(sopnetSegments, blockWiseSegment))
+		{
+			bsSegmentSetDiff->add(blockWiseSegment);
+			ok = false;
+		}
+	}
+	
+	foreach (boost::shared_ptr<Segment> sopnetSegment, sopnetSegments->getSegments())
+	{
+		if (!segmentsContains(blockwiseSegments, sopnetSegment))
+		{
+			sbSegmentSetDiff->add(sopnetSegment);
+			ok = false;
+		}
+	}
+	
+	if (optionCoreTestWriteDebugFiles)
+	{
+		writeSegments(sopnetSegments, sopnetOutputPath);
+		writeSegments(blockwiseSegments, blockwiseOutputPath);
+	}
+	
+	if (!ok)
+	{
+		LOG_DEBUG(coretestlog) << bsSegmentSetDiff->size() <<
+			" segments were found in the blockwise output but not sopnet: " << endl;
+		if (bsSegmentSetDiff-size() > 0)
+		{
+			LOG_DEBUG(coretestlog) << "\t" << bsSegmentSetDiff->getEnds().size() <<
+				" Ends" << endl;
+			LOG_DEBUG(coretestlog) << "\t" << bsSegmentSetDiff->getContinuations().size() <<
+				" Continuations" << endl;
+			LOG_DEBUG(coretestlog) << "\t" << bsSegmentSetDiff->getBranches().size() <<
+				" Branches" << endl;
+			
+		}
+		foreach (boost::shared_ptr<Segment> segment, bsSegmentSetDiff->getSegments())
+		{
+			LOG_DEBUG(coretestlog) << Segment::typeString(segment->getType()) << " ";
+			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+			{
+				LOG_DEBUG(coretestlog) << slice->getId() << " ";
+			}
+			LOG_DEBUG(coretestlog) << endl;
+		}
+		
+		LOG_DEBUG(coretestlog) << sbSegmentSetDiff->size() <<
+			" segments were found in the sopnet output but not blockwise: " << endl;
+		if (sbSegmentSetDiff-size() > 0)
+		{
+			LOG_DEBUG(coretestlog) << "\t" << sbSegmentSetDiff->getEnds().size() <<
+				" Ends" << endl;
+			LOG_DEBUG(coretestlog) << "\t" << sbSegmentSetDiff->getContinuations().size() <<
+				" Continuations" << endl;
+			LOG_DEBUG(coretestlog) << "\t" << sbSegmentSetDiff->getBranches().size() <<
+				" Branches" << endl;
+			
+		}
+		foreach (boost::shared_ptr<Segment> segment, sbSegmentSetDiff->getSegments())
+		{
+			LOG_DEBUG(coretestlog) << Segment::typeString(segment->getType()) << " ";
+			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+			{
+				LOG_DEBUG(coretestlog) << slice->getId() << " ";
+			}
+			LOG_DEBUG(coretestlog) << endl;
+		}
+	}
+
+	if (ok)
+	{
+		LOG_DEBUG(coretestlog) << "Segment test passed" << endl;
+	}
+	else
+	{
+		LOG_USER(coretestlog) << "Segment test failed" << endl;
+	}
+	
+	return ok;
 }
+
+void coreSolver(
+	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
+	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
+	const boost::shared_ptr<SegmentTrees>& neuronsOut,
+	util::point3<unsigned int> stackSize,
+	util::point3<unsigned int> blockSize)
+{
+	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
+	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
+	
+	boost::shared_ptr<BlockManager> blockManager =
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<Box<> > box =
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
+	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	
+	// Block pipeline variables
+	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+	boost::shared_ptr<LocalSliceStore> localSliceStore =
+		boost::shared_ptr<LocalSliceStore>(new LocalSliceStore());
+	boost::shared_ptr<SliceStore> sliceStore = localSliceStore;
+	boost::shared_ptr<SegmentStore> segmentStore =
+		boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
+	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
+	boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
+	bool bfe = optionCoreTestForceExplanation;
+	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
+	
+	// Result Values
+	//pipeline::Value<SliceStoreResult> sliceResult;
+	pipeline::Value<SegmentTrees> neurons;
+	pipeline::Value<Segments> segments;
+	pipeline::Value<Slices> slices;
+	
+	// guarantee segments
+	guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore);
+
+	LOG_ALL(coretestlog) << "Setting up block solver" << std::endl;
+	coreSolver->setInput("prior cost parameters",
+							priorCostFunctionParameters);
+	coreSolver->setInput("segmentation cost parameters", segmentationCostParameters);
+	coreSolver->setInput("blocks", blocks);
+	coreSolver->setInput("segment store", segmentStore);
+	coreSolver->setInput("slice store", sliceStore);
+	coreSolver->setInput("raw image store", rawStackStore);
+	coreSolver->setInput("membrane image store", membraneStackStore);
+	coreSolver->setInput("force explanation", forceExplanation);
+	
+	LOG_ALL(coretestlog) << "Inputs are set" << endl;
+	
+	neurons = coreSolver->getOutput("neurons");
+	segments = coreSolver->getOutput("segments");
+	
+	LOG_DEBUG(coretestlog) << "Solved " << neurons->size() << " neurons" << std::endl;
+	
+	neuronsOut->addAll(neurons);
+	
+}
+
+void sopnetSolver(
+	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
+	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
+	const boost::shared_ptr<SegmentTrees>& neuronsOut)
+{
+	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
+	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
+	boost::shared_ptr<ImageStackDirectoryReader> membraneReader =
+		boost::make_shared<ImageStackDirectoryReader>(membranePath);
+	boost::shared_ptr<ImageStackDirectoryReader> rawReader =
+		boost::make_shared<ImageStackDirectoryReader>(rawPath);
+	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("woo hoo");
+	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
+	
+	bool bfe = optionCoreTestForceExplanation;
+	pipeline::Value<SegmentTrees> neurons;
+	pipeline::Value<Segments> segments;
+	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
+	
+	sopnet->setInput("raw sections", rawReader->getOutput());
+	sopnet->setInput("membranes", membraneReader->getOutput());
+	sopnet->setInput("neuron slices", membraneReader->getOutput());
+	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
+	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
+	sopnet->setInput("force explanation", forceExplanation);
+	neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
+	
+	neurons = neuronExtractor->getOutput();
+	segments = sopnet->getOutput("segments");
+	
+	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
+	
+	neuronsOut->addAll(neurons);
+}
+
+bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+{
+	bool ok = true;
+	
+	boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
+		boost::make_shared<SegmentationCostFunctionParameters>();
+	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+		boost::make_shared<PriorCostFunctionParameters>();
+	
+	segmentationCostParameters->weightPotts = 0;
+	segmentationCostParameters->weight = 0;
+	segmentationCostParameters->priorForeground = 0.2;
+	
+	priorCostFunctionParameters->priorContinuation = -50;
+	priorCostFunctionParameters->priorBranch = -100;
+	
+	sopnetSolver(segmentationCostParameters, priorCostFunctionParameters, sopnetNeurons);
+	coreSolver(segmentationCostParameters, priorCostFunctionParameters, blockwiseNeurons,
+			   stackSize, blockSize);
+	
+	return ok;
+}
+
 
 util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stackSize)
 {
@@ -1009,20 +1061,13 @@ util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stack
 void mkdir(const std::string& path)
 {
 	boost::filesystem::path dir(path);
-	
 	boost::filesystem::create_directory(dir);
-
 }
 
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
 	LogManager::init();
-
-	/*
-	 * Assumes membrane path is ./membranes and raw image path is ./raw 
-	 * Requires a file ./segment_rf.hdf compatible with these images
-	 */
 	
 	try
 	{
@@ -1034,12 +1079,6 @@ int main(int optionc, char** optionv)
 		boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
 		
-		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
-		{
-			mkdir(sopnetOutputPath);
-			mkdir(blockwiseOutputPath);
-		}
-		
 		testStack = directoryStackReader->getOutput();
 		nx = testStack->width();
 		ny = testStack->height();
@@ -1048,6 +1087,17 @@ int main(int optionc, char** optionv)
 		stackSize = point3<unsigned int>(nx, ny, nz);
 		
 		blockSize = parseBlockSize(stackSize);
+		
+		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
+		{
+			blockwiseOutputPath = blockwiseOutputPath + "_" +
+				boost::lexical_cast<std::string>(stackSize.x) + "x" + 
+				boost::lexical_cast<std::string>(stackSize.y) + "_" + 
+				boost::lexical_cast<std::string>(blockSize.x) + "x" +
+				boost::lexical_cast<std::string>(blockSize.y);
+			mkdir(sopnetOutputPath);
+			mkdir(blockwiseOutputPath);
+		}
 		
 		testStack->clear();
 		
