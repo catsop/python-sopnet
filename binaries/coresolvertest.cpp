@@ -1,5 +1,6 @@
 #include <string>
 #include <fstream>
+#include <bits/slice_array.h>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -8,6 +9,7 @@
 #include <imageprocessing/ImageStack.h>
 #include <util/Logger.h>
 #include <util/point3.hpp>
+#include <util/ProgramOptions.h>
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
@@ -43,6 +45,51 @@ using util::point3;
 using namespace logger;
 using namespace std;
 
+logger::LogChannel coretestlog("coretestlog", "[CoreTest] ");
+
+util::ProgramOption optionCoreTestMembranesPath(
+	util::_module = 			"core",
+	util::_long_name = 			"membranes",
+	util::_description_text = 	"Path to membrane image stack",
+	util::_default_value =		"./membranes");
+	
+util::ProgramOption optionCoreTestRawImagesPath(
+	util::_module = 			"core",
+	util::_long_name = 			"raw",
+	util::_description_text = 	"Path to raw image stack",
+	util::_default_value =		"./raw");
+
+util::ProgramOption optionCoreTestBlockSizeFraction(
+	util::_module = 			"core",
+	util::_long_name = 			"blockSizeFraction",
+	util::_description_text = 	"Block size, as a fraction of the whole stack, like numerator/denominator",
+	util::_default_value =		"2/5");
+
+util::ProgramOption optionCoreTestSequential(
+	util::_module = 			"core",
+	util::_long_name = 			"sequential",
+	util::_description_text = 	"Determines whether to extract slices/segments sequentially or simultaneously",
+	util::_default_value =		true);
+
+util::ProgramOption optionCoreTestWriteSliceImages(
+	util::_module = 			"core",
+	util::_long_name = 			"writeSliceImages",
+	util::_description_text = 	"Write slice images");
+
+util::ProgramOption optionCoreTestWriteDebugFiles(
+	util::_module = 			"core",
+	util::_long_name = 			"writeDebugFiles",
+	util::_description_text = 	"Write debug files");
+
+
+util::ProgramOption optionCoreTestMembranesPath(
+	util::_module = 			"core",
+	util::_long_name = 			"writeTextInfo",
+	util::_description_text = 	"Write text debug output");
+
+
+std::string sopnetOutputPath = "./out-sopnet";
+std::string blockwiseOutputPath = "./out-blockwise";
 
 int experiment = 0;
 
@@ -65,8 +112,27 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
+void writeConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
+					   const std::string& path)
+{
+	ofstream conflictFile;
+	std::string conflictFilePath = path + "/conflict.txt";
+	conflictFile.open(conflictFilePath.c_str());
+	
+	foreach (const ConflictSet conflictSet, *conflictSets)
+	{
+		foreach (unsigned int id, conflictSet.getSlices())
+		{
+			conflictFile << id << " ";
+		}
+		conflictFile << endl;
+	}
+	
+	conflictFile.close();
+	
+}
 
-void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory, ofstream& file) {
+void writeSlice(const Slice& slice, const std::string& sliceImageDirectory, ofstream& file) {
 
 	unsigned int section = slice.getSection();
 	unsigned int id      = slice.getId();
@@ -76,61 +142,46 @@ void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory,
 		"_" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
 		"_" + boost::lexical_cast<std::string>(bbox.minY) + ".png";
 
-	file << id << ", " << slice.hashValue() << ";" << endl;
-		
-	vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()),
-					   vigra::ImageExportInfo(filename.c_str()));
-}
-
-
-void writeAllSlices(const boost::shared_ptr<ImageStack>& stack)
-{
-	int i = 0;
-
-	ofstream sliceFile;
-	sliceFile.open("./true_slices/sliceids.txt");
-	
-	foreach (boost::shared_ptr<Image> image, *stack)
+	if (optionCoreTestWriteDebugFiles)
 	{
-		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
-			boost::make_shared<SliceExtractor<unsigned char> >(i++);
-		pipeline::Value<Slices> slices;
-		extractor->setInput("membrane", image);
-		slices = extractor->getOutput("slices");
-		foreach (boost::shared_ptr<Slice> slice, *slices)
-		{
-			writeSliceImage(*slice, "./true_slices", sliceFile);
-		}
+		file << id << ", " << slice.hashValue() << ";" << endl;
 	}
-	
-	sliceFile.close();
+
+	if (optionCoreTestWriteSliceImages)
+	{
+		vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()),
+						vigra::ImageExportInfo(filename.c_str()));
+	}
 }
 
-void writeSliceImages(const boost::shared_ptr<SliceStore>& store,
-					  const boost::shared_ptr<Blocks>& blocks)
+void writeSlices(const boost::shared_ptr<Slices> slices,
+					  const std::string path)
 {
-	std::string path = "./experiment_" + boost::lexical_cast<std::string>(experiment);
 	boost::filesystem::path dir(path);
-	pipeline::Value<Slices> slices;
-	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
 	
 	ofstream sliceFile;
 	string slicelog = path + "/sliceids.txt";
-	boost::filesystem::create_directory(dir);
+
+	if (!optionCoreTestWriteDebugFiles && !optionCoreTestWriteSliceImages)
+	{
+		return;
+	}
 	
-	LOG_USER(out) << "Writing slice ids to " << path << "/sliceids.txt" << std::endl;
-	sliceFile.open(slicelog.c_str());
-	
-	reader->setInput("store", store);
-	reader->setInput("blocks", blocks);
-	slices = reader->getOutput("slices");
+	if (optionCoreTestWriteDebugFiles)
+	{
+		sliceFile.open(slicelog.c_str());
+	}
+
 	
 	foreach (boost::shared_ptr<Slice>& slice, *slices)
 	{
-		writeSliceImage(*slice, path, sliceFile);
+		writeSlice(*slice, path, sliceFile);
 	}
 	
-	sliceFile.close();
+	if (optionCoreTestWriteDebugFiles)
+	{
+		sliceFile.close();
+	}
 }
 
 
@@ -292,7 +343,7 @@ void coreSolver(const std::string& membranePath, const std::string& rawPath,
 	
 	localSliceStore->dumpStore();
 	
-	writeSliceImages(sliceStore, blocks);
+// 	writeSliceImages(sliceStore, blocks);
 }
 
 unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)
@@ -485,7 +536,7 @@ void testSliceGuarantor(const std::string& membranePath,
 	
 	LOG_USER(out) << "Read " << readSlices->size() << " slices" << std::endl;
 	
-	writeSliceImages(sliceStore, blocks);
+// 	writeSliceImages(sliceStore, blocks);
 	
 	//localSliceStore->dumpStore();
 	
@@ -616,13 +667,297 @@ void testSolver(const std::string& membranePath,
 
 }
 
+int sliceContains(const boost::shared_ptr<Slices> slices,
+				   const boost::shared_ptr<Slice> slice)
+{
+	foreach (boost::shared_ptr<Slice> otherSlice, *slices)
+	{
+		if (*otherSlice == *slice)
+		{
+			return otherSlice->getId();
+		}
+	}
+	
+	return -1;
+}
+
+boost::shared_ptr<ConflictSets> mapConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
+												const std::map<unsigned int, unsigned int>& idMap)
+{
+	boost::shared_ptr<ConflictSets> mappedSets = boost::make_shared<ConflictSets>();
+	foreach (ConflictSet conflictSet, *conflictSets)
+	{
+		ConflictSet mappedSet;
+		
+		foreach (unsigned int id, conflictSet.getSlices())
+		{
+			mappedSet.addSlice(idMap[id]);
+		}
+		
+		mappedSets->add(mappedSet);
+	}
+	
+	return mappedSets;
+}
+
+bool conflictSetContains(const boost::shared_ptr<ConflictSets> conflictSets,
+						 const ConflictSet conflictSet)
+{
+	foreach (ConflictSet otherConflictSet, *conflictSets)
+	{
+		if (otherConflictSet == conflictSet)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+{
+	// SOPNET variables
+	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
+	
+	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader>(membranePath);
+	pipeline::Value<ImageStack> stack = directoryStackReader->getOutput();
+	
+	pipeline::Value<Slices> sopnetSlices = pipeline::Value<Slices>();
+	pipeline::Value<ConflictSets> sopnetConflictSets = pipeline::Value<ConflictSets>();
+	
+	// Extract Slices as in the original SOPNET pipeline.
+	foreach (boost::shared_ptr<Image> image, *stack)
+	{
+		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
+			boost::make_shared<SliceExtractor<unsigned char> >(i++);
+		pipeline::Value<Slices> slices;
+		pipeline::Value<ConflictSets> conflictSets;
+		extractor->setInput("membrane", image);
+		slices = extractor->getOutput("slices");
+		conflictSets = extractor->getOutput("conflict sets");
+		
+		sopnetSlices->addAll(slices);
+		sopnetConflictSets->addAll(*conflictSets);
+	}
+	
+	// Blockwise variables
+	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<BlockManager>(stackSize,
+																					blockSize);
+	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+															   stackSize);
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
+	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
+	
+	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
+	
+	pipeline::Value<Slices> blockwiseSlices;
+	pipeline::Value<ConflictSets> blockwiseConflictSets;
+	
+	sliceGuarantor->setInput("slice store", sliceStore);
+	sliceGuarantor->setInput("stack store", stackStore);
+	
+	
+	// Now, do it blockwise
+	if (optionCoreTestSequential)
+	{		
+		foreach (const boost::shared_ptr<Block> block, *blocks)
+		{
+			pipeline::Value<Blocks> needBlocks;
+			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
+			sliceGuarantor->setInput("blocks", singleBlock);
+			
+			LOG_DEBUG(coretestlog) << "Extracting slices from block " << *block << endl;
+			
+			needBlocks = sliceGuarantor->guaranteeSlices();
+			
+			if (!needBlocks->empty())
+			{
+				LOG_DEBUG(coretestlog) << "SliceGuarantor needs images for block " <<
+					*block << endl;
+				return false;
+			}
+		}
+	}
+	else
+	{
+		pipeline::Value<Blocks> needBlocks;
+		
+		LOG_DEBUG(coretestlog) << "Extracting slices from entire stack" << endl;
+		
+		sliceGuarantor->setInput("blocks", blocks);
+		
+		needBlocks = sliceGuarantor->guaranteeSlices();
+		
+		if (!needBlocks->empty())
+		{
+			LOG_DEBUG(coretestlog) << "SliceGuarantor needs images for " <<
+				needBlocks->length() << " blocks:" << endl;
+			foreach (boost::shared_ptr<Block> block, *needBlocks)
+			{
+				LOG_DEBUG(coretestlog) << "\t" << *block << endl;
+			}
+			return false;
+		}
+	}
+	
+	sliceReader->setInput("blocks", blocks);
+	sliceReader->setInput("store", sliceStore);
+	
+	blockwiseSlices = sliceReader->getOutput("slices");
+	blockwiseConflictSets = sliceReader->getOutput("conflict sets");
+	
+	// Compare outputs
+	bool ok;
+	// Maps blockwise ids to sopnet ids.
+	std::map<unsigned int, unsigned int> blockwiseSopnetIDMap;
+	// Slices in blockwiseSlices that are not in sopnetSlices
+	boost::shared_ptr<Slices> bsSlicesSetDiff = boost::make_shared<Slices>();
+	// vice-versa
+	boost::shared_ptr<Slices> sbSlicesSetDiff = boost::make_shared<Slices>();
+	boost::shared_ptr<ConflictSets> bsConflictSetDiff = boost::make_shared<ConflictSets>();
+	boost::shared_ptr<ConflictSets> sbConflictSetDiff = boost::make_shared<ConflictSets>();
+	boost::shared_ptr<ConflictSets> blockwiseConflictSetsSopnetIds;
+	
+	foreach (boost::shared_ptr<Slice> blockwiseSlice, *blockwiseSlices)
+	{
+		int id = sliceContains(blockwiseSlice, sopnetSlices);
+		
+		if (id < 0)
+		{
+			bsSlicesSetDiff->add(blockwiseSlice);
+			ok = false;
+		}
+		else
+		{
+			unsigned int uid = (unsigned int)id;
+			blockwiseSopnetIDMap[blockwiseSlice->getId()] = uid;
+		}
+	}
+	
+	foreach (boost::shared_ptr<Slice> sopnetSlice, *sopnetSlices)
+	{
+		int id = sliceContains(sopnetSlice, blockwiseSlices);
+		
+		if (id < 0)
+		{
+			sbSlicesSetDiff->add(sopnetSlice);
+			ok = false;
+		}
+	}
+	
+	if (!ok)
+	{
+		LOG_DEBUG(coretestlog) << "Slices found in Blockwise output but not Sopnet:" << endl;
+		foreach (boost::shared_ptr<Slice> slice, bsSlicesSetDiff)
+		{
+			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
+		}
+		
+		LOG_DEBUG(coretestlog) << "Slices found in Sopnet output but not Blockwise:" << endl;
+		foreach (boost::shared_ptr<Slice> slice, sbSlicesSetDiff)
+		{
+			LOG_DEBUG(coretestlog) << slice->getId() << ", " << slice->hashValue() << endl;
+		}
+	}
+	
+	if (ok)
+	{
+		blockwiseConflictSetsSopnetIds = 
+			mapConflictSets(blockwiseConflictSets, blockwiseSopnetIDMap);
+		LOG_DEBUG(coretestlog) << "Blockwise conflict sets mapped to sopnet ids" << std::endl;
+		
+		foreach (ConflictSet blockwiseConflict, *blockwiseConflictSetsSopnetIds)
+		{
+			if (!conflictSetContains(blockwiseConflict, sopnetConflictSets))
+			{
+				bsConflictSetDiff->add(blockwiseConflict);
+				ok = false;
+			}
+		}
+		
+		foreach (ConflictSet sopnetConflict, *sopnetConflictSets)
+		{
+			if (!conflictSetContains(sopnetConflict, blockwiseConflictSetsSopnetIds))
+			{
+				
+				sbConflictSetDiff->add(sopnetConflict);
+				ok = false;
+			}
+		}
+		
+		if (!ok)
+		{
+			LOG_DEBUG(coretestlog) << "ConflictSets found in Blockwise output but not Sopnet:" << endl;
+			foreach (ConflictSet conflictSet, bsConflictSetDiff)
+			{
+				LOG_DEBUG(coretestlog) << conflictSet << endl;
+			}
+			
+			LOG_DEBUG(coretestlog) << "ConflictSets found in Sopnet output but not Blockwise:" << endl;
+			foreach (ConflictSet conflictSet, sbConflictSetDiff)
+			{
+				LOG_DEBUG(coretestlog) << conflictSet << endl;
+			}
+		}
+	}
+	
+	writeSlices(sopnetSlices, sopnetOutputPath);
+	writeSlices(blockwiseSlices, blockwiseOutputPath);
+	
+	if (optionCoreTestWriteDebugFiles && blockwiseConflictSetsSopnetIds)
+	{
+		writeConflictSets(sopnetConflictSets, sopnetOutputPath);
+		writeConflictSets(blockwiseConflictSetsSopnetIds, blockwiseOutputPath);
+	}
+	
+	if (!ok)
+	{
+		LOG_USER(coretestlog) << "Slice test failed" << endl;
+	}
+	else
+	{
+		LOG_DEBUG(coretestlog) << "Slice test passed" << endl;
+	}
+	
+	return ok;
+}
+
+util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stackSize)
+{
+	std::vector<std::string> strToks;
+	std::stringstream ss(optionCoreTestBlockSizeFraction.as<std::string>());
+    std::string item;
+	int num, denom;
+	
+    while (std::getline(ss, item, "/")) {
+        strToks.push_back(item);
+    }
+	
+	num = boost::lexical_cast<int>(strToks[0]);
+	denom = boost::lexical_cast<int>(strToks[1]);
+	
+	return util::point3<unsigned int>(fractionCeiling(stackSize.x, num, denom),
+									  fractionCeiling(stackSize.y, num, denom),
+									  stackSize.z);
+
+}
+
+void mkdir(const std::string& path)
+{
+	boost::filesystem::path dir(path);
+	
+	boost::filesystem::create_directory(dir);
+
+}
+
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
 	LogManager::init();
-	
-	LOG_DEBUG(out) << "what?" << std::endl;
-	
+
 	/*
 	 * Assumes membrane path is ./membranes and raw image path is ./raw 
 	 * Requires a file ./segment_rf.hdf compatible with these images
@@ -630,41 +965,48 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
-		cout << "go?" << endl;
-		std::string membranePath = "./membranes";
-		std::string rawPath = "./raw";
+		std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 		pipeline::Value<ImageStack> testStack;
 		unsigned int nx, ny, nz;
-		util::point3<unsigned int> stackSize;
-		util::point3<unsigned int>  blockSize50, blockSize40;
+		util::point3<unsigned int> stackSize, blockSize;
 		
-		boost::shared_ptr<ImageStackDirectoryReader> directoryStack =
+		boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
 		
-		testStack = directoryStack->getOutput();
+		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
+		{
+			mkdir(sopnetOutputPath);
+			mkdir(blockwiseOutputPath);
+		}
+		
+		testStack = directoryStackReader->getOutput();
 		nx = testStack->width();
 		ny = testStack->height();
 		nz = testStack->size();
 		
 		stackSize = point3<unsigned int>(nx, ny, nz);
 		
-		blockSize50 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 1, 2),
-									fractionCeiling(stackSize.y, 1, 2), stackSize.z);
-		// Blocks of this size mean that the blocks don't fit exactly within stack boundaries.
-		// The result should not change in this case.
-		blockSize40 = util::point3<unsigned int>(fractionCeiling(stackSize.x, 2, 5),
-									fractionCeiling(stackSize.y, 2, 5), stackSize.z);
-		
-		writeAllSlices(testStack);
+		blockSize = parseBlockSize(stackSize);
 		
 		testStack->clear();
 		
+		if (!testSlices(stackSize, blockSize))
+		{
+			
+			return -1;
+		}
 		
-		//testSliceGuarantor(membranePath, stackSize, blockSize40);
+		if (!testSegments(stackSize, blockSize))
+		{
+			return -2;
+		}
 		
-		testSolver(membranePath,
-					 rawPath,
-					 stackSize);
+		if (!testSolutions(stackSize, blockSize))
+		{
+			return -3;
+		}
+		
+		return 0;
 	}
 	catch (Exception& e)
 	{
