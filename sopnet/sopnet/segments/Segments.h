@@ -285,7 +285,9 @@ public:
 	/**
 	 * Get the number of segments.
 	 */
-	unsigned int size();
+	unsigned int size() const;
+	
+	bool operator==(const Segments& other) const;
 
 private:
 

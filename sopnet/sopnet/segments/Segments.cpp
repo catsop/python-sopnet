@@ -297,7 +297,7 @@ Segments::getNumInterSectionIntervals() {
 }
 
 unsigned int
-Segments::size() {
+Segments::size() const {
 
 	unsigned int size = 0;
 
@@ -311,3 +311,64 @@ Segments::size() {
 	return size;
 }
 
+bool
+Segments::operator==(const Segments& other) const
+{
+	if (other.size() != size())
+	{
+		return false;
+	}
+	
+	foreach (boost::shared_ptr<EndSegment> otherEnd, other.getEnds())
+	{
+		bool found = false;
+		foreach (boost::shared_ptr<EndSegment> end, getEnds())
+		{
+			if (*end == *otherEnd)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			return false;
+		}
+	}
+	
+	foreach (boost::shared_ptr<ContinuationSegment> otherContinuation, other.getContinuations())
+	{
+		bool found = false;
+		foreach (boost::shared_ptr<ContinuationSegment> continuation, getContinuations())
+		{
+			if (*continuation == *otherContinuation)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			return false;
+		}
+	}
+	
+	foreach (boost::shared_ptr<BranchSegment> otherBranch, other.getBranches())
+	{
+		bool found = false;
+		foreach (boost::shared_ptr<BranchSegment> branch, getBranches())
+		{
+			if (*branch == *otherBranch)
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
