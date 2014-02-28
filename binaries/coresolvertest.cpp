@@ -71,6 +71,12 @@ util::ProgramOption optionCoreTestSequential(
 	util::_description_text = 	"Determines whether to extract slices/segments sequentially or simultaneously",
 	util::_default_value =		true);
 
+util::ProgramOption optionCoreTestForceExplanation(
+	util::_module = 			"core",
+	util::_long_name = 			"forceExplanation",
+	util::_description_text = 	"Force Explanation",
+	util::_default_value =		true);
+
 util::ProgramOption optionCoreTestWriteSliceImages(
 	util::_module = 			"core",
 	util::_long_name = 			"writeSliceImages",
@@ -925,24 +931,80 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	return ok;
 }
 
+void testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+{
+	// SOPNET variables
+	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
+	
+	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader>(membranePath);
+	pipeline::Value<ImageStack> stack = directoryStackReader->getOutput();
+	
+	pipeline::Value<Segments> sopnetSegments = pipeline::Value<Segments>();
+	pipeline::Value<Slices> prevSlices, nextSlices;
+	
+	// Extract Segments as in the original SOPNET pipeline.
+	foreach (boost::shared_ptr<Image> image, *stack)
+	{
+		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
+			boost::make_shared<SliceExtractor<unsigned char> >(i++);
+		extractor->setInput("membrane", image);
+		nextSlices = extractor->getOutput("slices");
+		
+		if (prevSlices)
+		{
+			pipeline::Value<bool> forceExplanation =
+				pipeline::Value<bool>(optionCoreTestForceExplanation);
+			boost::shared_ptr<SegmentExtractor> segmentExtractor =
+				boost::make_shared<SegmentExtractor>();
+			pipeline::Value<Segments> segments;
+			
+			segmentExtractor->setInput("previous slices", prevSlices);
+			segmentExtractor->setInput("next slices", nextSlices);
+			segmentExtractor->setInput("force explanation", forceExplanation);
+			
+			segments = segmentExtractor->getOutput("segments");
+			sopnetSegments->addAll(segments);
+		}
+		
+		prevSlices = nextSlices;
+	}
+}
+
 util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stackSize)
 {
 	std::vector<std::string> strToks;
 	std::stringstream ss(optionCoreTestBlockSizeFraction.as<std::string>());
     std::string item;
+	util::point3<unsigned int> blockSize;
 	int num, denom;
 	
-    while (std::getline(ss, item, "/")) {
+    while (std::getline(ss, item, "/"))
+	{
         strToks.push_back(item);
     }
 	
-	num = boost::lexical_cast<int>(strToks[0]);
-	denom = boost::lexical_cast<int>(strToks[1]);
+	if (strToks.size() == 2)
+	{
+		num = boost::lexical_cast<int>(strToks[0]);
+		denom = boost::lexical_cast<int>(strToks[1]);
 	
-	return util::point3<unsigned int>(fractionCeiling(stackSize.x, num, denom),
-									  fractionCeiling(stackSize.y, num, denom),
-									  stackSize.z);
+		LOG_ALL(coretestlog) << "Got numerator " << num << ", denominator " << denom << endl;
+		
+		blockSize = util::point3<unsigned int>(fractionCeiling(stackSize.x, num, denom),
+										fractionCeiling(stackSize.y, num, denom),
+										stackSize.z);
+	}
+	else
+	{
+		LOG_ALL(coretestlog) << "found " << strToks.size() <<
+			" tokens, using stacksize for blocksize" << endl;
+		blockSize = stackSize;
+	}
 
+	LOG_DEBUG(coretestlog) << "Stack size: " << stackSize << ", block size: " << blockSize << endl;
+	
+	return blockSize;
 }
 
 void mkdir(const std::string& path)
