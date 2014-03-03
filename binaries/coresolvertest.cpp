@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 
 #include <imageprocessing/ImageStack.h>
-#include <util/Logger.h>
+
 #include <util/point3.hpp>
 #include <util/ProgramOptions.h>
 #include <pipeline/all.h>
@@ -41,11 +41,13 @@
 #include <imageprocessing/gui/ImageStackView.h>
 #include <neurons/NeuronExtractor.h>
 
+#include <util/Logger.h>
+
 using util::point3;
 using namespace logger;
 using namespace std;
 
-logger::LogChannel coretestlog("coretestlog", "[CoreTest] ");
+//logger::LogChannel coretestlog("coretestlog", "[CoreTest] ");
 
 util::ProgramOption optionCoreTestMembranesPath(
 	util::_module = 			"core",
@@ -521,7 +523,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	if (!ok)
 	{
-		LOG_USER(coretestlog) << "Slice test failed" << endl;
+		LOG_USER(out) << "Slice test failed" << endl;
 	}
 	else
 	{
@@ -667,9 +669,9 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	
 	
 	segmentReader->setInput("blocks", blocks);
-	segmentReader->setInput("store", sliceStore);
+	segmentReader->setInput("store", segmentStore);
 	
-	blockwiseSegments = segmentReader->getOutput("slices");
+	blockwiseSegments = segmentReader->getOutput("segments");
 	
 	// Now, check for differences
 	
@@ -755,7 +757,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	}
 	else
 	{
-		LOG_USER(coretestlog) << "Segment test failed" << endl;
+		LOG_USER(out) << "Segment test failed" << endl;
 	}
 	
 	return ok;
@@ -804,7 +806,7 @@ bool coreSolver(
 		return false;
 	}
 
-	LOG_ALL(coretestlog) << "Setting up block solver" << std::endl;
+	LOG_USER(out) << "Setting up block solver" << std::endl;
 	coreSolver->setInput("prior cost parameters",
 							priorCostFunctionParameters);
 	coreSolver->setInput("segmentation cost parameters", segmentationCostParameters);
@@ -815,7 +817,7 @@ bool coreSolver(
 	coreSolver->setInput("membrane image store", membraneStackStore);
 	coreSolver->setInput("force explanation", forceExplanation);
 	
-	LOG_ALL(coretestlog) << "Inputs are set" << endl;
+	LOG_USER(out) << "Inputs are set" << endl;
 	
 	neurons = coreSolver->getOutput("neurons");
 	segments = coreSolver->getOutput("segments");
