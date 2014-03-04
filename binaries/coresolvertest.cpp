@@ -656,7 +656,9 @@ void logSegment(const boost::shared_ptr<Segment> segment)
 	LOG_USER(out) << Segment::typeString(segment->getType()) << " ";
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
-		LOG_USER(out) << slice->getId() << " ";
+		// Use hash values rather than ids because we want to cross-reference later
+		// hash values are consistent across equality, whereas slice ids can vary.
+		LOG_USER(out) << slice->hashValue() << " ";
 	}
 	LOG_USER(out) << endl;
 }
@@ -795,12 +797,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		}
 		foreach (boost::shared_ptr<Segment> segment, sbSegmentSetDiff->getSegments())
 		{
-			LOG_USER(out) << Segment::typeString(segment->getType()) << " ";
-			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
-			{
-				LOG_USER(out) << slice->getId() << " ";
-			}
-			LOG_USER(out) << endl;
+			logSegment(segment);
 		}
 	}
 
