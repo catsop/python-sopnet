@@ -298,34 +298,41 @@ SliceGuarantor::checkWhole(const boost::shared_ptr<Slice>& slice,
 						   const boost::shared_ptr<Blocks>& nbdBlocks) const
 {
 	util::rect<unsigned int> sliceBound = slice->getComponent()->getBoundingBox();
+	util::rect<unsigned int> blockBound = *extractBlocks;
 	
-	point3<unsigned int> blockLocation = extractBlocks->location();
-	point3<unsigned int> blockSize = extractBlocks->size();
+	LOG_ALL(sliceguarantorlog) << "block bound: " << blockBound << ", slice bound: " <<
+		sliceBound << " for slice " << slice->getId() << std::endl;
 	
-	if (sliceBound.minX <= blockLocation.x)
+	if (sliceBound.minX <= blockBound.minX)
 	{
 		Blocks expandBlocks = Blocks(*extractBlocks);
 		expandBlocks.expand(util::point3<int>(-1, 0, 0));
 		nbdBlocks->addAll(expandBlocks.getBlocks());
+		LOG_ALL(sliceguarantorlog) << "Slice touches -x boundary" << std::endl;
 	}
-	else if (sliceBound.maxX >= blockLocation.x + blockSize.x - 1)
+	
+	if (sliceBound.maxX >= blockBound.maxX)
 	{
 		Blocks expandBlocks = Blocks(*extractBlocks);
 		expandBlocks.expand(util::point3<int>(1, 0, 0));
 		nbdBlocks->addAll(expandBlocks.getBlocks());
+		LOG_ALL(sliceguarantorlog) << "Slice touches +x boundary" << std::endl;
 	}
-	
-	if (sliceBound.minY <= blockLocation.y)
+
+	if (sliceBound.minY <= blockBound.minY)
 	{
 		Blocks expandBlocks = Blocks(*extractBlocks);
 		expandBlocks.expand(util::point3<int>(0, -1, 0));
 		nbdBlocks->addAll(expandBlocks.getBlocks());
+		LOG_ALL(sliceguarantorlog) << "Slice touches -y boundary" << std::endl;
 	}
-	else if (sliceBound.maxY >= blockLocation.y + blockSize.y - 1)
+	
+	if (sliceBound.maxY >= blockBound.maxY)
 	{
 		Blocks expandBlocks = Blocks(*extractBlocks);
 		expandBlocks.expand(util::point3<int>(0, 1, 0));
 		nbdBlocks->addAll(expandBlocks.getBlocks());
+		LOG_ALL(sliceguarantorlog) << "Slice touches +y boundary" << std::endl;
 	}
 }
 
