@@ -214,6 +214,8 @@ void writeSegment(ofstream& file, const boost::shared_ptr<Segment> segment)
 			file << "-1 ";
 	}
 	
+	file << segment->getId() << " " << segment->hashValue() << " ";
+	
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
 		++i;
@@ -243,6 +245,52 @@ void writeSegments(const boost::shared_ptr<Segments> segments,
 		writeSegment(segmentFile, segment);
 	}
 
+}
+
+void writeSegmentTree(ofstream& file,
+	const boost::shared_ptr<SegmentTree> neuron,
+	unsigned int pack)
+{
+	unsigned int count = 0;
+	
+	foreach (boost::shared_ptr<Segment> segment, neuron->getSegments())
+	{
+		file << segment->hashValue() << " ";
+		++count;
+	}
+	
+	for (unsigned int i = count; i < pack; ++i)
+	{
+		file << "-1 ";
+	}
+	file << endl;
+}
+
+void writeSegmentTrees(const boost::shared_ptr<SegmentTrees> trees,
+					   const std::string path)
+{
+	boost::filesystem::path dir(path);
+	unsigned int maxSize = 0;
+	
+	ofstream neuronFile;
+	std::string neuronlog = path + "/neurons.txt";
+
+	neuronFile.open(neuronlog.c_str());
+	
+	foreach (boost::shared_ptr<SegmentTree> segmentTree, *trees)
+	{
+		if (segmentTree->size() > maxSize)
+		{
+			maxSize = segmentTree->size();
+		}
+	}
+	
+	foreach (boost::shared_ptr<SegmentTree> segmentTree, *trees)
+	{
+		writeSegmentTree(neuronFile, segmentTree, maxSize);
+	}
+	
+	neuronFile.close();
 }
 
 int sliceContains(const boost::shared_ptr<Slices> slices,
@@ -461,7 +509,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 			LOG_USER(out) << slice->getId() << ", " << slice->hashValue() << endl;
 		}
 		
-		LOG_USER(out) << bsSlicesSetDiff->size() <<
+		LOG_USER(out) << sbSlicesSetDiff->size() <<
 			" slices were found in the sopnet output but not blockwise: " << endl;
 		foreach (boost::shared_ptr<Slice> slice, *sbSlicesSetDiff)
 		{
@@ -603,6 +651,16 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 	return true;
 }
 
+void logSegment(const boost::shared_ptr<Segment> segment)
+{
+	LOG_USER(out) << Segment::typeString(segment->getType()) << " ";
+	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+	{
+		LOG_USER(out) << slice->getId() << " ";
+	}
+	LOG_USER(out) << endl;
+}
+
 bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
@@ -720,12 +778,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		}
 		foreach (boost::shared_ptr<Segment> segment, bsSegmentSetDiff->getSegments())
 		{
-			LOG_USER(out) << Segment::typeString(segment->getType()) << " ";
-			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
-			{
-				LOG_USER(out) << slice->getId() << " ";
-			}
-			LOG_USER(out) << endl;
+			logSegment(segment);
 		}
 		
 		LOG_USER(out) << sbSegmentSetDiff->size() <<
@@ -759,6 +812,8 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	{
 		LOG_USER(out) << "Segment test failed" << endl;
 	}
+	
+	
 	
 	return ok;
 }
@@ -864,6 +919,20 @@ void sopnetSolver(
 	neuronsOut->addAll(neurons);
 }
 
+bool segmentTreesContains(const boost::shared_ptr<SegmentTrees> trees,
+						  const boost::shared_ptr<SegmentTree> tree)
+{
+	foreach (boost::shared_ptr<SegmentTree> otherTree, *trees)
+	{
+		if (*tree == *otherTree)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
 bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	bool ok;
@@ -875,6 +944,11 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 		boost::make_shared<PriorCostFunctionParameters>();
 	
+	// Trees that appear in the blockwise solution but not the sopnet one.
+	boost::shared_ptr<SegmentTrees> bsTreeDiff = boost::make_shared<SegmentTrees>();
+	// Vice-versa
+	boost::shared_ptr<SegmentTrees> sbTreeDiff = boost::make_shared<SegmentTrees>();
+		
 	segmentationCostParameters->weightPotts = 0;
 	segmentationCostParameters->weight = 0;
 	segmentationCostParameters->priorForeground = 0.2;
@@ -885,6 +959,72 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	sopnetSolver(segmentationCostParameters, priorCostFunctionParameters, sopnetNeurons);
 	ok = coreSolver(segmentationCostParameters, priorCostFunctionParameters, blockwiseNeurons,
 			   stackSize, blockSize);
+	
+	LOG_USER(out) << "Sopnet solved " << sopnetNeurons->size()
+		<< " neurons and blockwise solved " << blockwiseNeurons->size() << "." << endl;
+
+	if (ok)
+	{
+		foreach (boost::shared_ptr<SegmentTree> blockwiseTree, *blockwiseNeurons)
+		{
+			if (!segmentTreesContains(sopnetNeurons, blockwiseTree))
+			{
+				ok = false;
+				bsTreeDiff->add(blockwiseTree);
+			}
+		}
+		
+		foreach (boost::shared_ptr<SegmentTree> sopnetTree, *sopnetNeurons)
+		{
+			if (!segmentTreesContains(blockwiseNeurons, sopnetTree))
+			{
+				ok = false;
+				sbTreeDiff->add(sopnetTree);
+			}
+		}
+		
+		if (!ok)
+		{
+			LOG_USER(out) << bsTreeDiff->size() <<
+				" Neurons  were found in the blockwise output but not sopnet:" << endl;
+			foreach (boost::shared_ptr<SegmentTree> tree, *bsTreeDiff)
+			{
+				LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
+				foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
+				{
+					logSegment(segment);
+				}
+				LOG_USER(out) << endl;
+			}
+			
+			LOG_USER(out) << sbTreeDiff->size() <<
+				" Neurons  were found in the sopnet output but not blockwise:" << endl;
+			foreach (boost::shared_ptr<SegmentTree> tree, *sbTreeDiff)
+			{
+				LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
+				foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
+				{
+					logSegment(segment);
+				}
+				LOG_USER(out) << endl;
+			}
+		}
+	}
+	
+	if (optionCoreTestWriteDebugFiles)
+	{
+		writeSegmentTrees(sopnetNeurons, sopnetOutputPath);
+		writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
+	}
+	
+	if (ok)
+	{
+		LOG_USER(out) << "Neuron solutions passed" << endl;
+	}
+	else
+	{
+		LOG_USER(out) << "Neuron solutions failed" << endl;
+	}
 	
 	return ok;
 }
@@ -956,11 +1096,15 @@ int main(int optionc, char** optionv)
 		
 		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
 		{
+			LOG_USER(out) << "Creating output directories" << endl;
 			blockwiseOutputPath = blockwiseOutputPath + "_" +
 				boost::lexical_cast<std::string>(stackSize.x) + "x" + 
 				boost::lexical_cast<std::string>(stackSize.y) + "_" + 
 				boost::lexical_cast<std::string>(blockSize.x) + "x" +
 				boost::lexical_cast<std::string>(blockSize.y);
+			sopnetOutputPath = sopnetOutputPath + "_" +
+				boost::lexical_cast<std::string>(stackSize.x) + "x" + 
+				boost::lexical_cast<std::string>(stackSize.y);
 			mkdir(sopnetOutputPath);
 			mkdir(blockwiseOutputPath);
 		}
@@ -978,10 +1122,10 @@ int main(int optionc, char** optionv)
 			return -2;
 		}
 		
-// 		if (!testSolutions(stackSize, blockSize))
-// 		{
-// 			return -3;
-// 		}
+		if (!testSolutions(stackSize, blockSize))
+		{
+			return -3;
+		}
 		
 		return 0;
 	}
