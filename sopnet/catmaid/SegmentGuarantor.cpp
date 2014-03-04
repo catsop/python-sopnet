@@ -80,8 +80,34 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 		return needBlocks;
 	}
 
+	sliceReader->setInput("blocks", sliceBlocks);
 	slices = sliceReader->getOutput("slices");
 
+	/*
+	// Very verbose debug output.
+	
+	LOG_DEBUG(segmentguarantorlog) << "Extracting over " << slices->size() <<
+		" slices." << std::endl;
+	
+	LOG_ALL(segmentguarantorlog) << "Read the following slices:";
+	
+	foreach (boost::shared_ptr<Slice> slice, *slices)
+	{
+		LOG_ALL(segmentguarantorlog) << " " << slice->hashValue();
+	}
+	
+	LOG_ALL(segmentguarantorlog) << std::endl;
+	
+	LOG_ALL(segmentguarantorlog) << "Read from blocks:";
+	
+	foreach (boost::shared_ptr<Block> block, *sliceBlocks)
+	{
+		LOG_ALL(segmentguarantorlog) << " " << block->getId();
+	}
+
+	LOG_ALL(segmentguarantorlog) << std::endl;
+	
+	*/
 	
 	for (unsigned int z = zBegin; z < zEnd; ++z)
 	{
