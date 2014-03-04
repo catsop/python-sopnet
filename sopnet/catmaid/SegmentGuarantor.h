@@ -21,6 +21,11 @@ private:
 	boost::shared_ptr<Slices> collectSlicesByZ(const boost::shared_ptr<Slices>& slices,
 											   unsigned int z) const;
 
+	boost::shared_ptr<Box<> > boundingBox(const boost::shared_ptr<Slices> slices);
+	
+	bool checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
+						  const boost::shared_ptr<Blocks> needBlocks);
+
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
 	pipeline::Input<Blocks> _blocks;

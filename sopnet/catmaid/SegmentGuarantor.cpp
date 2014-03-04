@@ -49,29 +49,39 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	}
 	
 	// Now, check to see that we have all of the Slices we need.
-	foreach (boost::shared_ptr<Block> block, *sliceBlocks)
-	{
-		if (!block->getSlicesFlag())
-		{
-			needBlocks->add(block);
-		}
-	}
-	
 	// If not, return a list of blocks that should have slices extracted before proceeding.
-	if (!needBlocks->empty())
+	if (!checkBlockSlices(sliceBlocks, needBlocks))
 	{
 		return needBlocks;
 	}
 	
 	// OK, here we go.
-	// Note that we don't have to go searching around for Slices in other Block's, because
-	// the SliceReader guarantees (by way of the guarantee provided at the SliceStore level)
-	// that it will return fully-populated conflict-set cliques of Slices.
+	
+	// Step one: retrieve all of the slices associated with the slice-request blocks.
+	// Step two: expand the slice-request blocks to fit the boundaries of all of our new slices,
+	//           then try again.
+	//
+	// The second step is taken because we could have the situation in which a slice overlaps with
+	// another across sections that does not belong to a conflict-clique that exists within the
+	// requested geometry.
+	
 	sliceReader->setInput("blocks", sliceBlocks);
 	sliceReader->setInput("store", _sliceStore);
 	slices = sliceReader->getOutput("slices");
 	
-	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() << " slices." << std::endl;
+	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() <<
+		" slices from requested geometry. Expanding blocks to fit." << std::endl;
+	
+	sliceBlocks = _blocks->getManager()->blocksInBox(boundingBox(slices));
+
+	// Check again
+	if (!checkBlockSlices(sliceBlocks, needBlocks))
+	{
+		return needBlocks;
+	}
+
+	slices = sliceReader->getOutput("slices");
+
 	
 	for (unsigned int z = zBegin; z < zEnd; ++z)
 	{
@@ -117,9 +127,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 
 void SegmentGuarantor::updateOutputs()
 {
-	
-	
-	
+	*_needBlocks = *guaranteeSegments();
 }
 
 boost::shared_ptr<Slices> SegmentGuarantor::collectSlicesByZ(
@@ -139,5 +147,58 @@ boost::shared_ptr<Slices> SegmentGuarantor::collectSlicesByZ(
 	LOG_DEBUG(segmentguarantorlog) << "Collected " << zSlices->size() << " slices for z=" << z << std::endl;
 	
 	return zSlices;
+}
+
+boost::shared_ptr<Box<> >
+SegmentGuarantor::boundingBox(const boost::shared_ptr<Slices> slices)
+{
+	boost::shared_ptr<Box<> > box;
+	
+	if (slices->size() == 0)
+	{
+		box = boost::make_shared<Box<> >();
+	}
+	else
+	{
+		util::rect<unsigned int> bound = (*slices)[0]->getComponent()->getBoundingBox();
+		unsigned int zMax = (*slices)[0]->getSection();
+		unsigned int zMin = zMax;
+		
+		foreach (const boost::shared_ptr<Slice> slice, *slices)
+		{
+			bound.fit(slice->getComponent()->getBoundingBox());
+			
+			if (zMax < slice->getSection())
+			{
+				zMax = slice->getSection();
+			}
+			
+			if (zMin > slice->getSection())
+			{
+				zMin = slice->getSection();
+			}
+		}
+		
+		box = boost::make_shared<Box<> >(bound, zMin, zMax - zMin);
+	}
+	
+	return box;
+}
+
+bool
+SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
+								   const boost::shared_ptr<Blocks> needBlocks)
+{
+	bool ok = true;
+	foreach (boost::shared_ptr<Block> block, *sliceBlocks)
+	{
+		if (!block->getSlicesFlag())
+		{
+			ok = false;
+			needBlocks->add(block);
+		}
+	}
+	
+	return ok;
 }
 
