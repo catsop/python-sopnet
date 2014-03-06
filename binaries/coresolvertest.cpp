@@ -113,6 +113,13 @@ void handleException(boost::exception& e) {
 	exit(-1);
 }
 
+void mkdir(const std::string& path)
+{
+	boost::filesystem::path dir(path);
+	boost::filesystem::create_directory(dir);
+}
+
+
 void writeConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
 					   const std::string& path)
 {
@@ -140,8 +147,9 @@ void writeSlice(const Slice& slice, const std::string& sliceImageDirectory, ofst
 	util::rect<int> bbox = slice.getComponent()->getBoundingBox();
 
 	std::string filename = sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section) +
-		"_" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
+		"/" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
 		"_" + boost::lexical_cast<std::string>(bbox.minY) + ".png";
+	mkdir(sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section));
 
 	if (optionCoreTestWriteDebugFiles)
 	{
@@ -1059,12 +1067,6 @@ util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stack
 	LOG_USER(out) << "Stack size: " << stackSize << ", block size: " << blockSize << endl;
 	
 	return blockSize;
-}
-
-void mkdir(const std::string& path)
-{
-	boost::filesystem::path dir(path);
-	boost::filesystem::create_directory(dir);
 }
 
 int main(int optionc, char** optionv)
