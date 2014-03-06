@@ -2,6 +2,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <util/Logger.h>
+#include <algorithm>
 
 logger::LogChannel segmentlog("segmentlog", "[Segment] ");
 
@@ -106,10 +107,6 @@ Segment::operator==(const Segment& other) const
 			
 			if (!contains)
 			{
-				if (_hashValue == other._hashValue)
-				{
-					LOG_ALL(segmentlog) << "equals returns false for equivalent segments (B): " << _hashValue << std::endl;
-				}
 				return false;
 			}
 		}
@@ -118,13 +115,6 @@ Segment::operator==(const Segment& other) const
 	}
 	else
 	{
-		if (_hashValue == other._hashValue)
-		{
-			LOG_ALL(segmentlog) << "equals returns false for equivalent segments (A): " << _hashValue << std::endl;
-			LOG_ALL(segmentlog) << "this of type " << typeString(getType()) <<
-				", that of type " << typeString(other.getType()) << std::endl;
-			
-		}
 		return false;
 	}
 }
@@ -148,32 +138,32 @@ std::string Segment::typeString(const SegmentType type)
 std::size_t
 Segment::hashValue() const
 {
-	return _hashValue;
-}
-
-void
-Segment::setHash()
-{
-	std::size_t seed = 0;
+	std::size_t hash = 0;
+	
+	std::vector<std::size_t> sliceHashes;
+	foreach (boost::shared_ptr<Slice> slice, getSlices())
+	{
+		sliceHashes.push_back(slice->hashValue());
+	}
+	
+	std::sort(sliceHashes.begin(), sliceHashes.end());
 	
 	if (getDirection() == Left)
 	{
-		boost::hash_combine(seed, boost::hash_value(37));
+		boost::hash_combine(hash, boost::hash_value(37));
 	}
 	else if(getDirection() == Right)
 	{
-		boost::hash_combine(seed, boost::hash_value(61));
+		boost::hash_combine(hash, boost::hash_value(61));
 	}
 	
-	foreach(boost::shared_ptr<Slice> slice, getSlices())
+	foreach(std::size_t sliceHash, sliceHashes)
 	{
-		boost::hash_combine(seed, hash_value(slice));
+		boost::hash_combine(hash, sliceHash);
 	}
 	
-	_hashValue = seed;
+	return hash;
 }
-
-
 
 std::size_t hash_value(const Segment& segment)
 {

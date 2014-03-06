@@ -73,14 +73,11 @@ public:
 	
 	bool operator== (const Segment& other) const;
 	
+	bool operator< (const Segment& other) const {return _id < other._id; }
+	
 	virtual SegmentType getType() const = 0;
 	
 	std::size_t hashValue() const;
-
-protected:
-	std::size_t _hashValue;
-	
-	void setHash();
 	
 private:
 

@@ -14,7 +14,7 @@ ContinuationSegment::ContinuationSegment(
 			 (sourceSlice->getComponent()->getSize() + targetSlice->getComponent()->getSize()),
 			sourceSlice->getSection() + (direction == Left ? 0 : 1)),
 	_sourceSlice(sourceSlice),
-	_targetSlice(targetSlice) {setHash();}
+	_targetSlice(targetSlice) {}
 
 boost::shared_ptr<Slice>
 ContinuationSegment::getSourceSlice() const {
