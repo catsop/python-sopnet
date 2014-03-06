@@ -1,6 +1,7 @@
 #ifndef SEGMENT_SET_H__
 #define SEGMENT_SET_H__
 
+#include <set>
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <sopnet/segments/Segment.h>
@@ -10,10 +11,21 @@
  * want, so we'll roll our own.
  */
 
+class SegmentComparator
+{
+public:
+	bool operator()(const boost::shared_ptr<Segment> segment1,
+						   const boost::shared_ptr<Segment> segment2) const
+	{
+		return (*segment1) < (*segment2);
+	}
+};
+
 class SegmentSet
 {
-	typedef std::vector<boost::shared_ptr<Segment> >::iterator iterator;
-	typedef std::vector<boost::shared_ptr<Segment> >::const_iterator const_iterator;
+	typedef std::set<boost::shared_ptr<Segment>, SegmentComparator> segment_set;
+	typedef segment_set::iterator iterator;
+	typedef segment_set::const_iterator const_iterator;
 	
 public:
 	SegmentSet(){}
@@ -22,7 +34,7 @@ public:
 	
 	bool contains(const boost::shared_ptr<Segment> segment) const;
 	
-	boost::shared_ptr<Segment> find(const boost::shared_ptr<Segment> segment);
+	boost::shared_ptr<Segment> find(const boost::shared_ptr<Segment> segment) const;
 	
 	const const_iterator begin() const { return _segments.begin(); }
 
@@ -35,7 +47,7 @@ public:
 	unsigned int size() const { return _segments.size(); }
 	
 private:
-	std::vector<boost::shared_ptr<Segment> > _segments;
+	segment_set _segments;
 };
 
 

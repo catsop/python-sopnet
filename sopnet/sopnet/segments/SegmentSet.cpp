@@ -3,37 +3,29 @@
 void
 SegmentSet::add(const boost::shared_ptr<Segment> segment)
 {
-	if (!contains(segment))
-	{
-		_segments.push_back(segment);
-	}
+	_segments.insert(segment);
 }
 
 bool
 SegmentSet::contains(const boost::shared_ptr<Segment> segment) const
 {
-	foreach (const boost::shared_ptr<Segment> hereSegment, _segments)
+	if (_segments.count(segment))
 	{
-		if (*segment == *hereSegment)
-		{
-			return true;
-		}
+		return true;
 	}
-	
-	return false;
+	else
+	{
+		return false;
+	}
 }
 
 boost::shared_ptr<Segment>
-SegmentSet::find(const boost::shared_ptr<Segment> segment)
+SegmentSet::find(const boost::shared_ptr<Segment> segment) const
 {
-	foreach (boost::shared_ptr<Segment> hereSegment, _segments)
+	if (contains(segment))
 	{
-		if (*segment == *hereSegment)
-		{
-			return hereSegment;
-		}
+		return *_segments.find(segment);
 	}
 	
 	return boost::shared_ptr<Segment>();
 }
-
