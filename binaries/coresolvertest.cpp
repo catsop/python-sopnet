@@ -89,6 +89,21 @@ util::ProgramOption optionCoreTestWriteDebugFiles(
 	util::_long_name = 			"writeDebugFiles",
 	util::_description_text = 	"Write debug files");
 
+util::ProgramOption optionCoreTestDisableSliceTest(
+	util::_module = 			"core",
+	util::_long_name = 			"disableSlice",
+	util::_description_text = 	"disable slice test");
+
+util::ProgramOption optionCoreTestDisableSegmentTest(
+	util::_module = 			"core",
+	util::_long_name = 			"disableSegment",
+	util::_description_text = 	"disable segment test");
+
+util::ProgramOption optionCoreTestDisableSolutionTest(
+	util::_module = 			"core",
+	util::_long_name = 			"disableSolution",
+	util::_description_text = 	"disable solution test");
+
 std::string sopnetOutputPath = "./out-sopnet";
 std::string blockwiseOutputPath = "./out-blockwise";
 
@@ -747,10 +762,26 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	boost::shared_ptr<Segments> bsSegmentSetDiff = boost::make_shared<Segments>();
 	// vice-versa
 	boost::shared_ptr<Segments> sbSegmentSetDiff = boost::make_shared<Segments>();
+	SegmentSetType  sopnetSegmentSet;
+	SegmentSetType  blockwiseSegmentSet;
+	
+	
+	foreach (boost::shared_ptr<Segment> segment, blockwiseSegments->getSegments())
+	{
+		blockwiseSegmentSet.insert(segment);
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, sopnetSegments->getSegments())
+	{
+		sopnetSegmentSet.insert(segment);
+	}
+	
 
 	foreach (boost::shared_ptr<Segment> blockWiseSegment, blockwiseSegments->getSegments())
 	{
-		if (!segmentsContains(sopnetSegments, blockWiseSegment))
+// 		if (!segmentsContains(sopnetSegments, blockWiseSegment))
+		
+		if (!sopnetSegmentSet.count(blockWiseSegment))
 		{
 			bsSegmentSetDiff->add(blockWiseSegment);
 			ok = false;
@@ -759,7 +790,8 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	
 	foreach (boost::shared_ptr<Segment> sopnetSegment, sopnetSegments->getSegments())
 	{
-		if (!segmentsContains(blockwiseSegments, sopnetSegment))
+		//if (!segmentsContains(blockwiseSegments, sopnetSegment))
+		if (!blockwiseSegmentSet.count(sopnetSegment))
 		{
 			sbSegmentSetDiff->add(sopnetSegment);
 			ok = false;
@@ -1110,18 +1142,21 @@ int main(int optionc, char** optionv)
 		
 		testStack->clear();
 		
-		if (!testSlices(stackSize, blockSize))
+		if (!optionCoreTestDisableSliceTest &&
+			!testSlices(stackSize, blockSize))
 		{
 			
 			return -1;
 		}
 		
-		if (!testSegments(stackSize, blockSize))
+		if (!optionCoreTestDisableSegmentTest &&
+			!testSegments(stackSize, blockSize))
 		{
 			return -2;
 		}
 		
-		if (!testSolutions(stackSize, blockSize))
+		if (!optionCoreTestDisableSolutionTest &&
+			!testSolutions(stackSize, blockSize))
 		{
 			return -3;
 		}
