@@ -5,6 +5,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <sopnet/segments/Segment.h>
+#include <sopnet/segments/Segments.h>
 
 /**
  * A slow-but-steady Segments set. boost::unordered_set and std::set don't seem to do the job we
@@ -31,6 +32,8 @@ public:
 	SegmentSet(){}
 
 	void add(const boost::shared_ptr<Segment> segment);
+	
+	void addAll(const boost::shared_ptr<Segments> segments);
 	
 	bool contains(const boost::shared_ptr<Segment> segment) const;
 	
