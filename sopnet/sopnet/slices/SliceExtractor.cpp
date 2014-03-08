@@ -49,10 +49,11 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	_mserParameters.registerBackwardCallback(&SliceExtractor<Precision>::onInputSet, this);
 
 	// set default mser parameters from program options
-	_defaultMserParameters->darkToBright =  optionInvertSliceMaps;
-	_defaultMserParameters->brightToDark = !optionInvertSliceMaps;
-	_defaultMserParameters->minArea      =  optionMinSliceSize;
-	_defaultMserParameters->maxArea      =  optionMaxSliceSize;
+	_defaultMserParameters->darkToBright      =  optionInvertSliceMaps;
+	_defaultMserParameters->brightToDark      = !optionInvertSliceMaps;
+	_defaultMserParameters->minArea           =  optionMinSliceSize;
+	_defaultMserParameters->maxArea           =  optionMaxSliceSize;
+	_defaultMserParameters->fullComponentTree = true;
 
 	LOG_DEBUG(sliceextractorlog)
 			<< "extracting slices with min size " << optionMinSliceSize.as<int>()
