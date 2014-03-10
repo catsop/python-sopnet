@@ -41,6 +41,12 @@ public:
 	
 	void dumpStore();
 	
+	int storeFeatures(pipeline::Value<Features> features);
+	
+	pipeline::Value<SegmentFeaturesMap> retrieveFeatures(pipeline::Value<Segments> segments);
+	
+	std::vector<std::string> getFeatureNames();
+	
 private:
 	void mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
 						   const boost::shared_ptr<Block>& block);
@@ -66,7 +72,10 @@ private:
 	BlockSegmentMap _blockSegmentMap;
 	IdSegmentMap _idSegmentMap;
 	
+	SegmentFeaturesMap _featureMasterMap;
 	SegmentSet _segmentMasterList;
+	
+	std::vector<std::string> _featureNames;
 
 };
 

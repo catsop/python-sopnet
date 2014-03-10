@@ -4,6 +4,7 @@ SegmentWriter::SegmentWriter()
 {
 	registerInput(_segments, "segments");
 	registerInput(_blocks, "blocks");
+	registerInput(_features, "features", pipeline::Optional);
 	registerInput(_store, "store");
 }
 
@@ -27,6 +28,11 @@ void SegmentWriter::writeSegments()
 		}
 		
 		_store->associate(segments, valueBlock);
+	}
+	
+	if (_features)
+	{
+		_store->storeFeatures(_features);
 	}
 }
 

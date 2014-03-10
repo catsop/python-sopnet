@@ -1,4 +1,6 @@
 #include "LocalSegmentStore.h"
+#include <map>
+#include <vector>
 #include <util/Logger.h>
 logger::LogChannel localsegmentstorelog("localsegmentstorelog", "[LocalSegmentStore] ");
 
@@ -194,3 +196,60 @@ void LocalSegmentStore::dumpStore()
 		LOG_ALL(localsegmentstorelog) << std::endl;
 	}
 }
+
+int
+LocalSegmentStore::storeFeatures(pipeline::Value<Features> features)
+{
+	std::map<unsigned int, unsigned int>::const_iterator it;
+	std::map<unsigned int, unsigned int> idMap = features->getSegmentsIdsMap();
+	int count = 0;
+	
+	for (it = idMap.begin(); it != idMap.end(); ++it)
+	{
+		unsigned int id = it->second;
+		unsigned int i = it->first;
+		if (_idSegmentMap.count(id))
+		{
+			boost::shared_ptr<Segment> segment = _idSegmentMap[id];
+			_featureMasterMap[segment] = (*features)[i];
+			++count;
+		}
+	}
+	
+	if (count > 0 && _featureNames.empty())
+	{
+		foreach (std::string name, features->getNames())
+		{
+			// For some reason, vector.insert wouldn't work here.
+			_featureNames.push_back(name);
+		}
+	}
+
+	LOG_DEBUG(localsegmentstorelog) << "Wrote features for " << count << " of " <<
+		features->size() << " segments" << std::endl;
+	return count;
+}
+
+pipeline::Value<SegmentStore::SegmentFeaturesMap>
+LocalSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
+{
+	pipeline::Value<SegmentStore::SegmentFeaturesMap> featureMap;
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_featureMasterMap.count(segment))
+		{
+			std::vector<double> features = _featureMasterMap[segment];
+			(*featureMap)[segment] = features;
+		}
+	}
+	
+	return featureMap;
+}
+
+std::vector<std::string>
+LocalSegmentStore::getFeatureNames()
+{
+	return _featureNames;
+}
+
