@@ -263,17 +263,12 @@ CoreSolver::updateOutputs()
 	pipeline::Value<util::point3<unsigned int> > offset(boundingBlocks->location());;
 	
 	LOG_DEBUG(coresolverlog) << "Segment bound computed" << *boundingBlocks << std::endl;
-	LOG_DEBUG(coresolverlog) << "A" << std::endl;
 	
 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-	
-	LOG_DEBUG(coresolverlog) << "B" << std::endl;
 		
 	segmentFeaturesExtractor->setInput("segments", problemAssembler->getOutput("segments"));
 	segmentFeaturesExtractor->setInput("raw sections", _rawImageStore->getImageStack(*boundingBlocks));
 	segmentFeaturesExtractor->setInput("crop offset", offset);
-	
-	LOG_DEBUG(coresolverlog) << "C" << std::endl;
 	
 	reader->setInput(contentProvider->getOutput());
 	linearCostFunction->setInput("features", segmentFeaturesExtractor->getOutput("all features"));
@@ -281,31 +276,14 @@ CoreSolver::updateOutputs()
 	LOG_DEBUG(coresolverlog) << "D" << std::endl;
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
-// 	if (_segmentationCostFunctionParameters)
-// 	{
-// 		LOG_DEBUG(coresolverlog) << "D.5" << std::endl;
-// 		segmentationCostFunction->setInput("membranes", _membraneStore->getImageStack(*boundingBlocks));
-// 		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
-// 		segmentationCostFunction->setInput("crop offset", offset);
-// 		objectiveGenerator->addInput("cost functions",
-// 									  segmentationCostFunction->getOutput("cost function"));
-// 	}
-
-	LOG_DEBUG(coresolverlog) << "E" << std::endl;
-	
-	
 	
 	linearSolver->setInput("objective", objectiveGenerator->getOutput());
 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
 	linearSolver->setInput("parameters", binarySolverParameters);
 	
-	LOG_DEBUG(coresolverlog) << "F" << std::endl;
-	
 	reconstructor->setInput("segments", problemAssembler->getOutput("segments"));
 	reconstructor->setInput("solution", linearSolver->getOutput());
 
-	LOG_DEBUG(coresolverlog) << "G" << std::endl;
-	
 	neuronExtractor->setInput("segments", reconstructor->getOutput());
 	
 	LOG_DEBUG(coresolverlog) << "Pipeline is setup, extracting neurons" << std::endl;
