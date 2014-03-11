@@ -1,7 +1,7 @@
 #include "SegmentGuarantor.h"
 #include <util/Logger.h>
-#include <catmaid/persistence/SegmentWriter.h>
 #include <sopnet/segments/SegmentExtractor.h>
+#include <features/SegmentFeaturesExtractor.h>
 #include <pipeline/Value.h>
 
 logger::LogChannel segmentguarantorlog("segmentguarantorlog", "[SegmentGuarantor] ");
@@ -11,6 +11,7 @@ SegmentGuarantor::SegmentGuarantor()
 	registerInput(_blocks, "blocks");
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
+	registerInput(_rawImageStore, "image store", pipeline::Optional);
 	
 	registerOutput(_needBlocks, "slice blocks");
 }
@@ -83,31 +84,6 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	sliceReader->setInput("blocks", sliceBlocks);
 	slices = sliceReader->getOutput("slices");
 
-	/*
-	// Very verbose debug output.
-	
-	LOG_DEBUG(segmentguarantorlog) << "Extracting over " << slices->size() <<
-		" slices." << std::endl;
-	
-	LOG_ALL(segmentguarantorlog) << "Read the following slices:";
-	
-	foreach (boost::shared_ptr<Slice> slice, *slices)
-	{
-		LOG_ALL(segmentguarantorlog) << " " << slice->hashValue();
-	}
-	
-	LOG_ALL(segmentguarantorlog) << std::endl;
-	
-	LOG_ALL(segmentguarantorlog) << "Read from blocks:";
-	
-	foreach (boost::shared_ptr<Block> block, *sliceBlocks)
-	{
-		LOG_ALL(segmentguarantorlog) << " " << block->getId();
-	}
-
-	LOG_ALL(segmentguarantorlog) << std::endl;
-	
-	*/
 	
 	for (unsigned int z = zBegin; z < zEnd; ++z)
 	{
@@ -139,6 +115,11 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	segmentWriter->setInput("blocks", _blocks);
 	segmentWriter->setInput("store", _segmentStore);
 	
+	if (_rawImageStore)
+	{
+		guaranteeFeatures(segmentWriter, segments, sliceBlocks);
+	}
+	
 	segmentWriter->writeSegments();
 	
 	foreach (boost::shared_ptr<Block> block, *_blocks)
@@ -157,7 +138,7 @@ void SegmentGuarantor::updateOutputs()
 }
 
 boost::shared_ptr<Slices> SegmentGuarantor::collectSlicesByZ(
-	const boost::shared_ptr< Slices >& slices, unsigned int z) const
+	const boost::shared_ptr<Slices> slices, unsigned int z) const
 {
 	boost::shared_ptr<Slices> zSlices = boost::make_shared<Slices>();
 	
@@ -227,4 +208,24 @@ SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 	
 	return ok;
 }
+
+void
+SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
+									const boost::shared_ptr<Segments> segments,
+									const boost::shared_ptr<Blocks> blocks)
+{
+	pipeline::Value<util::point3<unsigned int> > offset(blocks->location());
+	boost::shared_ptr<SegmentFeaturesExtractor> featuresExtractor =
+		boost::make_shared<SegmentFeaturesExtractor>();
+	pipeline::Value<Features> features;
+	
+	featuresExtractor->setInput("segments", segments);
+	featuresExtractor->setInput("raw sections", _rawImageStore->getImageStack(*blocks));
+	featuresExtractor->setInput("offset", offset);
+	
+	features = featuresExtractor->getOutput("all features");
+	
+	segmentWriter->setInput("features", features);
+}
+
 
