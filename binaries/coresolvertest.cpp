@@ -33,6 +33,7 @@
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <sopnet/segments/SegmentSet.h>
+#include <sopnet/features/SegmentFeaturesExtractor.h>
 
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
@@ -607,16 +608,18 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 	const boost::shared_ptr<SliceStore> sliceStore,
 	const boost::shared_ptr<SegmentStore> segmentStore,
-	const boost::shared_ptr<StackStore> stackStore)
+	const boost::shared_ptr<StackStore> membraneStackStore,
+	const boost::shared_ptr<StackStore> rawStackStore)
 {
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
 	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
 	boost::shared_ptr<BlockManager> blockManager = blocks->getManager();
 	
 	sliceGuarantor->setInput("slice store", sliceStore);
-	sliceGuarantor->setInput("stack store", stackStore);
+	sliceGuarantor->setInput("stack store", membraneStackStore);
 	segmentGuarantor->setInput("segment store", segmentStore);
 	segmentGuarantor->setInput("slice store", sliceStore);
+	segmentGuarantor->setInput("stack store", rawStackStore);
 	
 	if (optionCoreTestSequential)
 	{
@@ -686,19 +689,46 @@ void logSegment(const boost::shared_ptr<Segment> segment)
 	LOG_USER(out) << endl;
 }
 
+bool featureEquals(const std::vector<double>& v1, const std::vector<double>& v2)
+{
+	if (v1.size() == v2.size())
+	{
+		for(unsigned int i = 0; i < v1.size(); ++i)
+		{
+			if (v1[i] != v2[i])
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	// SOPNET variables
 	int i = 0;
 	bool segExtraction = false, ok = true;
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
+	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
 	
 	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
 	pipeline::Value<ImageStack> stack = directoryStackReader->getOutput();
 	
+	boost::shared_ptr<ImageStackDirectoryReader> rawImageStackReader =
+			boost::make_shared<ImageStackDirectoryReader>(rawPath);
+	boost::shared_ptr<SegmentFeaturesExtractor> featureExtractor = 
+		boost::make_shared<SegmentFeaturesExtractor>();
+	
 	pipeline::Value<Segments> sopnetSegments = pipeline::Value<Segments>();
 	pipeline::Value<Slices> prevSlices, nextSlices;
+	pipeline::Value<Features> sopnetFeatures;
 	
 	// Extract Segments as in the original SOPNET pipeline.
 	foreach (boost::shared_ptr<Image> image, *stack)
@@ -730,12 +760,19 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		prevSlices = nextSlices;
 	}
 	
+	// Collect Features
+	featureExtractor->setInput("segments", sopnetSegments);
+	featureExtractor->setInput("raw sections", rawImageStackReader->getOutput());
+	sopnetFeatures = featureExtractor->getOutput("all features");
+	
 	// Blockwise variables
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
 																					blockSize);
-	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
-	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   stackSize);
+	boost::shared_ptr<StackStore> membraneStackStore =
+		boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+	boost::shared_ptr<Box<> > stackBox =
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
@@ -743,9 +780,10 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	
 	pipeline::Value<Segments> blockwiseSegments;
+	pipeline::Value<Features> blockwiseFeatures;
 	
 	// Now, do it blockwise
-	if (!guaranteeSegments(blocks, sliceStore, segmentStore, stackStore))
+	if (!guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore, rawStackStore))
 	{
 		return false;
 	}
@@ -755,15 +793,19 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	segmentReader->setInput("store", segmentStore);
 	
 	blockwiseSegments = segmentReader->getOutput("segments");
+	blockwiseFeatures = segmentReader->getOutput("features");
 	
 	// Now, check for differences
+	
+	// First, check for differences in the segment sets.
 	
 	// Segments that appear in the blockwise segments, but not the sopnet segments
 	boost::shared_ptr<Segments> bsSegmentSetDiff = boost::make_shared<Segments>();
 	// vice-versa
 	boost::shared_ptr<Segments> sbSegmentSetDiff = boost::make_shared<Segments>();
-	SegmentSetType  sopnetSegmentSet;
-	SegmentSetType  blockwiseSegmentSet;
+	SegmentSetType sopnetSegmentSet;
+	SegmentSetType blockwiseSegmentSet;
+	SegmentSetType badFeatureSegmentSet; 
 	
 	
 	foreach (boost::shared_ptr<Segment> segment, blockwiseSegments->getSegments())
@@ -798,11 +840,6 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		}
 	}
 	
-	if (optionCoreTestWriteDebugFiles)
-	{
-		writeSegments(sopnetSegments, sopnetOutputPath);
-		writeSegments(blockwiseSegments, blockwiseOutputPath);
-	}
 	
 	if (!ok)
 	{
@@ -839,7 +876,49 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		{
 			logSegment(segment);
 		}
+		
+		return false;
 	}
+	
+	
+	// If the Segments test passed, check for equality in Features
+	if (ok)
+	{
+		foreach (boost::shared_ptr<Segment> sopnetSegment, sopnetSegmentSet)
+		{
+			boost::shared_ptr<Segment> blockwiseSegment = *blockwiseSegmentSet.find(sopnetSegment);
+			std::vector<double> sopnetFeature = sopnetFeatures->get(sopnetSegment->getId());
+			std::vector<double> blockwiseFeature = blockwiseFeatures->get(blockwiseSegment->getId());
+			if (!featureEquals(sopnetFeature, blockwiseFeature))
+			{
+				ok = false;
+				badFeatureSegmentSet.insert(sopnetSegment);
+			}
+		}
+		
+		if (!ok)
+		{
+			LOG_USER(out) << "Features were unequal for " << badFeatureSegmentSet.size() <<
+				" Segment hashes:" << std::endl;
+			foreach (boost::shared_ptr<Segment> segment, badFeatureSegmentSet)
+			{
+				LOG_USER(out) << " " << segment->hashValue();
+			}
+			LOG_USER(out) << std::endl;
+		}
+		else
+		{
+			LOG_USER(out) << "Segment feature test passed" << std::endl;
+		}
+	}
+	
+	
+	if (optionCoreTestWriteDebugFiles)
+	{
+		writeSegments(sopnetSegments, sopnetOutputPath);
+		writeSegments(blockwiseSegments, blockwiseOutputPath);
+	}
+
 
 	if (ok)
 	{
@@ -848,10 +927,10 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	else
 	{
 		LOG_USER(out) << "Segment test failed" << endl;
+		
+
 	}
-	
-	
-	
+
 	return ok;
 }
 
@@ -893,7 +972,7 @@ bool coreSolver(
 	pipeline::Value<Slices> slices;
 	
 	// guarantee segments
-	if (!guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore))
+	if (!guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore, rawStackStore))
 	{
 		return false;
 	}
