@@ -11,7 +11,7 @@ SegmentGuarantor::SegmentGuarantor()
 	registerInput(_blocks, "blocks");
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
-	registerInput(_rawImageStore, "image store", pipeline::Optional);
+	registerInput(_rawImageStore, "stack store", pipeline::Optional);
 	
 	registerOutput(_needBlocks, "slice blocks");
 }
@@ -117,7 +117,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	
 	if (_rawImageStore)
 	{
-		guaranteeFeatures(segmentWriter, segments, sliceBlocks);
+		guaranteeFeatures(segmentWriter, segments);
 	}
 	
 	segmentWriter->writeSegments();
@@ -209,11 +209,39 @@ SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 	return ok;
 }
 
+boost::shared_ptr<Blocks>
+SegmentGuarantor::segmentBoundingBlocks(const boost::shared_ptr<Segments> inSegments)
+{
+	if (inSegments->size() == 0)
+	{
+		return boost::make_shared<Blocks>();
+	}
+	else
+	{
+		std::vector<boost::shared_ptr<Segment> > segments = inSegments->getSegments();
+		util::rect<int> bound(segments[0]->getSlices()[0]->getComponent()->getBoundingBox());
+		boost::shared_ptr<Box<> > box;
+		boost::shared_ptr<Blocks> blocks;
+		
+		foreach (boost::shared_ptr<Segment> segment, segments)
+		{
+			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+			{
+				bound.fit(slice->getComponent()->getBoundingBox());
+			}
+		}
+		
+		box = boost::make_shared<Box<> >(bound, _blocks->location().z, _blocks->size().z);
+		blocks = _blocks->getManager()->blocksInBox(box);
+		return blocks;
+	}
+}
+
 void
 SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
-									const boost::shared_ptr<Segments> segments,
-									const boost::shared_ptr<Blocks> blocks)
+									const boost::shared_ptr<Segments> segments)
 {
+	boost::shared_ptr<Blocks> blocks = segmentBoundingBlocks(segments);
 	pipeline::Value<util::point3<unsigned int> > offset(blocks->location());
 	boost::shared_ptr<SegmentFeaturesExtractor> featuresExtractor =
 		boost::make_shared<SegmentFeaturesExtractor>();
@@ -221,7 +249,7 @@ SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segme
 	
 	featuresExtractor->setInput("segments", segments);
 	featuresExtractor->setInput("raw sections", _rawImageStore->getImageStack(*blocks));
-	featuresExtractor->setInput("offset", offset);
+	featuresExtractor->setInput("crop offset", offset);
 	
 	features = featuresExtractor->getOutput("all features");
 	

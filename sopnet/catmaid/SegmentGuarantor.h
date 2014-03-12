@@ -12,6 +12,21 @@
 class SegmentGuarantor : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a SegmentGuarantor
+	 * Inputs:
+	 *   Blocks "blocks" - requested blocks
+	 *   SegmentStore "segment store"
+	 *   SliceStore "slice store"
+	 *   StackStore "stack store" - raw images, optional
+	 * 
+	 * If "stack store" is set, this SegmentGuarantor will extract Features from the guaranteed
+	 * Segments, and store them in the SegmentStore.
+	 *  
+	 * Outputs:
+	 *   Blocks "slices blocks" - blocks for which Slices must be guaranteed as a prerequisite
+	 *                            to guaranteeing Segments
+	 */
 	SegmentGuarantor();
 	
 	
@@ -29,8 +44,9 @@ private:
 						  const boost::shared_ptr<Blocks> needBlocks);
 	
 	void guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
-							const boost::shared_ptr<Segments> segments,
-							const boost::shared_ptr<Blocks> blocks);
+							const boost::shared_ptr<Segments> segments);
+	
+	boost::shared_ptr<Blocks> segmentBoundingBlocks(const boost::shared_ptr<Segments> segments);
 
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
