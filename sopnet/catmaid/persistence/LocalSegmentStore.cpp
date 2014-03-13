@@ -206,8 +206,8 @@ LocalSegmentStore::storeFeatures(pipeline::Value<Features> features)
 	
 	for (it = idMap.begin(); it != idMap.end(); ++it)
 	{
-		unsigned int id = it->second;
-		unsigned int i = it->first;
+		unsigned int i = it->second;
+		unsigned int id = it->first;
 		if (_idSegmentMap.count(id))
 		{
 			boost::shared_ptr<Segment> segment = _idSegmentMap[id];
