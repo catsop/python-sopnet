@@ -615,6 +615,8 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
 	boost::shared_ptr<BlockManager> blockManager = blocks->getManager();
 	
+	LOG_USER(out) << "Begin extracting segments" << std::endl;
+	
 	sliceGuarantor->setInput("slice store", sliceStore);
 	sliceGuarantor->setInput("stack store", membraneStackStore);
 	segmentGuarantor->setInput("segment store", segmentStore);
@@ -673,6 +675,8 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 			return false;
 		}
 	}
+	
+	LOG_USER(out) << "Done extracting segments" << std::endl;
 	
 	return true;
 }
@@ -761,9 +765,12 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	}
 	
 	// Collect Features
+	LOG_USER(out) << "Collecting segment features for sopnet pipeline" << std::endl;
 	featureExtractor->setInput("segments", sopnetSegments);
 	featureExtractor->setInput("raw sections", rawImageStackReader->getOutput());
 	sopnetFeatures = featureExtractor->getOutput("all features");
+	
+	LOG_USER(out) << "Extracted " << sopnetFeatures->size() << " features" << std::endl;
 	
 	// Blockwise variables
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
@@ -788,6 +795,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		return false;
 	}
 	
+	LOG_USER(out) << "Segment test: segments extracted successfully" << std::endl;
 	
 	segmentReader->setInput("blocks", blocks);
 	segmentReader->setInput("store", segmentStore);
@@ -807,6 +815,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	SegmentSetType blockwiseSegmentSet;
 	SegmentSetType badFeatureSegmentSet; 
 	
+	LOG_USER(out) << "Checking for segment equality" << std::endl;
 	
 	foreach (boost::shared_ptr<Segment> segment, blockwiseSegments->getSegments())
 	{
@@ -841,7 +850,11 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	}
 	
 	
-	if (!ok)
+	if (ok)
+	{
+		LOG_USER(out) << "Segments are consistent" << std::endl;
+	}
+	else
 	{
 		LOG_USER(out) << bsSegmentSetDiff->size() <<
 			" segments were found in the blockwise output but not sopnet: " << endl;
@@ -884,6 +897,23 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	// If the Segments test passed, check for equality in Features
 	if (ok)
 	{
+		LOG_USER(out) << "Testing features for equality" << std::endl;
+		
+		LOG_USER(out) << "Sopnet features contain " << sopnetFeatures->getSegmentsIdsMap().size() <<
+			" entries" << std::endl;
+		LOG_USER(out) << "Blockwise features contain " <<
+			blockwiseFeatures->getSegmentsIdsMap().size() << " entries" << std::endl;
+		
+		LOG_USER(out) << "\tand does not contain entries for the following segments:" << std::endl;
+		foreach (boost::shared_ptr<Segment> blockwiseSegment, blockwiseSegmentSet)
+		{
+			if (!blockwiseFeatures->getSegmentsIdsMap().count(blockwiseSegment->getId()))
+			{
+				LOG_USER(out) << "\t" << blockwiseSegment->getId() << " " <<
+					blockwiseSegment->hashValue() << std::endl;
+			}
+		}
+		
 		foreach (boost::shared_ptr<Segment> sopnetSegment, sopnetSegmentSet)
 		{
 			boost::shared_ptr<Segment> blockwiseSegment = *blockwiseSegmentSet.find(sopnetSegment);
