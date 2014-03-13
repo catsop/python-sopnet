@@ -8,6 +8,7 @@
 #include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/SegmentWriter.h>
 #include <catmaid/persistence/StackStore.h>
+#include <sopnet/features/Features.h>
 
 class SegmentGuarantor : public pipeline::SimpleProcessNode<>
 {
@@ -43,7 +44,8 @@ private:
 	bool checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 						  const boost::shared_ptr<Blocks> needBlocks);
 	
-	void guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
+	pipeline::Value<Features> guaranteeFeatures(
+							const boost::shared_ptr<SegmentWriter> segmentWriter,
 							const boost::shared_ptr<Segments> segments);
 	
 	boost::shared_ptr<Blocks> segmentBoundingBlocks(const boost::shared_ptr<Segments> segments);

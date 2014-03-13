@@ -117,7 +117,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	
 	if (_rawImageStore)
 	{
-		guaranteeFeatures(segmentWriter, segments);
+		segmentWriter->setInput("features", guaranteeFeatures(segmentWriter, segments));
 	}
 	
 	segmentWriter->writeSegments();
@@ -237,7 +237,7 @@ SegmentGuarantor::segmentBoundingBlocks(const boost::shared_ptr<Segments> inSegm
 	}
 }
 
-void
+pipeline::Value<Features>
 SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
 									const boost::shared_ptr<Segments> segments)
 {
@@ -247,13 +247,18 @@ SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segme
 		boost::make_shared<SegmentFeaturesExtractor>();
 	pipeline::Value<Features> features;
 	
+	LOG_DEBUG(segmentguarantorlog) << "Extracting features for " << segments->size() <<
+		" segments" << std::endl;
+	
 	featuresExtractor->setInput("segments", segments);
 	featuresExtractor->setInput("raw sections", _rawImageStore->getImageStack(*blocks));
 	featuresExtractor->setInput("crop offset", offset);
 	
 	features = featuresExtractor->getOutput("all features");
 	
-	segmentWriter->setInput("features", features);
+	LOG_DEBUG(segmentguarantorlog) << "Done extracting features" << std::endl;
+	
+	return features;
 }
 
 
