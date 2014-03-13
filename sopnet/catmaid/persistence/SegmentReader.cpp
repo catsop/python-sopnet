@@ -17,13 +17,15 @@ void
 SegmentReader::updateOutputs()
 {
 	pipeline::Value<Segments> segments;
-
+	pipeline::Value<Features> features;
 
 	LOG_DEBUG(segmentreaderlog) << "Reading segments from " << *_blocks << std::endl;
 	segments = _store->retrieveSegments(_blocks);
 	LOG_DEBUG(segmentreaderlog) << "Read " << segments->size() << " segments" << std::endl;
+	features = reconstituteFeatures(segments);
+	LOG_DEBUG(segmentreaderlog) << "Read " << features->size() << " features" << std::endl;
 	
-	*_features = *(reconstituteFeatures(segments));
+	*_features = *features;
 	*_segments = *segments;
 }
 
@@ -42,6 +44,8 @@ SegmentReader::reconstituteFeatures(pipeline::Value<Segments> segments)
 	featureMap = _store->retrieveFeatures(segments);
 	featureNames = _store->getFeatureNames();
 	
+	features->resize(featureMap->size(), featureNames.size());
+	
 	foreach (std::string name, featureNames)
 	{
 		features->addName(name);
@@ -49,7 +53,7 @@ SegmentReader::reconstituteFeatures(pipeline::Value<Segments> segments)
 	
 	for (it = featureMap->begin(); it != featureMap->end(); ++it)
 	{
-		idMap[i] = it->first->getId();
+		idMap[it->first->getId()] = i;
 		(*features)[i] = it->second;
 		++i;
 	}
