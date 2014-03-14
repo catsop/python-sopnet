@@ -372,3 +372,29 @@ Segments::operator==(const Segments& other) const
 	
 	return true;
 }
+
+boost::shared_ptr<util::rect<int> >
+Segments::boundingBox()
+{
+	boost::shared_ptr<util::rect<int> > bound;
+	if (size() > 0)
+	{
+		bound = boost::make_shared<util::rect<int> >(
+			getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox());
+		
+		foreach (boost::shared_ptr<Segment> segment, getSegments())
+		{
+			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+			{
+				util::rect<int> componentBound = slice->getComponent()->getBoundingBox();
+				bound->fit(componentBound);
+			}
+		}
+	}
+	else
+	{
+		bound = boost::make_shared<util::rect<int> >();
+	}
+	
+	return bound;
+}

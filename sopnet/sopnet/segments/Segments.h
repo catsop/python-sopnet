@@ -288,6 +288,8 @@ public:
 	unsigned int size() const;
 	
 	bool operator==(const Segments& other) const;
+	
+	boost::shared_ptr<util::rect<int> > boundingBox();
 
 private:
 
