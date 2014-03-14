@@ -1,6 +1,6 @@
 #include <boost/make_shared.hpp>
 
-
+#include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <features/SegmentFeaturesExtractor.h>
@@ -151,7 +151,7 @@ void CoreSolver::EndExtractor::updateOutputs()
 	SegmentSet segmentSet;
 	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
 	
-	LOG_DEBUG(coresolverlog) << "End extractor recieved " << outputSegments->size() <<
+	LOG_DEBUG(coresolverlog) << "End extractor recieved " << _eeSegments->size() <<
 		" segments" << std::endl;
 	
 	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
@@ -203,18 +203,6 @@ void CoreSolver::EndExtractor::updateOutputs()
 	*_allSegments = *outputSegments;
 }
 
-CoreSolver::FeatureAssembler::FeatureAssembler()
-{
-	registerInput(_faSegments, "segments");
-	registerInput(_faSegmentStore, "segment store");
-	registerOutput(_features, "features");
-}
-
-void CoreSolver::FeatureAssembler::updateOutputs()
-{
-
-}
-
 
 void
 CoreSolver::updateOutputs()
@@ -238,15 +226,15 @@ CoreSolver::updateOutputs()
 					optionLinearCostFunctionParametersFileBlock.as<std::string>());
 	boost::shared_ptr<LinearCostFunctionParametersReader> reader
 				= boost::make_shared<LinearCostFunctionParametersReader>();
-	boost::shared_ptr<SegmentFeaturesExtractor> segmentFeaturesExtractor =
-		boost::make_shared<SegmentFeaturesExtractor>();
+	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
+		boost::make_shared<SegmentFeatureReader>();
+	
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
-
+	
 	// inputs and outputs
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Blocks> boundingBlocks;
 	pipeline::Value<Segments> segments;
 
 	LOG_DEBUG(coresolverlog) << "Variables instantiated, setting up pipeline" << std::endl;
@@ -267,23 +255,16 @@ CoreSolver::updateOutputs()
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
 	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
 	
-
-	// Use problem assembler output to compute the bounding box we need to contain all
-	// of the slices that are present. This will usually be larger than the requested
-	// Blocks.
-	boundingBlocks = computeBound(problemAssembler);
-	pipeline::Value<util::point3<unsigned int> > offset(boundingBlocks->location());;
-	
-	LOG_DEBUG(coresolverlog) << "Segment bound computed" << *boundingBlocks << std::endl;
+	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
+	segmentFeatureReader->setInput("store", _segmentStore);
+	segmentFeatureReader->setInput("block manager", _blocks->getManager());
+	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
 	
 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-		
-	segmentFeaturesExtractor->setInput("segments", problemAssembler->getOutput("segments"));
-	segmentFeaturesExtractor->setInput("raw sections", _rawImageStore->getImageStack(*boundingBlocks));
-	segmentFeaturesExtractor->setInput("crop offset", offset);
 	
 	reader->setInput(contentProvider->getOutput());
-	linearCostFunction->setInput("features", segmentFeaturesExtractor->getOutput("all features"));
+	
+	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
 	linearCostFunction->setInput("parameters", reader->getOutput());
 
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
@@ -307,38 +288,5 @@ CoreSolver::updateOutputs()
 	*_neurons = *neurons;
 }
 
-pipeline::Value<Blocks>
-CoreSolver::computeBound(const boost::shared_ptr<ProblemAssembler> problemAssembler)
-{
-		pipeline::Value<Segments> segments = problemAssembler->getOutput("segments");
-	if (segments->size() > 0)
-	{
-		util::rect<int> bound =
-			segments->getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
-		boost::shared_ptr<Box<> > box;
-		pipeline::Value<Blocks> boundBlocks;
-		
-		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
-		{
-			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
-			{
-				util::rect<int> componentBound = slice->getComponent()->getBoundingBox();
-				bound.fit(componentBound);
-			}
-		}
-		
-		box = boost::make_shared<Box<> >(bound, _blocks->location().z, _blocks->size().z);
-		
-		*boundBlocks = *(_blocks->getManager()->blocksInBox(box));
-		
-		boundBlocks->expand(util::point3<int>(0,0,1));
-		return boundBlocks;
-	}
-	else
-	{
-		LOG_DEBUG(coresolverlog) << "No segments, returning request bound." << std::endl;
-		return _blocks;
-	}
-}
 
 
