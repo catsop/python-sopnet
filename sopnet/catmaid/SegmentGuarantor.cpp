@@ -73,7 +73,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() <<
 		" slices from requested geometry. Expanding blocks to fit." << std::endl;
 	
-	sliceBlocks = _blocks->getManager()->blocksInBox(boundingBox(slices));
+	sliceBlocks = _blocks->getManager()->blocksInBox(slicesBoundingBox(slices));
 
 	// Check again
 	if (!checkBlockSlices(sliceBlocks, needBlocks))
@@ -157,7 +157,7 @@ boost::shared_ptr<Slices> SegmentGuarantor::collectSlicesByZ(
 }
 
 boost::shared_ptr<Box<> >
-SegmentGuarantor::boundingBox(const boost::shared_ptr<Slices> slices)
+SegmentGuarantor::slicesBoundingBox(const boost::shared_ptr<Slices> slices)
 {
 	boost::shared_ptr<Box<> > box;
 	
@@ -210,28 +210,19 @@ SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 }
 
 boost::shared_ptr<Blocks>
-SegmentGuarantor::segmentBoundingBlocks(const boost::shared_ptr<Segments> inSegments)
+SegmentGuarantor::segmentBoundingBlocks(const boost::shared_ptr<Segments> segments)
 {
-	if (inSegments->size() == 0)
+	if (segments->size() == 0)
 	{
 		return boost::make_shared<Blocks>();
 	}
 	else
 	{
-		std::vector<boost::shared_ptr<Segment> > segments = inSegments->getSegments();
-		util::rect<int> bound(segments[0]->getSlices()[0]->getComponent()->getBoundingBox());
+		boost::shared_ptr<util::rect<int> > bound = segments->boundingBox();
 		boost::shared_ptr<Box<> > box;
 		boost::shared_ptr<Blocks> blocks;
 		
-		foreach (boost::shared_ptr<Segment> segment, segments)
-		{
-			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
-			{
-				bound.fit(slice->getComponent()->getBoundingBox());
-			}
-		}
-		
-		box = boost::make_shared<Box<> >(bound, _blocks->location().z, _blocks->size().z);
+		box = boost::make_shared<Box<> >(*bound, _blocks->location().z, _blocks->size().z);
 		blocks = _blocks->getManager()->blocksInBox(box);
 		return blocks;
 	}
