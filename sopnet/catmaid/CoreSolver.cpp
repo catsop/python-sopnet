@@ -203,6 +203,18 @@ void CoreSolver::EndExtractor::updateOutputs()
 	*_allSegments = *outputSegments;
 }
 
+CoreSolver::FeatureAssembler::FeatureAssembler()
+{
+	registerInput(_faSegments, "segments");
+	registerInput(_faSegmentStore, "segment store");
+	registerOutput(_features, "features");
+}
+
+void CoreSolver::FeatureAssembler::updateOutputs()
+{
+
+}
+
 
 void
 CoreSolver::updateOutputs()
@@ -273,7 +285,7 @@ CoreSolver::updateOutputs()
 	reader->setInput(contentProvider->getOutput());
 	linearCostFunction->setInput("features", segmentFeaturesExtractor->getOutput("all features"));
 	linearCostFunction->setInput("parameters", reader->getOutput());
-	LOG_DEBUG(coresolverlog) << "D" << std::endl;
+
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
 	
