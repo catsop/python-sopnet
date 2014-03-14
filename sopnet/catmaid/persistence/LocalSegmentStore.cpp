@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <util/Logger.h>
+#include <util/foreach.h>
 logger::LogChannel localsegmentstorelog("localsegmentstorelog", "[LocalSegmentStore] ");
 
 LocalSegmentStore::LocalSegmentStore()
