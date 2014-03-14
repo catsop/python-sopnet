@@ -49,9 +49,9 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 	{
 		if (_blockSegmentMap.count(*block))
 		{
-			LOG_DEBUG(localsegmentstorelog) << "Retrieving segments for " << *block << std::endl;
+			LOG_ALL(localsegmentstorelog) << "Retrieving segments for " << *block << std::endl;
 			boost::shared_ptr<Segments> blockSegments = _blockSegmentMap[*block];
-			LOG_DEBUG(localsegmentstorelog) << "Retrieved " << blockSegments->size() <<
+			LOG_ALL(localsegmentstorelog) << "Retrieved " << blockSegments->size() <<
 				" segments" << std::endl;
 			foreach (boost::shared_ptr<Segment> segment, blockSegments->getSegments())
 			{
