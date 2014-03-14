@@ -32,16 +32,16 @@
 
 #include <imageprocessing/io/ImageBlockFileReader.h>
 #include <util/point3.hpp>
-#include <catmaidsopnet/SliceGuarantorParameters.h>
-#include <catmaidsopnet/SliceGuarantor.h>
-#include <catmaidsopnet/SegmentGuarantor.h>
-#include <catmaidsopnet/persistence/SliceStore.h>
-#include <catmaidsopnet/persistence/LocalSliceStore.h>
-#include <catmaidsopnet/persistence/LocalSegmentStore.h>
-#include <catmaidsopnet/persistence/SliceReader.h>
-#include <catmaidsopnet/persistence/SegmentReader.h>
-#include <catmaidsopnet/ConsistencyConstraintExtractor.h>
-#include <catmaidsopnet/BlockSolver.h>
+#include <catmaid/SliceGuarantorParameters.h>
+#include <catmaid/SliceGuarantor.h>
+#include <catmaid/SegmentGuarantor.h>
+#include <catmaid/persistence/SliceStore.h>
+#include <catmaid/persistence/LocalSliceStore.h>
+#include <catmaid/persistence/LocalSegmentStore.h>
+#include <catmaid/persistence/SliceReader.h>
+#include <catmaid/persistence/SegmentReader.h>
+#include <catmaid/ConsistencyConstraintExtractor.h>
+#include <catmaid/CoreSolver.h>
 
 #include <boost/unordered_set.hpp>
 
