@@ -59,7 +59,7 @@ public:
 	 * @return a map from a shared_ptr to a Segment to a vector of double values representing the
 	 * features for that Segment.
 	 * 
-	 * Conversion to a Features object is handled in SegmentReader.
+	 * Conversion to a Features object is handled in SegmentFeatureReader.
 	 */
 	virtual pipeline::Value<SegmentFeaturesMap>
 		retrieveFeatures(pipeline::Value<Segments> segments) = 0;
