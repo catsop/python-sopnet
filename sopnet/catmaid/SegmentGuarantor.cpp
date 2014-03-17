@@ -209,30 +209,12 @@ SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 	return ok;
 }
 
-boost::shared_ptr<Blocks>
-SegmentGuarantor::segmentBoundingBlocks(const boost::shared_ptr<Segments> segments)
-{
-	if (segments->size() == 0)
-	{
-		return boost::make_shared<Blocks>();
-	}
-	else
-	{
-		boost::shared_ptr<util::rect<int> > bound = segments->boundingBox();
-		boost::shared_ptr<Box<> > box;
-		boost::shared_ptr<Blocks> blocks;
-		
-		box = boost::make_shared<Box<> >(*bound, _blocks->location().z, _blocks->size().z);
-		blocks = _blocks->getManager()->blocksInBox(box);
-		return blocks;
-	}
-}
-
 pipeline::Value<Features>
 SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
 									const boost::shared_ptr<Segments> segments)
 {
-	boost::shared_ptr<Blocks> blocks = segmentBoundingBlocks(segments);
+	boost::shared_ptr<Box<> > box = segments->boundingBox();
+	boost::shared_ptr<Blocks> blocks = _blocks->getManager()->blocksInBox(box);
 	pipeline::Value<util::point3<unsigned int> > offset(blocks->location());
 	boost::shared_ptr<SegmentFeaturesExtractor> featuresExtractor =
 		boost::make_shared<SegmentFeaturesExtractor>();

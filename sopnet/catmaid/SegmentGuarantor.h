@@ -47,8 +47,6 @@ private:
 	pipeline::Value<Features> guaranteeFeatures(
 							const boost::shared_ptr<SegmentWriter> segmentWriter,
 							const boost::shared_ptr<Segments> segments);
-	
-	boost::shared_ptr<Blocks> segmentBoundingBlocks(const boost::shared_ptr<Segments> segments);
 
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
