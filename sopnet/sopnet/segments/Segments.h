@@ -5,6 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
+#include <block/Box.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
@@ -289,7 +290,7 @@ public:
 	
 	bool operator==(const Segments& other) const;
 	
-	boost::shared_ptr<util::rect<int> > boundingBox();
+	boost::shared_ptr<Box<> > boundingBox();
 
 private:
 
