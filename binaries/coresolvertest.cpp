@@ -31,6 +31,7 @@
 #include <catmaid/persistence/LocalSegmentStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
+#include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <sopnet/segments/SegmentSet.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
@@ -770,7 +771,8 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	featureExtractor->setInput("raw sections", rawImageStackReader->getOutput());
 	sopnetFeatures = featureExtractor->getOutput("all features");
 	
-	LOG_USER(out) << "Extracted " << sopnetFeatures->size() << " features" << std::endl;
+	LOG_USER(out) << "Extracted " << sopnetFeatures->size() << " sopnet features for " <<
+		sopnetSegments->size() << " segments" << std::endl;
 	
 	// Blockwise variables
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
@@ -785,6 +787,8 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
 	
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader = 
+		boost::make_shared<SegmentFeatureReader>();
 	
 	pipeline::Value<Segments> blockwiseSegments;
 	pipeline::Value<Features> blockwiseFeatures;
@@ -799,10 +803,19 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	
 	segmentReader->setInput("blocks", blocks);
 	segmentReader->setInput("store", segmentStore);
-	
 	blockwiseSegments = segmentReader->getOutput("segments");
-	blockwiseFeatures = segmentReader->getOutput("features");
 	
+	LOG_USER(out) << "read back " << blockwiseSegments->size() << " blockwise segments" <<
+		std::endl;
+	
+	segmentFeatureReader->setInput("segments", blockwiseSegments);
+	segmentFeatureReader->setInput("store", segmentStore);
+	segmentFeatureReader->setInput("block manager", blocks->getManager());
+	segmentFeatureReader->setInput("raw stack store", rawStackStore);
+	
+	blockwiseFeatures = segmentFeatureReader->getOutput("features");
+	
+	LOG_USER(out) << "Read " << blockwiseFeatures->size() << " features blockwise " << std::endl;
 	// Now, check for differences
 	
 	// First, check for differences in the segment sets.
