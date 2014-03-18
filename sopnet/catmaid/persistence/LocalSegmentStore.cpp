@@ -43,7 +43,7 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 {
 	pipeline::Value<Segments> segments;
 	std::vector<boost::shared_ptr<Segment> > segmentVector;
-	SegmentSet segmentSet;
+	SegmentSetType segmentSet;
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
@@ -55,7 +55,7 @@ LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 				" segments" << std::endl;
 			foreach (boost::shared_ptr<Segment> segment, blockSegments->getSegments())
 			{
-				segmentSet.add(segment);
+				segmentSet.insert(segment);
 			}
 		}
 		else
