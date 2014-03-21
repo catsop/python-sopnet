@@ -165,8 +165,9 @@ SliceGuarantor::extractSlices(const unsigned int z,
 
 	pipeline::Value<Slices> slicesValue;
 	pipeline::Value<ConflictSets> conflictValue;
+	boost::shared_ptr<Blocks> inputBlocks = _blocks;
 	
-	extractBlocks->addAll(_blocks);
+	extractBlocks->addAll(inputBlocks);
 	// Dilate once beforehand.
 	extractBlocks->dilateXY();
 

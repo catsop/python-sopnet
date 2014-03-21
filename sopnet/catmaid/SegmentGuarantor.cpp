@@ -22,7 +22,8 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	updateInputs();
 	
 	pipeline::Value<Blocks> needBlocks;
-	boost::shared_ptr<Blocks> sliceBlocks = boost::make_shared<Blocks>(_blocks);
+	boost::shared_ptr<Blocks> inputBlocks = _blocks;
+	boost::shared_ptr<Blocks> sliceBlocks = boost::make_shared<Blocks>(inputBlocks);
 	
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
 	pipeline::Value<Slices> slices;
