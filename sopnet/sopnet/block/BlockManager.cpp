@@ -85,4 +85,8 @@ BlockManager::blocksInBox(const boost::shared_ptr< Box<unsigned int> >& box)
 	return blocks;
 }
 
-
+const util::point3<unsigned int>&
+BlockManager::maximumBlockCoordinates()
+{
+	return _maxBlockCoordinates;
+}

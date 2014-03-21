@@ -72,6 +72,8 @@ public:
 	 */
 	virtual bool isUpperBound(unsigned int z) = 0;
 	
+	virtual const point3<unsigned int>& maximumBlockCoordinates();
+	
 protected:
     point3<unsigned int> _stackSize, _blockSize;
 	point3<unsigned int> _maxBlockCoordinates;
