@@ -10,6 +10,7 @@
 #include <pipeline/Data.h>
 #include <pipeline/Value.h>
 #include <sopnet/features/Features.h>
+#include <sopnet/inference/Solution.h>
 #include <catmaid/persistence/SegmentPointerHash.h>
 
 /**
@@ -63,9 +64,41 @@ public:
 	 */
 	virtual pipeline::Value<SegmentFeaturesMap>
 		retrieveFeatures(pipeline::Value<Segments> segments) = 0;
-	
+
+	/**
+	 * Retrieve the names of the Segment Features that have been stored herel.
+	 */
 	virtual std::vector<std::string> getFeatureNames() = 0;
 
+	/**
+	 * Store solution scores for the given segments.
+	 * @param segments - the Segments corresponding to the given Solution object
+	 * @param solution - the Solution scores, as computed for instance by LinearSolver
+	 * @return the number of Segments for which the scores were successfully stored. This will
+	 * be less than the size of segments when not all of the Segments have already been associated.
+	 * 
+	 * A Solution object stores a linear index of scores on the Segments that were given to the
+	 * solver. In other words, (*solution)[i] returns the score corresponding to
+	 * segments->getSegments()[i], so it is important to input the same Segments object that was used
+	 * for the Solver.
+	 */
+	virtual unsigned int storeSolution(pipeline::Value<Segments> segments,
+							   pipeline::Value<Solution> solution) = 0;
+
+	/**
+	 * Retrieve the solution scores for the given segments.
+	 * @param segments - the Segments for which solution scores are to be retrieved.
+	 * @return the corresponding Solution object
+	 * 
+	 * The returned Solution object will be indexed to correspond to the segments argument. The
+	 * score for a Segment will be zero in the case that it is not associated in this store, or no
+	 * corresponding score has been stored.
+	 */
+	virtual pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments) = 0;
+	
+	/**
+	 * Print the contents of this store to the DEBUG logging channel.
+	 */
 	virtual void dumpStore() = 0;
 };
 

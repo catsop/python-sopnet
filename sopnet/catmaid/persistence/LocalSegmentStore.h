@@ -19,6 +19,8 @@ class LocalSegmentStore : public SegmentStore
 		SegmentPointerHash, SegmentPointerEquals > SegmentBlockMap;
 	typedef boost::unordered_map<Block, boost::shared_ptr<Segments> > BlockSegmentMap;
 	typedef boost::unordered_map<unsigned int, boost::shared_ptr<Segment> > IdSegmentMap;
+	typedef boost::unordered_map<boost::shared_ptr<Segment>, double,
+		SegmentPointerHash, SegmentPointerEquals > SegmentScoreMap;
 	
 public:
 	LocalSegmentStore();
@@ -47,6 +49,11 @@ public:
 	
 	std::vector<std::string> getFeatureNames();
 	
+	unsigned int storeSolution(pipeline::Value<Segments> segments,
+							   pipeline::Value<Solution> solution);
+	
+	pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments);
+	
 private:
 	void mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
 						   const boost::shared_ptr<Block>& block);
@@ -73,6 +80,7 @@ private:
 	IdSegmentMap _idSegmentMap;
 	
 	SegmentFeaturesMap _featureMasterMap;
+	SegmentScoreMap _scoreMap;
 	SegmentSet _segmentMasterList;
 	
 	std::vector<std::string> _featureNames;

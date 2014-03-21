@@ -248,6 +248,55 @@ LocalSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
 	return featureMap;
 }
 
+unsigned int
+LocalSegmentStore::storeSolution(pipeline::Value<Segments> segments,
+								 pipeline::Value<Solution> solution)
+{
+	unsigned int count = 0, i = 0;
+
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_segmentMasterList.contains(segment))
+		{
+			_scoreMap[segment] = (*solution)[i];
+			++count;
+		}
+		
+		++i;
+		
+		if (i > solution->size())
+		{
+			return count;
+		}
+	}
+
+	return count;
+}
+
+pipeline::Value<Solution>
+LocalSegmentStore::retrieveSolution(pipeline::Value<Segments> segments)
+{
+	pipeline::Value<Solution> solution;
+	unsigned int i = 0;
+	
+	solution->resize(segments->size());
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_scoreMap.count(segment))
+		{
+			(*solution)[i] = _scoreMap[segment];
+		}
+		else
+		{
+			(*solution)[i] = 0;
+		}
+	}
+	
+	return solution;
+}
+
+
 std::vector<std::string>
 LocalSegmentStore::getFeatureNames()
 {
