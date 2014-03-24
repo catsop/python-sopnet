@@ -157,7 +157,8 @@ SliceGuarantor::extractSlices(const unsigned int z,
 							  const shared_ptr<Blocks> extractBlocks)
 {
 	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline for section " << z << std::endl;
-	shared_ptr<Blocks> nbdBlocks;	
+	shared_ptr<Blocks> nbdBlocks;
+	util::rect<unsigned int> blocksRect = *_blocks;
 	
 	bool okSlices = false;
 	shared_ptr<SliceExtractor<unsigned char> > sliceExtractor =
@@ -204,7 +205,8 @@ SliceGuarantor::extractSlices(const unsigned int z,
 		foreach(boost::shared_ptr<Slice> slice, *slicesValue)
 		{
 			slice->translate(translate);
-			if (_blocks->overlaps(slice->getComponent()))
+			if (blocksRect.intersects(
+				static_cast<util::rect<unsigned int> >(slice->getComponent()->getBoundingBox())))
 			{
 				checkWhole(slice, extractBlocks, nbdBlocks);
 			}
@@ -243,6 +245,7 @@ SliceGuarantor::collectOutputSlices(pipeline::Value<Slices>& extractedSlices,
 	// Must be separate from idSet to avoid problems with the possibility of multiply-overlapping
 	// conflict sets.
 	set<unsigned int> conflictCliqueIdSet;
+	util::rect<unsigned int> blocksRect = *_blocks;
 	
 	// Collection in two steps:
 	// 1) Find all Slice's that overlap the guarantee blocks
@@ -254,7 +257,8 @@ SliceGuarantor::collectOutputSlices(pipeline::Value<Slices>& extractedSlices,
 		idSliceMap[slice->getId()] = slice;
 		
 		// If the slice overlaps the guarantee blocks, add it to the set
-		if (_blocks->overlaps(slice->getComponent()))
+		if (blocksRect.intersects(
+			static_cast<util::rect<unsigned int> >(slice->getComponent()->getBoundingBox())))
 		{
 			idSet.insert(slice->getId());
 		}
@@ -306,33 +310,33 @@ SliceGuarantor::checkWhole(const boost::shared_ptr<Slice>& slice,
 	
 	if (sliceBound.minX <= blockBound.minX)
 	{
-		Blocks expandBlocks = Blocks(*extractBlocks);
-		expandBlocks.expand(util::point3<int>(-1, 0, 0));
-		nbdBlocks->addAll(expandBlocks.getBlocks());
+		boost::shared_ptr<Blocks> expandBlocks = boost::make_shared<Blocks>(*extractBlocks);
+		expandBlocks->expand(util::point3<int>(-1, 0, 0));
+		nbdBlocks->addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -x boundary" << std::endl;
 	}
 	
 	if (sliceBound.maxX >= blockBound.maxX)
 	{
-		Blocks expandBlocks = Blocks(*extractBlocks);
-		expandBlocks.expand(util::point3<int>(1, 0, 0));
-		nbdBlocks->addAll(expandBlocks.getBlocks());
+		boost::shared_ptr<Blocks> expandBlocks = boost::make_shared<Blocks>(*extractBlocks);
+		expandBlocks->expand(util::point3<int>(1, 0, 0));
+		nbdBlocks->addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +x boundary" << std::endl;
 	}
 
 	if (sliceBound.minY <= blockBound.minY)
 	{
-		Blocks expandBlocks = Blocks(*extractBlocks);
-		expandBlocks.expand(util::point3<int>(0, -1, 0));
-		nbdBlocks->addAll(expandBlocks.getBlocks());
+		boost::shared_ptr<Blocks> expandBlocks = boost::make_shared<Blocks>(*extractBlocks);
+		expandBlocks->expand(util::point3<int>(0, -1, 0));
+		nbdBlocks->addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -y boundary" << std::endl;
 	}
 	
 	if (sliceBound.maxY >= blockBound.maxY)
 	{
-		Blocks expandBlocks = Blocks(*extractBlocks);
-		expandBlocks.expand(util::point3<int>(0, 1, 0));
-		nbdBlocks->addAll(expandBlocks.getBlocks());
+		boost::shared_ptr<Blocks> expandBlocks = boost::make_shared<Blocks>(*extractBlocks);
+		expandBlocks->expand(util::point3<int>(0, 1, 0));
+		nbdBlocks->addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +y boundary" << std::endl;
 	}
 }
