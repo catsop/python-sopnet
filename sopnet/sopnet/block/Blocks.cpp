@@ -7,23 +7,26 @@
 
 logger::LogChannel blockslog("blocks", "[Blocks] ");
 
-BlocksImpl::BlocksImpl() : _blockManager(boost::shared_ptr<BlockManager>())
+template<class T>
+BlocksImpl<T>::BlocksImpl() : _blockManager(boost::shared_ptr<BlockManager>())
 {}
 
-BlocksImpl::BlocksImpl(const boost::shared_ptr<Block> block) : _blockManager(block->getManager())
+template<class T>
+BlocksImpl<T>::BlocksImpl(const boost::shared_ptr<T> block) : _blockManager(block->getManager())
 {
 	add(block);
 }
 
-BlocksImpl::BlocksImpl(const boost::shared_ptr<BlocksImpl> blocksImpl) :
+template<class T>
+BlocksImpl<T>::BlocksImpl(const boost::shared_ptr<BlocksImpl<T> > blocksImpl) :
 	_blockManager(blocksImpl->getManager())
 {
 	addAll(blocksImpl->_blocks);
 }
 
-
-
-bool BlocksImpl::internalAdd(const boost::shared_ptr<Block>& block)
+template<class T>
+bool
+BlocksImpl<T>::internalAdd(const boost::shared_ptr<T>& block)
 {
 	if(block && !contains(block))
 	{
@@ -40,7 +43,9 @@ bool BlocksImpl::internalAdd(const boost::shared_ptr<Block>& block)
 	}
 }
 
-void BlocksImpl::add(const boost::shared_ptr<Block>& block)
+template<class T>
+void
+BlocksImpl<T>::add(const boost::shared_ptr<T> block)
 {
 	if (internalAdd(block))
 	{
@@ -48,7 +53,9 @@ void BlocksImpl::add(const boost::shared_ptr<Block>& block)
 	}
 }
 
-void BlocksImpl::addAll(const std::vector<boost::shared_ptr<Block> >& blocks)
+template<class T>
+void
+BlocksImpl<T>::addAll(const std::vector<boost::shared_ptr<T> >& blocks)
 {
 	bool needUpdate = false;
 	foreach (boost::shared_ptr<Block> block, blocks)
@@ -62,16 +69,19 @@ void BlocksImpl::addAll(const std::vector<boost::shared_ptr<Block> >& blocks)
 	}
 }
 
-void BlocksImpl::addAll(const boost::shared_ptr<BlocksImpl>& blocks)
+template<class T>
+void
+BlocksImpl<T>::addAll(const boost::shared_ptr<BlocksImpl<T> > blocks)
 {
 	addAll(blocks->_blocks);
 }
 
-
-void BlocksImpl::remove(const boost::shared_ptr<Block>& otherBlock)
+template<class T>
+void
+BlocksImpl<T>::remove(const boost::shared_ptr<T> otherBlock)
 {
-	boost::shared_ptr<Block> eraseBlock;
-	foreach (boost::shared_ptr<Block> block, _blocks)
+	boost::shared_ptr<T> eraseBlock;
+	foreach (boost::shared_ptr<T> block, _blocks)
 	{
 		if (*block == *otherBlock)
 		{
@@ -86,10 +96,11 @@ void BlocksImpl::remove(const boost::shared_ptr<Block>& otherBlock)
 	}
 }
 
+template<class T>
 bool
-BlocksImpl::contains(const boost::shared_ptr<Block>& otherBlock)
+BlocksImpl<T>::contains(const boost::shared_ptr<T> otherBlock)
 {
-	foreach(boost::shared_ptr<Block> block, _blocks)
+	foreach(boost::shared_ptr<T> block, _blocks)
 	{
 		if (*block == *otherBlock)
 		{
@@ -100,7 +111,9 @@ BlocksImpl::contains(const boost::shared_ptr<Block>& otherBlock)
 	return false;
 }
 
-void BlocksImpl::updateBox()
+template<class T>
+void
+BlocksImpl<T>::updateBox()
 {
 	if (_blocks.empty())
 	{
@@ -111,7 +124,7 @@ void BlocksImpl::updateBox()
 	{
 		util::point3<unsigned int> minPoint(_blocks[0]->location()), maxPoint(_blocks[0]->location());
 		
-		foreach (boost::shared_ptr<Block> block, _blocks)
+		foreach (boost::shared_ptr<T> block, _blocks)
 		{
 			minPoint = minPoint.min(block->location());
 			maxPoint = maxPoint.max(block->location() + block->size());
@@ -122,40 +135,20 @@ void BlocksImpl::updateBox()
 	}
 }
 
-bool
-BlocksImpl::overlaps(const boost::shared_ptr< ConnectedComponent >& component)
-{
-	foreach (boost::shared_ptr<Block> block, _blocks)
-	{
-		if (block->overlaps(component))
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-std::vector<boost::shared_ptr<Block> >
-BlocksImpl::getBlocks()
-{
-	return _blocks;
-}
-
-
+template<class T>
 boost::shared_ptr<BlockManager>
-BlocksImpl::getManager()
+BlocksImpl<T>::getManager()
 {
 	return _blockManager;
 }
 
-Blocks::Blocks() : BlocksImpl()
+Blocks::Blocks() : BlocksImpl<Block>()
 {}
 
-Blocks::Blocks(const boost::shared_ptr<Block> block) : BlocksImpl(block)
+Blocks::Blocks(const boost::shared_ptr<Block> block) : BlocksImpl<Block>(block)
 {}
 
-Blocks::Blocks(const boost::shared_ptr<BlocksImpl> blocks) : BlocksImpl(blocks)
+Blocks::Blocks(const boost::shared_ptr<BlocksImpl> blocks) : BlocksImpl<Block>(blocks)
 {}
 
 

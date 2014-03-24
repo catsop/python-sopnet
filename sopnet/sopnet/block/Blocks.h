@@ -8,18 +8,19 @@
 #include "Block.h"
 #include "Box.h"
 
+template <typename T>
 class BlocksImpl : public Box<>
 {
-	typedef std::vector<boost::shared_ptr<Block> >::iterator       iterator;
-	typedef std::vector<boost::shared_ptr<Block> >::const_iterator const_iterator;
+	typedef std::vector<boost::shared_ptr<T> >::iterator       iterator;
+	typedef std::vector<boost::shared_ptr<T> >::const_iterator const_iterator;
 	
 public:
 	
 	BlocksImpl();
 	
-	BlocksImpl(const boost::shared_ptr<Block> block);
+	BlocksImpl(const boost::shared_ptr<T> block);
 	
-	BlocksImpl(const boost::shared_ptr<BlocksImpl> blocksImpl);
+	BlocksImpl(const boost::shared_ptr<BlocksImpl<T> > blocksImpl);
 	
 	virtual const const_iterator begin() const { return _blocks.begin(); }
 
@@ -31,7 +32,7 @@ public:
 
 	virtual unsigned int length() const { return _blocks.size(); }
 
-	virtual bool contains(const boost::shared_ptr<Block>& block);
+	virtual bool contains(const boost::shared_ptr<T> block);
 	
 	template<typename S>
 	bool contains(const util::rect<S>& rect)
@@ -39,35 +40,31 @@ public:
 		return Box<>::contains<S>(rect);
 	}
 	
-	virtual void add(const boost::shared_ptr<Block>& block);
+	virtual void add(const boost::shared_ptr<T> block);
 	
-	virtual void addAll(const std::vector<boost::shared_ptr<Block> >& blocks);
+	virtual void addAll(const std::vector<boost::shared_ptr<T> >& blocks);
 	
-	virtual void addAll(const boost::shared_ptr<BlocksImpl>& blocks);
+	virtual void addAll(const boost::shared_ptr<BlocksImpl<T> > blocks);
 	
-	virtual void remove(const boost::shared_ptr<Block>& block);
+	virtual void remove(const boost::shared_ptr<T> block);
 
 	virtual boost::shared_ptr<BlockManager> getManager();
-	
-	virtual std::vector<boost::shared_ptr<Block> > getBlocks();
-	
-	virtual bool overlaps(const boost::shared_ptr<ConnectedComponent>& component);
 	
 	virtual bool empty(){return _blocks.empty();}
 
 	
 protected:
-	std::vector<boost::shared_ptr<Block> > _blocks;
+	std::vector<boost::shared_ptr<T> > _blocks;
 	boost::shared_ptr<BlockManager> _blockManager;
 	
 private:
-	bool internalAdd(const boost::shared_ptr<Block>& block);
+	bool internalAdd(const boost::shared_ptr<T>& block);
 	
 	void updateBox();
 
 };
 
-class Blocks : public BlocksImpl
+class Blocks : public BlocksImpl<Block>
 {
 public:
 	Blocks();
