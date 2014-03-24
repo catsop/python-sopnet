@@ -86,10 +86,12 @@ pipeline::Value<Slices>
 SliceWriter::collectSlicesByBlocks(const boost::shared_ptr<Block> block)
 {
 	pipeline::Value<Slices> blockSlices;
+	util::rect<unsigned int> blockRect = *block;
 
 	foreach (boost::shared_ptr<Slice> slice, *_slices)
 	{
-		if (block->overlaps(slice->getComponent()))
+		if (blockRect.intersects(
+			static_cast<util::rect<unsigned int> >(slice->getComponent()->getBoundingBox())))
 		{
 			blockSlices->add(slice);
 		}

@@ -40,9 +40,11 @@ bool
 SegmentWriter::associated(const boost::shared_ptr<Segment>& segment,
 						  const boost::shared_ptr<Block>& block)
 {
+	util::rect<unsigned int> blockRect = *block;
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
-		if (block->overlaps(slice->getComponent()))
+		if (blockRect.intersects(
+			static_cast<util::rect<unsigned int> >(slice->getComponent()->getBoundingBox())))
 		{
 			return true;
 		}
