@@ -8,19 +8,28 @@
 #include "Block.h"
 #include "Box.h"
 
-template <typename T>
+class Core;
+
+template <class T>
 class BlocksImpl : public Box<>
 {
-	typedef std::vector<boost::shared_ptr<T> >::iterator       iterator;
-	typedef std::vector<boost::shared_ptr<T> >::const_iterator const_iterator;
 	
 public:
+	typedef typename std::vector<boost::shared_ptr<T> >::iterator       iterator;
+	typedef typename std::vector<boost::shared_ptr<T> >::const_iterator const_iterator;
+
+	BlocksImpl() : _blockManager(boost::shared_ptr<BlockManager>()) {}
 	
-	BlocksImpl();
+	BlocksImpl(const boost::shared_ptr<T> block) : _blockManager(block->getManager())
+	{
+		add(block);
+	}
 	
-	BlocksImpl(const boost::shared_ptr<T> block);
-	
-	BlocksImpl(const boost::shared_ptr<BlocksImpl<T> > blocksImpl);
+	BlocksImpl(const boost::shared_ptr<BlocksImpl<T> > blocksImpl) :
+		_blockManager(blocksImpl->getManager())
+	{
+		addAll(blocksImpl->_blocks);
+	}
 	
 	virtual const const_iterator begin() const { return _blocks.begin(); }
 
@@ -32,7 +41,18 @@ public:
 
 	virtual unsigned int length() const { return _blocks.size(); }
 
-	virtual bool contains(const boost::shared_ptr<T> block);
+	virtual bool contains(const boost::shared_ptr<T> otherBlock)
+	{
+		foreach(boost::shared_ptr<T> block, _blocks)
+		{
+			if (*block == *otherBlock)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 	template<typename S>
 	bool contains(const util::rect<S>& rect)
@@ -40,15 +60,55 @@ public:
 		return Box<>::contains<S>(rect);
 	}
 	
-	virtual void add(const boost::shared_ptr<T> block);
+	virtual void add(const boost::shared_ptr<T> block)
+	{
+		if (internalAdd(block))
+		{
+			updateBox();
+		}
+	}
 	
-	virtual void addAll(const std::vector<boost::shared_ptr<T> >& blocks);
+	virtual void addAll(const std::vector<boost::shared_ptr<T> >& blocks)
+	{
+		bool needUpdate = false;
+		foreach (boost::shared_ptr<T> block, blocks)
+		{
+			needUpdate = internalAdd(block) || needUpdate;
+		}
+		
+		if (needUpdate)
+		{
+			updateBox();
+		}
+	}
 	
-	virtual void addAll(const boost::shared_ptr<BlocksImpl<T> > blocks);
+	virtual void addAll(const boost::shared_ptr<BlocksImpl<T> > blocks)
+	{
+		addAll(blocks->_blocks);
+	}
 	
-	virtual void remove(const boost::shared_ptr<T> block);
+	virtual void remove(const boost::shared_ptr<T> otherBlock)
+	{
+		boost::shared_ptr<T> eraseBlock;
+		foreach (boost::shared_ptr<T> block, _blocks)
+		{
+			if (*block == *otherBlock)
+			{
+				_blocks.erase(std::remove(_blocks.begin(), _blocks.end(), block), _blocks.end());
+				updateBox();
+				if (_blocks.empty())
+				{
+					_blockManager = boost::shared_ptr<BlockManager>();
+				}
+				return;
+			}
+		}
+	}
 
-	virtual boost::shared_ptr<BlockManager> getManager();
+	virtual boost::shared_ptr<BlockManager> getManager()
+	{
+		return _blockManager;
+	}
 	
 	virtual bool empty(){return _blocks.empty();}
 
@@ -58,9 +118,45 @@ protected:
 	boost::shared_ptr<BlockManager> _blockManager;
 	
 private:
-	bool internalAdd(const boost::shared_ptr<T>& block);
+	bool internalAdd(const boost::shared_ptr<T>& block)
+	{
+		if(block && !contains(block))
+		{
+			if (!_blockManager)
+			{
+				_blockManager = block->getManager();
+			}
+			_blocks.push_back(block);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 	
-	void updateBox();
+	void updateBox()
+	{
+		if (_blocks.empty())
+		{
+			_location = util::point3<unsigned int>(0,0,0);
+			_size = util::point3<unsigned int>(0,0,0);
+		}
+		else
+		{
+			util::point3<unsigned int> minPoint(_blocks[0]->location()),
+				maxPoint(_blocks[0]->location());
+			
+			foreach (boost::shared_ptr<T> block, _blocks)
+			{
+				minPoint = minPoint.min(block->location());
+				maxPoint = maxPoint.max(block->location() + block->size());
+			}
+			
+			_location = minPoint;
+			_size = maxPoint - minPoint;
+		}
+	}
 
 };
 

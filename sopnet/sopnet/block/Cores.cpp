@@ -2,7 +2,7 @@
 #include <boost/make_shared.hpp>
 #include <util/foreach.h>
 
-Cores::Cores()
+Cores::Cores() : BlocksImpl<Core>()
 {
 
 }
@@ -17,7 +17,7 @@ Cores::asBlocks()
 {
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	
-	foreach (boost::shared_ptr<Core> core, this)
+	foreach (boost::shared_ptr<Core> core, _blocks)
 	{
 		blocks->addAll(core);
 	}
