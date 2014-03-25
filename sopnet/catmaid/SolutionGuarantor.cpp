@@ -145,6 +145,9 @@ SolutionGuarantor::checkSolution(const boost::shared_ptr<Blocks> blocks)
 	return needSolutionBlocks;
 }
 
+void SolutionGuarantor::setupInputs()
+{
+}
 
 void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> solveBlocks)
 {
@@ -245,7 +248,7 @@ SolutionGuarantor::EndExtractor::updateOutputs()
 	SegmentSet segmentSet;
 	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
 	
-	LOG_DEBUG(coresolverlog) << "End extractor recieved " << _eeSegments->size() <<
+	LOG_DEBUG(solutionguarantorlog) << "End extractor recieved " << _eeSegments->size() <<
 		" segments" << std::endl;
 	
 	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
@@ -256,7 +259,7 @@ SolutionGuarantor::EndExtractor::updateOutputs()
 		}
 	}
 	
-	LOG_DEBUG(coresolverlog) << " End extractor: max z is " << z << std::endl;
+	LOG_DEBUG(solutionguarantorlog) << " End extractor: max z is " << z << std::endl;
 
 	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
 	{
@@ -281,7 +284,7 @@ SolutionGuarantor::EndExtractor::updateOutputs()
 			segmentSet.add(rightEnd);
 			segmentSet.add(leftEnd);
 			
-			LOG_ALL(coresolverlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
+			LOG_ALL(solutionguarantorlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
 		}
 	}
 	
@@ -291,7 +294,7 @@ SolutionGuarantor::EndExtractor::updateOutputs()
 		outputSegments->add(segment);
 	}
 	
-	LOG_DEBUG(coresolverlog) << "End extractor returning " << outputSegments->size() <<
+	LOG_DEBUG(solutionguarantorlog) << "End extractor returning " << outputSegments->size() <<
 		" segments" << std::endl;
 	
 	*_allSegments = *outputSegments;
