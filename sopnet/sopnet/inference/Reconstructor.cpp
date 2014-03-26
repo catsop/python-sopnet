@@ -45,9 +45,9 @@ Reconstructor::updateReconstruction() {
 	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
 		probe(segment);
 
-	LOG_DEBUG(reconstructorlog) << "Reconstruction contains " << _reconstruction->size() << std::endl;
-	
 	LOG_ALL(reconstructorlog) << std::endl;
+	
+	LOG_DEBUG(reconstructorlog) << "Reconstruction contains " << _reconstruction->size() << std::endl;
 }
 
 template <typename SegmentType>
