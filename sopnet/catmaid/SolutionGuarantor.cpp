@@ -159,6 +159,23 @@ SolutionGuarantor::checkCost(const boost::shared_ptr<Blocks> blocks)
 
 void SolutionGuarantor::setupInputs()
 {
+	if (_forceExplanation)
+	{
+		_useForceExplanation = *_forceExplanation;
+	}
+	else
+	{
+		_useForceExplanation = optionCoreForceExplanation;
+	}
+	
+	if (_bufferRadius)
+	{
+		_useBufferRadius = *_bufferRadius;
+	}
+	else
+	{
+		_useBufferRadius = optionCoreBufferRadius.as<unsigned int>();
+	}
 }
 
 void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
@@ -187,7 +204,7 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 	
 	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
 	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
-	constraintAssembler->setInput("force explanation", _forceExplanation);
+	constraintAssembler->setInput("force explanation", _useForceExplanation);
 	
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
 	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
@@ -254,7 +271,7 @@ void SolutionGuarantor::storeCosts(const boost::shared_ptr<Blocks> costBlocks)
 	
 	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
 	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
-	constraintAssembler->setInput("force explanation", _forceExplanation);
+	constraintAssembler->setInput("force explanation", _useForceExplanation);
 	
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
 	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
@@ -273,20 +290,16 @@ void SolutionGuarantor::storeCosts(const boost::shared_ptr<Blocks> costBlocks)
 
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
+// 	if (_segmentationCostFunctionParameters)
+// 	{
+// 		//TODO
+// 	}
+	
 	costWriter->setInput("store", _segmentStore);
 	costWriter->setInput("segments", problemAssembler->getOutput("segments"));
 	costWriter->setInput("objective", objectiveGenerator->getOutput());
 	
 	costWriter->writeCosts();
-	
-// 	linearSolver->setInput("objective", objectiveGenerator->getOutput());
-// 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
-// 	linearSolver->setInput("parameters", binarySolverParameters);
-// 
-// 	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
-// 	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
-// 	
-// 	solutionWriter->writeSolution();
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{

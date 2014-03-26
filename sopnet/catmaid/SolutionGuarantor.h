@@ -127,10 +127,8 @@ private:
 	pipeline::Input<unsigned int> _bufferRadius;
 	pipeline::Input<bool> _forceExplanation;
 	
-	bool _useForceExplanation;
+	pipeline::Value<bool> _useForceExplanation;
 	int _useBufferRadius;
-	boost::shared_ptr<SegmentationCostFunctionParameters> _useSCFP;
-	boost::shared_ptr<PriorCostFunctionParameters> _usePCFP;
 	
 	pipeline::Output<Blocks> _needBlocks;
 };
