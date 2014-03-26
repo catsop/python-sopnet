@@ -16,6 +16,7 @@
 #include <sopnet/Sopnet.h>
 #include <sopnet/inference/PriorCostFunctionParameters.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
+#include <sopnet/inference/Reconstructor.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
@@ -29,10 +30,13 @@
 #include <catmaid/CoreSolver.h>
 #include <catmaid/SegmentGuarantor.h>
 #include <catmaid/SliceGuarantor.h>
+#include <catmaid/SolutionGuarantor.h>
+#include <catmaid/persistence/CostReader.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
+#include <catmaid/persistence/SolutionReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <sopnet/segments/SegmentSet.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
@@ -987,21 +991,16 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 bool coreSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
-	const boost::shared_ptr<SegmentTrees> neuronsOut,
-	const boost::shared_ptr<Segments> segmentsOut,
-	const boost::shared_ptr<LinearObjective> objectiveOut,
+	boost::shared_ptr<SegmentTrees>& neuronsOut,
+	boost::shared_ptr<Segments>& segmentsOut,
+	boost::shared_ptr<LinearObjective>& objectiveOut,
 	const boost::shared_ptr<Core> core,
-	const boost::shared_ptr<Blocks> blocks)
+	unsigned int buffer)
 {
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
-	
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
-	boost::shared_ptr<Box<> > box =
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0u, 0u, 0u), stackSize);
+
 	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
-	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	// Block pipeline variables
 	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
@@ -1013,41 +1012,76 @@ bool coreSolver(
 		boost::shared_ptr<SegmentStore>(new LocalSegmentStore());
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
+	boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
+	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
+	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
+	boost::shared_ptr<Reconstructor> reconstructor = boost::make_shared<Reconstructor>();
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
+	pipeline::Value<unsigned int> bufferValue = pipeline::Value<unsigned int>(buffer);
+	
+	boost::shared_ptr<SolutionGuarantor> solutionGuarantor = 
+		boost::make_shared<SolutionGuarantor>();
+	
+	boost::shared_ptr<Blocks> blocks;
+	pipeline::Value<Blocks> needBlocks;
+	pipeline::Value<Cores> cores;
+	cores->add(core);
 	
 	// Result Values
 	//pipeline::Value<SliceStoreResult> sliceResult;
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
-	pipeline::Value<Slices> slices;
+	pipeline::Value<Solution> solution;
+	pipeline::Value<LinearObjective> objective;
 	
-	// guarantee segments
-	if (!guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore, rawStackStore))
+	solutionGuarantor->setInput("cores", cores);
+	solutionGuarantor->setInput("slice store", sliceStore);
+	solutionGuarantor->setInput("raw image store", rawStackStore);
+	solutionGuarantor->setInput("membrane image store", membraneStackStore);
+	solutionGuarantor->setInput("buffer", bufferValue);
+	solutionGuarantor->setInput("force explanation", forceExplanation);
+	solutionGuarantor->setInput("segmentation cost parameters", segmentationCostParameters);
+	solutionGuarantor->setInput("prior cost parameters", priorCostFunctionParameters);
+	
+	do
 	{
-		return false;
-	}
+		solutionGuarantor->setInput("segment store", segmentStore);
+		needBlocks = solutionGuarantor->getOutput();
+		if (!needBlocks->empty() &&
+			!guaranteeSegments(needBlocks, sliceStore, segmentStore,
+							   membraneStackStore, rawStackStore))
+		{
+			return false;
+		}
+	} while (!needBlocks->empty());
 
-	LOG_USER(out) << "Setting up block solver" << std::endl;
-	coreSolver->setInput("prior cost parameters",
-							priorCostFunctionParameters);
-	coreSolver->setInput("segmentation cost parameters", segmentationCostParameters);
-	coreSolver->setInput("blocks", blocks);
-	coreSolver->setInput("segment store", segmentStore);
-	coreSolver->setInput("slice store", sliceStore);
-	coreSolver->setInput("raw image store", rawStackStore);
-	coreSolver->setInput("membrane image store", membraneStackStore);
-	coreSolver->setInput("force explanation", forceExplanation);
+	segmentReader->setInput("blocks", core);
+	segmentReader->setInput("store", segmentStore);
+	segments = segmentReader->getOutput("segments");
 	
-	LOG_USER(out) << "Inputs are set" << endl;
+	solutionReader->setInput("cores", cores);
+	solutionReader->setInput("store", segmentStore);
+	solutionReader->setInput("segments", segments);
+	solution = solutionReader->getOutput("solution");
 	
-	neurons = coreSolver->getOutput("neurons");
-	segments = coreSolver->getOutput("segments");
+	costReader->setInput("blocks", core);
+	costReader->setInput("segments", segments);
+	objective = costReader->getOutput();
+	
+	reconstructor->setInput("solution", solution);
+	reconstructor->setInput("segments", segments);
+	
+	neuronExtractor->setInput("segments", reconstructor->getOutput());
+	
+	neurons = neuronExtractor->getOutput("neurons");
 	
 	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
 	
 	neuronsOut->addAll(neurons);
+	segmentsOut->addAll(segments);
+	objectiveOut = objective;
 	
 	return true;
 }
@@ -1205,7 +1239,7 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
-	foreach (boost::shared_ptr<Core> core, *coreManager->coresInBox())
+	foreach (boost::shared_ptr<Core> core, *coreManager->coresInBox(stackBox))
 	{
 		boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
 		boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
