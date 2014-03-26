@@ -8,6 +8,7 @@
 #include <sopnet/segments/Segment.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/block/Block.h>
+#include <sopnet/block/Core.h>
 #include <sopnet/block/Blocks.h>
 #include <sopnet/segments/SegmentSet.h>
 #include <catmaid/persistence/SegmentPointerHash.h>
@@ -20,7 +21,8 @@ class LocalSegmentStore : public SegmentStore
 	typedef boost::unordered_map<Block, boost::shared_ptr<Segments> > BlockSegmentMap;
 	typedef boost::unordered_map<unsigned int, boost::shared_ptr<Segment> > IdSegmentMap;
 	typedef boost::unordered_map<boost::shared_ptr<Segment>, double,
-		SegmentPointerHash, SegmentPointerEquals > SegmentScoreMap;
+		SegmentPointerHash, SegmentPointerEquals > SegmentCostMap;
+	typedef boost::unordered_map<Core, SegmentCostMap> SegmentSolutionMap;
 	
 public:
 	LocalSegmentStore();
@@ -49,10 +51,19 @@ public:
 	
 	std::vector<std::string> getFeatureNames();
 	
-	unsigned int storeSolution(pipeline::Value<Segments> segments,
-							   pipeline::Value<Solution> solution);
+	unsigned int storeCost(pipeline::Value<Segments> segments,
+						   pipeline::Value<LinearObjective> objective);
 	
-	pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments);
+	pipeline::Value<LinearObjective> retrieveCost(pipeline::Value<Segments> segments,
+												  double defaultCost);
+	
+	unsigned int storeSolution(pipeline::Value<Segments> segments,
+							   pipeline::Value<Core> core,
+							   pipeline::Value<Solution> solution,
+							   std::vector<unsigned int> indices);
+	
+	pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments,
+											   pipeline::Value<Core> core);
 	
 private:
 	void mapSegmentToBlock(const boost::shared_ptr<Segment>& segment,
@@ -80,7 +91,8 @@ private:
 	IdSegmentMap _idSegmentMap;
 	
 	SegmentFeaturesMap _featureMasterMap;
-	SegmentScoreMap _scoreMap;
+	SegmentCostMap _costMap;
+	SegmentSolutionMap _solutionMap;
 	SegmentSet _segmentMasterList;
 	
 	std::vector<std::string> _featureNames;

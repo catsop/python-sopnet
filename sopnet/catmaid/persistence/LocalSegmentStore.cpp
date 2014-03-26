@@ -249,22 +249,82 @@ LocalSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
 }
 
 unsigned int
-LocalSegmentStore::storeSolution(pipeline::Value<Segments> segments,
-								 pipeline::Value<Solution> solution)
+LocalSegmentStore::storeCost(pipeline::Value<Segments> segments,
+							 pipeline::Value<LinearObjective> objective)
 {
 	unsigned int count = 0, i = 0;
-
+	const std::vector<double> coefs = objective->getCoefficients();
+	
 	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
 		if (_segmentMasterList.contains(segment))
 		{
-			_scoreMap[segment] = (*solution)[i];
+			_costMap[segment] = coefs[i];
 			++count;
 		}
 		
 		++i;
 		
-		if (i > solution->size())
+		if (i > coefs.size())
+		{
+			return count;
+		}
+	}
+	
+	return count;
+}
+
+pipeline::Value<LinearObjective>
+LocalSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
+								double defaultCost)
+{
+	pipeline::Value<LinearObjective> objective;
+	unsigned int i = 0;
+	
+	objective->resize(segments->size());
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_costMap.count(segment))
+		{
+			objective->setCoefficient(i, _costMap[segment]);
+		}
+		else
+		{
+			objective->setCoefficient(i, defaultCost);
+		}
+		++i;
+	}
+	
+	return objective;
+}
+
+
+unsigned int
+LocalSegmentStore::storeSolution(pipeline::Value<Segments> segments,
+								 pipeline::Value<Core> core,
+								 pipeline::Value<Solution> solution,
+								 std::vector<unsigned int> indices)
+{
+	unsigned int count = 0, i = 0;
+
+	if (solution->size() == 0 || indices.empty())
+	{
+		return 0;
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_segmentMasterList.contains(segment))
+		{
+			unsigned int j = indices[i];
+			_solutionMap[*core][segment] = (*solution)[j];
+			++count;
+		}
+		
+		++i;
+		
+		if (i > solution->size() || i > indices.size())
 		{
 			return count;
 		}
@@ -274,7 +334,8 @@ LocalSegmentStore::storeSolution(pipeline::Value<Segments> segments,
 }
 
 pipeline::Value<Solution>
-LocalSegmentStore::retrieveSolution(pipeline::Value<Segments> segments)
+LocalSegmentStore::retrieveSolution(pipeline::Value<Segments> segments,
+									pipeline::Value<Core> core)
 {
 	pipeline::Value<Solution> solution;
 	unsigned int i = 0;
@@ -283,19 +344,20 @@ LocalSegmentStore::retrieveSolution(pipeline::Value<Segments> segments)
 	
 	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
-		if (_scoreMap.count(segment))
+		if (_solutionMap[*core].count(segment))
 		{
-			(*solution)[i] = _scoreMap[segment];
+			(*solution)[i] = _solutionMap[*core][segment];
 		}
 		else
 		{
 			(*solution)[i] = 0;
 		}
+		
+		++i;
 	}
 	
 	return solution;
 }
-
 
 std::vector<std::string>
 LocalSegmentStore::getFeatureNames()
