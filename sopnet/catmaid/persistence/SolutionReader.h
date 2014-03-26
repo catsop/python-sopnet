@@ -15,6 +15,7 @@ public:
 	 * 
 	 * Inputs:
 	 *   SegmentStore - "store"
+	 *   Core         - "core"
 	 *   Segments     - "segments"
 	 * Outputs:
 	 *   Solution     - "solution"
@@ -25,6 +26,7 @@ private:
 	void updateOutputs();
 	
 	pipeline::Input<SegmentStore> _store;
+	pipeline::Input<Core> _core;
 	pipeline::Input<Segments> _segments;
 	pipeline::Output<Solution> _solution;
 	
