@@ -5,11 +5,13 @@
 
 #include <sopnet/block/BlockManager.h>
 #include <sopnet/block/Core.h>
+#include <sopnet/block/Cores.h>
 #include <pipeline/all.h>
 #include <util/point3.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
-class CoreManager : public pipeline::Data
+class CoreManager : public pipeline::Data, public boost::enable_shared_from_this<CoreManager>
 {
 public:
 	CoreManager(const boost::shared_ptr<BlockManager> blockManager,
@@ -21,10 +23,16 @@ public:
 	
 	boost::shared_ptr<BlockManager> getBlockManager();
 	
+	boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
+	
+	const util::point3<unsigned int>& coreSize();
+	
+	const util::point3<unsigned int>& coreSizeInBlocks();
+	
 private:
 	boost::unordered_map<util::point3<unsigned int>, boost::shared_ptr<Core> > _coreMap;
 	boost::shared_ptr<BlockManager> _blockManager;
-	util::point3<unsigned int> _coreSize, _maxCoreCoordinates;
+	util::point3<unsigned int> _coreSize, _coreSizeInBlocks, _maxCoreCoordinates;
 	unsigned int _lastId;
 };
 

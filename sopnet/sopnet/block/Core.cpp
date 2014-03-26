@@ -1,7 +1,9 @@
 #include "Core.h"
 
-Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) :
-	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false)
+Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks,
+	const boost::shared_ptr<CoreManager> coreManager) :
+	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false),
+	_coreManager(coreManager)
 {}
 
 boost::shared_ptr<Blocks>
@@ -34,6 +36,13 @@ bool Core::setSolutionSetFlag(const bool& flag)
 	_solutionSetFlag = flag;
 	return flagOut;
 }
+
+boost::shared_ptr<CoreManager>
+Core::getCoreManager()
+{
+	return _coreManager;
+}
+
 
 std::size_t hash_value(const Core& core)
 {

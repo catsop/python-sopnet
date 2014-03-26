@@ -6,6 +6,8 @@
 #include <pipeline/Data.h>
 #include <boost/shared_ptr.hpp>
 
+class CoreManager;
+
 class Cores : public BlocksImpl<Core>
 {
 public:
@@ -14,6 +16,8 @@ public:
 	Cores(const boost::shared_ptr<Cores> cores);
 	
 	boost::shared_ptr<Blocks> asBlocks();
+	
+	boost::shared_ptr<CoreManager> getCoreManager();
 };
 
 #endif //CORES_H__
