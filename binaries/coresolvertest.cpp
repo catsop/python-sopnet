@@ -20,6 +20,7 @@
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
 #include <sopnet/block/BlockManager.h>
+#include <sopnet/block/CoreManager.h>
 #include <sopnet/block/Box.h>
 #include <sopnet/block/LocalBlockManager.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
@@ -105,6 +106,12 @@ util::ProgramOption optionCoreTestDisableSolutionTest(
 	util::_module = 			"core",
 	util::_long_name = 			"disableSolution",
 	util::_description_text = 	"disable solution test");
+
+util::ProgramOption optionCoreBuffer(
+	util::_module = 			"core",
+	util::_long_name = 			"buffer",
+	util::_description_text = 	"core buffer in blocks",
+	util::_default_value =		"2");
 
 std::string sopnetOutputPath = "./out-sopnet";
 std::string blockwiseOutputPath = "./out-blockwise";
@@ -979,10 +986,12 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 
 bool coreSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
-	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	const boost::shared_ptr<SegmentTrees>& neuronsOut,
-	util::point3<unsigned int> stackSize,
-	util::point3<unsigned int> blockSize)
+	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
+	const boost::shared_ptr<SegmentTrees> neuronsOut,
+	const boost::shared_ptr<Segments> segmentsOut,
+	const boost::shared_ptr<LinearObjective> objectiveOut,
+	const boost::shared_ptr<Core> core,
+	const boost::shared_ptr<Blocks> blocks)
 {
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
@@ -1043,10 +1052,24 @@ bool coreSolver(
 	return true;
 }
 
+void sopnetCoreCrop(boost::shared_ptr<Segments> segmentsIn,
+					boost::shared_ptr<LinearObjective> objectiveIn,
+					boost::shared_ptr<Core> core,
+					boost::shared_ptr<Segments> segmentsOut,
+					boost::shared_ptr<LinearObjective> objectiveOut)
+{
+	
+}
+
+
 void sopnetSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
-	const boost::shared_ptr<PriorCostFunctionParameters>& priorCostFunctionParameters,
-	const boost::shared_ptr<SegmentTrees>& neuronsOut)
+	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
+	const boost::shared_ptr<SegmentTrees> neuronsOut,
+	const boost::shared_ptr<Segments> segmentsOut,
+	const boost::shared_ptr<LinearObjective> objectiveOut,
+	const boost::shared_ptr<Core> core,
+	const unsigned int buffer)
 {
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
@@ -1092,22 +1115,89 @@ bool segmentTreesContains(const boost::shared_ptr<SegmentTrees> trees,
 	return false;
 }
 
-bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+bool checkSegmentCosts(boost::shared_ptr<Segments> sopnetSegments,
+					   boost::shared_ptr<Segments> blockwiseSegments,
+					   boost::shared_ptr<LinearObjective> sopnetObjective,
+					   boost::shared_ptr<LinearObjective> blockwiseObjective)
 {
-	bool ok;
+	bool ok = true;
 	
-	boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
-	boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
-	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
-		boost::make_shared<SegmentationCostFunctionParameters>();
-	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
-		boost::make_shared<PriorCostFunctionParameters>();
-	
+	return ok;
+}
+
+bool checkSegmentTrees(boost::shared_ptr<SegmentTrees> sopnetNeurons,
+					   boost::shared_ptr<SegmentTrees> blockwiseNeurons)
+{
+	bool ok = true;
 	// Trees that appear in the blockwise solution but not the sopnet one.
 	boost::shared_ptr<SegmentTrees> bsTreeDiff = boost::make_shared<SegmentTrees>();
 	// Vice-versa
 	boost::shared_ptr<SegmentTrees> sbTreeDiff = boost::make_shared<SegmentTrees>();
+
+	foreach (boost::shared_ptr<SegmentTree> blockwiseTree, *blockwiseNeurons)
+	{
+		if (!segmentTreesContains(sopnetNeurons, blockwiseTree))
+		{
+			ok = false;
+			bsTreeDiff->add(blockwiseTree);
+		}
+	}
+	
+	foreach (boost::shared_ptr<SegmentTree> sopnetTree, *sopnetNeurons)
+	{
+		if (!segmentTreesContains(blockwiseNeurons, sopnetTree))
+		{
+			ok = false;
+			sbTreeDiff->add(sopnetTree);
+		}
+	}
+	
+	if (!ok)
+	{
+		LOG_USER(out) << bsTreeDiff->size() <<
+			" Neurons  were found in the blockwise output but not sopnet:" << endl;
+		foreach (boost::shared_ptr<SegmentTree> tree, *bsTreeDiff)
+		{
+			LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
+			foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
+			{
+				logSegment(segment);
+			}
+			LOG_USER(out) << endl;
+		}
 		
+		LOG_USER(out) << sbTreeDiff->size() <<
+			" Neurons  were found in the sopnet output but not blockwise:" << endl;
+		foreach (boost::shared_ptr<SegmentTree> tree, *sbTreeDiff)
+		{
+			LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
+			foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
+			{
+				logSegment(segment);
+			}
+			LOG_USER(out) << endl;
+		}
+	}
+	
+	return ok;
+}
+
+bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
+{
+	bool ok;
+	
+	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
+		boost::make_shared<SegmentationCostFunctionParameters>();
+	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+		boost::make_shared<PriorCostFunctionParameters>();
+		
+	boost::shared_ptr<BlockManager> blockManager =
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<CoreManager> coreManager = 
+		boost::make_shared<CoreManager>(blockManager, util::point3<unsigned int>(2, 2, 1));
+	boost::shared_ptr<Box<> > stackBox =
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
+	
 	segmentationCostParameters->weightPotts = 0;
 	segmentationCostParameters->weight = 0;
 	segmentationCostParameters->priorForeground = 0.2;
@@ -1115,77 +1205,48 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
-	sopnetSolver(segmentationCostParameters, priorCostFunctionParameters, sopnetNeurons);
-	ok = coreSolver(segmentationCostParameters, priorCostFunctionParameters, blockwiseNeurons,
-			   stackSize, blockSize);
-	
-	LOG_USER(out) << "Sopnet solved " << sopnetNeurons->size()
-		<< " neurons and blockwise solved " << blockwiseNeurons->size() << "." << endl;
+	foreach (boost::shared_ptr<Core> core, *coreManager->coresInBox())
+	{
+		boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
+		boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
+		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
+		boost::shared_ptr<Segments> blockwiseSegments = boost::make_shared<Segments>();
+		boost::shared_ptr<LinearObjective> sopnetObjective = boost::make_shared<LinearObjective>();
+		boost::shared_ptr<LinearObjective> blockwiseObjective =
+			boost::make_shared<LinearObjective>();
+		unsigned int buffer = optionCoreBuffer.as<unsigned int>();
 
-	if (ok)
-	{
-		foreach (boost::shared_ptr<SegmentTree> blockwiseTree, *blockwiseNeurons)
+		sopnetSolver(segmentationCostParameters, priorCostFunctionParameters,
+					 sopnetNeurons, sopnetSegments, sopnetObjective, core, buffer);
+		ok &= coreSolver(segmentationCostParameters, priorCostFunctionParameters,
+						blockwiseNeurons, blockwiseSegments, blockwiseObjective, core, buffer);
+		
+		LOG_USER(out) << "Testing solutions for core " << *core << std::endl;
+		LOG_USER(out) << "Sopnet solved " << sopnetNeurons->size()
+			<< " neurons and blockwise solved " << blockwiseNeurons->size() << "." << endl;
+
+		ok = ok && checkSegmentCosts(sopnetSegments, blockwiseSegments,
+									 sopnetObjective, blockwiseObjective);
+		ok = ok && checkSegmentTrees(sopnetNeurons, blockwiseNeurons);
+		
+		if (optionCoreTestWriteDebugFiles)
 		{
-			if (!segmentTreesContains(sopnetNeurons, blockwiseTree))
-			{
-				ok = false;
-				bsTreeDiff->add(blockwiseTree);
-			}
+			writeSegmentTrees(sopnetNeurons, sopnetOutputPath);
+			writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
 		}
 		
-		foreach (boost::shared_ptr<SegmentTree> sopnetTree, *sopnetNeurons)
+		if (ok)
 		{
-			if (!segmentTreesContains(blockwiseNeurons, sopnetTree))
-			{
-				ok = false;
-				sbTreeDiff->add(sopnetTree);
-			}
+			LOG_USER(out) << "Neuron solutions passed" << endl;
 		}
-		
-		if (!ok)
+		else
 		{
-			LOG_USER(out) << bsTreeDiff->size() <<
-				" Neurons  were found in the blockwise output but not sopnet:" << endl;
-			foreach (boost::shared_ptr<SegmentTree> tree, *bsTreeDiff)
-			{
-				LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
-				foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
-				{
-					logSegment(segment);
-				}
-				LOG_USER(out) << endl;
-			}
-			
-			LOG_USER(out) << sbTreeDiff->size() <<
-				" Neurons  were found in the sopnet output but not blockwise:" << endl;
-			foreach (boost::shared_ptr<SegmentTree> tree, *sbTreeDiff)
-			{
-				LOG_USER(out) << "Tree with " << tree->size() << " segments:" << endl;
-				foreach (boost::shared_ptr<Segment> segment, tree->getSegments())
-				{
-					logSegment(segment);
-				}
-				LOG_USER(out) << endl;
-			}
+			LOG_USER(out) << "Neuron solutions failed" << endl;
+			return false;
 		}
 	}
 	
-	if (optionCoreTestWriteDebugFiles)
-	{
-		writeSegmentTrees(sopnetNeurons, sopnetOutputPath);
-		writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
-	}
-	
-	if (ok)
-	{
-		LOG_USER(out) << "Neuron solutions passed" << endl;
-	}
-	else
-	{
-		LOG_USER(out) << "Neuron solutions failed" << endl;
-	}
-	
-	return ok;
+	return true;
 }
 
 
