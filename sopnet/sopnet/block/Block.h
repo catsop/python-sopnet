@@ -32,13 +32,10 @@ public:
 	bool setSlicesFlag(bool flag);
 	bool setSegmentsFlag(bool flag);
 	bool setSolutionCostFlag(bool flag);
-	bool setSolutionSelectFlag(bool flag);
 	
 	bool getSlicesFlag();
 	bool getSegmentsFlag();
 	bool getSolutionCostFlag();
-	bool getSolutionSelectFlag();
-	
 	
 	/**
 	 * Block equality is determined by size and location.
@@ -62,7 +59,7 @@ private:
 		const point3<unsigned int>& location);
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
-	bool _slicesExtracted, _segmentsExtracted, _solutionCostComputed, _solutionSelected;
+	bool _slicesExtracted, _segmentsExtracted, _solutionCostComputed;
 };
 
 /**

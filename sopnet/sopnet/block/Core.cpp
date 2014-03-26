@@ -1,7 +1,7 @@
 #include "Core.h"
 
 Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) :
-	BlocksImpl<Block>(blocks), _id(id)
+	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false)
 {}
 
 boost::shared_ptr<Blocks>
@@ -21,4 +21,25 @@ Core::getId()
 bool Core::operator==(const Core& other) const
 {
 	return other.location() == location() && other.size() == size();
+}
+
+bool Core::getSolutionSetFlag()
+{
+	return _solutionSetFlag;
+}
+
+bool Core::setSolutionSetFlag(const bool& flag)
+{
+	bool flagOut = _solutionSetFlag;
+	_solutionSetFlag = flag;
+	return flagOut;
+}
+
+std::size_t hash_value(const Core& core)
+{
+	std::size_t seed = 0;
+	boost::hash_combine(seed, util::hash_value(core.location()));
+	boost::hash_combine(seed, util::hash_value(core.size()));
+
+	return seed;
 }

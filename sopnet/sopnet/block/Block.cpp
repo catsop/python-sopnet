@@ -21,7 +21,7 @@ Block::Block()
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager) : Box<>(loc, blockSize(manager, loc)),
 			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false),
-			_solutionCostComputed(false), _solutionSelected(false)
+			_solutionCostComputed(false)
 {
     
 }
@@ -61,14 +61,6 @@ bool Block::setSolutionCostFlag(bool flag)
 	return outFlag;
 }
 
-bool Block::setSolutionSelectFlag(bool flag)
-{
-	bool outFlag = _solutionSelected;
-	_solutionSelected = flag;
-	return outFlag;
-}
-
-
 bool
 Block::getSegmentsFlag()
 {
@@ -84,11 +76,6 @@ Block::getSlicesFlag()
 bool Block::getSolutionCostFlag()
 {
 	return _solutionCostComputed;
-}
-
-bool Block::getSolutionSelectFlag()
-{
-	return _solutionSelected;
 }
 
 bool

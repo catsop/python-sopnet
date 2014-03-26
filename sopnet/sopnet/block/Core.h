@@ -12,10 +12,22 @@ public:
 	
 	unsigned int getId();
 	
+	bool getSolutionSetFlag();
+	
+	bool setSolutionSetFlag(const bool& flag);
+	
 	bool operator==(const Core& other) const;
 	
 private:
 	const unsigned int _id;
+	
+	bool _solutionSetFlag;
 };
+
+/**
+ * Core hash value determined by mixing hash values returned by
+ * util::hash_value for location and size.
+ */
+std::size_t hash_value(Core const& core);
 
 #endif //CORE_H__
