@@ -1,6 +1,8 @@
 #include "SolutionGuarantor.h"
 #include <sopnet/segments/SegmentSet.h>
 
+#include <catmaid/persistence/CostWriter.h>
+#include <catmaid/persistence/CostReader.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
@@ -110,48 +112,104 @@ SolutionGuarantor::checkData(const boost::shared_ptr<Blocks> solveBlocks,
 	bool ok = true;
 	bool proceed = false;
 	
+	foreach (boost::shared_ptr<Core> core, *_cores)
+	{
+		if (!core->getSolutionSetFlag())
+		{
+			proceed = true;
+			break;
+		}
+	}
+	
+	// If proceed was set true, then there is at least one Core on input that has not yet
+	// had its solution set.
+	// On the other hand, if proceed is false, then we have no work to do and can simply return.
+	if (!proceed)
+	{
+		return false;
+	}
+	
 	foreach (boost::shared_ptr<Block> block, *solveBlocks)
 	{
-		if (block->getSegmentsFlag() && block->getSlicesFlag())
-		{
-			if (!block->getSolutionSelectFlag())
-			{
-				proceed = true;
-			}
-		}
-		else
+		if (!block->getSegmentsFlag() || !block->getSlicesFlag())
 		{
 			ok = false;
 			needBlocks->add(block);
 		}
 	}
 	
-	return ok && proceed;
+	return ok;
 }
 
 boost::shared_ptr<Blocks>
-SolutionGuarantor::checkSolution(const boost::shared_ptr<Blocks> blocks)
+SolutionGuarantor::checkCost(const boost::shared_ptr<Blocks> blocks)
 {
-	boost::shared_ptr<Blocks> needSolutionBlocks = boost::make_shared<Blocks>();
+	boost::shared_ptr<Blocks> needCostBlocks = boost::make_shared<Blocks>();
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
 		if (!block->getSolutionCostFlag())
 		{
-			needSolutionBlocks->add(block);
+			needCostBlocks->add(block);
 		}
 	}
 	
-	return needSolutionBlocks;
+	return needCostBlocks;
 }
 
 void SolutionGuarantor::setupInputs()
 {
 }
 
-void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> solveBlocks)
+void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 {
-	boost::shared_ptr<Blocks> blocks = checkSolution(solveBlocks);
+	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
+	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
+	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	boost::shared_ptr<LinearSolver> linearSolver = boost::make_shared<LinearSolver>();
+	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
+		boost::make_shared<ConstraintAssembler>();
+	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
+	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
+	
+	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
+		boost::make_shared<LinearSolverParameters>(Binary);
+	
+	segmentReader->setInput("blocks", blocks);
+	sliceReader->setInput("blocks", blocks);
+	
+	segmentReader->setInput("store", _segmentStore);
+	sliceReader->setInput("store", _sliceStore);
+	
+	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
+	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
+	
+	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
+	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
+	constraintAssembler->setInput("force explanation", _forceExplanation);
+	
+	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
+	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
+
+	costReader->setInput("store", _segmentStore);
+	costReader->setInput("segments", problemAssembler->getOutput("segments"));
+	
+	linearSolver->setInput("objective", costReader->getOutput("objective"));
+	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
+	linearSolver->setInput("parameters", binarySolverParameters);
+
+	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
+	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
+	solutionWriter->setInput("cores", _cores);
+	
+	solutionWriter->writeSolution();
+}
+
+
+void SolutionGuarantor::storeCosts(const boost::shared_ptr<Blocks> costBlocks)
+{
+	boost::shared_ptr<Blocks> blocks = checkCost(costBlocks);
 	
 	// A whole mess of pipeline variables
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
@@ -161,9 +219,6 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> solveBlocks)
 		boost::make_shared<ObjectiveGenerator>();
 	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction =
 		boost::make_shared<SegmentationCostFunction>();
-	boost::shared_ptr<LinearSolver> linearSolver = boost::make_shared<LinearSolver>();
-	boost::shared_ptr<Reconstructor> reconstructor = boost::make_shared<Reconstructor>();
-	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
 		boost::make_shared<ConstraintAssembler>();
 	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();;
@@ -177,13 +232,14 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> solveBlocks)
 	
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 	
-	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
 	
 	// inputs and outputs
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
+	
 
 	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
 	
@@ -217,15 +273,20 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> solveBlocks)
 
 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
+	costWriter->setInput("store", _segmentStore);
+	costWriter->setInput("segments", problemAssembler->getOutput("segments"));
+	costWriter->setInput("objective", objectiveGenerator->getOutput());
 	
-	linearSolver->setInput("objective", objectiveGenerator->getOutput());
-	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
-	linearSolver->setInput("parameters", binarySolverParameters);
-
-	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
-	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
+	costWriter->writeCosts();
 	
-	solutionWriter->writeSolution();
+// 	linearSolver->setInput("objective", objectiveGenerator->getOutput());
+// 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
+// 	linearSolver->setInput("parameters", binarySolverParameters);
+// 
+// 	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
+// 	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
+// 	
+// 	solutionWriter->writeSolution();
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{

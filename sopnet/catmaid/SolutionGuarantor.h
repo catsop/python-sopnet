@@ -104,16 +104,18 @@ private:
 	
 	void setupInputs();
 	
-	bool checkData(const boost::shared_ptr<Blocks> guaranteeBlocks,
+	bool checkData(const boost::shared_ptr<Blocks> solveBlocks,
 				   pipeline::Value<Blocks> needBlocks);
 	
 	/**
 	 * Finds the subset of the argument blocks that do not yet have solutions scores stored
 	 * for their segments.
 	 */
-	boost::shared_ptr<Blocks> checkSolution(const boost::shared_ptr<Blocks> blocks);
+	boost::shared_ptr<Blocks> checkCost(const boost::shared_ptr<Blocks> blocks);
 	
-	void solve(const boost::shared_ptr<Blocks> guaranteeBlocks);
+	void storeCosts(const boost::shared_ptr<Blocks> costBlocks);
+	
+	void solve(const boost::shared_ptr<Blocks> blocks);
 	
 	pipeline::Input<PriorCostFunctionParameters> _priorCostFunctionParameters;
 	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
