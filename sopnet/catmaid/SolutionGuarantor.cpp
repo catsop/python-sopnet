@@ -161,11 +161,12 @@ void SolutionGuarantor::setupInputs()
 {
 	if (_forceExplanation)
 	{
-		_useForceExplanation = *_forceExplanation;
+		_useForceExplanation = pipeline::Value<bool>(*_forceExplanation);
 	}
 	else
 	{
-		_useForceExplanation = optionCoreForceExplanation;
+		bool forceExplanation = optionCoreForceExplanation;
+		_useForceExplanation = pipeline::Value<bool>(forceExplanation);
 	}
 	
 	if (_bufferRadius)
