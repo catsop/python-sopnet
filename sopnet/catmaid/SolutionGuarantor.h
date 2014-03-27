@@ -60,6 +60,12 @@ public:
 	
 	pipeline::Value<Blocks> guaranteeSolution();
 	
+	static boost::shared_ptr<Blocks> bufferCore(boost::shared_ptr<Core> core,
+											  const unsigned int buffer);
+	
+	static boost::shared_ptr<Blocks> bufferCores(boost::shared_ptr<Cores> cores,
+											   const unsigned int buffer);
+	
 private:
 	/**
 	 * Assembles segment-wise linear constraints from slices-wise conflict sets.

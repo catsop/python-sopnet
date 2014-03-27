@@ -78,12 +78,7 @@ SolutionGuarantor::guaranteeSolution()
 	
 	setupInputs();
 	
-	solveBlocks = boost::make_shared<Blocks>(_cores->asBlocks());
-	
-	for (int i = 0; i < _useBufferRadius; ++i)
-	{
-		solveBlocks->dilateXY();
-	}
+	solveBlocks = bufferCores(_cores, _useBufferRadius);
 	
 	//TODO: decide whether or not this should go in the for loop above
 	solveBlocks->expand(util::point3<int>(0, 0, 1));
@@ -448,4 +443,25 @@ SolutionGuarantor::ConstraintAssembler::updateOutputs()
 	}
 	
 	*_constraints = *constraints;
+}
+
+boost::shared_ptr<Blocks>
+SolutionGuarantor::bufferCore(boost::shared_ptr<Core> core, unsigned int buffer)
+{
+	pipeline::Value<Cores> cores;
+	cores->add(core);
+	return bufferCores(cores, buffer);
+}
+
+boost::shared_ptr<Blocks>
+SolutionGuarantor::bufferCores(boost::shared_ptr<Cores> cores, unsigned int buffer)
+{
+	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(cores->asBlocks());
+	
+	for (unsigned int i = 0; i < buffer; ++i)
+	{
+		blocks->dilateXY();
+	}
+	
+	return blocks;
 }
