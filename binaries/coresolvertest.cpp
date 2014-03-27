@@ -1421,15 +1421,21 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	
 	//TODO consider creating test object classes
 	
+	LOG_USER(out) << "Testing solutions" << std::endl;
+	
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
 	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
 	
+	LOG_USER(out) << "A" << std::endl;
+
 	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
 		boost::make_shared<SegmentationCostFunctionParameters>();
 	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 		boost::make_shared<PriorCostFunctionParameters>();
+		
+	LOG_USER(out) << "B" << std::endl;
 		
 	boost::shared_ptr<BlockManager> blockManager =
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
@@ -1439,6 +1445,8 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<Box<> > stackBox =
 		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
 	
+	LOG_USER(out) << "C" << std::endl;
+		
 	segmentationCostParameters->weightPotts = 0;
 	segmentationCostParameters->weight = 0;
 	segmentationCostParameters->priorForeground = 0.2;
@@ -1446,8 +1454,12 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
+	LOG_USER(out) << "D" << std::endl;
+	
 	foreach (boost::shared_ptr<Core> core, *coreManager->coresInBox(stackBox))
 	{
+		LOG_USER(out) << "Testing solvers over core " << *core << endl;
+		
 		boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
 		boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
 		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
@@ -1461,10 +1473,14 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 		unsigned int buffer = optionCoreBuffer.as<unsigned int>();
 
 		//TODO: These calls are way way out of hand.
+		LOG_USER(out) << "Test core solver" << endl;
+		
 		ok &= coreSolver(segmentationCostParameters, priorCostFunctionParameters,
 						 sliceStore, segmentStore, membraneStackStore, rawStackStore,
 						 core, buffer,
 						 blockwiseNeurons, blockwiseSegments, blockwiseObjective);
+
+		LOG_USER(out) << "Test Sopnet solver" << endl;
 
 		sopnetSolver(segmentationCostParameters, priorCostFunctionParameters,
 						 sliceStore, segmentStore, membraneStackStore, rawStackStore,
