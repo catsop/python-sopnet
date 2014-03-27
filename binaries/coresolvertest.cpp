@@ -39,8 +39,10 @@
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SolutionReader.h>
 #include <catmaid/persistence/SegmentReader.h>
+#include <catmaid/persistence/SegmentPointerHash.h>
 #include <sopnet/segments/SegmentSet.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
+
 
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
@@ -1248,7 +1250,7 @@ void sopnetSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
 	const boost::shared_ptr<SliceStore> sliceStore,
-	const boost::shared_ptr<SegmentStore> segmentStore,
+	const boost::shared_ptr<SegmentStore>,
 	const boost::shared_ptr<StackStore> membraneStackStore,
 	const boost::shared_ptr<StackStore> rawStackStore,
 	const boost::shared_ptr<Core> core,
@@ -1319,6 +1321,39 @@ bool checkSegmentCosts(boost::shared_ptr<Segments> sopnetSegments,
 					   boost::shared_ptr<LinearObjective> blockwiseObjective)
 {
 	bool ok = true;
+	boost::unordered_map<boost::shared_ptr<Segment>, unsigned int,
+		SegmentPointerHash, SegmentPointerEquals> coreSegmentIdMap;
+	unsigned int i = 0;
+	std::vector<double> sopnetCoefs = sopnetObjective->getCoefficients();
+	std::vector<double> coreCoefs = blockwiseObjective->getCoefficients();
+	
+	LOG_USER(out) << "Cost testing" << endl;
+	
+	foreach (boost::shared_ptr<Segment> segment, blockwiseSegments->getSegments())
+	{
+		coreSegmentIdMap[segment] = i++;
+	}
+	
+	i = 0;
+	
+	foreach (boost::shared_ptr<Segment> segment, sopnetSegments->getSegments())
+	{
+		if (coreSegmentIdMap.count(segment))
+		{
+			double sval = sopnetCoefs[i];
+			double cval = coreCoefs[coreSegmentIdMap[segment]];
+			if (cval != sval)
+			{
+				LOG_USER(out) << segment->hashValue() << " " << sval << " " << cval << endl;
+				ok = false;
+			}
+		}
+		else
+		{
+			LOG_USER(out) << segment->hashValue() << " -1 -1 " << std::endl;
+			ok = false;
+		}
+	}
 	
 	return ok;
 }
