@@ -1080,18 +1080,19 @@ bool coreSolver(
 	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
 	
 	neuronsOut->addAll(neurons);
-	segmentsOut->addAll(segments);
 	objectiveOut = objective;
+	segmentsOut->addAll(segments);
 	
 	return true;
 }
 
-void sopnetCoreCrop(boost::shared_ptr<Segments> segmentsIn,
-					boost::shared_ptr<LinearObjective> objectiveIn,
-					boost::shared_ptr<Core> core,
-					boost::shared_ptr<Segments> segmentsOut,
-					boost::shared_ptr<LinearObjective> objectiveOut)
-{
+void sopnetCleanseOutputs(boost::shared_ptr<Segments> segmentsIn,
+						  boost::shared_ptr<LinearObjective> objectiveIn,
+						  boost::shared_ptr<Core> core,
+						  boost::shared_ptr<Blocks> blocks,
+						  boost::shared_ptr<Segments> segmentsOut,
+						  boost::shared_ptr<LinearObjective> objectiveOut)
+{ //SOOOOOO many arguments.
 	
 }
 
@@ -1099,40 +1100,57 @@ void sopnetCoreCrop(boost::shared_ptr<Segments> segmentsIn,
 void sopnetSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
-	const boost::shared_ptr<SegmentTrees> neuronsOut,
-	const boost::shared_ptr<Segments> segmentsOut,
-	const boost::shared_ptr<LinearObjective> objectiveOut,
+	boost::shared_ptr<SegmentTrees>& neuronsOut,
+	boost::shared_ptr<Segments>& segmentsOut,
+	boost::shared_ptr<LinearObjective>& objectiveOut,
 	const boost::shared_ptr<Core> core,
 	const unsigned int buffer)
 {
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
-	boost::shared_ptr<ImageStackDirectoryReader> membraneReader =
-		boost::make_shared<ImageStackDirectoryReader>(membranePath);
-	boost::shared_ptr<ImageStackDirectoryReader> rawReader =
-		boost::make_shared<ImageStackDirectoryReader>(rawPath);
+	
+	boost::shared_ptr<StackStore> membraneStackStore =
+		boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+	boost::shared_ptr<Blocks> blocks = SolutionGuarantor::bufferCore(core, buffer);
+	
 	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("woo hoo");
 	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Segments> segments;
+	pipeline::Value<Segments> solutionSegments, allSegments;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
+	pipeline::Value<LinearObjective> objective;
+	boost::shared_ptr<LinearObjective> cleanObjective;
+	boost::shared_ptr<Segments> cleanSolutionSegments, cleanAllSegments;
 	
-	sopnet->setInput("raw sections", rawReader->getOutput());
-	sopnet->setInput("membranes", membraneReader->getOutput());
-	sopnet->setInput("neuron slices", membraneReader->getOutput());
+	sopnet->setInput("raw sections", rawStackStore->getImageStack(*blocks));
+	sopnet->setInput("membranes", membraneStackStore->getImageStack(*blocks));
+	sopnet->setInput("neuron slices", membraneStackStore->getImageStack(*blocks));
 	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
 	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
 	sopnet->setInput("force explanation", forceExplanation);
-	neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
+	solutionSegments = sopnet->getOutput("solution");
+	objective = sopnet->getOutput("objective");
+	allSegments = sopnet->getOutput("segments");
 	
+	sopnetCleanseOutputs(allSegments, objective,
+						core, blocks,
+						cleanAllSegments, cleanObjective);
+	
+	sopnetCleanseOutputs(solutionSegments, boost::shared_ptr<LinearObjective>(),
+						core, blocks,
+						cleanSolutionSegments, boost::shared_ptr<LinearObjective>());
+	
+	neuronExtractor->setInput("segments", cleanSolutionSegments);
 	neurons = neuronExtractor->getOutput();
-	segments = sopnet->getOutput("segments");
 	
 	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
 	
+	objectiveOut = cleanObjective;
 	neuronsOut->addAll(neurons);
+	segmentsOut->addAll(cleanAllSegments);
 }
 
 bool segmentTreesContains(const boost::shared_ptr<SegmentTrees> trees,
