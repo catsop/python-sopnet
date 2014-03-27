@@ -13,6 +13,15 @@
 class SliceReader : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a SliceReader, which reads Slices and ConflictSets from a SliceStore.
+	 * Inputs:
+	 *   Blocks     - "blocks"
+	 *   SliceStore - "store"
+	 * Outputs:
+	 *   Slices       - "slices"
+	 *   ConflictSets - "conflict sets"
+	 */
 	SliceReader();
 
 private:
