@@ -1006,18 +1006,21 @@ bool coreSolver(
 	boost::shared_ptr<LinearObjective>& objectiveOut)
 {
 	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);
+
+	unsigned int count = 0;
 	
 	// Block pipeline variables
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
 	boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
 	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
-	boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
+	//boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
 	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	boost::shared_ptr<Reconstructor> reconstructor = boost::make_shared<Reconstructor>();
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<unsigned int> bufferValue = pipeline::Value<unsigned int>(buffer);
+	boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>(core);
 	
 	boost::shared_ptr<SolutionGuarantor> solutionGuarantor = 
 		boost::make_shared<SolutionGuarantor>();
@@ -1025,6 +1028,7 @@ bool coreSolver(
 	boost::shared_ptr<Blocks> blocks;
 	pipeline::Value<Blocks> needBlocks;
 	pipeline::Value<Cores> cores;
+	
 	cores->add(core);
 	
 	// Result Values
@@ -1036,6 +1040,7 @@ bool coreSolver(
 	
 	solutionGuarantor->setInput("cores", cores);
 	solutionGuarantor->setInput("slice store", sliceStore);
+	solutionGuarantor->setInput("segment store", segmentStore);
 	solutionGuarantor->setInput("raw image store", rawStackStore);
 	solutionGuarantor->setInput("membrane image store", membraneStackStore);
 	solutionGuarantor->setInput("buffer", bufferValue);
@@ -1043,28 +1048,43 @@ bool coreSolver(
 	solutionGuarantor->setInput("segmentation cost parameters", segmentationCostParameters);
 	solutionGuarantor->setInput("prior cost parameters", priorCostFunctionParameters);
 	
+	LOG_USER(out) << "D" << endl;
+	
 	do
 	{
+		LOG_USER(out) << "Attempting to guarantee a solution" << endl;
 		solutionGuarantor->setInput("segment store", segmentStore);
-		needBlocks = solutionGuarantor->getOutput();
+		
+		LOG_USER(out) << "Sigh." << endl;
+		needBlocks = solutionGuarantor->guaranteeSolution();
+		
+		LOG_USER(out) << "Need segments for " << needBlocks->length() << " blocks" << std::endl;
+		
 		if (!needBlocks->empty() &&
 			!guaranteeSegments(needBlocks, sliceStore, segmentStore,
 							   membraneStackStore, rawStackStore))
 		{
 			return false;
 		}
+		LOG_USER(out) << "end of do block" << endl;
+		if (++count > 10)
+		{
+			return false;
+		}
 	} while (!needBlocks->empty());
 
-	segmentReader->setInput("blocks", core);
+	LOG_USER(out) << "E" << endl;
+	
+	segmentReader->setInput("blocks", coreBlocks);
 	segmentReader->setInput("store", segmentStore);
 	segments = segmentReader->getOutput("segments");
 	
-	solutionReader->setInput("cores", cores);
+	solutionReader->setInput("core", core);
 	solutionReader->setInput("store", segmentStore);
 	solutionReader->setInput("segments", segments);
 	solution = solutionReader->getOutput("solution");
 	
-	costReader->setInput("blocks", core);
+	costReader->setInput("store", segmentStore);
 	costReader->setInput("segments", segments);
 	objective = costReader->getOutput();
 	
@@ -1428,14 +1448,10 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
 	
-	LOG_USER(out) << "A" << std::endl;
-
 	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters = 
 		boost::make_shared<SegmentationCostFunctionParameters>();
 	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 		boost::make_shared<PriorCostFunctionParameters>();
-		
-	LOG_USER(out) << "B" << std::endl;
 		
 	boost::shared_ptr<BlockManager> blockManager =
 		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
@@ -1445,8 +1461,6 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<Box<> > stackBox =
 		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
 	
-	LOG_USER(out) << "C" << std::endl;
-		
 	segmentationCostParameters->weightPotts = 0;
 	segmentationCostParameters->weight = 0;
 	segmentationCostParameters->priorForeground = 0.2;
@@ -1454,9 +1468,13 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
-	LOG_USER(out) << "D" << std::endl;
+	boost::shared_ptr<Cores> cores = coreManager->coresInBox(stackBox);
 	
-	foreach (boost::shared_ptr<Core> core, *coreManager->coresInBox(stackBox))
+	LOG_USER(out) << "cores in box returned" << std::endl;
+	LOG_USER(out) << "Got cores " << *cores << std::endl;
+	
+	
+	foreach (boost::shared_ptr<Core> core, *cores)
 	{
 		LOG_USER(out) << "Testing solvers over core " << *core << endl;
 		
