@@ -13,7 +13,7 @@ public:
 	 * Construct a CostReader, which retrieves LinearObjectives from a SegmentStore
 	 * Inputs:
 	 *   SegmentStore - "store"
-	 *   Segments     - "segment"
+	 *   Segments     - "segments"
 	 *   double       - "default cost" - Optional
 	 * Outputs:
 	 *   LinearObjective - "objective"

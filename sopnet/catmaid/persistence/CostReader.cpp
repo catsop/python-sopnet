@@ -4,7 +4,7 @@
 CostReader::CostReader()
 {
 	registerInput(_store, "store");
-	registerInput(_segments, "segments in");
+	registerInput(_segments, "segments");
 	registerInput(_defaultCost, "default cost", pipeline::Optional);
 	registerOutput(_objective, "objective");
 }
