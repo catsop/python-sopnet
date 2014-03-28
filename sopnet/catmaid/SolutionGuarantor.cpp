@@ -74,6 +74,8 @@ SolutionGuarantor::guaranteeSolution()
 	pipeline::Value<Blocks> needBlocks;
 	boost::shared_ptr<Blocks> solveBlocks;
 	
+	LOG_DEBUG(solutionguarantorlog) << "SolutionGuarantor::guaranteeSolution" << std::endl;
+	
 	updateInputs();
 	
 	setupInputs();
@@ -90,11 +92,15 @@ SolutionGuarantor::guaranteeSolution()
 		solve(solveBlocks);
 	}
 	
+	LOG_DEBUG(solutionguarantorlog) << "leaving guaranteeSolution" << std::endl;
+	
 	return needBlocks;
 }
 
 void SolutionGuarantor::updateOutputs()
 {
+	LOG_DEBUG(solutionguarantorlog) << "SolutionGuarantor::updateOutputs" << std::endl;
+	
 	pipeline::Value<Blocks> needBlocks = guaranteeSolution();
 	
 	*_needBlocks = *needBlocks;
@@ -176,6 +182,8 @@ void SolutionGuarantor::setupInputs()
 
 void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 {
+	LOG_DEBUG(solutionguarantorlog) << "solve()" << std::endl;
+	
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
@@ -185,6 +193,17 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 		boost::make_shared<ConstraintAssembler>();
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
+	
+	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
+		boost::make_shared<ObjectiveGenerator>();
+	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
+		boost::make_shared<SegmentFeatureReader>();
+	boost::shared_ptr<FileContentProvider> contentProvider =
+				boost::make_shared<FileContentProvider>("./feature_weights.dat");
+	boost::shared_ptr<LinearCostFunctionParametersReader> reader =
+		boost::make_shared<LinearCostFunctionParametersReader>();
+	boost::shared_ptr<LinearCostFunction> linearCostFunction =
+		boost::make_shared<LinearCostFunction>();
 	
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
@@ -207,16 +226,38 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 
 	costReader->setInput("store", _segmentStore);
 	costReader->setInput("segments", problemAssembler->getOutput("segments"));
+
+	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
+	segmentFeatureReader->setInput("store", _segmentStore);
+	segmentFeatureReader->setInput("block manager", blocks->getManager());
+	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
 	
-	linearSolver->setInput("objective", costReader->getOutput("objective"));
+	reader->setInput(contentProvider->getOutput());
+	
+	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
+	linearCostFunction->setInput("parameters", reader->getOutput());
+	
+	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
+	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
+
+	
+// 	pipeline::Value<LinearObjective> objective = costReader->getOutput("objective");
+	pipeline::Value<LinearObjective> objective = objectiveGenerator->getOutput();
+	
+	LOG_DEBUG(solutionguarantorlog) << "bla bla bla " << objective->size() << std::endl;
+	
+	linearSolver->setInput("objective", objective);
 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
 	linearSolver->setInput("parameters", binarySolverParameters);
-
+	
 	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
+	solutionWriter->setInput("store", _segmentStore);
 	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
 	solutionWriter->setInput("cores", _cores);
 	
 	solutionWriter->writeSolution();
+	
+	LOG_DEBUG(solutionguarantorlog) << "Solution written" << std::endl;
 }
 
 
