@@ -29,19 +29,23 @@ public:
 	
     unsigned int getId() const;
 	
-	bool overlaps(const boost::shared_ptr<ConnectedComponent>& component);
-	
 	bool setSlicesFlag(bool flag);
 	bool setSegmentsFlag(bool flag);
+	bool setSolutionCostFlag(bool flag);
 	
 	bool getSlicesFlag();
-	
 	bool getSegmentsFlag();
+	bool getSolutionCostFlag();
 	
 	/**
 	 * Block equality is determined by size and location.
 	 */
 	bool operator==(const Block& other) const;
+	
+	bool operator<(const Block& other) const
+	{
+		return _id < other._id;
+	}
 	
 	/**
 	* Return the bounding box representing this Block in XY
@@ -55,7 +59,7 @@ private:
 		const point3<unsigned int>& location);
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
-	bool _slicesExtracted, _segmentsExtracted;
+	bool _slicesExtracted, _segmentsExtracted, _solutionCostComputed;
 };
 
 /**

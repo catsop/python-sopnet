@@ -11,3 +11,13 @@ std::size_t hash_value(const ConflictSet& conflictSet)
 	
 	return hv;
 }
+
+std::ostream& operator<<(std::ostream& os, const ConflictSet& conflictSet)
+{
+	os << "ConflictSet size " << conflictSet.getSlices().size() << " ";
+	foreach (unsigned id, conflictSet.getSlices())
+	{
+		os << id << " ";
+	}
+	return os;
+}

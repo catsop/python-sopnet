@@ -4,38 +4,47 @@ SegmentWriter::SegmentWriter()
 {
 	registerInput(_segments, "segments");
 	registerInput(_blocks, "blocks");
+	registerInput(_features, "features", pipeline::Optional);
 	registerInput(_store, "store");
-	
-	registerOutput(_result, "count");
 }
 
 
-void SegmentWriter::updateOutputs()
+void SegmentWriter::writeSegments()
 {
-	boost::shared_ptr<SegmentStoreResult> result = boost::make_shared<SegmentStoreResult>();
+	updateInputs();
 	
 	foreach(boost::shared_ptr<Block> block, *_blocks)
 	{
+		pipeline::Value<Block> valueBlock;
+		pipeline::Value<Segments> segments;
+		*valueBlock = *block;
+		
 		foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
 		{
 			if (associated(segment, block))
 			{
-				_store->associate(segment, block);
-				result->count += 1;
+				segments->add(segment);
 			}
 		}
+		
+		_store->associate(segments, valueBlock);
 	}
 	
-	*_result = *result;
+	if (_features)
+	{
+		_store->storeFeatures(_features);
+	}
 }
 
 bool
 SegmentWriter::associated(const boost::shared_ptr<Segment>& segment,
 						  const boost::shared_ptr<Block>& block)
 {
+	util::rect<unsigned int> blockRect = *block;
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
-		if (block->overlaps(slice->getComponent()))
+		if (blockRect.intersects(
+			static_cast<util::rect<unsigned int> >(slice->getComponent()->getBoundingBox())))
 		{
 			return true;
 		}

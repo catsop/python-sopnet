@@ -61,7 +61,7 @@ SegmentExtractor::SegmentExtractor() :
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
-	registerInput(_prevConflictSets, "previous conflict sets");
+	registerInput(_prevConflictSets, "previous conflict sets", pipeline::Optional);
 	registerInput(_nextConflictSets, "next conflict sets", pipeline::Optional);
 	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
 
@@ -95,7 +95,7 @@ SegmentExtractor::updateOutputs() {
 		_slicesChanged = false;
 	}
 
-	if (_conflictSetsChanged) {
+	if (_conflictSetsChanged && _prevConflictSets) {
 
 		assembleLinearConstraints();
 		_conflictSetsChanged = false;
@@ -113,8 +113,8 @@ SegmentExtractor::extractSegments() {
 			<< "previous sections contains " << _prevSlices->size() << " slices,"
 			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
 
-	LOG_DEBUG(segmentextractorlog) << "Branch overlap threshold: " << _branchOverlapThreshold << std::endl;
-	LOG_DEBUG(segmentextractorlog) << "Branch size ratio threshold: " << _branchSizeRatioThreshold << std::endl;
+	LOG_ALL(segmentextractorlog) << "Branch overlap threshold: " << _branchOverlapThreshold << std::endl;
+	LOG_ALL(segmentextractorlog) << "Branch size ratio threshold: " << _branchSizeRatioThreshold << std::endl;
 
 			
 	buildOverlapMap();
@@ -122,33 +122,6 @@ SegmentExtractor::extractSegments() {
 	unsigned int oldSize = 0;
 
 	LOG_DEBUG(segmentextractorlog) << "extracting segments..." << std::endl;
-
-	LOG_DEBUG(segmentextractorlog) << "extracting ends to and from previous section..." << std::endl;
-
-	// end segments for every previous slice
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
-
-		extractSegment(prevSlice, Left);
-		extractSegment(prevSlice, Right);
-	}
-
-	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-	oldSize = _segments->size();
-
-	// end segments for every next slice, if we are the last segment extractor
-	if (_nextConflictSets) {
-
-		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
-
-		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
-
-			extractSegment(nextSlice, Left);
-			extractSegment(nextSlice, Right);
-		}
-
-		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-		oldSize = _segments->size();
-	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
@@ -211,7 +184,7 @@ SegmentExtractor::extractSegments() {
 					const unsigned int overlap1 = _prevOverlaps[i][j1_index].first;
 					const unsigned int overlap2 = _prevOverlaps[i][j2_index].first;
 
-					LOG_DEBUG(segmentextractorlog) << "i, j1, j2: " << i << " " << j1 << " " << j2 << std::endl;
+					LOG_ALL(segmentextractorlog) << "i, j1, j2: " << i << " " << j1 << " " << j2 << std::endl;
 					
 					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId())) {
 
@@ -221,6 +194,33 @@ SegmentExtractor::extractSegments() {
 		}
 
 		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	}
+
+	LOG_DEBUG(segmentextractorlog) << "extracting ends to and from previous section..." << std::endl;
+
+	// end segments for every previous slice
+	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
+
+		extractSegment(prevSlice, Left);
+		extractSegment(prevSlice, Right);
+	}
+
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
+	// end segments for every next slice, if we are the last segment extractor
+	if (_nextConflictSets) {
+
+		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
+
+		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
+
+			extractSegment(nextSlice, Left);
+			extractSegment(nextSlice, Right);
+		}
+
+		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+		oldSize = _segments->size();
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
@@ -335,6 +335,9 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 	boost::shared_ptr<EndSegment> segment = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), direction, slice);
 
 	_segments->add(segment);
+	
+	LOG_ALL(segmentextractorlog) << "Created segment " << segment->getId() << " from slice " <<
+		slice->getId() << std::endl;
 
 	// only for ends that have the slice on the left side
 	if (direction == Right)
@@ -374,6 +377,9 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 
 	_continuationPartners[prevSlice->getId()].push_back(nextSlice->getId());
 	_continuationPartners[nextSlice->getId()].push_back(prevSlice->getId());
+	
+	LOG_ALL(segmentextractorlog) << "Created segment " << segment->getId() << " from slices " <<
+		prevSlice->getId() << " and " << nextSlice->getId() << std::endl;
 }
 
 bool
@@ -387,17 +393,17 @@ SegmentExtractor::extractSegment(
 
 	double normalizedOverlap = Overlap::normalize(*target1, *target2, *source, overlap1 + overlap2);
 
-	LOG_DEBUG(segmentextractorlog) << "Branch normalized overlap: " << normalizedOverlap << std::endl;
+	LOG_ALL(segmentextractorlog) << "Branch normalized overlap: " << normalizedOverlap << std::endl;
 	
 	if (normalizedOverlap > 1) {
 
-		LOG_DEBUG(segmentextractorlog) << normalizedOverlap << std::endl;
-		LOG_DEBUG(segmentextractorlog) << overlap1 << std::endl;
-		LOG_DEBUG(segmentextractorlog) << overlap2 << std::endl;
-		LOG_DEBUG(segmentextractorlog) << target1->getComponent()->getSize() << std::endl;
-		LOG_DEBUG(segmentextractorlog) << target2->getComponent()->getSize() << std::endl;
-		LOG_DEBUG(segmentextractorlog) << source->getComponent()->getSize() << std::endl;
-		LOG_DEBUG(segmentextractorlog) << std::endl;
+		LOG_ALL(segmentextractorlog) << normalizedOverlap << std::endl;
+		LOG_ALL(segmentextractorlog) << overlap1 << std::endl;
+		LOG_ALL(segmentextractorlog) << overlap2 << std::endl;
+		LOG_ALL(segmentextractorlog) << target1->getComponent()->getSize() << std::endl;
+		LOG_ALL(segmentextractorlog) << target2->getComponent()->getSize() << std::endl;
+		LOG_ALL(segmentextractorlog) << source->getComponent()->getSize() << std::endl;
+		LOG_ALL(segmentextractorlog) << std::endl;
 	}
 
 	if (normalizedOverlap < _branchOverlapThreshold)
@@ -408,7 +414,7 @@ SegmentExtractor::extractSegment(
 
 	double sizeRatio = static_cast<double>(std::min(size1, size2))/std::max(size1, size2);
 
-	LOG_DEBUG(segmentextractorlog) << "Branch size ratio: " << sizeRatio << std::endl;
+	LOG_ALL(segmentextractorlog) << "Branch size ratio: " << sizeRatio << std::endl;
 	
 	if (sizeRatio < _branchSizeRatioThreshold)
 		return false;
@@ -436,6 +442,9 @@ SegmentExtractor::extractSegment(
 		_sliceSegments[source->getId()].push_back(segment->getId());
 	}
 
+	LOG_ALL(segmentextractorlog) << "Created segment " << segment->getId() << " from slices " <<
+		source->getId() << ", " << target1->getId() << ", and " << target2->getId() << std::endl;
+	
 	return true;
 }
 

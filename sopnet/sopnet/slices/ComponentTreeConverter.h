@@ -50,12 +50,14 @@ public:
 	void visitNode(boost::shared_ptr<ComponentTree::Node> node);
 
 	void leaveNode(boost::shared_ptr<ComponentTree::Node> node);
+	
+	static unsigned int getNextSliceId();
+
 
 private:
 
 	void addConflictSet();
 
-	static unsigned int getNextSliceId();
 
 	static unsigned int NextSliceId;
 

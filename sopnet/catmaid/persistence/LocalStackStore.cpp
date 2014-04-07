@@ -61,7 +61,7 @@ boost::shared_ptr<Image> LocalStackStore::getImage(util::rect<unsigned int> boun
 		{
 			*w = image->width() - *x;
 			*h = image->height() - *y;
-			LOG_ALL(localstackstorelog) << "Bound " << bound <<
+			LOG_DEBUG(localstackstorelog) << "Bound " << bound <<
 				" did not fit inside image with size " <<
 				image->width() << "x" << image->height() << std::endl;
 				
@@ -74,6 +74,9 @@ boost::shared_ptr<Image> LocalStackStore::getImage(util::rect<unsigned int> boun
 		cropper->setInput("height", h);
 		
 		croppedImage = cropper->getOutput("cropped image");
+		
+		LOG_ALL(localstackstorelog) << "Returning cropped image of size" << 
+			croppedImage->width() << "x" << croppedImage->height() << std::endl;
 		
 		return croppedImage;
 	}

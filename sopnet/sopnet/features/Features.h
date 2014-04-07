@@ -34,6 +34,8 @@ public:
 
 	std::vector<double>& get(unsigned int segmentId);
 
+	unsigned int count(unsigned int segmentId);
+
 	unsigned int size();
 
 	iterator begin();

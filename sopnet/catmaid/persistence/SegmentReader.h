@@ -13,23 +13,23 @@
 class SegmentReader : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a SegmentReader
+	 * Inputs:
+	 *   Blocks "blocks"
+	 *   SegmentStore "store"
+	 * Outputs:
+	 *   Segments "segments"
+	 */
 	SegmentReader();
 	
 private:
 	void updateOutputs();
 	
-	void onBoxSet(const pipeline::InputSetBase&);
-	
-	void onBlocksSet(const pipeline::InputSetBase&);
-	
 	pipeline::Input<Blocks> _blocks;
-	pipeline::Input<Box<> > _box;
-	pipeline::Input<BlockManager> _blockManager;
 	pipeline::Input<SegmentStore> _store;
 	
 	pipeline::Output<Segments> _segments;
-	
-	bool _sourceIsBox;
 };
 
 #endif //SEGMENT_READER_H__

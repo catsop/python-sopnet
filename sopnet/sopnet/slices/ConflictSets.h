@@ -49,9 +49,14 @@ public:
 
 		return _conflictSets.end();
 	}
+	
+	int size()
+	{
+		return _conflictSets.size();
+	}
 
-	void clear() {
-
+	void clear()
+	{
 		_conflictSets.clear();
 	}
 

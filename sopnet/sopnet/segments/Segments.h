@@ -5,6 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
+#include <block/Box.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
@@ -285,7 +286,11 @@ public:
 	/**
 	 * Get the number of segments.
 	 */
-	unsigned int size();
+	unsigned int size() const;
+	
+	bool operator==(const Segments& other) const;
+	
+	boost::shared_ptr<Box<> > boundingBox();
 
 private:
 

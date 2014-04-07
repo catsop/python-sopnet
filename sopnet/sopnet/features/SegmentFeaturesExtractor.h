@@ -16,6 +16,18 @@ class SegmentFeaturesExtractor : public pipeline::ProcessNode {
 
 public:
 
+	/**
+	 * Construct a SegmentFeaturesExtractor
+	 * Inputs:
+	 *   Segments "segments" - the Segments for which Features are to be extracted
+	 *   ImageStack "raw sections" - raw images representing the sections
+	 *   util::point3<unsigned int> "crop offset" - optional - points to the offset of the stack
+	 *                               crop, in the case that the stack has been cropped before
+	 *                               features are to be extracted.
+	 * 
+	 * Outputs:
+	 *  Features "all features" - the Features extracted from "segments" 
+	 */
 	SegmentFeaturesExtractor();
 
 private:

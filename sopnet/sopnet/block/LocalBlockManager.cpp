@@ -14,20 +14,28 @@ LocalBlockManager::blockAtCoordinates(const point3<unsigned int>& coordinates)
 {
 	//TODO: synchronize
 	//point3<int> pt = *coordinates;
-
-	if (_blockMap->count(coordinates))
+	
+	if (coordinates < _maxBlockCoordinates)
 	{
-		return (*_blockMap)[coordinates];
+		if (_blockMap->count(coordinates))
+		{
+			return (*_blockMap)[coordinates];
+		}
+		else
+		{
+			// modular math, taking advantage of the modular properaties of int divide.
+			point3<unsigned int> corner = coordinates * _blockSize;
+			boost::shared_ptr<Block> block = boost::make_shared<Block>(_lastId++, corner,
+																	   shared_from_this());
+			
+			(*_blockMap)[coordinates] = block;
+			
+			return block;
+		}
 	}
 	else
 	{
-		// modular math, taking advantage of the modular properaties of int divide.
-		point3<unsigned int> corner = coordinates * _blockSize;
-		boost::shared_ptr<Block> block = boost::make_shared<Block>(_lastId++, corner, shared_from_this());
-		
-		(*_blockMap)[coordinates] = block;
-		
-		return block;
+		return boost::shared_ptr<Block>();
 	}
 }
 

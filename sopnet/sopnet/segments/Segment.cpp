@@ -2,6 +2,7 @@
 #include <boost/functional/hash.hpp>
 
 #include <util/Logger.h>
+#include <algorithm>
 
 logger::LogChannel segmentlog("segmentlog", "[Segment] ");
 
@@ -118,32 +119,55 @@ Segment::operator==(const Segment& other) const
 	}
 }
 
-SegmentType Segment::getType() const
+std::string Segment::typeString(const SegmentType type)
 {
-	return BaseSegmentType;
+	switch (type)
+	{
+		case EndSegmentType:
+			return "end";
+		case ContinuationSegmentType:
+			return "continuation";
+		case BranchSegmentType:
+			return "branch";
+		default:
+			return "unknown";
+	}
 }
 
 
+std::size_t
+Segment::hashValue() const
+{
+	std::size_t hash = 0;
+	
+	std::vector<std::size_t> sliceHashes;
+	foreach (boost::shared_ptr<Slice> slice, getSlices())
+	{
+		sliceHashes.push_back(slice->hashValue());
+	}
+	
+	std::sort(sliceHashes.begin(), sliceHashes.end());
+	
+	if (getDirection() == Left)
+	{
+		boost::hash_combine(hash, boost::hash_value(37));
+	}
+	else if(getDirection() == Right)
+	{
+		boost::hash_combine(hash, boost::hash_value(61));
+	}
+	
+	foreach(std::size_t sliceHash, sliceHashes)
+	{
+		boost::hash_combine(hash, sliceHash);
+	}
+	
+	return hash;
+}
 
 std::size_t hash_value(const Segment& segment)
 {
-	std::size_t seed = 0;
-	
-	if (segment.getDirection() == Left)
-	{
-		boost::hash_combine(seed, boost::hash_value(2));
-	}
-	else if(segment.getDirection() == Right)
-	{
-		boost::hash_combine(seed, boost::hash_value(8));
-	}
-	
-	foreach(boost::shared_ptr<Slice> slice, segment.getSlices())
-	{
-		boost::hash_combine(seed, hash_value(slice));
-	}
-	
-	return seed;
+	return segment.hashValue();
 }
 
 

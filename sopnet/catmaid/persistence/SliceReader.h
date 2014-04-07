@@ -13,22 +13,27 @@
 class SliceReader : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a SliceReader, which reads Slices and ConflictSets from a SliceStore.
+	 * Inputs:
+	 *   Blocks     - "blocks"
+	 *   SliceStore - "store"
+	 * Outputs:
+	 *   Slices       - "slices"
+	 *   ConflictSets - "conflict sets"
+	 */
 	SliceReader();
 
 private:
 	void updateOutputs();
 	
-	void addUnique(const boost::shared_ptr<Slices>& inSlices,
-				   const boost::shared_ptr<Slices>& recvSlices,
-				   boost::unordered_set<Slice>& set);
-
+	static bool slicePtrComparator(const boost::shared_ptr<Slice> slice1,
+								   const boost::shared_ptr<Slice> slice2);
+	
 	pipeline::Input<Blocks> _blocks;
-	pipeline::Input<BlockManager> _blockManager;
 	pipeline::Input<SliceStore> _store;
 	pipeline::Output<Slices> _slices;
 	pipeline::Output<ConflictSets> _conflictSets;
-	
-	bool _sourceIsBox;
 };
 
 #endif //SLICE_READER_H__

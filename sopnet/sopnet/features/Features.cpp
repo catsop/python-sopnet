@@ -55,6 +55,12 @@ Features::get(unsigned int segmentId) {
 }
 
 unsigned int
+Features::count(unsigned int segmentId)
+{
+	return _segmentIdsMap.count(segmentId);
+}
+
+unsigned int
 Features::size(){
 
 	return _features.size();

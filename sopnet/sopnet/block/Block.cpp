@@ -19,8 +19,9 @@ Block::Block()
 }
 
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
-			boost::shared_ptr<BlockManager> manager) : Box<unsigned int>(loc, blockSize(manager, loc)),
-			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false)
+			boost::shared_ptr<BlockManager> manager) : Box<>(loc, blockSize(manager, loc)),
+			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false),
+			_solutionCostComputed(false)
 {
     
 }
@@ -53,6 +54,13 @@ Block::setSegmentsFlag(bool flag)
 	return outFlag;
 }
 
+bool Block::setSolutionCostFlag(bool flag)
+{
+	bool outFlag = _solutionCostComputed;
+	_solutionCostComputed = flag;
+	return outFlag;
+}
+
 bool
 Block::getSegmentsFlag()
 {
@@ -65,16 +73,15 @@ Block::getSlicesFlag()
 	return _slicesExtracted;
 }
 
+bool Block::getSolutionCostFlag()
+{
+	return _solutionCostComputed;
+}
 
 bool
 Block::operator==(const Block& other) const
 {
 	return _location == other._location && _size == other._size;
-}
-
-bool Block::overlaps(const boost::shared_ptr< ConnectedComponent >& component)
-{
-	return component->getBoundingBox().intersects(getBoundingBox());
 }
 
 /**

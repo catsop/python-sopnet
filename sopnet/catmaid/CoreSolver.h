@@ -2,70 +2,99 @@
 #define CORE_SOLVER_H__
 
 #include <boost/shared_ptr.hpp>
+
 #include <pipeline/all.h>
-#include <imageprocessing/io/ImageBlockFactory.h>
-#include <imageprocessing/io/ImageBlockStackReader.h>
-#include <sopnet/inference/PriorCostFunctionParameters.h>
-#include <sopnet/inference/ProblemAssembler.h>
-#include <sopnet/inference/LinearSolver.h>
-#include <sopnet/inference/Reconstructor.h>
-#include <sopnet/inference/PriorCostFunction.h>
-#include <sopnet/inference/ProblemAssembler.h>
-#include <sopnet/inference/RandomForestCostFunction.h>
-#include <sopnet/inference/ObjectiveGenerator.h>
-#include <sopnet/inference/SegmentationCostFunctionParameters.h>
-#include <sopnet/inference/SegmentationCostFunction.h>
-#include <sopnet/inference/io/RandomForestHdf5Reader.h>
-#include <sopnet/neurons/NeuronExtractor.h>
-#include <sopnet/block/Blocks.h>
-#include <sopnet/block/Box.h>
-#include <sopnet/block/BlockManager.h>
-#include <sopnet/features/SegmentFeaturesExtractor.h>
+
 #include <catmaid/persistence/SegmentStore.h>
 #include <catmaid/persistence/SliceStore.h>
-#include <catmaid/persistence/SegmentReader.h>
-#include <catmaid/persistence/SliceReader.h>
+#include <catmaid/persistence/StackStore.h>
+#include <inference/PriorCostFunctionParameters.h>
+#include <inference/ProblemAssembler.h>
+#include <inference/SegmentationCostFunctionParameters.h>
+#include <sopnet/block/Blocks.h>
+#include <sopnet/segments/SegmentTrees.h>
 
 class CoreSolver : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a CoreSolver
+	 * Inputs:
+	 *   PriorCostFunctionParameters "prior cost parameters"
+	 *   Blocks                      "blocks"
+	 *   SegmentationCostFunctionParameters
+	 *                               "segmentation cost parameters" - optional
+	 *   SegmentStore                "segment store"
+	 *   SliceStore                  "slice store"
+	 *   StackStore                  "raw image store"
+	 *   StackStore                  "membrane image store"
+	 *   bool                        "force explanation"
+	 * Outputs:
+	 *   SegmentTrees                "neurons"
+	 *   Segments                    "segments"
+	 * 
+	 * CoreSolver is a transitional test class that will eventually be refactored as the class
+	 * SolutionGuarantor
+	 * 
+	 * This process node takes the Slices and Segments from their given stores and Blocks, and
+	 * computes a Sopnet segmentation solution over them, given the various other inputs.
+	 */
 	CoreSolver();
 	
-	boost::shared_ptr<ProblemAssembler> getProblemAssembler()
-	{
-		return _problemAssembler;
-	}
-	
 private:
+	/**
+	 * Assembles segment-wise linear constraints from slices-wise conflict sets.
+	 */
+	class ConstraintAssembler : public pipeline::SimpleProcessNode<>
+	{
+	public:
+		ConstraintAssembler();
+		
+	private:
+		void updateOutputs();
+		
+		boost::shared_ptr<LinearConstraint> assembleConstraint(const ConflictSet& conflictSet,
+						std::map<unsigned int, std::vector<unsigned int> >& sliceSegmentMap);
+		
+		pipeline::Input<Segments> _segments;
+		pipeline::Input<ConflictSets> _conflictSets;
+		pipeline::Input<bool> _assemblerForceExplanation;
+		
+		pipeline::Output<LinearConstraints> _constraints;
+	};
+	
+	/**
+	 * Guarantees that we have correct EndSegments at the section representing the upper bound
+	 * of our sub stack. The SegmentGuarantor wouldn't necessarily have extracted these.
+	 */
+	class EndExtractor : public pipeline::SimpleProcessNode<>
+	{
+	public:
+		EndExtractor();
+		
+	private:
+		void updateOutputs();
+		
+		pipeline::Input<Segments> _eeSegments;
+		pipeline::Input<Slices> _eeSlices;
+		
+		pipeline::Output<Segments> _allSegments;
+	};
+	
 	void updateOutputs();
-	boost::shared_ptr<Blocks> computeBound();
 	
 	pipeline::Input<PriorCostFunctionParameters> _priorCostFunctionParameters;
 	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
 	pipeline::Input<Blocks> _blocks;
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
-	pipeline::Input<ImageBlockFactory> _rawImageFactory;
-	pipeline::Input<ImageBlockFactory> _membraneFactory;
+	pipeline::Input<StackStore> _rawImageStore;
+	pipeline::Input<StackStore> _membraneStore;
 	pipeline::Input<bool> _forceExplanation;
 	
 	pipeline::Output<SegmentTrees> _neurons;
+	pipeline::Output<Segments> _outputSegments;
 	
-	boost::shared_ptr<ProblemAssembler> _problemAssembler;
-	//boost::shared_ptr<ComponentTreeExtractor> _componentTreeExtractor;
-	boost::shared_ptr<Reconstructor> _reconstructor;
-	boost::shared_ptr<LinearSolver> _linearSolver;
-	boost::shared_ptr<NeuronExtractor> _neuronExtractor;
-	boost::shared_ptr<SegmentReader> _segmentReader;
-	boost::shared_ptr<SliceReader> _sliceReader;
-	boost::shared_ptr<PriorCostFunction> _priorCostFunction;
-	boost::shared_ptr<SegmentationCostFunction> _segmentationCostFunction;
-	boost::shared_ptr<RandomForestHdf5Reader> _randomForestHDF5Reader;
-	boost::shared_ptr<ImageBlockStackReader> _rawImageStackReader;
-	boost::shared_ptr<ImageBlockStackReader> _membraneStackReader;
-	boost::shared_ptr<RandomForestCostFunction> _randomForestCostFunction;
-	boost::shared_ptr<SegmentFeaturesExtractor> _segmentFeaturesExtractor;
-	boost::shared_ptr<ObjectiveGenerator> _objectiveGenerator;
 
 };
 

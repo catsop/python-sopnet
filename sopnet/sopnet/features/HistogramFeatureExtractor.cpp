@@ -35,6 +35,8 @@ HistogramFeatureExtractor::updateOutputs() {
 		_features->addName("normalized histogram " + boost::lexical_cast<std::string>(i));
 
 	_features->resize(_segments->size(), 2*_numBins);
+	
+	LOG_ALL(histogramfeaturelog) << "Features names set up, now lets extract them" << std::endl;
 
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 		getFeatures(*segment, _features->get(segment->getId()));
@@ -113,14 +115,19 @@ HistogramFeatureExtractor::getFeatures(const BranchSegment& branch, std::vector<
 std::vector<double>
 HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
-	util::point3<unsigned int> offset = _cropOffset ? *_cropOffset : util::point3<unsigned int>(0, 0, 0);
-	util::point<unsigned int> offset2D = offset;
-
+	util::point3<unsigned int> offset = _cropOffset ? *_cropOffset :
+		util::point3<unsigned int>(0, 0, 0);
 	std::vector<double> histogram(_numBins, 0);
 
 	unsigned int section = slice.getSection() - offset.z;
 
 	Image& image = *(*_sections)[section];
+	
+	LOG_ALL(histogramfeaturelog) << "Offset:      " << offset << std::endl;
+	LOG_ALL(histogramfeaturelog) << "Image size:  " << image.width() << "x" << image.height() <<
+		std::endl;
+	LOG_ALL(histogramfeaturelog) << "Slice bound: " << slice.getComponent()->getBoundingBox() <<
+		std::endl;
 
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
@@ -130,6 +137,6 @@ HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
 		histogram[bin]++;
 	}
-
+	
 	return histogram;
 }

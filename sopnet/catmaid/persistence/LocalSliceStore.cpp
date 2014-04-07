@@ -3,6 +3,9 @@
 #include <set>
 #include <utility>
 
+#include <sopnet/slices/ConflictSet.h>
+#include <sopnet/slices/ConflictSets.h>
+
 #include <util/Logger.h>
 logger::LogChannel localslicestorelog("localslicestorelog", "[LocalSliceStore] ");
 
@@ -28,8 +31,13 @@ pipeline::Value<Slices>
 LocalSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 {
 	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
+	// Use a set to ensure that we don't accidentally push the same Slice multiple times into to
+	// the returned Slices.
 	SliceSet blockSliceSet;
+	SliceSet conflictSliceSet;
+	boost::unordered_set<ConflictSet> conflictSetUSet;
 	
+	// Retrieve the slices that belong to the requested blocks
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
 	if (_blockSliceMap.count(*block))
@@ -38,38 +46,62 @@ LocalSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 				std::endl;
 			pipeline::Value<Slices> blockSlices = _blockSliceMap[*block];
 			blockSliceSet.insert(blockSlices->begin(), blockSlices->end());
+			LOG_ALL(localslicestorelog) << "Retrieved " << blockSlices->size() <<
+				" slices from block" << std::endl;
 		}
 	}
+	
+	LOG_ALL(localslicestorelog) << "Retrieved " << blockSliceSet.size() << " slices in total" << std::endl;
+	
+	// Retrieve all slices that are in conflict sets with the slices we've already retrieved.
+	foreach (boost::shared_ptr<Slice> blockSlice, blockSliceSet)
+	{
+		// First, push all ConflictSets into an actual unordered_set. Otherwise, we might
+		// try to add the slices from each conflict set n times, where n is the size of the
+		// conflictSet.
+		pipeline::Value<ConflictSets> conflictSets = _conflictMap[blockSlice->getId()];
+		conflictSetUSet.insert(conflictSets->begin(), conflictSets->end());
+	}
+	
+	foreach (ConflictSet conflictSet, conflictSetUSet)
+	{
+		// For each id in the conflict set, find the Slice with the given id and add it to the 
+		// conflictSliceSet.
+		foreach (unsigned int id, conflictSet.getSlices())
+		{
+			conflictSliceSet.insert(_idSliceMap[id]);
+		}
+	}
+	
+	// Merge the conflict set into the  block slice set
+	blockSliceSet.insert(conflictSliceSet.begin(), conflictSliceSet.end());
 
 	foreach (boost::shared_ptr<Slice> slice, blockSliceSet)
 	{
 		slices->add(slice);
 	}
 	
+	// Set the conflict information for each slices
+	foreach (ConflictSet conflictSet, conflictSetUSet)
+	{
+		slices->addConflicts(conflictSet.getSlices());
+	}
+	
 	return slices;
 }
 
 void
-LocalSliceStore::mapBlockToSlice(const boost::shared_ptr< Block >& block, const boost::shared_ptr< Slice >& slice)
+LocalSliceStore::mapBlockToSlice(const boost::shared_ptr< Block > block, const boost::shared_ptr< Slice > slice)
 {
 	// Place entry in block slice map
+
 	pipeline::Value<Slices> slices = _blockSliceMap[*block];
-	
-// 	if (_blockSliceMap.count(*block))
-// 	{
-// 		
-// 	}
-// 	else
-// 	{
-// 		slices = boost::make_shared<Slices>();
-// 		_blockSliceMap[*block] = slices;
-// 	}
 	
 	foreach (boost::shared_ptr<Slice> cSlice, *slices)
 	{
 		if (*cSlice == *slice)
 		{
-			LOG_DEBUG(localslicestorelog) << "BlockSliceMap already links Block " <<
+			LOG_ALL(localslicestorelog) << "BlockSliceMap already links Block " <<
 				block->getId() << " to slice " << slice->getId() << std::endl;
 			return;
 		}
@@ -79,27 +111,16 @@ LocalSliceStore::mapBlockToSlice(const boost::shared_ptr< Block >& block, const 
 }
 
 void
-LocalSliceStore::mapSliceToBlock(const boost::shared_ptr< Slice >& slice, const boost::shared_ptr< Block >& block)
+LocalSliceStore::mapSliceToBlock(const boost::shared_ptr< Slice > slice, const boost::shared_ptr< Block > block)
 {
 	// Place entry in slice block map
 	pipeline::Value<Blocks> blocks = _sliceBlockMap[*slice];
-	
-	
-// 	if (_sliceBlockMap->count(*slice))
-// 	{
-// 		blocks = (*_sliceBlockMap)[*slice];
-// 	}
-// 	else
-// 	{
-// 		blocks = boost::make_shared<Blocks>();
-// 		(*_sliceBlockMap)[*slice] = blocks;
-// 	}
 	
 	foreach (boost::shared_ptr<Block> cBlock, *blocks)
 	{
 		if (*block == *cBlock)
 		{
-			LOG_DEBUG(localslicestorelog) << "SliceBlockMap already links slice " <<
+			LOG_ALL(localslicestorelog) << "SliceBlockMap already links slice " <<
 				slice->getId() << " to block " << block->getId() << std::endl;
 			return;
 		}
@@ -141,7 +162,7 @@ LocalSliceStore::associate(pipeline::Value<Slices> slicesIn,
 }
 
 boost::shared_ptr<Slice>
-LocalSliceStore::equivalentSlice(const boost::shared_ptr<Slice>& slice)
+LocalSliceStore::equivalentSlice(const boost::shared_ptr<Slice> slice)
 {
 	if (_sliceMasterSet.count(slice))
 	{
@@ -176,6 +197,9 @@ LocalSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 			
 		}
 		
+		LOG_ALL(localslicestorelog) << "     input set: " << conflict << std::endl;
+		LOG_ALL(localslicestorelog) << "storing eq set: " << eqConflict << std::endl << std::endl;
+		
 
 		foreach (const unsigned int id, eqConflict.getSlices())
 		{
@@ -189,19 +213,20 @@ pipeline::Value<ConflictSets>
 LocalSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 {
 	pipeline::Value<ConflictSets> allConflictSets;
-	boost::unordered_set<ConflictSet> conflictSetSet;
+	boost::unordered_set<ConflictSet> conflictSetUSet;
 	
 	// Oh, man. This could be really expensive. We're only doing it for testing, so it should be ok
 	foreach (boost::shared_ptr<Slice> slice, *slices)
 	{
 		boost::shared_ptr<Slice> eqSlice = equivalentSlice(slice);
 		pipeline::Value<ConflictSets> conflictSets = _conflictMap[eqSlice->getId()];
-		conflictSetSet.insert(conflictSets->begin(), conflictSets->end());
+		conflictSetUSet.insert(conflictSets->begin(), conflictSets->end());
 	}
 	
-	foreach (ConflictSet conflictSet, conflictSetSet)
+	foreach (ConflictSet conflictSet, conflictSetUSet)
 	{
 		allConflictSets->add(conflictSet);
+		LOG_ALL(localslicestorelog) << "Retrieved conflict: " << conflictSet << std::endl;
 	}
 	
 	return allConflictSets;
@@ -223,15 +248,30 @@ LocalSliceStore::dumpStore()
 			slice->hashValue() << std::endl;
 	}
 	
+	for (bsm_it = _blockSliceMap.begin(); bsm_it != _blockSliceMap.end(); ++bsm_it)
+	{
+		LOG_DEBUG(localslicestorelog) << "Block " << bsm_it->first.getId() << " " << bsm_it->first << std::endl;
+	}
+	
+	
 	for (sbm_it = _sliceBlockMap.begin(); sbm_it != _sliceBlockMap.end(); ++sbm_it)
 	{
 		LOG_DEBUG(localslicestorelog) << "Slice id: " << sbm_it->first.getId() <<
-			" with " << sbm_it->second->length() << " blocks " << std::endl;
+			" with blocks";
+		foreach (boost::shared_ptr<Block> block, *sbm_it->second)
+		{
+			  LOG_DEBUG(localslicestorelog) << " " << block->getId();
+		}
+		LOG_DEBUG(localslicestorelog) << std::endl;
 	}
 	
 	for (bsm_it = _blockSliceMap.begin(); bsm_it != _blockSliceMap.end(); ++bsm_it)
 	{
-		LOG_DEBUG(localslicestorelog) << "Block " << bsm_it->first << " with " <<
-			bsm_it->second->size() << " slices" << std::endl;
+		LOG_DEBUG(localslicestorelog) << "Block " <<  bsm_it->first.getId() << " with  slices";
+		foreach (boost::shared_ptr<Slice> slice, *bsm_it->second)
+		{
+			LOG_DEBUG(localslicestorelog) << " " << slice->getId();
+		}
+		LOG_DEBUG(localslicestorelog) << std::endl;
 	}
 }
