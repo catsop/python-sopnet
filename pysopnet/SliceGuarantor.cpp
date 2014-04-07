@@ -7,6 +7,8 @@
 
 namespace python {
 
+struct MissingSliceData : virtual Exception {};
+
 void
 SliceGuarantor::fill(
 		const point3<unsigned int>& request,
@@ -39,9 +41,17 @@ SliceGuarantor::fill(
 	sliceGuarantor->setInput("slice store", sliceStore);
 	sliceGuarantor->setInput("maximum area", maxSliceSize);
 
+	LOG_DEBUG(pylog) << "[SliceGuarantor] asking for slices..." << std::endl;
+
 	// let it do what it was build for
-	// NOTE: doesn't work, yet
-	//sliceGuarantor->guaranteeSlices();
+	pipeline::Value<Blocks> missing = sliceGuarantor->guaranteeSlices();
+
+	LOG_DEBUG(pylog) << "[SliceGuarantor] " << missing->length() << " blocks missing" << std::endl;
+
+	if (missing->length() > 0)
+		UTIL_THROW_EXCEPTION(
+				MissingSliceData,
+				"not all images are available to extract slices in " << request);
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] done" << std::endl;
 }
