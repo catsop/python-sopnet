@@ -4,7 +4,7 @@ import libpysopnet as ps
 
 print "Increasing wrapper verbosity"
 
-ps.setLogLevel(3);
+ps.setLogLevel(4);
 
 print "Creating a poject configuration"
 
@@ -25,7 +25,7 @@ sliceGuarantor = ps.SliceGuarantor()
 
 print "Requesting a block"
 
-request = ps.point3(5,5,2)
+request = ps.point3(0,0,0)
 parameters = ps.SliceGuarantorParameters()
 sliceGuarantor.fill(request, parameters, config)
 
