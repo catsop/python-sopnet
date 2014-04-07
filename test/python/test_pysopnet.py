@@ -14,6 +14,9 @@ print "setting Django URL"
 config.setDjangoUrl("http://django.url")
 print config.getDjangoUrl()
 
+print "setting volume size"
+config.setVolumeSize(ps.point3(1024, 1024, 20))
+
 print "setting block size"
 config.setBlockSize(ps.point3(16, 16, 8))
 bs = config.getBlockSize()

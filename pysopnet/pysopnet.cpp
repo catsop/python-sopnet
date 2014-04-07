@@ -58,7 +58,9 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setDjangoUrl", &ProjectConfiguration::setDjangoUrl)
 			.def("getDjangoUrl", &ProjectConfiguration::getDjangoUrl, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)
-			.def("getBlockSize", &ProjectConfiguration::getBlockSize, boost::python::return_internal_reference<>());
+			.def("getBlockSize", &ProjectConfiguration::getBlockSize, boost::python::return_internal_reference<>())
+			.def("setVolumeSize", &ProjectConfiguration::setVolumeSize)
+			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>());
 
 	// Locations
 	boost::python::class_<Locations>("Locations")

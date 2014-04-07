@@ -34,13 +34,12 @@ SegmentGuarantor::fill(
 	segmentGuarantor->setInput("segment store", segmentStore);
 
 	// let it do what it was build for
-	//segmentGuarantor->guaranteeSegments();
+	pipeline::Value<Blocks> missingBlocks = segmentGuarantor->guaranteeSegments();
 
-	// TODO:
-	// read output of missing slice blocks
+	// collect missing block locations
 	Locations missing;
-	missing.push_back(util::point3<unsigned int>(1,2,3));
-	missing.push_back(util::point3<unsigned int>(3,2,1));
+	//foreach (boost::shared_ptr<Block> block, *missingBlocks)
+		//missing.push_back(block->getLocation());
 
 	return missing;
 }
