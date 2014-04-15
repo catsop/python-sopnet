@@ -1212,9 +1212,8 @@ void sopnetCleanseOutputs(boost::shared_ptr<Segments> segmentsIn,
 	if (objectiveIn)
 	{
 		coefs = objectiveIn->getCoefficients();
+		objectiveOut->resize(objectiveIn->size());
 	}
-	
-	objectiveOut->resize(objectiveIn->size());
 	
 	foreach (boost::shared_ptr<Segment> segment, segmentsIn->getSegments())
 	{
@@ -1288,20 +1287,30 @@ void sopnetSolver(
 	pipeline::Value<Segments> solutionSegments, allSegments;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<LinearObjective> objective;
-	boost::shared_ptr<LinearObjective> cleanObjective;
-	boost::shared_ptr<Segments> cleanSolutionSegments, cleanAllSegments;
+	boost::shared_ptr<LinearObjective> cleanObjective = boost::make_shared<LinearObjective>();
+	boost::shared_ptr<Segments> cleanSolutionSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> cleanAllSegments = boost::make_shared<Segments>();
 	
 	boost::shared_ptr<Box<> > cropBox = sopnetBoundingBox(sliceStore, core, buffer);
 	
-	sopnet->setInput("raw sections", rawStackStore->getImageStack(*cropBox));
-	sopnet->setInput("membranes", membraneStackStore->getImageStack(*cropBox));
-	sopnet->setInput("neuron slices", membraneStackStore->getImageStack(*cropBox));
+	LOG_USER(out) << "Grabbing raw stack for box " << *cropBox << endl;
+	pipeline::Value<ImageStack> rawStack = rawStackStore->getImageStack(*cropBox);
+	LOG_USER(out) << "Grabbing membrane stack" << endl;
+	pipeline::Value<ImageStack> membraneStack = membraneStackStore->getImageStack(*cropBox);
+	
+	LOG_USER(out) << "Setting up inputs" << endl;
+	
+	sopnet->setInput("raw sections", rawStack);
+	sopnet->setInput("membranes", membraneStack);
+	sopnet->setInput("neuron slices", membraneStack);
 	sopnet->setInput("segmentation cost parameters", segmentationCostParameters);
 	sopnet->setInput("prior cost parameters", priorCostFunctionParameters);
 	sopnet->setInput("force explanation", forceExplanation);
 	solutionSegments = sopnet->getOutput("solution");
 	objective = sopnet->getOutput("objective");
 	allSegments = sopnet->getOutput("segments");
+	
+	LOG_USER(out) << "Cleansing outputs" << endl;
 	
 	sopnetCleanseOutputs(allSegments, objective,
 						core, cropBox,
