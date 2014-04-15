@@ -248,7 +248,7 @@ Sopnet::createInferencePipeline() {
 
 	// setup the segment feature extractor
 	_segmentFeaturesExtractor->setInput("segments", _problemAssembler->getOutput("segments"));
-	_segmentFeaturesExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
+	_segmentFeaturesExtractor->setInput("raw sections", _rawSections);
 
 	boost::shared_ptr<LinearCostFunction>       linearCostFunction;
 	boost::shared_ptr<RandomForestCostFunction> rfCostFunction;
@@ -341,7 +341,6 @@ Sopnet::createInferencePipeline() {
 			_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
 		}
 	}
-
 }
 
 void
