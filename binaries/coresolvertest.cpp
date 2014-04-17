@@ -33,6 +33,7 @@
 #include <catmaid/SliceGuarantor.h>
 #include <catmaid/SolutionGuarantor.h>
 #include <catmaid/persistence/CostReader.h>
+#include <catmaid/persistence/CostWriter.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
@@ -992,6 +993,60 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	return ok;
 }
 
+// bool segmentIntersectsBox(const boost::shared_ptr<Segment> segment,
+// 						  const boost::shared_ptr<Box<> > box)
+// {
+// 	util::rect<unsigned int> boxUIRect = *box;
+// 	util::rect<int> boxRect = static_cast<util::rect<int>>(boxUIRect);
+// 	
+// 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+// 	{
+// 		if (slice->getComponent()->getBoundingBox().intersects(boxRect))
+// 		{
+// 			return true;
+// 		}
+// 	}
+// 	
+// 	return false;
+// }
+
+
+boost::shared_ptr<Solution> readAllSolutions(const boost::shared_ptr<Cores> cores,
+										   const boost::shared_ptr<SegmentStore> segmentStore,
+										   const boost::shared_ptr<Segments> segments)
+{
+	boost::shared_ptr<Solution> solution = boost::make_shared<Solution>();
+	solution->resize(segments->size());
+	
+	unsigned int j = 0;
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		(*solution)[j++] = 0;
+	}
+	
+	foreach (boost::shared_ptr<Core> core, *cores)
+	{
+		boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
+		pipeline::Value<Solution> coreSolution;
+		
+		solutionReader->setInput("core", core);
+		solutionReader->setInput("store", segmentStore);
+		solutionReader->setInput("segments", segments);
+		coreSolution = solutionReader->getOutput("solution");
+		
+		for (unsigned int i = 0; i < coreSolution->size(); ++i)
+		{
+			if ((*coreSolution)[i] > (*solution)[i])
+			{
+				(*solution)[i] = (*coreSolution)[i];
+			}
+		}
+		
+	}
+	
+	return solution;
+}
+
 bool coreSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
@@ -999,7 +1054,7 @@ bool coreSolver(
 	const boost::shared_ptr<SegmentStore> segmentStore,
 	const boost::shared_ptr<StackStore> membraneStackStore,
 	const boost::shared_ptr<StackStore> rawStackStore,
-	const boost::shared_ptr<Core> core,
+	const boost::shared_ptr<CoreManager> coreManager,
 	unsigned int buffer,
 	boost::shared_ptr<SegmentTrees>& neuronsOut,
 	boost::shared_ptr<Segments>& segmentsOut,
@@ -1020,22 +1075,21 @@ bool coreSolver(
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<unsigned int> bufferValue = pipeline::Value<unsigned int>(buffer);
-	boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>(core);
+	util::point3<unsigned int> stackSize = coreManager->getBlockManager()->stackSize();
 	
 	boost::shared_ptr<SolutionGuarantor> solutionGuarantor = 
 		boost::make_shared<SolutionGuarantor>();
 	
 	boost::shared_ptr<Blocks> blocks;
 	pipeline::Value<Blocks> needBlocks;
-	pipeline::Value<Cores> cores;
-	
-	cores->add(core);
+	boost::shared_ptr<Cores> cores = coreManager->coresInBox(
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
 	
 	// Result Values
 	//pipeline::Value<SliceStoreResult> sliceResult;
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
-	pipeline::Value<Solution> solution;
+	boost::shared_ptr<Solution> solution;
 	pipeline::Value<LinearObjective> objective;
 	
 	solutionGuarantor->setInput("cores", cores);
@@ -1075,14 +1129,16 @@ bool coreSolver(
 
 	LOG_USER(out) << "E" << endl;
 	
-	segmentReader->setInput("blocks", coreBlocks);
+	segmentReader->setInput("blocks", cores->asBlocks());
 	segmentReader->setInput("store", segmentStore);
 	segments = segmentReader->getOutput("segments");
 	
-	solutionReader->setInput("core", core);
-	solutionReader->setInput("store", segmentStore);
-	solutionReader->setInput("segments", segments);
-	solution = solutionReader->getOutput("solution");
+	solution = readAllSolutions(cores, segmentStore, segments);
+	
+// 	solutionReader->setInput("core", core);
+// 	solutionReader->setInput("store", segmentStore);
+// 	solutionReader->setInput("segments", segments);
+// 	solution = solutionReader->getOutput("solution");
 	
 	costReader->setInput("store", segmentStore);
 	costReader->setInput("segments", segments);
@@ -1125,155 +1181,18 @@ bool overlap(boost::shared_ptr<Segment> segment, boost::shared_ptr<Box<> > box)
 	
 }
 
-boost::shared_ptr<Slice> translateSlice(boost::shared_ptr<Slice> slice,
-										const util::point3<unsigned int>& offset)
-{
-	boost::shared_ptr<Slice> translatedSlice = boost::make_shared<Slice>(
-		ComponentTreeConverter::getNextSliceId(),
-		slice->getSection() + offset.z,
-		slice->getComponent());
-	translatedSlice->translate(offset);
-	return translatedSlice;
-}
-
-boost::shared_ptr<Segment> translateSegment(boost::shared_ptr<Segment> segment,
-											 const util::point3<unsigned int>& offset)
-{
-	boost::shared_ptr<Segment> translatedSegment;
-
-	boost::shared_ptr<Slice> slice0, slice1, slice2;
-	
-	switch (segment->getType())
-	{
-		case EndSegmentType:
-			slice0 = translateSlice(segment->getSlices()[0],
-				offset);
-			translatedSegment = boost::make_shared<EndSegment>(
-				Segment::getNextSegmentId(),
-				segment->getDirection(),
-				slice0);
-			break;
-		case ContinuationSegmentType:
-			slice0 = translateSlice(segment->getSlices()[0],
-				offset);
-			slice1 = translateSlice(segment->getSlices()[1],
-															 offset);
-			translatedSegment = boost::make_shared<ContinuationSegment>(
-				Segment::getNextSegmentId(),
-				segment->getDirection(),
-				slice0, slice1);
-			break;
-		case BranchSegmentType:
-			slice0 = translateSlice(segment->getSlices()[0],
-				offset);
-			slice1 = translateSlice(segment->getSlices()[1],
-															 offset);
-			slice2 = translateSlice(segment->getSlices()[2],
-															 offset);
-			translatedSegment = boost::make_shared<BranchSegment>(
-				Segment::getNextSegmentId(),
-				segment->getDirection(),
-				slice0, slice1, slice2);
-			break;
-		default:
-			translatedSegment = boost::shared_ptr<Segment>();
-			break;
-	}
-	
-	return translatedSegment;
-}
-
-void sopnetCleanseOutputs(boost::shared_ptr<Segments> segmentsIn,
-						  boost::shared_ptr<LinearObjective> objectiveIn,
-						  boost::shared_ptr<Core> core,
-						  boost::shared_ptr<Box<> > box,
-						  boost::shared_ptr<Segments> segmentsOut,
-						  boost::shared_ptr<LinearObjective> objectiveOut)
-{ //SOOOOOO many arguments.
-	/*
-	  The goal here is to set the sopnet outputs so that they are directly comparable to
-	  the outputs generated by the core wise solver.
-	
-	  The sopnetSolver function will have cropped the image stack to include only the same
-	  Segments and Slices used in the blockSolver.
-	  
-	  As a result, the Slices contained in the Segments here will be translated relative to the 
-	  ones generated in coreSolver.
-	  
-	  Here, we translate them back, and select out only the Segments that have some overlap
-	  with the given Core. We also filter the cost values from objectiveIn to objectiveOut based
-	  on those Segments, so that we can do a similarity comparison on them later.
-	*/
-	util::point3<unsigned int> offset = box->location();
-	boost::shared_ptr<Segments> filteredSegments = boost::make_shared<Segments>();
-	unsigned int i = 0, j = 0;
-	std::vector<double> coefs;
-	
-	if (objectiveIn)
-	{
-		coefs = objectiveIn->getCoefficients();
-		objectiveOut->resize(objectiveIn->size());
-	}
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentsIn->getSegments())
-	{
-		boost::shared_ptr<Segment> translatedSegment = translateSegment(segment, offset);
-		if (overlap(translatedSegment, core))
-		{
-			segmentsOut->add(translatedSegment);
-			if (objectiveIn && objectiveOut)
-			{
-				objectiveOut->setCoefficient(j++, coefs[i]);
-			}
-		}
-		++i;
-	}
-	
-}
-
-boost::shared_ptr<Box<> > sopnetBoundingBox(boost::shared_ptr<SliceStore> sliceStore,
-											boost::shared_ptr<Core> core,
-											unsigned int buffer)
-{
-	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	pipeline::Value<Slices> slices;
-	boost::shared_ptr<Box<> > box;
-	boost::shared_ptr<Blocks> blocks = SolutionGuarantor::bufferCore(core, buffer);
-	
-	sliceReader->setInput("blocks", blocks);
-	sliceReader->setInput("store", sliceStore);
-	slices = sliceReader->getOutput("slices");
-	
-	if (slices->size() == 0)
-	{
-		LOG_USER(out) << " Uh-oh. Got an empty slices from the store" << std::endl;
-		box = boost::shared_ptr<Box<> >();
-	}
-	else
-	{
-		util::rect<unsigned int> bound = (*slices)[0]->getComponent()->getBoundingBox();
-		foreach (boost::shared_ptr<Slice> slice, *slices)
-		{
-			bound.fit(slice->getComponent()->getBoundingBox());
-		}
-		
-		box = boost::make_shared<Box<> >(bound, core->location().z, core->size().z);
-	}
-	
-	return box;
-}
 
 // Assumes that the *stores have already been populated. This can be accomplished by
 // running coreSolver(...) first.
 void sopnetSolver(
 	const boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostParameters,
 	const boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters,
-	const boost::shared_ptr<SliceStore> sliceStore,
+	const boost::shared_ptr<SliceStore>,
 	const boost::shared_ptr<SegmentStore>,
 	const boost::shared_ptr<StackStore> membraneStackStore,
 	const boost::shared_ptr<StackStore> rawStackStore,
-	const boost::shared_ptr<Core> core,
-	unsigned int buffer,
+	const boost::shared_ptr<CoreManager> coreManager,
+	unsigned int,
 	boost::shared_ptr<SegmentTrees>& neuronsOut,
 	boost::shared_ptr<Segments>& segmentsOut,
 	boost::shared_ptr<LinearObjective>& objectiveOut)
@@ -1287,16 +1206,14 @@ void sopnetSolver(
 	pipeline::Value<Segments> solutionSegments, allSegments;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<LinearObjective> objective;
-	boost::shared_ptr<LinearObjective> cleanObjective = boost::make_shared<LinearObjective>();
-	boost::shared_ptr<Segments> cleanSolutionSegments = boost::make_shared<Segments>();
-	boost::shared_ptr<Segments> cleanAllSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(
+		util::point3<unsigned int>(0,0,0), coreManager->getBlockManager()->stackSize());
 	
-	boost::shared_ptr<Box<> > cropBox = sopnetBoundingBox(sliceStore, core, buffer);
 	
-	LOG_USER(out) << "Grabbing raw stack for box " << *cropBox << endl;
-	pipeline::Value<ImageStack> rawStack = rawStackStore->getImageStack(*cropBox);
+	LOG_USER(out) << "Grabbing raw stack for box " << *box << endl;
+	pipeline::Value<ImageStack> rawStack = rawStackStore->getImageStack(*box);
 	LOG_USER(out) << "Grabbing membrane stack" << endl;
-	pipeline::Value<ImageStack> membraneStack = membraneStackStore->getImageStack(*cropBox);
+	pipeline::Value<ImageStack> membraneStack = membraneStackStore->getImageStack(*box);
 	
 	LOG_USER(out) << "Setting up inputs" << endl;
 	
@@ -1310,24 +1227,15 @@ void sopnetSolver(
 	objective = sopnet->getOutput("objective");
 	allSegments = sopnet->getOutput("segments");
 	
-	LOG_USER(out) << "Cleansing outputs" << endl;
 	
-	sopnetCleanseOutputs(allSegments, objective,
-						core, cropBox,
-						cleanAllSegments, cleanObjective);
-	
-	sopnetCleanseOutputs(solutionSegments, boost::shared_ptr<LinearObjective>(),
-						core, cropBox,
-						cleanSolutionSegments, boost::shared_ptr<LinearObjective>());
-	
-	neuronExtractor->setInput("segments", cleanSolutionSegments);
+	neuronExtractor->setInput("segments", solutionSegments);
 	neurons = neuronExtractor->getOutput();
 	
 	LOG_USER(out) << "Solved " << neurons->size() << " neurons" << std::endl;
 	
-	objectiveOut = cleanObjective;
+	objectiveOut = objective;
 	neuronsOut->addAll(neurons);
-	segmentsOut->addAll(cleanAllSegments);
+	segmentsOut->addAll(allSegments);
 }
 
 bool segmentTreesContains(const boost::shared_ptr<SegmentTrees> trees,
@@ -1444,6 +1352,50 @@ bool checkSegmentTrees(boost::shared_ptr<SegmentTrees> sopnetNeurons,
 	return ok;
 }
 
+bool testCostIO(boost::shared_ptr<BlockManager> blockManager,
+				boost::shared_ptr<Segments> segments,
+				boost::shared_ptr<LinearObjective> objective,
+				boost::shared_ptr<Box<> > stackBox)
+{
+	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
+	boost::shared_ptr<SegmentWriter> segmentWriter = boost::make_shared<SegmentWriter>();
+	boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
+	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
+	pipeline::Value<LinearObjective> readObjective;
+	bool ok;
+	
+	segmentWriter->setInput("segments", segments);
+	segmentWriter->setInput("store", segmentStore);
+	segmentWriter->setInput("blocks", blocks);
+	segmentWriter->writeSegments();
+	
+	costWriter->setInput("store", segmentStore);
+	costWriter->setInput("segments", segments);
+	costWriter->setInput("objective", objective);
+	costWriter->writeCosts();
+	
+	costReader->setInput("store", segmentStore);
+	costReader->setInput("segments", segments);
+	readObjective = costReader->getOutput();
+	
+	
+	LOG_USER(out) << "Testing cost IO directly" << std::endl;
+	ok = checkSegmentCosts(segments, segments, objective, readObjective);
+	
+	if (ok)
+	{
+		LOG_USER(out) << "Segment cost test ok" << std::endl;
+	}
+	else
+	{
+		LOG_USER(out) << "Segment cost test FAIL" << std::endl;
+	}
+	
+	return ok;
+	
+}
+
 bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned int> blockSize)
 {
 	bool ok;
@@ -1477,66 +1429,65 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 	
-	boost::shared_ptr<Cores> cores = coreManager->coresInBox(stackBox);
+	boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
+	boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<Segments> blockwiseSegments = boost::make_shared<Segments>();
+	boost::shared_ptr<LinearObjective> sopnetObjective = boost::make_shared<LinearObjective>();
+	boost::shared_ptr<LinearObjective> blockwiseObjective =
+		boost::make_shared<LinearObjective>();
+	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
+	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
+
+	unsigned int buffer = optionCoreBuffer.as<unsigned int>();
+
+	LOG_USER(out) << "Test Sopnet solver" << endl;
+
+	sopnetSolver(segmentationCostParameters, priorCostFunctionParameters,
+						sliceStore, segmentStore, membraneStackStore, rawStackStore,
+						coreManager, buffer,
+						sopnetNeurons, sopnetSegments, sopnetObjective);
 	
-	LOG_USER(out) << "cores in box returned" << std::endl;
-	LOG_USER(out) << "Got cores " << *cores << std::endl;
+	LOG_USER(out) << "Test Objective storage" << endl;
 	
+	ok = testCostIO(blockManager, sopnetSegments, sopnetObjective, stackBox);
 	
-	foreach (boost::shared_ptr<Core> core, *cores)
+	if (!ok)
 	{
-		LOG_USER(out) << "Testing solvers over core " << *core << endl;
-		
-		boost::shared_ptr<SegmentTrees> sopnetNeurons = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<SegmentTrees> blockwiseNeurons = boost::make_shared<SegmentTrees>();
-		boost::shared_ptr<Segments> sopnetSegments = boost::make_shared<Segments>();
-		boost::shared_ptr<Segments> blockwiseSegments = boost::make_shared<Segments>();
-		boost::shared_ptr<LinearObjective> sopnetObjective = boost::make_shared<LinearObjective>();
-		boost::shared_ptr<LinearObjective> blockwiseObjective =
-			boost::make_shared<LinearObjective>();
-		boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
-		boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
+		LOG_USER(out) << "Objective storage failed, bailing on other tests" << endl;
+		return false;
+	}
+	
+	LOG_USER(out) << "Test core solver" << endl;
+	
+	ok &= coreSolver(segmentationCostParameters, priorCostFunctionParameters,
+						sliceStore, segmentStore, membraneStackStore, rawStackStore,
+						coreManager, buffer,
+						blockwiseNeurons, blockwiseSegments, blockwiseObjective);
 
-		unsigned int buffer = optionCoreBuffer.as<unsigned int>();
+	
+	
+	LOG_USER(out) << "Sopnet solved " << sopnetNeurons->size()
+		<< " neurons and blockwise solved " << blockwiseNeurons->size() << "." << endl;
 
-		//TODO: These calls are way way out of hand.
-		LOG_USER(out) << "Test core solver" << endl;
-		
-		ok &= coreSolver(segmentationCostParameters, priorCostFunctionParameters,
-						 sliceStore, segmentStore, membraneStackStore, rawStackStore,
-						 core, buffer,
-						 blockwiseNeurons, blockwiseSegments, blockwiseObjective);
-
-		LOG_USER(out) << "Test Sopnet solver" << endl;
-
-		sopnetSolver(segmentationCostParameters, priorCostFunctionParameters,
-						 sliceStore, segmentStore, membraneStackStore, rawStackStore,
-						 core, buffer,
-						 sopnetNeurons, sopnetSegments, sopnetObjective);
-		
-		LOG_USER(out) << "Testing solutions for core " << *core << std::endl;
-		LOG_USER(out) << "Sopnet solved " << sopnetNeurons->size()
-			<< " neurons and blockwise solved " << blockwiseNeurons->size() << "." << endl;
-
-		ok = ok && checkSegmentCosts(sopnetSegments, blockwiseSegments,
-									 sopnetObjective, blockwiseObjective);
-		ok = ok && checkSegmentTrees(sopnetNeurons, blockwiseNeurons);
-		
-		if (optionCoreTestWriteDebugFiles)
-		{
-			writeSegmentTrees(sopnetNeurons, sopnetOutputPath);
-			writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
-		}
-		
-		if (ok)
-		{
-			LOG_USER(out) << "Neuron solutions passed" << endl;
-		}
-		else
-		{
-			LOG_USER(out) << "Neuron solutions failed" << endl;
-			return false;
-		}
+	ok = ok && checkSegmentCosts(sopnetSegments, blockwiseSegments,
+									sopnetObjective, blockwiseObjective);
+	ok = ok && checkSegmentTrees(sopnetNeurons, blockwiseNeurons);
+	
+	if (optionCoreTestWriteDebugFiles)
+	{
+		writeSegmentTrees(sopnetNeurons, sopnetOutputPath);
+		writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
+	}
+	
+	if (ok)
+	{
+		LOG_USER(out) << "Neuron solutions passed" << endl;
+	}
+	else
+	{
+		LOG_USER(out) << "Neuron solutions failed" << endl;
+		return false;
 	}
 	
 	return true;
