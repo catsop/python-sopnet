@@ -7,9 +7,9 @@ CostWriter::CostWriter()
 	registerInput(_objective, "objective");
 }
 
-void CostWriter::writeCosts()
+unsigned int CostWriter::writeCosts()
 {
 	updateInputs();
-	_store->storeCost(_segments, _objective);
+	return _store->storeCost(_segments, _objective);
 }
 

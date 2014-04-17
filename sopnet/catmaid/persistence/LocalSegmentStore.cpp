@@ -3,6 +3,7 @@
 #include <vector>
 #include <util/Logger.h>
 #include <util/foreach.h>
+
 logger::LogChannel localsegmentstorelog("localsegmentstorelog", "[LocalSegmentStore] ");
 
 LocalSegmentStore::LocalSegmentStore()
@@ -257,6 +258,12 @@ LocalSegmentStore::storeCost(pipeline::Value<Segments> segments,
 	
 	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
+		if (i >= coefs.size())
+		{
+			LOG_DEBUG(localsegmentstorelog) << "Coefficient index exceeded" << std::endl;
+			return count;
+		}
+		
 		if (_segmentMasterList.contains(segment))
 		{
 			_costMap[segment] = coefs[i];
@@ -264,12 +271,29 @@ LocalSegmentStore::storeCost(pipeline::Value<Segments> segments,
 		}
 		
 		++i;
-		
-		if (i > coefs.size())
-		{
-			return count;
-		}
 	}
+	
+	i = 0;
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		if (_costMap.count(segment))
+		{
+			if (_costMap[segment] != coefs[i])
+			{
+				LOG_DEBUG(localsegmentstorelog) << "costMap does not reflect coefs for index " << i
+					<< "!" << std::endl;
+			}
+		}
+		else
+		{
+			LOG_DEBUG(localsegmentstorelog) << "Segment " << segment->hashValue() <<
+				" was not in the master list" << std::endl;
+		}
+		
+		++i;
+	}
+	
+	LOG_DEBUG(localsegmentstorelog) << "Completed sanity check" << std::endl;
 	
 	return count;
 }
@@ -279,7 +303,7 @@ LocalSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 								double defaultCost)
 {
 	pipeline::Value<LinearObjective> objective;
-	unsigned int i = 0;
+	unsigned int i = 0, count = 0;
 	
 	objective->resize(segments->size());
 	
@@ -287,14 +311,20 @@ LocalSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	{
 		if (_costMap.count(segment))
 		{
+			count++;
 			objective->setCoefficient(i, _costMap[segment]);
 		}
 		else
 		{
+			LOG_DEBUG(localsegmentstorelog) << "For index " << i << ", segment " <<
+				segment->hashValue() << " not found in the cost map" << std::endl;
 			objective->setCoefficient(i, defaultCost);
 		}
 		++i;
 	}
+	
+	LOG_DEBUG(localsegmentstorelog) << "Read coefficients for " << count << " of " <<
+		segments->size() << " segments" << std::endl;
 	
 	return objective;
 }

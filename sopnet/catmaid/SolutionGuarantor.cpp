@@ -186,7 +186,7 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 	
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
+	//boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
 	boost::shared_ptr<LinearSolver> linearSolver = boost::make_shared<LinearSolver>();
 	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
@@ -224,8 +224,8 @@ void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
 	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
 
-	costReader->setInput("store", _segmentStore);
-	costReader->setInput("segments", problemAssembler->getOutput("segments"));
+	//costReader->setInput("store", _segmentStore);
+	//costReader->setInput("segments", problemAssembler->getOutput("segments"));
 
 	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
 	segmentFeatureReader->setInput("store", _segmentStore);
