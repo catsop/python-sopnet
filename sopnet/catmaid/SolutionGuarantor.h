@@ -30,14 +30,11 @@ public:
 	 *   StackStore                  "membrane image store"
 	 *   bool                        "force explanation"
 	 * Outputs:
-	 *   SegmentTrees                "neurons"
-	 *   Segments                    "segments"
-	 * 
-	 * SolutionGuarantor is a transitional test class that will eventually be refactored as the class
-	 * SolutionGuarantor
+	 *   Blocks                      "need blocks"
 	 * 
 	 * This process node takes the Slices and Segments from their given stores and Blocks, and
-	 * computes a Sopnet segmentation solution over them, given the various other inputs.
+	 * computes a Sopnet segmentation solution over them, given the various other inputs. The
+	 * solution is written to a SegmentStore view a SolutionWriter.
 	 */
 	SolutionGuarantor();
 	
@@ -70,23 +67,6 @@ private:
 		pipeline::Output<LinearConstraints> _constraints;
 	};
 	
-	/**
-	 * Guarantees that we have correct EndSegments at the section representing the upper bound
-	 * of our sub stack. The SegmentGuarantor wouldn't necessarily have extracted these.
-	 */
-	class EndExtractor : public pipeline::SimpleProcessNode<>
-	{
-	public:
-		EndExtractor();
-		
-	private:
-		void updateOutputs();
-		
-		pipeline::Input<Segments> _eeSegments;
-		pipeline::Input<Slices> _eeSlices;
-		
-		pipeline::Output<Segments> _allSegments;
-	};
 	
 	void updateOutputs();
 	
@@ -99,6 +79,7 @@ private:
 	pipeline::Input<StackStore> _membraneStore;
 	pipeline::Input<bool> _forceExplanation;
 	
+	pipeline::Output<Blocks> _needBlocks;
 	pipeline::Output<SegmentTrees> _neurons;
 	pipeline::Output<Segments> _outputSegments;
 	

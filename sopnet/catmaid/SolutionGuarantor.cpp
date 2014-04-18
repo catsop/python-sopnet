@@ -1,8 +1,10 @@
 #include <boost/make_shared.hpp>
 
+#include <catmaid/EndExtractor.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
+#include <catmaid/persistence/SolutionWriter.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <inference/LinearConstraint.h>
 #include <inference/LinearConstraints.h>
@@ -58,8 +60,7 @@ SolutionGuarantor::SolutionGuarantor()
 	registerInput(_membraneStore, "membrane image store");
 	registerInput(_forceExplanation, "force explanation");
 	
-	registerOutput(_neurons, "neurons");
-	registerOutput(_outputSegments, "segments");
+	registerOutput(_needBlocks, "need blocks");
 }
 
 SolutionGuarantor::ConstraintAssembler::ConstraintAssembler()
@@ -138,72 +139,6 @@ void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 	*_constraints = *constraints;
 }
 
-SolutionGuarantor::EndExtractor::EndExtractor()
-{
-	registerInput(_eeSegments, "segments");
-	registerInput(_eeSlices, "slices");
-	registerOutput(_allSegments, "segments");
-}
-
-void SolutionGuarantor::EndExtractor::updateOutputs()
-{
-	unsigned int z = 0;
-	SegmentSet segmentSet;
-	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
-	
-	LOG_DEBUG(solutionguarantorlog) << "End extractor recieved " << _eeSegments->size() <<
-		" segments" << std::endl;
-	
-	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
-	{
-		if (slice->getSection() > z)
-		{
-			z = slice->getSection();
-		}
-	}
-	
-	LOG_DEBUG(solutionguarantorlog) << " End extractor: max z is " << z << std::endl;
-
-	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
-	{
-		segmentSet.add(segment);
-	}
-
-	
-	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
-	{
-		if (slice->getSection() == z)
-		{
-			int begSize = segmentSet.size();
-			boost::shared_ptr<EndSegment> rightEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Left,
-											   slice);
-			boost::shared_ptr<EndSegment> leftEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Right,
-											   slice);
-			
-			segmentSet.add(rightEnd);
-			segmentSet.add(leftEnd);
-			
-			LOG_ALL(solutionguarantorlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
-		}
-	}
-	
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentSet)
-	{
-		outputSegments->add(segment);
-	}
-	
-	LOG_DEBUG(solutionguarantorlog) << "End extractor returning " << outputSegments->size() <<
-		" segments" << std::endl;
-	
-	*_allSegments = *outputSegments;
-}
-
-
 void
 SolutionGuarantor::updateOutputs()
 {
@@ -231,12 +166,15 @@ SolutionGuarantor::updateOutputs()
 	
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 	
+	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	
 	// inputs and outputs
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
 	boost::shared_ptr<Blocks> blocks = _cores->asBlocks();
+	boost::shared_ptr<Blocks> needBlocks = boost::make_shared<Blocks>();
 
 	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
 	
@@ -275,18 +213,16 @@ SolutionGuarantor::updateOutputs()
 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
 	linearSolver->setInput("parameters", binarySolverParameters);
 	
-	reconstructor->setInput("segments", problemAssembler->getOutput("segments"));
-	reconstructor->setInput("solution", linearSolver->getOutput());
-
-	neuronExtractor->setInput("segments", reconstructor->getOutput());
+	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
+	solutionWriter->setInput("cores", _cores);
+	solutionWriter->setInput("solution", linearSolver->getOutput());
+	solutionWriter->setInput("store", _segmentStore);
 	
 	LOG_DEBUG(solutionguarantorlog) << "Pipeline is setup, extracting neurons" << std::endl;
+
+	solutionWriter->writeSolution();
 	
-	neurons = neuronExtractor->getOutput();
-	segments = problemAssembler->getOutput("segments");
-	
-	*_outputSegments = *segments;
-	*_neurons = *neurons;
+	*_needBlocks = *needBlocks;
 }
 
 pipeline::Value<Blocks> SolutionGuarantor::guaranteeSolution()
