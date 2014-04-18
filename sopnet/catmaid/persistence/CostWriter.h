@@ -19,7 +19,7 @@ public:
 	 */
 	CostWriter();
 	
-	void writeCosts();
+	unsigned int writeCosts();
 	
 private:
 	void updateOutputs(){}
