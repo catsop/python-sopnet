@@ -1075,13 +1075,16 @@ bool oldSchoolCoreSolver(
 	
 	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(
 		util::point3<unsigned int>(0,0,0), stackSize);
-	boost::shared_ptr<CoreSolver> coreSolver = 
-		boost::make_shared<CoreSolver>();
+	boost::shared_ptr<SolutionGuarantor> coreSolver = 
+		boost::make_shared<SolutionGuarantor>();
 	
 	boost::shared_ptr<Blocks> blocks = coreManager->getBlockManager()->blocksInBox(stackBox);
-	
+	boost::shared_ptr<Cores> cores = coreManager->coresInBox(stackBox);
+
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
+	pipeline::Value<Blocks> bla;
+	boost::shared_ptr<Solution> solution;
 	
 	if (!guaranteeSegments(blocks, sliceStore, segmentStore, membraneStackStore, rawStackStore))
 	{
@@ -1090,15 +1093,30 @@ bool oldSchoolCoreSolver(
 	}
 	
 	coreSolver->setInput("prior cost parameters", priorCostFunctionParameters);
-	coreSolver->setInput("blocks", blocks);
+	coreSolver->setInput("cores", cores);
 	coreSolver->setInput("segmentation cost parameters", segmentationCostParameters);
 	coreSolver->setInput("segment store", segmentStore);
 	coreSolver->setInput("slice store", sliceStore);
 	coreSolver->setInput("raw image store", rawStackStore);
 	coreSolver->setInput("membrane image store", membraneStackStore);
 	coreSolver->setInput("force explanation", forceExplanation);
-	neurons = coreSolver->getOutput("neurons");
-	segments = coreSolver->getOutput("segments");
+	
+	bla = coreSolver->getOutput();
+	LOG_USER(out) << "Got " << bla->length() << " bla bla bla" << endl;
+	
+	//neurons = coreSolver->getOutput("neurons");
+	//segments = coreSolver->getOutput("segments");
+	segmentReader->setInput("blocks", blocks);
+	segmentReader->setInput("store", segmentStore);
+	segments = segmentReader->getOutput("segments");
+	
+	solution = readAllSolutions(cores, segmentStore, segments);
+	reconstructor->setInput("solution", solution);
+	reconstructor->setInput("segments", segments);
+	
+	neuronExtractor->setInput("segments", reconstructor->getOutput());
+	
+	neurons = neuronExtractor->getOutput("neurons");
 	
 	neuronsOut->addAll(neurons);
 	segmentsOut->addAll(segments);
