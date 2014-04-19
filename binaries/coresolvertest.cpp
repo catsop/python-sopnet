@@ -1567,7 +1567,7 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	
 	LOG_USER(out) << "Test core solver" << endl;
 	
-	ok = oldSchoolCoreSolver(segmentationCostParameters, priorCostFunctionParameters,
+	ok = coreSolver(segmentationCostParameters, priorCostFunctionParameters,
 						sliceStore, segmentStore, membraneStackStore, rawStackStore,
 						coreManager, buffer,
 					blockwiseNeurons, blockwiseSegments, blockwiseObjective);
