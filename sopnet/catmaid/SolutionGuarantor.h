@@ -67,6 +67,9 @@ private:
 		pipeline::Output<LinearConstraints> _constraints;
 	};
 	
+	void solve();
+	
+	pipeline::Value<Blocks> checkBlocks();
 	
 	void updateOutputs();
 	
@@ -80,10 +83,6 @@ private:
 	pipeline::Input<bool> _forceExplanation;
 	
 	pipeline::Output<Blocks> _needBlocks;
-	pipeline::Output<SegmentTrees> _neurons;
-	pipeline::Output<Segments> _outputSegments;
-	
-
 };
 
 #endif //SOLUTION_GUARANTOR_H__

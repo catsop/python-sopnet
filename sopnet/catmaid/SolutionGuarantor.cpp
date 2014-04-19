@@ -140,7 +140,7 @@ void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 }
 
 void
-SolutionGuarantor::updateOutputs()
+SolutionGuarantor::solve()
 {
 	// A whole mess of pipeline variables
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
@@ -221,13 +221,44 @@ SolutionGuarantor::updateOutputs()
 	LOG_DEBUG(solutionguarantorlog) << "Pipeline is setup, extracting neurons" << std::endl;
 
 	solutionWriter->writeSolution();
+}
+
+void
+SolutionGuarantor::updateOutputs()
+{
+	pipeline::Value<Blocks> needBlocks = guaranteeSolution();
 	
 	*_needBlocks = *needBlocks;
 }
 
+pipeline::Value<Blocks> 
+SolutionGuarantor::checkBlocks()
+{
+	pipeline::Value<Blocks> needBlocks = pipeline::Value<Blocks>();
+	boost::shared_ptr<Blocks> blocks = _cores->asBlocks();
+	
+	foreach (boost::shared_ptr<Block> block, *blocks)
+	{
+		if (!block->getSegmentsFlag() || !block->getSlicesFlag())
+		{
+			needBlocks->add(block);
+		}
+	}
+	
+	return needBlocks;
+}
+
 pipeline::Value<Blocks> SolutionGuarantor::guaranteeSolution()
 {
-	return pipeline::Value<Blocks>();
+	//updateInputs();
+	pipeline::Value<Blocks> needBlocks = checkBlocks();
+	
+	if (needBlocks->empty())
+	{
+		solve();
+	}
+	
+	return needBlocks;
 }
 
 boost::shared_ptr<Blocks>
