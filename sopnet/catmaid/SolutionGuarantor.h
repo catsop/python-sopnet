@@ -75,14 +75,17 @@ private:
 	
 	pipeline::Input<PriorCostFunctionParameters> _priorCostFunctionParameters;
 	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
-	pipeline::Input<Cores> _cores;
+	pipeline::Input<Cores> _inCores;
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
 	pipeline::Input<StackStore> _rawImageStore;
 	pipeline::Input<StackStore> _membraneStore;
 	pipeline::Input<bool> _forceExplanation;
+	pipeline::Input<unsigned int> _buffer;
 	
 	pipeline::Output<Blocks> _needBlocks;
+	
+	boost::shared_ptr<Blocks> _bufferedBlocks;
 };
 
 #endif //SOLUTION_GUARANTOR_H__

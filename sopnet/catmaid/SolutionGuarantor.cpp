@@ -49,7 +49,7 @@ util::ProgramOption optionRandomForestFileSolutionGuarantor(
 SolutionGuarantor::SolutionGuarantor()
 {
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
-	registerInput(_cores, "cores");
+	registerInput(_inCores, "cores");
 	
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters",
 				pipeline::Optional);
@@ -59,6 +59,7 @@ SolutionGuarantor::SolutionGuarantor()
 	registerInput(_rawImageStore, "raw image store");
 	registerInput(_membraneStore, "membrane image store");
 	registerInput(_forceExplanation, "force explanation");
+	registerInput(_buffer, "buffer");
 	
 	registerOutput(_needBlocks, "need blocks");
 }
@@ -173,13 +174,12 @@ SolutionGuarantor::solve()
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
 	pipeline::Value<Segments> segments;
-	boost::shared_ptr<Blocks> blocks = _cores->asBlocks();
 	boost::shared_ptr<Blocks> needBlocks = boost::make_shared<Blocks>();
 
 	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
 	
-	segmentReader->setInput("blocks", blocks);
-	sliceReader->setInput("blocks", blocks);
+	segmentReader->setInput("blocks", _bufferedBlocks);
+	sliceReader->setInput("blocks", _bufferedBlocks);
 	
 	segmentReader->setInput("store", _segmentStore);
 	sliceReader->setInput("store", _sliceStore);
@@ -196,7 +196,7 @@ SolutionGuarantor::solve()
 	
 	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
 	segmentFeatureReader->setInput("store", _segmentStore);
-	segmentFeatureReader->setInput("block manager", blocks->getManager());
+	segmentFeatureReader->setInput("block manager", _bufferedBlocks->getManager());
 	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
 	
 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
@@ -214,7 +214,7 @@ SolutionGuarantor::solve()
 	linearSolver->setInput("parameters", binarySolverParameters);
 	
 	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
-	solutionWriter->setInput("cores", _cores);
+	solutionWriter->setInput("cores", _inCores);
 	solutionWriter->setInput("solution", linearSolver->getOutput());
 	solutionWriter->setInput("store", _segmentStore);
 	
@@ -235,9 +235,8 @@ pipeline::Value<Blocks>
 SolutionGuarantor::checkBlocks()
 {
 	pipeline::Value<Blocks> needBlocks = pipeline::Value<Blocks>();
-	boost::shared_ptr<Blocks> blocks = _cores->asBlocks();
 	
-	foreach (boost::shared_ptr<Block> block, *blocks)
+	foreach (boost::shared_ptr<Block> block, *_bufferedBlocks)
 	{
 		if (!block->getSegmentsFlag() || !block->getSlicesFlag())
 		{
@@ -250,8 +249,13 @@ SolutionGuarantor::checkBlocks()
 
 pipeline::Value<Blocks> SolutionGuarantor::guaranteeSolution()
 {
-	//updateInputs();
-	pipeline::Value<Blocks> needBlocks = checkBlocks();
+	pipeline::Value<Blocks> needBlocks;
+	
+	updateInputs();
+	
+	_bufferedBlocks = bufferCores(_inCores, *_buffer);
+	
+	needBlocks = checkBlocks();
 	
 	if (needBlocks->empty())
 	{
