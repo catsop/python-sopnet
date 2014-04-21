@@ -5,6 +5,8 @@
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/SolutionWriter.h>
+#include <catmaid/persistence/CostReader.h>
+#include <catmaid/persistence/CostWriter.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <inference/LinearConstraint.h>
 #include <inference/LinearConstraints.h>
@@ -140,6 +142,111 @@ void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 	*_constraints = *constraints;
 }
 
+SolutionGuarantor::LinearObjectiveAssembler::LinearObjectiveAssembler()
+{
+	
+	registerInput(_store, "segment store");
+	registerInput(_segments, "segments");
+	registerInput(_blocks, "blocks");
+	registerInput(_rawStackStore, "stack store");
+	
+	registerOutput(_objective, "objective");
+}
+
+void
+SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
+{
+	
+	pipeline::Value<Segments> noCostSegments;
+	pipeline::Value<LinearObjective> objective;
+	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
+	
+	// Retrieve LinearObjective costs from the store.
+	
+	costReader->setInput("store", _store);
+	costReader->setInput("segments", _segments);
+	
+	objective = costReader->getOutput("objective");
+	noCostSegments = costReader->getOutput("costless segments");
+	
+	LOG_DEBUG(solutionguarantorlog) << "Read no objective coefficients for " <<
+		noCostSegments->size() << " of " << _segments->size() << " segments" << std::endl;
+	
+	if (noCostSegments->size() > 0)
+	{
+		// When noCostSegments is non-empty, there are Segments for which
+		// no cost was retrieved.
+		boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(
+					optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>());
+		boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+		boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
+			boost::make_shared<SegmentFeatureReader>();
+		boost::shared_ptr<LinearCostFunction> linearCostFunction =
+			boost::make_shared<LinearCostFunction>();
+		boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
+			boost::make_shared<ObjectiveGenerator>();
+		boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
+		boost::unordered_map<boost::shared_ptr<Segment>, double,
+							 SegmentPointerHash, SegmentPointerEquals> segmentCostMap;
+		std::vector<boost::shared_ptr<Segment> > segmentVector = noCostSegments->getSegments();
+		std::vector<double> coefficientVector;
+		unsigned int i = 0;
+		pipeline::Value<LinearObjective> computedObjective;
+		
+		// Compute the objective for the costless segments.
+		reader->setInput(contentProvider->getOutput());
+		
+		segmentFeatureReader->setInput("segments", noCostSegments);
+		segmentFeatureReader->setInput("store", _store);
+		segmentFeatureReader->setInput("block manager", _blocks->getManager());
+		segmentFeatureReader->setInput("raw stack store", _rawStackStore);
+		
+		linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
+		linearCostFunction->setInput("parameters", reader->getOutput());
+		
+		objectiveGenerator->setInput("segments", noCostSegments);
+		objectiveGenerator->addInput("cost functions",
+									 linearCostFunction->getOutput("cost function"));
+		
+		computedObjective = objectiveGenerator->getOutput();
+		coefficientVector = computedObjective->getCoefficients();
+		
+		// Build a map from segment pointer to cost.
+		// Here, we assume that the ObjectiveGenerator produces a LinearObjective object with
+		// the same size as Segments.
+		for (unsigned int j = 0; j < segmentVector.size(); ++j)
+		{
+			segmentCostMap[segmentVector[j]] = coefficientVector[j];
+		}
+		
+		// Finally, iterate through the list of all Segments
+		// Here, we assume that _segments and obective are co-indexed.
+		foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		{
+			// If segment is mapped in the segmentCostMap, then it also exists in noCostSegments
+			// IE, its coefficient is in computedObjective, but not in objective.
+			if (segmentCostMap.count(segment))
+			{
+				// So replace the dummy entry in objective with the real one
+				objective->setCoefficient(i, segmentCostMap[segment]);
+			}
+			++i;
+		}
+		
+		// Now, as a post script, we write the Objective to the SegmentStore
+		costWriter->setInput("store", _store);
+		costWriter->setInput("segments", noCostSegments);
+		costWriter->setInput("objective", computedObjective);
+		costWriter->writeCosts();
+	}
+	
+	*_objective = *objective;
+}
+
+
+
 void
 SolutionGuarantor::solve()
 {
@@ -156,7 +263,7 @@ SolutionGuarantor::solve()
 	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
 		boost::make_shared<ConstraintAssembler>();
-	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();;
+	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();
 	boost::shared_ptr<FileContentProvider> contentProvider
 				= boost::make_shared<FileContentProvider>(
 					optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>());
@@ -168,6 +275,9 @@ SolutionGuarantor::solve()
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 	
 	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	
+	boost::shared_ptr<LinearObjectiveAssembler> objectiveAssembler =
+		boost::make_shared<LinearObjectiveAssembler>();
 	
 	// inputs and outputs
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
@@ -193,23 +303,28 @@ SolutionGuarantor::solve()
 	
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
 	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
-	
-	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
-	segmentFeatureReader->setInput("store", _segmentStore);
-	segmentFeatureReader->setInput("block manager", _bufferedBlocks->getManager());
-	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
-	
-	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-	
-	reader->setInput(contentProvider->getOutput());
-	
-	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
-	linearCostFunction->setInput("parameters", reader->getOutput());
 
-	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
+	objectiveAssembler->setInput("segment store", _segmentStore);
+	objectiveAssembler->setInput("segments", endExtractor->getOutput("segments"));
+	objectiveAssembler->setInput("blocks", _bufferedBlocks);
+	objectiveAssembler->setInput("stack store", _rawImageStore);
+
+// 	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
+// 	segmentFeatureReader->setInput("store", _segmentStore);
+// 	segmentFeatureReader->setInput("block manager", _bufferedBlocks->getManager());
+// 	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
+	
+// 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
+	
+// 	reader->setInput(contentProvider->getOutput());
+	
+// 	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
+// 	linearCostFunction->setInput("parameters", reader->getOutput());
+
+// 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 	
 	
-	linearSolver->setInput("objective", objectiveGenerator->getOutput());
+	linearSolver->setInput("objective", objectiveAssembler->getOutput());
 	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
 	linearSolver->setInput("parameters", binarySolverParameters);
 	

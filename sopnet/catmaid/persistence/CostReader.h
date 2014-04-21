@@ -17,6 +17,7 @@ public:
 	 *   double       - "default cost" - Optional
 	 * Outputs:
 	 *   LinearObjective - "objective"
+	 *   Segments        - "costless segments"
 	 */
 	CostReader();
 	
@@ -27,6 +28,7 @@ private:
 	pipeline::Input<Segments> _segments;
 	pipeline::Input<double> _defaultCost;
 	pipeline::Output<LinearObjective> _objective;
+	pipeline::Output<Segments> _noCostSegments;
 };
 
 #endif //COST_READER_H__

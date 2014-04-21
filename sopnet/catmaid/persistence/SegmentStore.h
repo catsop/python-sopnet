@@ -95,6 +95,8 @@ public:
 	 * @param segments - the Segments for which solution scores are to be retrieved.
 	 * @param defaultCost - the cost to assign to segments for which there is no stored
 	 * cost
+	 * @param segmentsNF - an empty Segments object, into which any Segment that does not have
+	 * a stored cost will be added.
 	 * @return the corresponding LinearObjective object
 	 * 
 	 * The returned LinearObjective object will be indexed to correspond to the segments
@@ -102,7 +104,8 @@ public:
 	 * assigned the defaultCost value. 
 	 */
 	virtual pipeline::Value<LinearObjective> retrieveCost(pipeline::Value<Segments> segments,
-														  double defaultCost) = 0;
+														  double defaultCost,
+														  pipeline::Value<Segments> segmentsNF)= 0;
 
 	/**
 	 * Store the solution for a given set of Segments and a give Core.

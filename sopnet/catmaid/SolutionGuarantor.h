@@ -67,6 +67,21 @@ private:
 		pipeline::Output<LinearConstraints> _constraints;
 	};
 	
+	class LinearObjectiveAssembler : public pipeline::SimpleProcessNode<>
+	{
+	public:
+		LinearObjectiveAssembler();
+		
+	private:
+		void updateOutputs();
+		
+		pipeline::Input<SegmentStore> _store;
+		pipeline::Input<Segments> _segments;
+		pipeline::Input<Blocks> _blocks;
+		pipeline::Input<StackStore> _rawStackStore;
+		pipeline::Output<LinearObjective> _objective;
+	};
+	
 	void solve();
 	
 	pipeline::Value<Blocks> checkBlocks();
