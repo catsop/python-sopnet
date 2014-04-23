@@ -1510,6 +1510,7 @@ bool checkSolutionSegments(const boost::shared_ptr<Segments> sopnetSolutionSegme
 	boost::shared_ptr<Segments> bsSegmentSetDiff, sbSegmentSetDiff;
 	bsSegmentSetDiff = boost::make_shared<Segments>();
 	sbSegmentSetDiff = boost::make_shared<Segments>();
+	int sCount = 0, bCount = 0;
 	
 	foreach (boost::shared_ptr<Segment> segment, sopnetSolutionSegments->getSegments())
 	{
@@ -1529,6 +1530,7 @@ bool checkSolutionSegments(const boost::shared_ptr<Segments> sopnetSolutionSegme
 			         bsSegmentSetDiff->add(blockwiseSegment);
 			ok = false;
 		}
+		++bCount;
 	}
 	
 	// We may miss some sopnet segments in the blockwise set. This is OK as long as
@@ -1547,10 +1549,13 @@ bool checkSolutionSegments(const boost::shared_ptr<Segments> sopnetSolutionSegme
 				ok = false;
 			}
 		}
+		++sCount;
 	}
 	
 	LOG_USER(out) << "Sopnet yielded " << sopnetSolutionSegments->size() <<
 			", and blockwise " << blockwiseSolutionSegments->size() << endl;
+	LOG_USER(out) << "Tested " << sCount << " sopnet segments and " <<
+		bCount << " blocwise segments. Yes, this test actually happened" << endl;
 	
 	if (ok)
 	{
@@ -1749,6 +1754,17 @@ util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stack
 	return blockSize;
 }
 
+void basicBlockManagerTest(const util::point3<unsigned int> stackSize,
+						   const util::point3<unsigned int> blockSize)
+{
+	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<Block> testBlock = blockManager->blockAtLocation(blockManager->stackSize());
+	if (testBlock)
+	{
+		LOG_USER(out) << "Got non-null test block: " << testBlock << std::endl;
+	}
+}
+
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
@@ -1772,6 +1788,8 @@ int main(int optionc, char** optionv)
 		stackSize = point3<unsigned int>(nx, ny, nz);
 		
 		blockSize = parseBlockSize(stackSize);
+		
+		basicBlockManagerTest(stackSize, blockSize);
 		
 		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
 		{
