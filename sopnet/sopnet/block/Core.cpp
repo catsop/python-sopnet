@@ -2,8 +2,8 @@
 
 Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks,
 	const boost::shared_ptr<CoreManager> coreManager) :
-	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false),
-	_coreManager(coreManager)
+	BlocksImpl<Block>(blocks), _id(id),
+	_coreManager(coreManager), _solutionSetFlag(false)
 {}
 
 boost::shared_ptr<Blocks>
