@@ -23,6 +23,8 @@ public:
 	
 	boost::shared_ptr<CoreManager> getCoreManager();
 	
+	util::point3<unsigned int> getCoordinates();
+	
 private:
 	const unsigned int _id;
 	

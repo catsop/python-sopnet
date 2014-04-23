@@ -1,4 +1,5 @@
 #include "Core.h"
+#include "CoreManager.h"
 
 Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks,
 	const boost::shared_ptr<CoreManager> coreManager) :
@@ -41,6 +42,13 @@ boost::shared_ptr<CoreManager>
 Core::getCoreManager()
 {
 	return _coreManager;
+}
+
+util::point3<unsigned int>
+Core::getCoordinates()
+{
+	util::point3<unsigned int> coreSize = _coreManager->coreSize();
+	return _location / coreSize;
 }
 
 
