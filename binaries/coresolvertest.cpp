@@ -1754,15 +1754,80 @@ util::point3<unsigned int> parseBlockSize(const util::point3<unsigned int> stack
 	return blockSize;
 }
 
-void basicBlockManagerTest(const util::point3<unsigned int> stackSize,
-						   const util::point3<unsigned int> blockSize)
+bool blockManagerCheck(util::point3<unsigned int> stackSize,
+					   util::point3<unsigned int> blockSize)
 {
-	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize, blockSize);
-	boost::shared_ptr<Block> testBlock = blockManager->blockAtLocation(blockManager->stackSize());
-	if (testBlock)
+	bool ok = true;
+	boost::shared_ptr<BlockManager> blockManager =
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<Block> block0 =
+		blockManager->blockAtLocation(util::point3<unsigned int>(0,0,0));
+	boost::shared_ptr<Block> blockNull = 
+		blockManager->blockAtLocation(stackSize);
+	boost::shared_ptr<Block> blockSup = 
+		blockManager->blockAtLocation(stackSize - util::point3<unsigned int>(1, 1, 1));
+	boost::shared_ptr<Blocks> allBlocks = blockManager->blocksInBox(
+		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
+	util::point3<unsigned int> maxCoords = blockManager->maximumBlockCoordinates();
+	unsigned int n = maxCoords.x * maxCoords.y * maxCoords.z;
+
+	ok &= allBlocks->length() == n;
+	
+	LOG_USER(out) << "Got " << allBlocks->length() << " blocks, expected " << n << endl;
+	
+	LOG_USER(out) << "For stack size " << stackSize << " and block size " << blockSize << ":" <<
+		endl;
+	LOG_USER(out) << "\tBlock 0: " << *block0 << endl;
+	LOG_USER(out) << "\tBlock Sup: " << *blockSup << endl;
+	if (blockNull)
 	{
-		LOG_USER(out) << "Got non-null test block: " << testBlock << std::endl;
+		LOG_USER(out) << "\tBlock inf (should be null): " << *blockNull << endl;
+		ok = false;
 	}
+	else
+	{
+		LOG_USER(out) << "\tBlock inf is correctly null" << std::endl;
+	}
+	
+	foreach (boost::shared_ptr<Block> block, *allBlocks)
+	{
+		if (! (*block == *blockManager->blockAtCoordinates(block->getCoordinates())))
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " with coordinates " << block->getCoordinates()
+				<< " did not match block returned by the block manager for those coordinates" << endl;
+		}
+	}
+	
+	if (ok)
+	{
+		LOG_USER(out) << "Block manager test passed" << endl;
+	}
+	else
+	{
+		LOG_USER(out) << "Block manager test failed" << endl;
+	}
+	
+	return ok;
+}
+
+bool basicBlockManagerTest()
+{
+	bool ok = true;
+	ok &= blockManagerCheck(util::point3<unsigned int>(25, 25, 10),
+							util::point3<unsigned int>(10, 10, 10));
+	
+	ok &= blockManagerCheck(util::point3<unsigned int>(31, 31, 11),
+							util::point3<unsigned int>(10, 10, 5));
+	
+	ok &= blockManagerCheck(util::point3<unsigned int>(30, 30, 10),
+							util::point3<unsigned int>(10, 10, 5));
+	
+	if (!ok)
+	{
+		LOG_USER(out) << "Found irregularities with respect to block management" << endl;
+	}
+	return ok;
 }
 
 int main(int optionc, char** optionv)
@@ -1789,7 +1854,10 @@ int main(int optionc, char** optionv)
 		
 		blockSize = parseBlockSize(stackSize);
 		
-		basicBlockManagerTest(stackSize, blockSize);
+		if (!basicBlockManagerTest())
+		{
+			return -10;
+		}
 		
 		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
 		{
