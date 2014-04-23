@@ -29,10 +29,17 @@ BlockManager::blockAtLocation(unsigned int x, unsigned int y, unsigned int z)
 boost::shared_ptr<Block>
 BlockManager::blockAtLocation(const point3<unsigned int>& location)
 {
-    point3<unsigned int> blockCoordinates = location / _blockSize;
-	LOG_DEBUG(blockmanagerlog) << "Converted location " << location << " to coordinates " <<
-		blockCoordinates << std::endl;
-	return blockAtCoordinates(blockCoordinates);
+	if (isValidLocation(location))
+	{
+		point3<unsigned int> blockCoordinates = location / _blockSize;
+		LOG_DEBUG(blockmanagerlog) << "Converted location " << location << " to coordinates " <<
+			blockCoordinates << std::endl;
+		return blockAtCoordinates(blockCoordinates);
+	}
+	else
+	{
+		return boost::shared_ptr<Block>();
+	}
 }
 
 boost::shared_ptr<Block>
@@ -54,13 +61,13 @@ BlockManager::blockAtOffset(const Block& block, const point3<int>& offset)
 }
 
 const util::point3<unsigned int>&
-BlockManager::blockSize()
+BlockManager::blockSize() const
 {
 	return _blockSize;
 }
 
 const util::point3<unsigned int>&
-BlockManager::stackSize()
+BlockManager::stackSize() const
 {
 	return _stackSize;
 }
@@ -94,4 +101,15 @@ const util::point3<unsigned int>&
 BlockManager::maximumBlockCoordinates()
 {
 	return _maxBlockCoordinates;
+}
+
+bool
+BlockManager::isValidCoordinates(const util::point3< unsigned int >& coords) const
+{
+	return coords < _maxBlockCoordinates;
+}
+
+bool BlockManager::isValidLocation(const util::point3< unsigned int >& loc) const
+{
+	return loc < _stackSize;
 }
