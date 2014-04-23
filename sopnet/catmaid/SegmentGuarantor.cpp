@@ -116,7 +116,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	// In the case that the guarantee block shares its upper bound with the whole stack, extracte
 	// EndSegments there and write them to the store.
 	// zEnd is not strictly in the z-range of the stack bounds, so we subtract 1
-	if (_blocks->getManager()->isUpperBound(zEnd - 1))
+	/*if (_blocks->getManager()->isUpperBound(zEnd - 1))
 	{
 		boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 		endExtractor->setInput("segments", segments);
@@ -124,9 +124,9 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 		segmentWriter->setInput("segments", endExtractor->getOutput());
 	}
 	else
-	{
+	{*/
 		segmentWriter->setInput("segments", segments);
-	}
+// 	}
 	
 	segmentWriter->setInput("blocks", _blocks);
 	segmentWriter->setInput("store", _segmentStore);
