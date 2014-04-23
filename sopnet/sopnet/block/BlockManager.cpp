@@ -30,6 +30,8 @@ boost::shared_ptr<Block>
 BlockManager::blockAtLocation(const point3<unsigned int>& location)
 {
     point3<unsigned int> blockCoordinates = location / _blockSize;
+	LOG_DEBUG(blockmanagerlog) << "Converted location " << location << " to coordinates " <<
+		blockCoordinates << std::endl;
 	return blockAtCoordinates(blockCoordinates);
 }
 
