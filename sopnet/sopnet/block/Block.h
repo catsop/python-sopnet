@@ -33,9 +33,11 @@ public:
 	bool setSegmentsFlag(bool flag);
 	bool setSolutionCostFlag(bool flag);
 	
-	bool getSlicesFlag();
-	bool getSegmentsFlag();
-	bool getSolutionCostFlag();
+	bool getSlicesFlag() const;
+	bool getSegmentsFlag() const;
+	bool getSolutionCostFlag() const;
+	
+	util::point3<unsigned int> getCoordinates() const;
 	
 	/**
 	 * Block equality is determined by size and location.

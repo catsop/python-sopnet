@@ -131,7 +131,8 @@ SliceGuarantor::guaranteeSlices()
 		conflictSets->addAll(*conflictSetsVector[i]);
 	}
 	
-	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " slices to " << extractBlocks->length() << " blocks" << std::endl;
+	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " slices to " <<
+		extractBlocks->length() << " blocks" << std::endl;
 	
 	sliceWriter->setInput("blocks", extractBlocks);
 	sliceWriter->setInput("slices", slices);
@@ -212,7 +213,8 @@ SliceGuarantor::extractSlices(const unsigned int z,
 			}
 		}
 		
-		LOG_ALL(sliceguarantorlog) << "Extract: " << *extractBlocks << ", Neighbor: " << *nbdBlocks << std::endl; 
+		LOG_ALL(sliceguarantorlog) << "Extract: " << *extractBlocks << ", Neighbor: " <<
+			*nbdBlocks << std::endl; 
 		
 		if (!(okSlices = extractBlocks->size() == nbdBlocks->size()))
 		{

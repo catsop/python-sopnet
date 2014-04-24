@@ -62,21 +62,28 @@ bool Block::setSolutionCostFlag(bool flag)
 }
 
 bool
-Block::getSegmentsFlag()
+Block::getSegmentsFlag() const
 {
 	return _segmentsExtracted;
 }
 
 bool
-Block::getSlicesFlag()
+Block::getSlicesFlag() const
 {
 	return _slicesExtracted;
 }
 
-bool Block::getSolutionCostFlag()
+bool Block::getSolutionCostFlag() const
 {
 	return _solutionCostComputed;
 }
+
+util::point3<unsigned int>
+Block::getCoordinates() const
+{
+	return _location / _manager->blockSize();
+}
+
 
 bool
 Block::operator==(const Block& other) const

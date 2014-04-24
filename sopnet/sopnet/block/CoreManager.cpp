@@ -30,8 +30,15 @@ CoreManager::coreAtLocation(unsigned int x, unsigned int y, unsigned int z)
 boost::shared_ptr<Core>
 CoreManager::coreAtLocation(const util::point3<unsigned int> location)
 {
-	point3<unsigned int> coreCoordinates = location / _coreSize;
-	return coreAtCoordinates(coreCoordinates);
+	if (isValidCoreLocation(location))
+	{
+		point3<unsigned int> coreCoordinates = location / _coreSize;
+		return coreAtCoordinates(coreCoordinates);
+	}
+	else
+	{
+		return boost::shared_ptr<Core>();
+	}
 }
 
 boost::shared_ptr<Core>
@@ -112,4 +119,15 @@ CoreManager::coreSizeInBlocks()
 	return _coreSizeInBlocks;
 }
 
+bool
+CoreManager::isValidCoreCoordinates(const util::point3<unsigned int>& coords) const
+{
+	return coords < _maxCoreCoordinates;
+}
+
+bool
+CoreManager::isValidCoreLocation(const util::point3<unsigned int>& loc) const
+{
+	return _blockManager->isValidLocation(loc);
+}
 

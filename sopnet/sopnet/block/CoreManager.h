@@ -29,6 +29,10 @@ public:
 	
 	const util::point3<unsigned int>& coreSizeInBlocks();
 	
+	bool isValidCoreCoordinates(const util::point3<unsigned int>& coords) const;
+	
+	bool isValidCoreLocation(const util::point3<unsigned int>& loc) const;
+	
 private:
 	boost::unordered_map<util::point3<unsigned int>, boost::shared_ptr<Core> > _coreMap;
 	boost::shared_ptr<BlockManager> _blockManager;

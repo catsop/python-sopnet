@@ -49,12 +49,12 @@ public:
 	/**
 	 * Returns the size of a block in pixels.
 	 */
-	virtual const point3<unsigned int>& blockSize();
+	virtual const point3<unsigned int>& blockSize() const;
 
 	/**
 	 * Returns the size of the stack in pixels.
 	 */
-	virtual const point3<unsigned int>& stackSize();
+	virtual const point3<unsigned int>& stackSize() const;
 	
 	/**
 	 * Returns a Blocks containing all Block's overlapped by the given Box.
@@ -66,6 +66,17 @@ public:
 	 * Determines whether a z-coordinate represents a valid section
 	 */
 	virtual bool isValidZ(unsigned int z) = 0;
+	
+	/**
+	 * Determines whether a given coordinate set will yeild a valid Block
+	 */
+	virtual bool isValidCoordinates(const util::point3<unsigned int>& coords) const;
+	
+	/**
+	 * Determines whether a given location will yeild a valid Block
+	 */
+	virtual bool isValidLocation(const util::point3<unsigned int>& loc) const;
+	
 	
 	/**
 	 * Determines whether a z-coordinate represents the final section in the stack represented by this block manager.
