@@ -10,7 +10,7 @@ namespace python {
 Locations
 SegmentGuarantor::fill(
 		const point3<unsigned int>& request,
-		const SegmentGuarantorParameters& parameters,
+		const SegmentGuarantorParameters& /*parameters*/,
 		const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[SegmentGuarantor] fill called for block at " << request << std::endl;
@@ -38,8 +38,8 @@ SegmentGuarantor::fill(
 
 	// collect missing block locations
 	Locations missing;
-	//foreach (boost::shared_ptr<Block> block, *missingBlocks)
-		//missing.push_back(block->getLocation());
+	foreach (boost::shared_ptr<Block> block, *missingBlocks)
+		missing.push_back(block->getCoordinates());
 
 	return missing;
 }
