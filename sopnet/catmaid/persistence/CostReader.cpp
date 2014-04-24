@@ -7,15 +7,18 @@ CostReader::CostReader()
 	registerInput(_segments, "segments");
 	registerInput(_defaultCost, "default cost", pipeline::Optional);
 	registerOutput(_objective, "objective");
+	registerOutput(_noCostSegments, "costless segments");
 }
 
 void CostReader::updateOutputs()
 {
 	pipeline::Value<LinearObjective> objective;
+	pipeline::Value<Segments> noCostSegments = pipeline::Value<Segments>();
 	
 	double cost = _defaultCost ? *_defaultCost : std::numeric_limits<double>::max();
 	
-	objective = _store->retrieveCost(_segments, cost);
+	objective = _store->retrieveCost(_segments, cost, noCostSegments);
 	
 	*_objective = *objective;
+	*_noCostSegments = *noCostSegments;
 }

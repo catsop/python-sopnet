@@ -276,7 +276,8 @@ LocalSegmentStore::storeCost(pipeline::Value<Segments> segments,
 
 pipeline::Value<LinearObjective>
 LocalSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
-								double defaultCost)
+								double defaultCost,
+								pipeline::Value<Segments> segmentsNF)
 {
 	pipeline::Value<LinearObjective> objective;
 	unsigned int i = 0;
@@ -292,6 +293,7 @@ LocalSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 		else
 		{
 			objective->setCoefficient(i, defaultCost);
+			segmentsNF->add(segment);
 		}
 		++i;
 	}

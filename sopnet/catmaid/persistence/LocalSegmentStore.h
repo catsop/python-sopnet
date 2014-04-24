@@ -55,7 +55,8 @@ public:
 						   pipeline::Value<LinearObjective> objective);
 	
 	pipeline::Value<LinearObjective> retrieveCost(pipeline::Value<Segments> segments,
-												  double defaultCost);
+												  double defaultCost,
+												  pipeline::Value<Segments> segmentsNF);
 	
 	unsigned int storeSolution(pipeline::Value<Segments> segments,
 							   pipeline::Value<Core> core,

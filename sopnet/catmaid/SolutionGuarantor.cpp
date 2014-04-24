@@ -1,12 +1,12 @@
-#include "SolutionGuarantor.h"
-#include <sopnet/segments/SegmentSet.h>
+#include <boost/make_shared.hpp>
 
-#include <catmaid/persistence/CostWriter.h>
-#include <catmaid/persistence/CostReader.h>
+#include <catmaid/EndExtractor.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/SolutionWriter.h>
+#include <catmaid/persistence/CostReader.h>
+#include <catmaid/persistence/CostWriter.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <inference/LinearConstraint.h>
 #include <inference/LinearConstraints.h>
@@ -28,387 +28,42 @@
 
 #include <inference/io/LinearCostFunctionParametersReader.h>
 
+
+#include "SolutionGuarantor.h"
+
 using std::vector;
 using std::map;
 
 logger::LogChannel solutionguarantorlog("solutionguarantorlog", "[SolutionGuarantor] ");
 
-util::ProgramOption optionCoreLinearCostFunctionParametersFile(
-		util::_module           = "core",
+util::ProgramOption optionLinearCostFunctionParametersFileSolutionGuarantor(
+		util::_module           = "solutionGuarantor",
 		util::_long_name        = "linearCostFunctionParameters",
 		util::_description_text = "Path to a file containing the weights for the linear cost function.",
 		util::_default_value    = "./feature_weights.dat");
 
-util::ProgramOption optionCoreForceExplanation(
-		util::_module           = "core",
-		util::_long_name        = "forceExplanation",
-		util::_description_text = "Force explanation, default true",
-		util::_default_value    = true);
-
-util::ProgramOption optionCoreBufferRadius(
-		util::_module           = "core",
-		util::_long_name        = "bufferRadius",
-		util::_description_text = "Buffer Radius, in Blocks",
-		util::_default_value    = "2");
+util::ProgramOption optionRandomForestFileSolutionGuarantor(
+		util::_module           = "solutionGuarantor",
+		util::_long_name        = "segmentRandomForest",
+		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
+		util::_default_value    = "segment_rf.hdf");
 
 SolutionGuarantor::SolutionGuarantor()
 {
-	registerInput(_cores, "cores");
+	registerInput(_priorCostFunctionParameters, "prior cost parameters");
+	registerInput(_inCores, "cores");
+	
+	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters",
+				pipeline::Optional);
+	
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
 	registerInput(_rawImageStore, "raw image store");
 	registerInput(_membraneStore, "membrane image store");
-	
-	registerInput(_bufferRadius, "buffer", pipeline::Optional);
-	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
-	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters",
-				pipeline::Optional);
-	registerInput(_priorCostFunctionParameters, "prior cost parameters", pipeline::Optional);
+	registerInput(_forceExplanation, "force explanation");
+	registerInput(_buffer, "buffer");
 	
 	registerOutput(_needBlocks, "need blocks");
-}
-
-pipeline::Value<Blocks>
-SolutionGuarantor::guaranteeSolution()
-{
-	pipeline::Value<Blocks> needBlocks;
-	boost::shared_ptr<Blocks> solveBlocks;
-	
-	LOG_DEBUG(solutionguarantorlog) << "SolutionGuarantor::guaranteeSolution" << std::endl;
-	
-	updateInputs();
-	
-	setupInputs();
-	
-	solveBlocks = bufferCores(_cores, _useBufferRadius);
-	
-	//TODO: decide whether or not this should go in the for loop above
-	solveBlocks->expand(util::point3<int>(0, 0, 1));
-	solveBlocks->expand(util::point3<int>(0, 0, -1));
-	
-	// checkData will add Blocks to needBlocks if we need segments to be extracted
-	if (checkData(solveBlocks, needBlocks))
-	{
-		solve(solveBlocks);
-	}
-	
-	LOG_DEBUG(solutionguarantorlog) << "leaving guaranteeSolution" << std::endl;
-	
-	return needBlocks;
-}
-
-void SolutionGuarantor::updateOutputs()
-{
-	LOG_DEBUG(solutionguarantorlog) << "SolutionGuarantor::updateOutputs" << std::endl;
-	
-	pipeline::Value<Blocks> needBlocks = guaranteeSolution();
-	
-	*_needBlocks = *needBlocks;
-}
-
-bool
-SolutionGuarantor::checkData(const boost::shared_ptr<Blocks> solveBlocks,
-							 pipeline::Value<Blocks> needBlocks)
-{
-	bool ok = true;
-	bool proceed = false;
-	
-	foreach (boost::shared_ptr<Core> core, *_cores)
-	{
-		if (!core->getSolutionSetFlag())
-		{
-			proceed = true;
-			break;
-		}
-	}
-	
-	// If proceed was set true, then there is at least one Core on input that has not yet
-	// had its solution set.
-	// On the other hand, if proceed is false, then we have no work to do and can simply return.
-	if (!proceed)
-	{
-		return false;
-	}
-	
-	foreach (boost::shared_ptr<Block> block, *solveBlocks)
-	{
-		if (!block->getSegmentsFlag() || !block->getSlicesFlag())
-		{
-			ok = false;
-			needBlocks->add(block);
-		}
-	}
-	
-	return ok;
-}
-
-boost::shared_ptr<Blocks>
-SolutionGuarantor::checkCost(const boost::shared_ptr<Blocks> blocks)
-{
-	boost::shared_ptr<Blocks> needCostBlocks = boost::make_shared<Blocks>();
-	
-	foreach (boost::shared_ptr<Block> block, *blocks)
-	{
-		if (!block->getSolutionCostFlag())
-		{
-			needCostBlocks->add(block);
-		}
-	}
-	
-	return needCostBlocks;
-}
-
-void SolutionGuarantor::setupInputs()
-{
-	if (_forceExplanation)
-	{
-		_useForceExplanation = pipeline::Value<bool>(*_forceExplanation);
-	}
-	else
-	{
-		bool forceExplanation = optionCoreForceExplanation;
-		_useForceExplanation = pipeline::Value<bool>(forceExplanation);
-	}
-	
-	if (_bufferRadius)
-	{
-		_useBufferRadius = *_bufferRadius;
-	}
-	else
-	{
-		_useBufferRadius = optionCoreBufferRadius.as<unsigned int>();
-	}
-}
-
-void SolutionGuarantor::solve(const boost::shared_ptr<Blocks> blocks)
-{
-	LOG_DEBUG(solutionguarantorlog) << "solve()" << std::endl;
-	
-	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
-	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
-	boost::shared_ptr<LinearSolver> linearSolver = boost::make_shared<LinearSolver>();
-	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
-		boost::make_shared<ConstraintAssembler>();
-	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
-	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
-	
-	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
-		boost::make_shared<ObjectiveGenerator>();
-	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
-		boost::make_shared<SegmentFeatureReader>();
-	boost::shared_ptr<FileContentProvider> contentProvider =
-				boost::make_shared<FileContentProvider>("./feature_weights.dat");
-	boost::shared_ptr<LinearCostFunctionParametersReader> reader =
-		boost::make_shared<LinearCostFunctionParametersReader>();
-	boost::shared_ptr<LinearCostFunction> linearCostFunction =
-		boost::make_shared<LinearCostFunction>();
-	
-	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
-		boost::make_shared<LinearSolverParameters>(Binary);
-	
-	segmentReader->setInput("blocks", blocks);
-	sliceReader->setInput("blocks", blocks);
-	
-	segmentReader->setInput("store", _segmentStore);
-	sliceReader->setInput("store", _sliceStore);
-	
-	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
-	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
-	
-	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
-	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
-	constraintAssembler->setInput("force explanation", _useForceExplanation);
-	
-	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
-	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
-
-	costReader->setInput("store", _segmentStore);
-	costReader->setInput("segments", problemAssembler->getOutput("segments"));
-
-	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
-	segmentFeatureReader->setInput("store", _segmentStore);
-	segmentFeatureReader->setInput("block manager", blocks->getManager());
-	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
-	
-	reader->setInput(contentProvider->getOutput());
-	
-	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
-	linearCostFunction->setInput("parameters", reader->getOutput());
-	
-	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
-
-	
-// 	pipeline::Value<LinearObjective> objective = costReader->getOutput("objective");
-	pipeline::Value<LinearObjective> objective = objectiveGenerator->getOutput();
-	
-	LOG_DEBUG(solutionguarantorlog) << "bla bla bla " << objective->size() << std::endl;
-	
-	linearSolver->setInput("objective", objective);
-	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
-	linearSolver->setInput("parameters", binarySolverParameters);
-	
-	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
-	solutionWriter->setInput("store", _segmentStore);
-	solutionWriter->setInput("solution", linearSolver->getOutput("solution"));
-	solutionWriter->setInput("cores", _cores);
-	
-	solutionWriter->writeSolution();
-	
-	LOG_DEBUG(solutionguarantorlog) << "Solution written" << std::endl;
-}
-
-
-void SolutionGuarantor::storeCosts(const boost::shared_ptr<Blocks> costBlocks)
-{
-	boost::shared_ptr<Blocks> blocks = checkCost(costBlocks);
-	
-	// A whole mess of pipeline variables
-	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
-	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
-		boost::make_shared<ObjectiveGenerator>();
-	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction =
-		boost::make_shared<SegmentationCostFunction>();
-	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
-		boost::make_shared<ConstraintAssembler>();
-	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();;
-	boost::shared_ptr<FileContentProvider> contentProvider
-				= boost::make_shared<FileContentProvider>(
-					optionCoreLinearCostFunctionParametersFile.as<std::string>());
-	boost::shared_ptr<LinearCostFunctionParametersReader> reader
-				= boost::make_shared<LinearCostFunctionParametersReader>();
-	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
-		boost::make_shared<SegmentFeatureReader>();
-	
-	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
-	
-	boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
-	
-	// inputs and outputs
-	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
-		boost::make_shared<LinearSolverParameters>(Binary);
-	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Segments> segments;
-	
-
-	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
-	
-	segmentReader->setInput("blocks", blocks);
-	sliceReader->setInput("blocks", blocks);
-	
-	segmentReader->setInput("store", _segmentStore);
-	sliceReader->setInput("store", _sliceStore);
-	
-	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
-	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
-	
-	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
-	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
-	constraintAssembler->setInput("force explanation", _useForceExplanation);
-	
-	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
-	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
-	
-	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
-	segmentFeatureReader->setInput("store", _segmentStore);
-	segmentFeatureReader->setInput("block manager", blocks->getManager());
-	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
-	
-	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
-	
-	reader->setInput(contentProvider->getOutput());
-	
-	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
-	linearCostFunction->setInput("parameters", reader->getOutput());
-
-	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
-	
-// 	if (_segmentationCostFunctionParameters)
-// 	{
-// 		//TODO
-// 	}
-	
-	costWriter->setInput("store", _segmentStore);
-	costWriter->setInput("segments", problemAssembler->getOutput("segments"));
-	costWriter->setInput("objective", objectiveGenerator->getOutput());
-	
-	costWriter->writeCosts();
-	
-	foreach (boost::shared_ptr<Block> block, *blocks)
-	{
-		block->setSolutionCostFlag(true);
-	}
-}
-
-
-SolutionGuarantor::EndExtractor::EndExtractor()
-{
-	registerInput(_eeSegments, "segments");
-	registerInput(_eeSlices, "slices");
-	registerOutput(_allSegments, "segments");
-}
-
-void
-SolutionGuarantor::EndExtractor::updateOutputs()
-{
-	unsigned int z = 0;
-	SegmentSet segmentSet;
-	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
-	
-	LOG_DEBUG(solutionguarantorlog) << "End extractor recieved " << _eeSegments->size() <<
-		" segments" << std::endl;
-	
-	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
-	{
-		if (slice->getSection() > z)
-		{
-			z = slice->getSection();
-		}
-	}
-	
-	LOG_DEBUG(solutionguarantorlog) << " End extractor: max z is " << z << std::endl;
-
-	foreach (boost::shared_ptr<Segment> segment, _eeSegments->getSegments())
-	{
-		segmentSet.add(segment);
-	}
-
-	
-	foreach (boost::shared_ptr<Slice> slice, *_eeSlices)
-	{
-		if (slice->getSection() == z)
-		{
-			int begSize = segmentSet.size();
-			boost::shared_ptr<EndSegment> rightEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Left,
-											   slice);
-			boost::shared_ptr<EndSegment> leftEnd =
-				boost::make_shared<EndSegment>(Segment::getNextSegmentId(),
-											   Right,
-											   slice);
-			
-			segmentSet.add(rightEnd);
-			segmentSet.add(leftEnd);
-			
-			LOG_ALL(solutionguarantorlog) << "Added " << (segmentSet.size() - begSize) << " segments" << std::endl;
-		}
-	}
-	
-	
-	foreach (boost::shared_ptr<Segment> segment, segmentSet)
-	{
-		outputSegments->add(segment);
-	}
-	
-	LOG_DEBUG(solutionguarantorlog) << "End extractor returning " << outputSegments->size() <<
-		" segments" << std::endl;
-	
-	*_allSegments = *outputSegments;
 }
 
 SolutionGuarantor::ConstraintAssembler::ConstraintAssembler()
@@ -419,10 +74,12 @@ SolutionGuarantor::ConstraintAssembler::ConstraintAssembler()
 	registerOutput(_constraints, "linear constraints");
 }
 
+
 boost::shared_ptr<LinearConstraint>
 SolutionGuarantor::ConstraintAssembler::assembleConstraint(const ConflictSet& conflictSet,
-							std::map<unsigned int, std::vector<unsigned int> >& sliceSegmentsMap)
+									 map<unsigned int, vector<unsigned int> >& sliceSegmentsMap)
 {
+
 	boost::shared_ptr<LinearConstraint> constraint = boost::make_shared<LinearConstraint>();
 
 	// for each slice in the constraint
@@ -454,8 +111,7 @@ SolutionGuarantor::ConstraintAssembler::assembleConstraint(const ConflictSet& co
 	return constraint;
 }
 
-void
-SolutionGuarantor::ConstraintAssembler::updateOutputs()
+void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 {
 	map<unsigned int, vector<unsigned int> > sliceSegmentMap;
 	boost::shared_ptr<LinearConstraints> constraints = boost::make_shared<LinearConstraints>();
@@ -486,6 +142,244 @@ SolutionGuarantor::ConstraintAssembler::updateOutputs()
 	*_constraints = *constraints;
 }
 
+SolutionGuarantor::LinearObjectiveAssembler::LinearObjectiveAssembler()
+{
+	
+	registerInput(_store, "segment store");
+	registerInput(_segments, "segments");
+	registerInput(_blocks, "blocks");
+	registerInput(_rawStackStore, "stack store");
+	
+	registerOutput(_objective, "objective");
+}
+
+void
+SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
+{
+	
+	pipeline::Value<Segments> noCostSegments;
+	pipeline::Value<LinearObjective> objective;
+	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
+	
+	// Retrieve LinearObjective costs from the store.
+	
+	costReader->setInput("store", _store);
+	costReader->setInput("segments", _segments);
+	
+	objective = costReader->getOutput("objective");
+	noCostSegments = costReader->getOutput("costless segments");
+	
+	LOG_DEBUG(solutionguarantorlog) << "Read no objective coefficients for " <<
+		noCostSegments->size() << " of " << _segments->size() << " segments" << std::endl;
+	
+	if (noCostSegments->size() > 0)
+	{
+		// When noCostSegments is non-empty, there are Segments for which
+		// no cost was retrieved.
+		boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(
+					optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>());
+		boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+		boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
+			boost::make_shared<SegmentFeatureReader>();
+		boost::shared_ptr<LinearCostFunction> linearCostFunction =
+			boost::make_shared<LinearCostFunction>();
+		boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
+			boost::make_shared<ObjectiveGenerator>();
+		boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
+		boost::unordered_map<boost::shared_ptr<Segment>, double,
+							 SegmentPointerHash, SegmentPointerEquals> segmentCostMap;
+		std::vector<boost::shared_ptr<Segment> > segmentVector = noCostSegments->getSegments();
+		std::vector<double> coefficientVector;
+		unsigned int i = 0;
+		pipeline::Value<LinearObjective> computedObjective;
+		
+		// Compute the objective for the costless segments.
+		reader->setInput(contentProvider->getOutput());
+		
+		segmentFeatureReader->setInput("segments", noCostSegments);
+		segmentFeatureReader->setInput("store", _store);
+		segmentFeatureReader->setInput("block manager", _blocks->getManager());
+		segmentFeatureReader->setInput("raw stack store", _rawStackStore);
+		
+		linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
+		linearCostFunction->setInput("parameters", reader->getOutput());
+		
+		objectiveGenerator->setInput("segments", noCostSegments);
+		objectiveGenerator->addInput("cost functions",
+									 linearCostFunction->getOutput("cost function"));
+		
+		computedObjective = objectiveGenerator->getOutput();
+		coefficientVector = computedObjective->getCoefficients();
+		
+		// Build a map from segment pointer to cost.
+		// Here, we assume that the ObjectiveGenerator produces a LinearObjective object with
+		// the same size as Segments.
+		for (unsigned int j = 0; j < segmentVector.size(); ++j)
+		{
+			segmentCostMap[segmentVector[j]] = coefficientVector[j];
+		}
+		
+		// Finally, iterate through the list of all Segments
+		// Here, we assume that _segments and obective are co-indexed.
+		foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		{
+			// If segment is mapped in the segmentCostMap, then it also exists in noCostSegments
+			// IE, its coefficient is in computedObjective, but not in objective.
+			if (segmentCostMap.count(segment))
+			{
+				// So replace the dummy entry in objective with the real one
+				objective->setCoefficient(i, segmentCostMap[segment]);
+			}
+			++i;
+		}
+		
+		// Now, as a post script, we write the Objective to the SegmentStore
+		costWriter->setInput("store", _store);
+		costWriter->setInput("segments", noCostSegments);
+		costWriter->setInput("objective", computedObjective);
+		costWriter->writeCosts();
+	}
+	
+	*_objective = *objective;
+}
+
+
+
+void
+SolutionGuarantor::solve()
+{
+	// A whole mess of pipeline variables
+	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
+	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
+	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
+	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
+		boost::make_shared<ObjectiveGenerator>();
+	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction =
+		boost::make_shared<SegmentationCostFunction>();
+	boost::shared_ptr<LinearSolver> linearSolver = boost::make_shared<LinearSolver>();
+	boost::shared_ptr<Reconstructor> reconstructor = boost::make_shared<Reconstructor>();
+	boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
+	boost::shared_ptr<ConstraintAssembler> constraintAssembler =
+		boost::make_shared<ConstraintAssembler>();
+	boost::shared_ptr<LinearCostFunction> linearCostFunction = boost::make_shared<LinearCostFunction>();
+	boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(
+					optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>());
+	boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+	boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
+		boost::make_shared<SegmentFeatureReader>();
+	
+	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
+	
+	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	
+	boost::shared_ptr<LinearObjectiveAssembler> objectiveAssembler =
+		boost::make_shared<LinearObjectiveAssembler>();
+	
+	// inputs and outputs
+	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
+		boost::make_shared<LinearSolverParameters>(Binary);
+	pipeline::Value<SegmentTrees> neurons;
+	pipeline::Value<Segments> segments;
+	boost::shared_ptr<Blocks> needBlocks = boost::make_shared<Blocks>();
+
+	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
+	
+	segmentReader->setInput("blocks", _bufferedBlocks);
+	sliceReader->setInput("blocks", _bufferedBlocks);
+	
+	segmentReader->setInput("store", _segmentStore);
+	sliceReader->setInput("store", _sliceStore);
+	
+	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
+	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
+	
+	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
+	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
+	constraintAssembler->setInput("force explanation", _forceExplanation);
+	
+	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));
+	problemAssembler->addInput("neuron linear constraints", constraintAssembler->getOutput("linear constraints"));
+
+	objectiveAssembler->setInput("segment store", _segmentStore);
+	objectiveAssembler->setInput("segments", endExtractor->getOutput("segments"));
+	objectiveAssembler->setInput("blocks", _bufferedBlocks);
+	objectiveAssembler->setInput("stack store", _rawImageStore);
+
+// 	segmentFeatureReader->setInput("segments", endExtractor->getOutput("segments"));
+// 	segmentFeatureReader->setInput("store", _segmentStore);
+// 	segmentFeatureReader->setInput("block manager", _bufferedBlocks->getManager());
+// 	segmentFeatureReader->setInput("raw stack store", _rawImageStore);
+	
+// 	objectiveGenerator->setInput("segments", problemAssembler->getOutput("segments"));
+	
+// 	reader->setInput(contentProvider->getOutput());
+	
+// 	linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
+// 	linearCostFunction->setInput("parameters", reader->getOutput());
+
+// 	objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
+	
+	
+	linearSolver->setInput("objective", objectiveAssembler->getOutput());
+	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
+	linearSolver->setInput("parameters", binarySolverParameters);
+	
+	solutionWriter->setInput("segments", problemAssembler->getOutput("segments"));
+	solutionWriter->setInput("cores", _inCores);
+	solutionWriter->setInput("solution", linearSolver->getOutput());
+	solutionWriter->setInput("store", _segmentStore);
+	
+	LOG_DEBUG(solutionguarantorlog) << "Pipeline is setup, extracting neurons" << std::endl;
+
+	solutionWriter->writeSolution();
+}
+
+void
+SolutionGuarantor::updateOutputs()
+{
+	pipeline::Value<Blocks> needBlocks = guaranteeSolution();
+	
+	*_needBlocks = *needBlocks;
+}
+
+pipeline::Value<Blocks> 
+SolutionGuarantor::checkBlocks()
+{
+	pipeline::Value<Blocks> needBlocks = pipeline::Value<Blocks>();
+	
+	foreach (boost::shared_ptr<Block> block, *_bufferedBlocks)
+	{
+		if (!block->getSegmentsFlag() || !block->getSlicesFlag())
+		{
+			needBlocks->add(block);
+		}
+	}
+	
+	return needBlocks;
+}
+
+pipeline::Value<Blocks> SolutionGuarantor::guaranteeSolution()
+{
+	pipeline::Value<Blocks> needBlocks;
+	
+	updateInputs();
+	
+	_bufferedBlocks = bufferCores(_inCores, *_buffer);
+	
+	needBlocks = checkBlocks();
+	
+	if (needBlocks->empty())
+	{
+		solve();
+	}
+	
+	return needBlocks;
+}
+
 boost::shared_ptr<Blocks>
 SolutionGuarantor::bufferCore(boost::shared_ptr<Core> core, unsigned int buffer)
 {
@@ -498,11 +392,11 @@ boost::shared_ptr<Blocks>
 SolutionGuarantor::bufferCores(boost::shared_ptr<Cores> cores, unsigned int buffer)
 {
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(cores->asBlocks());
-	
+
 	for (unsigned int i = 0; i < buffer; ++i)
 	{
 		blocks->dilateXY();
 	}
-	
+
 	return blocks;
 }

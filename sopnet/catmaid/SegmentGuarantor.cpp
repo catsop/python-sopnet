@@ -3,6 +3,7 @@
 #include <sopnet/segments/SegmentExtractor.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <pipeline/Value.h>
+#include <catmaid/EndExtractor.h>
 
 logger::LogChannel segmentguarantorlog("segmentguarantorlog", "[SegmentGuarantor] ");
 
@@ -111,14 +112,28 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 			segments->addAll(extractedSegments);
 		}
 	}
+
+	// In the case that the guarantee block shares its upper bound with the whole stack, extracte
+	// EndSegments there and write them to the store.
+	// zEnd is not strictly in the z-range of the stack bounds, so we subtract 1
+	if (_blocks->getManager()->isUpperBound(zEnd - 1))
+	{
+		boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
+		endExtractor->setInput("segments", segments);
+		endExtractor->setInput("slices", slices);
+		segmentWriter->setInput("segments", endExtractor->getOutput());
+	}
+	else
+	{
+		segmentWriter->setInput("segments", segments);
+	}
 	
-	segmentWriter->setInput("segments", segments);
 	segmentWriter->setInput("blocks", _blocks);
 	segmentWriter->setInput("store", _segmentStore);
 	
 	if (_rawImageStore)
 	{
-		segmentWriter->setInput("features", guaranteeFeatures(segmentWriter, segments));
+		segmentWriter->setInput("features", guaranteeFeatures(segments));
 	}
 	
 	segmentWriter->writeSegments();
@@ -211,8 +226,7 @@ SegmentGuarantor::checkBlockSlices(const boost::shared_ptr<Blocks> sliceBlocks,
 }
 
 pipeline::Value<Features>
-SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<SegmentWriter> segmentWriter,
-									const boost::shared_ptr<Segments> segments)
+SegmentGuarantor::guaranteeFeatures(const boost::shared_ptr<Segments> segments)
 {
 	boost::shared_ptr<Box<> > box = segments->boundingBox();
 	boost::shared_ptr<Blocks> blocks = _blocks->getManager()->blocksInBox(box);
