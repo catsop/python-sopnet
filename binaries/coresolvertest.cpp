@@ -58,6 +58,8 @@ using util::point3;
 using namespace logger;
 using namespace std;
 
+point3<unsigned int> tempCoreSize = point3<unsigned int>(2, 2, 1);
+
 //logger::LogChannel coretestlog("coretestlog", "[CoreTest] ");
 
 util::ProgramOption optionCoreTestMembranesPath(
@@ -431,7 +433,8 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	// Blockwise variables
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
-																					blockSize);
+																					blockSize,
+																					tempCoreSize);
 	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
 															   stackSize);
@@ -802,7 +805,8 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	
 	// Blockwise variables
 	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
-																					blockSize);
+																					blockSize,
+																					tempCoreSize);
 	boost::shared_ptr<StackStore> membraneStackStore =
 		boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
@@ -1624,7 +1628,7 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 		boost::make_shared<PriorCostFunctionParameters>();
 		
 	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize, tempCoreSize);
 	boost::shared_ptr<CoreManager> coreManager = 
 		boost::make_shared<CoreManager>(blockManager, util::point3<unsigned int>(2, 2, 1));
 	
@@ -1759,7 +1763,7 @@ bool blockManagerCheck(util::point3<unsigned int> stackSize,
 {
 	bool ok = true;
 	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+		boost::make_shared<LocalBlockManager>(stackSize, blockSize, tempCoreSize);
 	boost::shared_ptr<Block> block0 =
 		blockManager->blockAtLocation(util::point3<unsigned int>(0,0,0));
 	boost::shared_ptr<Block> blockNull = 

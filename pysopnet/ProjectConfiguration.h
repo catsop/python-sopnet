@@ -44,12 +44,23 @@ public:
 	 */
 	const util::point3<unsigned int>& getVolumeSize() const;
 
+	/**
+	 * Set the size of a core in blocks.
+	 */
+	void setCoreSize(const util::point3<unsigned int>& coreSizeInBlocks);
+
+	/**
+	 * Get the size of a core in blocks.
+	 */
+	const util::point3<unsigned int>& getCoreSize() const;
+
 private:
 
 	std::string _djangoUrl;
 
 	util::point3<unsigned int> _blockSize;
 	util::point3<unsigned int> _volumeSize;
+	util::point3<unsigned int> _coreSizeInBlocks;
 };
 
 } // namespace python

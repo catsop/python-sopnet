@@ -10,6 +10,8 @@
 
 using util::point3;
 
+class Core;
+class Cores;
 class Block;
 class Blocks;
 
@@ -22,13 +24,20 @@ public:
 	 * blockSize, also in pixels.
 	 */
     BlockManager(const point3<unsigned int>& stackSize,
-                 const point3<unsigned int>& blockSize);
+                 const point3<unsigned int>& blockSize,
+				 const point3<unsigned int>& coreSizeInBlocks);
 
 	/**
 	 * Returns a shared_ptr to a Block at the given location, in pixels.
 	 */
     virtual boost::shared_ptr<Block> blockAtLocation(unsigned int x, unsigned int y, unsigned int z);
 	virtual boost::shared_ptr<Block> blockAtLocation(const point3<unsigned int>& location);
+	
+	/**
+	 * Returns a shared_ptr to a Core at the given location, in pixels.
+	 */
+	virtual boost::shared_ptr<Core> coreAtLocation(unsigned int x, unsigned int y, unsigned int z);
+	virtual boost::shared_ptr<Core> coreAtLocation(const util::point3<unsigned int> location);
     
 	/**
 	 * Returns a shared_ptr to a Block at the given block-offset from the given Block.
@@ -47,10 +56,25 @@ public:
     virtual boost::shared_ptr<Block> blockAtCoordinates(const point3<unsigned int>& coordinates) = 0;
 
 	/**
+	 * Returns a shared_ptr ot a Core at the given core coordinates.
+	 */
+	virtual boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates) = 0;
+	
+	/**
 	 * Returns the size of a block in pixels.
 	 */
 	virtual const point3<unsigned int>& blockSize() const;
+	
+	/**
+	 * Returns the size of a core in pixels.
+	 */
+	const util::point3<unsigned int>& coreSize();
 
+	/**
+	 * Returns the size of a core in blocks. 
+	 */
+	const util::point3<unsigned int>& coreSizeInBlocks();
+	
 	/**
 	 * Returns the size of the stack in pixels.
 	 */
@@ -61,6 +85,12 @@ public:
 	 * @param box the box for which Blocks have been requested.
 	 */
 	virtual boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<unsigned int> >& box);
+
+	/**
+	 * Returns a Cores containing all Cores's overlapped by the given Box.
+	 * @param box the box for which Cores have been requested.
+	 */
+	virtual boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
 	
 	/**
 	 * Determines whether a z-coordinate represents a valid section
@@ -70,10 +100,15 @@ public:
 	/**
 	 * Determines whether a given coordinate set will yeild a valid Block
 	 */
-	virtual bool isValidCoordinates(const util::point3<unsigned int>& coords) const;
+	virtual bool isValidBlockCoordinates(const util::point3<unsigned int>& coords) const;
+
+	/**
+	 * Determines whether a given coordinate set will yeild a valid Core
+	 */
+	virtual bool isValidCoreCoordinates(const util::point3<unsigned int>& coords) const;
 	
 	/**
-	 * Determines whether a given location will yeild a valid Block
+	 * Determines whether a given location will yeild a valid Block or Core
 	 */
 	virtual bool isValidLocation(const util::point3<unsigned int>& loc) const;
 	
@@ -86,8 +121,8 @@ public:
 	virtual const point3<unsigned int>& maximumBlockCoordinates();
 	
 protected:
-    point3<unsigned int> _stackSize, _blockSize;
-	point3<unsigned int> _maxBlockCoordinates;
+    point3<unsigned int> _stackSize, _blockSize, _coreSize, _coreSizeInBlocks;
+	point3<unsigned int> _maxBlockCoordinates, _maxCoreCoordinates;
 
 };
 
