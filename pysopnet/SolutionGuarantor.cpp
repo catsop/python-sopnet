@@ -15,7 +15,7 @@ SolutionGuarantor::fill(
 
 	LOG_USER(pylog) << "[SolutionGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager>  blockManager  = createBlockManager(configuration);
+	pipeline::Value<CoreManager>  blockManager  = createCoreManager(configuration);
 	pipeline::Value<SliceStore>    sliceStore    = createSliceStore(configuration);
 	pipeline::Value<SegmentStore>  segmentStore  = createSegmentStore(configuration);
 	pipeline::Value<SolutionStore> solutionStore = createSolutionStore(configuration);

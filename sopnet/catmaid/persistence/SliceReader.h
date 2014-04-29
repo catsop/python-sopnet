@@ -5,7 +5,7 @@
 #include <boost/unordered_set.hpp>
 #include <imageprocessing/ComponentTrees.h>
 #include <catmaid/persistence/SliceStore.h>
-#include <sopnet/block/BlockManager.h>
+#include <sopnet/block/CoreManager.h>
 #include <sopnet/block/Box.h>
 #include <sopnet/slices/Slices.h>
 #include <pipeline/all.h>

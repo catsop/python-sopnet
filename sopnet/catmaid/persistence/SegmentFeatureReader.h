@@ -5,7 +5,7 @@
 #include <catmaid/persistence/SegmentStore.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
-#include <sopnet/block/BlockManager.h>
+#include <sopnet/block/CoreManager.h>
 #include <catmaid/persistence/StackStore.h>
 
 class SegmentFeatureReader : public pipeline::SimpleProcessNode<>
@@ -21,7 +21,7 @@ public:
 	 *  Segments     "segments"
 	 *  SegmentStore "store"
 	 *  bool         "stored only" - optional, defaults to false
-	 *  BlockManager "block manager" - optional, but needed if "stored only" is false
+	 *  CoreManager "block manager" - optional, but needed if "stored only" is false
 	 *  StackStore   "raw stack store - optional, but needed if "stored only" is false
 	 * 
 	 * Outputs:
@@ -63,7 +63,7 @@ private:
 	pipeline::Input<Segments> _segments;
 	pipeline::Input<SegmentStore> _store;
 	pipeline::Input<bool> _storedOnly;
-	pipeline::Input<BlockManager> _blockManager;
+	pipeline::Input<CoreManager> _blockManager;
 	pipeline::Input<StackStore> _rawStackStore;
 	
 	pipeline::Output<Features> _features;

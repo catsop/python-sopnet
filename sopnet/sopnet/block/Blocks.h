@@ -5,10 +5,9 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+
 #include "Block.h"
 #include "Box.h"
-
-class Core;
 
 template <class T>
 class BlocksImpl : public Box<>
@@ -18,7 +17,7 @@ public:
 	typedef typename std::vector<boost::shared_ptr<T> >::iterator       iterator;
 	typedef typename std::vector<boost::shared_ptr<T> >::const_iterator const_iterator;
 
-	BlocksImpl() : _blockManager(boost::shared_ptr<BlockManager>()) {}
+	BlocksImpl() : _blockManager(boost::shared_ptr<CoreManager>()) {}
 	
 	BlocksImpl(const boost::shared_ptr<T> block) : _blockManager(block->getManager())
 	{
@@ -98,14 +97,14 @@ public:
 				updateBox();
 				if (_blocks.empty())
 				{
-					_blockManager = boost::shared_ptr<BlockManager>();
+					_blockManager = boost::shared_ptr<CoreManager>();
 				}
 				return;
 			}
 		}
 	}
 
-	virtual boost::shared_ptr<BlockManager> getManager()
+	virtual boost::shared_ptr<CoreManager> getManager()
 	{
 		return _blockManager;
 	}
@@ -115,7 +114,7 @@ public:
 	
 protected:
 	std::vector<boost::shared_ptr<T> > _blocks;
-	boost::shared_ptr<BlockManager> _blockManager;
+	boost::shared_ptr<CoreManager> _blockManager;
 	
 private:
 	bool internalAdd(const boost::shared_ptr<T>& block)

@@ -5,15 +5,12 @@
 
 #include <pipeline/Data.h>
 #include <util/point3.hpp>
-#include <sopnet/sopnet/block/BlockManager.h>
+#include <sopnet/sopnet/block/CoreManager.h>
 #include <imageprocessing/ConnectedComponent.h>
 #include <vector>
 #include "Box.h"
 
 using util::point3;
-
-class Block;
-class BlockManager;
 
 class Block : public Box<unsigned int>
 {
@@ -23,9 +20,9 @@ public:
     Block(
 			unsigned int id,
 			const point3<unsigned int>& loc,
-			boost::shared_ptr<BlockManager> manager);
+			boost::shared_ptr<CoreManager> manager);
 
-	boost::shared_ptr<BlockManager> getManager() const;
+	boost::shared_ptr<CoreManager> getManager() const;
 	
     unsigned int getId() const;
 	
@@ -57,9 +54,9 @@ public:
 
 private:
 	static point3<unsigned int> blockSize(
-		const boost::shared_ptr<BlockManager>& blockManager,
+		const boost::shared_ptr<CoreManager>& blockManager,
 		const point3<unsigned int>& location);
-	boost::shared_ptr<BlockManager> _manager;
+	boost::shared_ptr<CoreManager> _manager;
     unsigned int _id;
 	bool _slicesExtracted, _segmentsExtracted, _solutionCostComputed;
 };

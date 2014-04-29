@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include <catmaid/SliceGuarantor.h>
 #include <catmaid/persistence/SegmentStore.h>
-#include <sopnet/block/BlockManager.h>
+#include <sopnet/block/CoreManager.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/SegmentWriter.h>
 #include <catmaid/persistence/StackStore.h>

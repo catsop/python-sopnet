@@ -21,10 +21,11 @@
 #include <sopnet/segments/Segments.h>
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
-#include <sopnet/block/BlockManager.h>
 #include <sopnet/block/CoreManager.h>
+#include <sopnet/block/CoreManager.h>
+#include <sopnet/block/LocalCoreManager.h>
 #include <sopnet/block/Box.h>
-#include <sopnet/block/LocalBlockManager.h>
+#include <sopnet/block/LocalCoreManager.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
@@ -430,7 +431,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	
 	// Blockwise variables
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
+	boost::shared_ptr<CoreManager> blockManager = boost::make_shared<LocalCoreManager>(stackSize,
 																					blockSize);
 	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
@@ -630,7 +631,7 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 {
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
 	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
-	boost::shared_ptr<BlockManager> blockManager = blocks->getManager();
+	boost::shared_ptr<CoreManager> blockManager = blocks->getManager();
 	
 	LOG_USER(out) << "Begin extracting segments" << std::endl;
 	
@@ -801,7 +802,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 		sopnetSegments->size() << " segments" << std::endl;
 	
 	// Blockwise variables
-	boost::shared_ptr<BlockManager> blockManager = boost::make_shared<LocalBlockManager>(stackSize,
+	boost::shared_ptr<CoreManager> blockManager = boost::make_shared<LocalCoreManager>(stackSize,
 																					blockSize);
 	boost::shared_ptr<StackStore> membraneStackStore =
 		boost::make_shared<LocalStackStore>(membranePath);
@@ -1080,7 +1081,7 @@ bool oldSchoolCoreSolver(
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<unsigned int> bufferValue = pipeline::Value<unsigned int>(buffer);
-	util::point3<unsigned int> stackSize = coreManager->getBlockManager()->stackSize();
+	util::point3<unsigned int> stackSize = coreManager->stackSize();
 	
 	
 	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(
@@ -1088,7 +1089,7 @@ bool oldSchoolCoreSolver(
 	boost::shared_ptr<SolutionGuarantor> coreSolver = 
 		boost::make_shared<SolutionGuarantor>();
 	
-	boost::shared_ptr<Blocks> blocks = coreManager->getBlockManager()->blocksInBox(stackBox);
+	boost::shared_ptr<Blocks> blocks = coreManager->blocksInBox(stackBox);
 	boost::shared_ptr<Cores> cores = coreManager->coresInBox(stackBox);
 
 	pipeline::Value<SegmentTrees> neurons;
@@ -1163,7 +1164,7 @@ bool coreSolver(
 	bool bfe = optionCoreTestForceExplanation;
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<unsigned int> bufferValue = pipeline::Value<unsigned int>(buffer);
-	util::point3<unsigned int> stackSize = coreManager->getBlockManager()->stackSize();
+	util::point3<unsigned int> stackSize = coreManager->stackSize();
 	
 	boost::shared_ptr<SolutionGuarantor> solutionGuarantor = 
 		boost::make_shared<SolutionGuarantor>();
@@ -1290,7 +1291,7 @@ void sopnetSolver(
 	pipeline::Value<bool> forceExplanation = pipeline::Value<bool>(bfe);
 	pipeline::Value<LinearObjective> objective;
 	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(
-		util::point3<unsigned int>(0,0,0), coreManager->getBlockManager()->stackSize());
+		util::point3<unsigned int>(0,0,0), coreManager->stackSize());
 	
 	
 	LOG_USER(out) << "Grabbing raw stack for box " << *box << endl;
@@ -1429,7 +1430,7 @@ bool checkSegmentTrees(boost::shared_ptr<SegmentTrees> sopnetNeurons,
 	return ok;
 }
 
-bool testCostIO(boost::shared_ptr<BlockManager> blockManager,
+bool testCostIO(boost::shared_ptr<CoreManager> blockManager,
 				boost::shared_ptr<Segments> segments,
 				boost::shared_ptr<LinearObjective> objective,
 				boost::shared_ptr<Box<> > stackBox)
@@ -1623,10 +1624,10 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 		boost::make_shared<PriorCostFunctionParameters>();
 		
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<CoreManager> blockManager =
+		boost::make_shared<LocalCoreManager>(stackSize, blockSize);
 	boost::shared_ptr<CoreManager> coreManager = 
-		boost::make_shared<CoreManager>(blockManager, util::point3<unsigned int>(2, 2, 1));
+		boost::make_shared<LocalCoreManager>(stackSize, blockSize, util::point3<unsigned int>(2, 2, 1));
 	
 	boost::shared_ptr<Box<> > stackBox =
 		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
@@ -1758,8 +1759,8 @@ bool blockManagerCheck(util::point3<unsigned int> stackSize,
 					   util::point3<unsigned int> blockSize)
 {
 	bool ok = true;
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<CoreManager> blockManager =
+		boost::make_shared<LocalCoreManager>(stackSize, blockSize);
 	boost::shared_ptr<Block> block0 =
 		blockManager->blockAtLocation(util::point3<unsigned int>(0,0,0));
 	boost::shared_ptr<Block> blockNull = 
@@ -1811,7 +1812,7 @@ bool blockManagerCheck(util::point3<unsigned int> stackSize,
 	return ok;
 }
 
-bool basicBlockManagerTest()
+bool basicCoreManagerTest()
 {
 	bool ok = true;
 	ok &= blockManagerCheck(util::point3<unsigned int>(25, 25, 10),
@@ -1854,7 +1855,7 @@ int main(int optionc, char** optionv)
 		
 		blockSize = parseBlockSize(stackSize);
 		
-		if (!basicBlockManagerTest())
+		if (!basicCoreManagerTest())
 		{
 			return -10;
 		}

@@ -26,8 +26,8 @@
 #include <sopnet/sopnet/block/Block.h>
 #include <sopnet/sopnet/block/Blocks.h>
 #include <sopnet/sopnet/block/Box.h>
-#include <sopnet/sopnet/block/BlockManager.h>
-#include <sopnet/sopnet/block/LocalBlockManager.h>
+#include <sopnet/sopnet/block/CoreManager.h>
+#include <sopnet/sopnet/block/LocalCoreManager.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 
 #include <imageprocessing/io/ImageBlockFileReader.h>
@@ -115,8 +115,8 @@ blockSolver(const std::string& membranePath, const std::string& rawPath,
 		// Block management variables
 	boost::shared_ptr<util::point3<unsigned int> > stackSize = util::ptrTo(179u, 168u, 5u);
 	boost::shared_ptr<util::point3<unsigned int> > blockSize = util::ptrTo(179u, 84u, 5u);
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize);
+	boost::shared_ptr<CoreManager> blockManager =
+		boost::make_shared<LocalCoreManager>(stackSize, blockSize);
 	boost::shared_ptr<Box<> > box =
 		boost::make_shared<Box<> >(util::ptrTo(0u, 0u, 0u), stackSize);
 	pipeline::Value<unsigned int> maxSize(1024 * 1024 * 64);

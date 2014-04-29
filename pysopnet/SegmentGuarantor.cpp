@@ -15,7 +15,7 @@ SegmentGuarantor::fill(
 
 	LOG_USER(pylog) << "[SegmentGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager> blockManager = createBlockManager(configuration);
+	pipeline::Value<CoreManager> blockManager = createCoreManager(configuration);
 	pipeline::Value<SliceStore>   sliceStore   = createSliceStore(configuration);
 	pipeline::Value<SegmentStore> segmentStore = createSegmentStore(configuration);
 

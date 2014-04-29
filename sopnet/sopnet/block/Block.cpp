@@ -4,7 +4,7 @@
 logger::LogChannel blocklog("blocklog", "[Block] ");
 
 util::point3<unsigned int>
-Block::blockSize(const boost::shared_ptr<BlockManager>& blockManager,
+Block::blockSize(const boost::shared_ptr<CoreManager>& blockManager,
 				 const util::point3<unsigned int>& location)
 {
 	point3<unsigned int> maxSize = blockManager->stackSize() - location;
@@ -19,7 +19,7 @@ Block::Block()
 }
 
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
-			boost::shared_ptr<BlockManager> manager) : Box<>(loc, blockSize(manager, loc)),
+			boost::shared_ptr<CoreManager> manager) : Box<>(loc, blockSize(manager, loc)),
 			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false),
 			_solutionCostComputed(false)
 {
@@ -32,7 +32,7 @@ Block::getId() const
     return _id;
 }
 
-boost::shared_ptr<BlockManager>
+boost::shared_ptr<CoreManager>
 Block::getManager() const
 {
 	return _manager;

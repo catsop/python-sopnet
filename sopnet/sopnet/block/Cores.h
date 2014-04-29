@@ -5,8 +5,7 @@
 #include <sopnet/block/Blocks.h>
 #include <pipeline/Data.h>
 #include <boost/shared_ptr.hpp>
-
-class CoreManager;
+#include <sopnet/block/CoreManager.h>
 
 class Cores : public BlocksImpl<Core>
 {

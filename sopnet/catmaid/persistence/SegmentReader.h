@@ -5,7 +5,7 @@
 #include <sopnet/block/Box.h>
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Blocks.h>
-#include <sopnet/block/BlockManager.h>
+#include <sopnet/block/CoreManager.h>
 #include <sopnet/segments/Segment.h>
 #include <sopnet/segments/Segments.h>
 #include <catmaid/persistence/SegmentStore.h>

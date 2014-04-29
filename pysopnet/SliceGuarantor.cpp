@@ -15,7 +15,7 @@ SliceGuarantor::fill(
 
 	LOG_USER(pylog) << "[SliceGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager> blockManager       = createBlockManager(configuration);
+	pipeline::Value<CoreManager> blockManager       = createCoreManager(configuration);
 	pipeline::Value<StackStore>   membraneStackStore = createStackStore(configuration);
 	pipeline::Value<SliceStore>   sliceStore         = createSliceStore(configuration);
 

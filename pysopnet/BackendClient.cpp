@@ -1,4 +1,4 @@
-#include <sopnet/block/LocalBlockManager.h>
+#include <sopnet/block/LocalCoreManager.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
@@ -8,18 +8,18 @@
 
 namespace python {
 
-pipeline::Value<BlockManager>
-BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
+pipeline::Value<CoreManager>
+BackendClient::createCoreManager(const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[BackendClient] create local block manager" << std::endl;
 
 	// TODO: create one based on provided configuration
-	pipeline::Value<LocalBlockManager> localBlockManager(
-			LocalBlockManager(
+	pipeline::Value<LocalCoreManager> localCoreManager(
+			LocalCoreManager(
 					configuration.getVolumeSize(),
 					configuration.getBlockSize()));
 
-	return localBlockManager;
+	return localCoreManager;
 }
 
 pipeline::Value<StackStore>

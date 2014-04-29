@@ -1,6 +1,7 @@
 #ifndef CORE_H__
 #define CORE_H__
 #include <sopnet/block/Blocks.h>
+#include <sopnet/block/Block.h>
 #include <boost/enable_shared_from_this.hpp>
 
 class CoreManager;
