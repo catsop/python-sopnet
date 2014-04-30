@@ -1803,6 +1803,56 @@ bool blockManagerCheck(util::point3<unsigned int> stackSize,
 		}
 	}
 	
+	foreach (boost::shared_ptr<Block> block, *allBlocks)
+	{
+		if (block->getSlicesFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " slices flag instantiated to true" << endl;
+		}
+		block->setSlicesFlag(true);
+	}
+	
+	foreach (boost::shared_ptr<Block> block, *allBlocks)
+	{
+		if (!block->getSlicesFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " slices flag false, previously set true" << endl;
+		}
+		if (block->getSegmentsFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " segments flag instantiated to true" << endl;
+		}
+		block->setSegmentsFlag(true);
+	}
+	
+	foreach (boost::shared_ptr<Block> block, *allBlocks)
+	{
+		if (!block->getSegmentsFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " segments flag false, previously set true" << endl;
+		}
+		if (block->getSolutionCostFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " solutions flag instantiated to true" << endl;
+		}
+		block->setSolutionCostFlag(true);
+	}
+
+	foreach (boost::shared_ptr<Block> block, *allBlocks)
+	{
+		if (!block->getSolutionCostFlag())
+		{
+			ok = false;
+			LOG_USER(out) << "Block " << *block << " solutions flag false, previously set true" << endl;
+		}
+	}
+
+	
 	if (ok)
 	{
 		LOG_USER(out) << "Block manager test passed" << endl;
