@@ -23,6 +23,9 @@ BlockManager::BlockManager(const point3<unsigned int>& stackSize,
 		_maxBlockCoordinates << std::endl;
 	_maxCoreCoordinates = (_maxBlockCoordinates + coreSizeInBlocks -
 		point3<unsigned int>(1u, 1u, 1u)) / coreSizeInBlocks;
+	_coreSize = util::point3<unsigned int>(coreSizeInBlocks.x * blockSize.x,
+										   coreSizeInBlocks.y * blockSize.y,
+										   coreSizeInBlocks.z * blockSize.z);
 }
 
 boost::shared_ptr<Block>
