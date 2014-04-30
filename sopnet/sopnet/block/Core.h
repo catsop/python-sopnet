@@ -3,13 +3,10 @@
 #include <sopnet/block/Blocks.h>
 #include <boost/enable_shared_from_this.hpp>
 
-class CoreManager;
-
 class Core : public BlocksImpl<Block>, public boost::enable_shared_from_this<Core>
 {
 public:
-	Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks,
-		boost::shared_ptr<CoreManager> coreManager);
+	Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks);
 
 	boost::shared_ptr<Blocks> dilateXYBlocks();
 	
@@ -21,14 +18,10 @@ public:
 	
 	bool operator==(const Core& other) const;
 	
-	boost::shared_ptr<CoreManager> getCoreManager();
-	
 	util::point3<unsigned int> getCoordinates();
 	
 private:
 	const unsigned int _id;
-	
-	const boost::shared_ptr<CoreManager> _coreManager;
 	
 	bool _solutionSetFlag;
 };
