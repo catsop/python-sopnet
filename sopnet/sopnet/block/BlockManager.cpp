@@ -11,9 +11,9 @@ logger::LogChannel blockmanagerlog("blockmanagerlog", "[BlockManager] ");
 /**
  * Creates an instance of a basic implementation of BlockManager, which exists only locally.
  */
-BlockManager::BlockManager(const point3<unsigned int>& stackSize,
-							const point3<unsigned int>& blockSize,
-							const point3<unsigned int>& coreSizeInBlocks) :
+BlockManager::BlockManager(const point3<unsigned int> stackSize,
+							const point3<unsigned int> blockSize,
+							const point3<unsigned int> coreSizeInBlocks) :
 							_stackSize(stackSize), _blockSize(blockSize),
 							_coreSizeInBlocks(coreSizeInBlocks)
 {

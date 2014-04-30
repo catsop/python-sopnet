@@ -23,9 +23,9 @@ public:
 	 * Creates a BlockManager for a stack with size stackSize in pixels and blocks of size
 	 * blockSize, also in pixels.
 	 */
-    BlockManager(const point3<unsigned int>& stackSize,
-                 const point3<unsigned int>& blockSize,
-				 const point3<unsigned int>& coreSizeInBlocks);
+    BlockManager(const point3<unsigned int> stackSize,
+                 const point3<unsigned int> blockSize,
+				 const point3<unsigned int> coreSizeInBlocks);
 
 	/**
 	 * Returns a shared_ptr to a Block at the given location, in pixels.
