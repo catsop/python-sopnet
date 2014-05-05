@@ -1,5 +1,5 @@
 #include "Core.h"
-#include "CoreManager.h"
+
 
 Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) :
 	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false)
