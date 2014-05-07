@@ -68,57 +68,44 @@ LocalBlockManager::coreAtCoordinates(const util::point3<unsigned int> coordinate
 	}
 }
 
-
 bool
-LocalBlockManager::isValidZ(unsigned int z)
+LocalBlockManager::getSegmentsFlag(boost::shared_ptr<Block> block)
 {
-	return z < _stackSize.z;
-}
-
-bool
-LocalBlockManager::isUpperBound(unsigned int z)
-{
-	return z == _stackSize.z - 1;
-}
-
-bool
-LocalBlockManager::getSegmentsFlag(const boost::shared_ptr<Block> block)
-{
-	getFlag(*block, _blockSegmentsFlagMap);
+	return getFlag(*block, _blockSegmentsFlagMap);
 }
 
 void
-LocalBlockManager::setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag)
+LocalBlockManager::setSegmentsFlag(boost::shared_ptr<Block> block, bool flag)
 {
 	_blockSegmentsFlagMap[*block] = flag;
 }
 
 bool
-LocalBlockManager::getSlicesFlag(const boost::shared_ptr<Block> block)
+LocalBlockManager::getSlicesFlag(boost::shared_ptr<Block> block)
 {
-	getFlag(*block, _blockSlicesFlagMap);
+	return getFlag(*block, _blockSlicesFlagMap);
 }
 
 void
-LocalBlockManager::setSlicesFlag(const boost::shared_ptr<Block> block, bool flag)
+LocalBlockManager::setSlicesFlag(boost::shared_ptr<Block> block, bool flag)
 {
 	_blockSlicesFlagMap[*block] = flag;
 }
 
 bool
-LocalBlockManager::getSolutionCostFlag(const boost::shared_ptr<Block> block)
+LocalBlockManager::getSolutionCostFlag(boost::shared_ptr<Block> block)
 {
-	getFlag(*block, _blockSolutionCostFlagMap);
+	return getFlag(*block, _blockSolutionCostFlagMap);
 }
 
 void
-LocalBlockManager::setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag)
+LocalBlockManager::setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag)
 {
 	_blockSolutionCostFlagMap[*block] = flag;
 }
 
 bool
-LocalBlockManager::getSolutionSetFlag(const boost::shared_ptr<Core> core)
+LocalBlockManager::getSolutionSetFlag(boost::shared_ptr<Core> core)
 {
 	if (_coreSolutionSetFlagMap.count(*core))
 	{
@@ -131,7 +118,7 @@ LocalBlockManager::getSolutionSetFlag(const boost::shared_ptr<Core> core)
 }
 
 void
-LocalBlockManager::setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag)
+LocalBlockManager::setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag)
 {
 	_coreSolutionSetFlagMap[*core] = flag;
 }

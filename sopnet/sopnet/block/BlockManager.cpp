@@ -184,3 +184,15 @@ BlockManager::isValidCoreCoordinates(const util::point3<unsigned int>& coords) c
 }
 
 
+
+bool
+BlockManager::isValidZ(unsigned int z)
+{
+	return z < _stackSize.z;
+}
+
+bool
+BlockManager::isUpperBound(unsigned int z)
+{
+	return z == _stackSize.z - 1;
+}

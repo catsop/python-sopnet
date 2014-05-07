@@ -16,7 +16,7 @@ using util::point3;
 class Block;
 class BlockManager;
 
-class Block : boost::enable_shared_from_this<Block>, public Box<unsigned int>
+class Block : public boost::enable_shared_from_this<Block>, public Box<unsigned int>
 {
 public:
 	Block();
@@ -34,9 +34,9 @@ public:
 	void setSegmentsFlag(bool flag);
 	void setSolutionCostFlag(bool flag);
 	
-	bool getSlicesFlag() const;
-	bool getSegmentsFlag() const;
-	bool getSolutionCostFlag() const;
+	bool getSlicesFlag();
+	bool getSegmentsFlag();
+	bool getSolutionCostFlag();
 	
 	util::point3<unsigned int> getCoordinates() const;
 	

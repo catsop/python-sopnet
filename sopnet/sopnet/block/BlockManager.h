@@ -2,6 +2,7 @@
 #define BLOCK_MANAGER_H__
 
 #include <boost/shared_ptr.hpp>
+#include <boost/unordered_map.hpp>
 
 #include <sopnet/block/Block.h>
 #include <sopnet/block/Box.h>
@@ -63,15 +64,15 @@ public:
 	 */
 	virtual boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates) = 0;
 	
-	virtual bool getSlicesFlag(const boost::shared_ptr<Block> block) = 0;
-	virtual bool getSegmentsFlag(const boost::shared_ptr<Block> block) = 0;
-	virtual bool getSolutionCostFlag(const boost::shared_ptr<Block> block) = 0;
-	virtual bool getSolutionSetFlag(const boost::shared_ptr<Core> core) = 0;
+	virtual bool getSlicesFlag(boost::shared_ptr<Block> block) = 0;
+	virtual bool getSegmentsFlag(boost::shared_ptr<Block> block) = 0;
+	virtual bool getSolutionCostFlag(boost::shared_ptr<Block> block) = 0;
+	virtual bool getSolutionSetFlag(boost::shared_ptr<Core> core) = 0;
 	
-	virtual void setSlicesFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
-	virtual void setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
-	virtual void setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
-	virtual void setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag) = 0;
+	virtual void setSlicesFlag(boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSegmentsFlag(boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag) = 0;
 	
 	/**
 	 * Returns the size of a block in pixels.
@@ -108,7 +109,7 @@ public:
 	/**
 	 * Determines whether a z-coordinate represents a valid section
 	 */
-	virtual bool isValidZ(unsigned int z) = 0;
+	virtual bool isValidZ(unsigned int z);
 	
 	/**
 	 * Determines whether a given coordinate set will yeild a valid Block
@@ -129,7 +130,7 @@ public:
 	/**
 	 * Determines whether a z-coordinate represents the final section in the stack represented by this block manager.
 	 */
-	virtual bool isUpperBound(unsigned int z) = 0;
+	virtual bool isUpperBound(unsigned int z);
 	
 	virtual const point3<unsigned int>& maximumBlockCoordinates();
 	

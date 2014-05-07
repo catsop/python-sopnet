@@ -28,19 +28,15 @@ public:
 	
 	boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates);
 	
-	bool isValidZ(unsigned int z);
+	bool getSlicesFlag(boost::shared_ptr<Block> block);
+	bool getSegmentsFlag(boost::shared_ptr<Block> block);
+	bool getSolutionCostFlag(boost::shared_ptr<Block> block);
+	bool getSolutionSetFlag(boost::shared_ptr<Core> core);
 	
-	bool isUpperBound(unsigned int z);
-	
-	bool getSlicesFlag(const boost::shared_ptr<Block> block);
-	bool getSegmentsFlag(const boost::shared_ptr<Block> block);
-	bool getSolutionCostFlag(const boost::shared_ptr<Block> block);
-	bool getSolutionSetFlag(const boost::shared_ptr<Core> core);
-	
-	void setSlicesFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag);
+	void setSlicesFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSegmentsFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag);
 
 private:
 	BlockManager::PointBlockMap _blockMap;

@@ -12,7 +12,8 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <util/httpclient.h>
 
-class DjangoBlockManager : boost::enable_shared_from_this<DjangoBlockManager>, public BlockManager
+class DjangoBlockManager : public boost::enable_shared_from_this<DjangoBlockManager>,
+	public BlockManager
 {
 public:
 	/**
@@ -23,43 +24,42 @@ public:
 		getBlockManager(const std::string& server,
 						const unsigned int stack, const unsigned int project);
 
+	/**
+	 * This constructor is not meant to be called directly. Use getBlockManager instead.
+	 */
+	DjangoBlockManager(const util::point3<unsigned int> stackSize,
+				const util::point3<unsigned int> blockSize,
+			const util::point3<unsigned int> coreSizeInBlocks,
+			const std::string server,
+			const int stack, const int project);
+
 	boost::shared_ptr<Block> blockAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Block> blockAtCoordinates(const util::point3<unsigned int>& coordinates);
 	boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<> >& box);
 	
-	boost::shared_ptr<Block> coreAtLocation(const util::point3<unsigned int>& location);
+	boost::shared_ptr<Core> coreAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates);
 	boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
 	
-	bool getSlicesFlag(const boost::shared_ptr<Block> block);
-	bool getSegmentsFlag(const boost::shared_ptr<Block> block);
-	bool getSolutionCostFlag(const boost::shared_ptr<Block> block);
-	bool getSolutionSetFlag(const boost::shared_ptr<Core> core);
+	bool getSlicesFlag(boost::shared_ptr<Block> block);
+	bool getSegmentsFlag(boost::shared_ptr<Block> block);
+	bool getSolutionCostFlag(boost::shared_ptr<Block> block);
+	bool getSolutionSetFlag(boost::shared_ptr<Core> core);
 	
-	void setSlicesFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag);
-	void setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag);
+	void setSlicesFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSegmentsFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag);
+	void setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag);
 	
 private:
-	DjangoBlockManager(const util::point3<unsigned int> stackSize,
-					   const util::point3<unsigned int> blockSize,
-					const util::point3<unsigned int> coreSizeInBlocks,
-					const std::string server,
-					const int stack, const int project);
 	
 	static void appendProjectAndStack(std::ostringstream& os, const DjangoBlockManager& manager);
 	static void appendProjectAndStack(std::ostringstream& os, const std::string& server,
 									  const unsigned int project, const unsigned int stack);
 	
-	static void logDjangoError(boost::shared_ptr<ptree> pt, std::string id);
-	static void handleNon200(const HttpClient::response& res, const std::string& url);
+	boost::shared_ptr<Block> parseBlock(const ptree& pt);
 	
-	boost::shared_ptr<Block> getBlock(const unsigned int id,
-									  const util::point3<unsigned int>& loc);
-	
-	boost::shared_ptr<Core> getCore(const unsigned int id,
-									  const util::point3<unsigned int>& loc);
+	boost::shared_ptr<Core> parseCore(const ptree& pt);
 	
 	bool getFlag(const unsigned int id, const std::string& flagName,
 				 const std::string& idVar);
@@ -70,7 +70,7 @@ private:
 	const int _stack, _project;
 	
 	BlockManager::PointBlockMap _blockMap;
-	BlockManager::PointBlockMap _coreMap;
+	BlockManager::PointCoreMap _coreMap;
 };
 
 #endif //DJANGO_BLOCK_MANAGER_H__
