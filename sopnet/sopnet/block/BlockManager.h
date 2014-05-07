@@ -18,6 +18,9 @@ class Blocks;
 class BlockManager : public pipeline::Data
 {
 public:
+	
+	typedef boost::unordered_map<point3<unsigned int>, boost::shared_ptr<Block> > PointBlockMap;
+	typedef boost::unordered_map<point3<unsigned int>, boost::shared_ptr<Core> > PointCoreMap;
 
     /**
 	 * Creates a BlockManager for a stack with size stackSize in pixels and blocks of size
@@ -59,6 +62,16 @@ public:
 	 * Returns a shared_ptr ot a Core at the given core coordinates.
 	 */
 	virtual boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates) = 0;
+	
+	virtual bool getSlicesFlag(const boost::shared_ptr<Block> block) = 0;
+	virtual bool getSegmentsFlag(const boost::shared_ptr<Block> block) = 0;
+	virtual bool getSolutionCostFlag(const boost::shared_ptr<Block> block) = 0;
+	virtual bool getSolutionSetFlag(const boost::shared_ptr<Core> core) = 0;
+	
+	virtual void setSlicesFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag) = 0;
+	virtual void setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag) = 0;
 	
 	/**
 	 * Returns the size of a block in pixels.

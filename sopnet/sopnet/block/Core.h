@@ -14,7 +14,7 @@ public:
 	
 	bool getSolutionSetFlag();
 	
-	bool setSolutionSetFlag(const bool& flag);
+	void setSolutionSetFlag(const bool& flag);
 	
 	bool operator==(const Core& other) const;
 	
@@ -22,8 +22,6 @@ public:
 	
 private:
 	const unsigned int _id;
-	
-	bool _solutionSetFlag;
 };
 
 /**

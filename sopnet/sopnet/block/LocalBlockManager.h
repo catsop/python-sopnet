@@ -12,8 +12,6 @@
 
 using util::point3;
 
-typedef boost::unordered_map<point3<unsigned int>, boost::shared_ptr<Block> > PointBlockMap;
-typedef boost::unordered_map<util::point3<unsigned int>, boost::shared_ptr<Core> > PointCoreMap;
 /**
  * A Local-only BlockManager. This class is intended to be used for testing the Catmaid-Sopnet
  * interoperability code.
@@ -33,11 +31,25 @@ public:
 	bool isValidZ(unsigned int z);
 	
 	bool isUpperBound(unsigned int z);
+	
+	bool getSlicesFlag(const boost::shared_ptr<Block> block);
+	bool getSegmentsFlag(const boost::shared_ptr<Block> block);
+	bool getSolutionCostFlag(const boost::shared_ptr<Block> block);
+	bool getSolutionSetFlag(const boost::shared_ptr<Core> core);
+	
+	void setSlicesFlag(const boost::shared_ptr<Block> block, bool flag);
+	void setSegmentsFlag(const boost::shared_ptr<Block> block, bool flag);
+	void setSolutionCostFlag(const boost::shared_ptr<Block> block, bool flag);
+	void setSolutionSetFlag(const boost::shared_ptr<Core> core, bool flag);
 
 private:
-	boost::shared_ptr<PointBlockMap> _blockMap;
-	PointCoreMap _coreMap;
+	BlockManager::PointBlockMap _blockMap;
+	BlockManager::PointCoreMap _coreMap;
 	unsigned int _lastBlockId, _lastCoreId;
+	boost::unordered_map<Block, bool> _blockSlicesFlagMap, _blockSegmentsFlagMap, _blockSolutionCostFlagMap;
+	boost::unordered_map<Core, bool> _coreSolutionSetFlagMap;
+	
+	bool getFlag(const Block& block, boost::unordered_map<Block, bool> map);
 };
 
 #endif //LOCAL_BLOCK_MANAGER_H__

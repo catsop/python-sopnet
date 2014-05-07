@@ -2,7 +2,7 @@
 
 
 Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) :
-	BlocksImpl<Block>(blocks), _id(id), _solutionSetFlag(false)
+	BlocksImpl<Block>(blocks), _id(id)
 {}
 
 boost::shared_ptr<Blocks>
@@ -26,14 +26,12 @@ bool Core::operator==(const Core& other) const
 
 bool Core::getSolutionSetFlag()
 {
-	return _solutionSetFlag;
+	return _blockManager->getSolutionSetFlag(shared_from_this());
 }
 
-bool Core::setSolutionSetFlag(const bool& flag)
+void Core::setSolutionSetFlag(const bool& flag)
 {
-	bool flagOut = _solutionSetFlag;
-	_solutionSetFlag = flag;
-	return flagOut;
+	_blockManager->setSolutionSetFlag(shared_from_this(), flag);
 }
 
 util::point3<unsigned int>

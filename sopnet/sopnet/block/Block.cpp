@@ -20,8 +20,7 @@ Block::Block()
 
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager) : Box<>(loc, blockSize(manager, loc)),
-			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false),
-			_solutionCostComputed(false)
+			_manager(manager), _id(id)
 {
     
 }
@@ -38,44 +37,38 @@ Block::getManager() const
 	return _manager;
 }
 
-bool
+void
 Block::setSlicesFlag(bool flag)
 {
-	bool outFlag = _slicesExtracted;
-	_slicesExtracted = flag;
-	return outFlag;
+	_manager->setSlicesFlag(shared_from_this(), flag);
 }
 
 bool
 Block::setSegmentsFlag(bool flag)
 {
-	bool outFlag = _segmentsExtracted;
-	_segmentsExtracted = flag;
-	return outFlag;
+	_manager->setSegmentsFlag(shared_from_this(), flag);
 }
 
 bool Block::setSolutionCostFlag(bool flag)
 {
-	bool outFlag = _solutionCostComputed;
-	_solutionCostComputed = flag;
-	return outFlag;
+	_manager->setSolutionCostFlag(shared_from_this(), flag);
 }
 
 bool
 Block::getSegmentsFlag() const
 {
-	return _segmentsExtracted;
+	_manager->getSegmentsFlag(shared_from_this());
 }
 
 bool
 Block::getSlicesFlag() const
 {
-	return _slicesExtracted;
+	_manager->getSlicesFlag(shared_from_this());
 }
 
 bool Block::getSolutionCostFlag() const
 {
-	return _solutionCostComputed;
+	_manager->getSolutionCostFlag(shared_from_this());
 }
 
 util::point3<unsigned int>
