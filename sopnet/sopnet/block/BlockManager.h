@@ -134,6 +134,8 @@ public:
 	
 	virtual const point3<unsigned int>& maximumBlockCoordinates();
 	
+	virtual const point3<unsigned int>& maximumCoreCoordinates();
+	
 protected:
     point3<unsigned int> _stackSize, _blockSize, _coreSize, _coreSizeInBlocks;
 	point3<unsigned int> _maxBlockCoordinates, _maxCoreCoordinates;

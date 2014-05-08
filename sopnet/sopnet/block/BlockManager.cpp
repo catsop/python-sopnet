@@ -134,6 +134,12 @@ BlockManager::maximumBlockCoordinates()
 	return _maxBlockCoordinates;
 }
 
+const util::point3<unsigned int>&
+BlockManager::maximumCoreCoordinates()
+{
+	return _maxCoreCoordinates;
+}
+
 bool
 BlockManager::isValidBlockCoordinates(const util::point3< unsigned int >& coords) const
 {
