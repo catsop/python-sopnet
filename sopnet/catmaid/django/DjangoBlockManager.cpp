@@ -259,7 +259,7 @@ DjangoBlockManager::coreAtCoordinates(const util::point3<unsigned int> coordinat
 boost::shared_ptr<Cores>
 DjangoBlockManager::coresInBox(const boost::shared_ptr<Box<> > box)
 {
-    boost::shared_ptr<Cores> cores;
+    boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
 	
