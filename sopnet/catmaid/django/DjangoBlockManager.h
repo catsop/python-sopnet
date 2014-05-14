@@ -40,6 +40,7 @@ public:
 	boost::shared_ptr<Core> coreAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates);
 	boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
+	boost::shared_ptr<Block> blockById(const unsigned int id);
 	
 	bool getSlicesFlag(boost::shared_ptr<Block> block);
 	bool getSegmentsFlag(boost::shared_ptr<Block> block);
@@ -51,11 +52,13 @@ public:
 	void setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag);
 	void setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag);
 	
+	std::string getServer();
+	int getStack();
+	int getProject();
+	
 private:
 	
 	static void appendProjectAndStack(std::ostringstream& os, const DjangoBlockManager& manager);
-	static void appendProjectAndStack(std::ostringstream& os, const std::string& server,
-									  const unsigned int project, const unsigned int stack);
 	
 	boost::shared_ptr<Block> parseBlock(const ptree& pt);
 	

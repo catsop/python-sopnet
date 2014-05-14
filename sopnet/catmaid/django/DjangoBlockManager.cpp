@@ -2,6 +2,7 @@
 
 
 #include <util/Logger.h>
+#include "DjangoUtils.h"
 
 logger::LogChannel djangoblockmanagerlog("djangoblockmanagerlog", "[DjangoBlockManager] ");
 
@@ -26,7 +27,7 @@ DjangoBlockManager::getBlockManager(const std::string& server,
 	std::ostringstream os;
 	unsigned int coreSizeCount, blockSizeCount, stackSizeCount;
 	
-	appendProjectAndStack(os, server, project, stack);
+	DjangoUtils::appendProjectAndStack(os, server, project, stack);
 	
 	os << "/block";
 	
@@ -400,13 +401,29 @@ void
 DjangoBlockManager::appendProjectAndStack(std::ostringstream& os,
 										  const DjangoBlockManager& manager)
 {
-	appendProjectAndStack(os, manager._server, manager._project, manager._stack);
+	DjangoUtils::appendProjectAndStack(os, manager._server, manager._project, manager._stack);
 }
 
-void
-DjangoBlockManager::appendProjectAndStack(std::ostringstream& os, const std::string& server, 
-										  const unsigned int project, const unsigned int stack)
+int
+DjangoBlockManager::getProject()
 {
-	os << "http://" << server << "/sopnet/" << project << "/stack/" << stack;
+	return _project;
 }
 
+std::string
+DjangoBlockManager::getServer()
+{
+	return _server;
+}
+
+int
+DjangoBlockManager::getStack()
+{
+	return _stack;
+}
+
+boost::shared_ptr<Block>
+DjangoBlockManager::blockById(const unsigned int id)
+{
+	// TODO
+}
