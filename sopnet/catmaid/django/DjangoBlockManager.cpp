@@ -2,7 +2,7 @@
 
 
 #include <util/Logger.h>
-#include "DjangoUtils.h"
+#include <catmaid/django/DjangoUtils.h>
 
 logger::LogChannel djangoblockmanagerlog("djangoblockmanagerlog", "[DjangoBlockManager] ");
 
@@ -103,9 +103,9 @@ DjangoBlockManager::blockAtLocation(const util::point3<unsigned int>& location)
 	// location
 	util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
 
-	if (_blockMap.count(loc))
+	if (_locationBlockMap.count(loc))
 	{
-		return _blockMap[loc];
+		return _locationBlockMap[loc];
 	}
 	else
 	{
@@ -113,7 +113,7 @@ DjangoBlockManager::blockAtLocation(const util::point3<unsigned int>& location)
 		boost::shared_ptr<ptree> pt;
 		boost::shared_ptr<Block> block;
 
-		appendProjectAndStack(os, *this);
+		appendProjectAndStack(os);
 		os << "/block_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
 
 		pt = HttpClient::getPropertyTree(os.str());
@@ -121,7 +121,7 @@ DjangoBlockManager::blockAtLocation(const util::point3<unsigned int>& location)
 		if (!HttpClient::checkDjangoError(pt))
 		{
 			block = parseBlock(*pt);
-			_blockMap[loc] = block;
+			insertBlock(block);
 			return block;
 		}
 		else
@@ -146,7 +146,7 @@ DjangoBlockManager::blocksInBox(const boost::shared_ptr<Box<> >& box)
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
 	
-	appendProjectAndStack(os, *this);
+	appendProjectAndStack(os);
 	
 	os << "/blocks_in_box?xmin=" << box->location().x << "&ymin=" << box->location().y << "&zmin=" <<
 		box->location().z << "&width=" << box->size().x << "&height=" << box->size().y <<
@@ -164,9 +164,9 @@ DjangoBlockManager::blocksInBox(const boost::shared_ptr<Box<> >& box)
 		{
 			boost::shared_ptr<Block> block = parseBlock(v.second);
 
-			if (block && !_blockMap.count(block->location()))
+			if (block && !_locationBlockMap.count(block->location()))
 			{
-				_blockMap[block->location()] = block;
+				insertBlock(block);
 			}
 			
 			blocks->add(block);
@@ -224,16 +224,16 @@ DjangoBlockManager::coreAtLocation(const util::point3<unsigned int>& location)
 	// location
 	util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
 
-	if (_coreMap.count(loc))
+	if (_locationCoreMap.count(loc))
 	{
-		return _coreMap[loc];
+		return _locationCoreMap[loc];
 	}
 	else
 	{
 		std::ostringstream os;
 		boost::shared_ptr<ptree> pt;
 
-		appendProjectAndStack(os, *this);
+		appendProjectAndStack(os);
 		os << "/core_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
 
 		pt = HttpClient::getPropertyTree(os.str());
@@ -245,7 +245,7 @@ DjangoBlockManager::coreAtLocation(const util::point3<unsigned int>& location)
 		else
 		{
 			boost::shared_ptr<Core> core = parseCore(*pt);
-			_coreMap[loc] = core;
+			insertCore(core);
 			return core;
 		}
 	}
@@ -264,7 +264,7 @@ DjangoBlockManager::coresInBox(const boost::shared_ptr<Box<> > box)
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
 	
-	appendProjectAndStack(os, *this);
+	appendProjectAndStack(os);
 	
 	os << "/cores_in_box?xmin=" << box->location().x << "&ymin=" << box->location().y << "&zmin=" <<
 		box->location().z << "&width=" << box->size().x << "&height=" << box->size().y <<
@@ -282,9 +282,9 @@ DjangoBlockManager::coresInBox(const boost::shared_ptr<Box<> > box)
 		{
 			boost::shared_ptr<Core> core = parseCore(v.second);
 
-			if (core && !_coreMap.count(core->location()))
+			if (core && !_locationCoreMap.count(core->location()))
 			{
-				_coreMap[core->location()] = core;
+				insertCore(core);
 			}
 
 			cores->add(core);
@@ -301,7 +301,7 @@ bool DjangoBlockManager::getFlag(const unsigned int id, const std::string& flagN
 	boost::shared_ptr<ptree> pt;
 	std::string flagStatus;
 	
-	appendProjectAndStack(os, *this);
+	appendProjectAndStack(os);
 	os << "/get_" << flagName << "?" << idVar << "=" << id;
 
 	pt = HttpClient::getPropertyTree(os.str());
@@ -327,7 +327,7 @@ void DjangoBlockManager::setFlag(const unsigned int id, const std::string& flagN
 	int iFlag = flag ? 1 : 0;
 	bool ok;
 	
-	appendProjectAndStack(os, *this);
+	appendProjectAndStack(os);
 	os << "/set_" << flagName << "?" << idVar << "=" << id << "&flag=" << iFlag;
 	
 	pt = HttpClient::getPropertyTree(os.str());
@@ -398,10 +398,9 @@ DjangoBlockManager::setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag)
 }
 
 void
-DjangoBlockManager::appendProjectAndStack(std::ostringstream& os,
-										  const DjangoBlockManager& manager)
+DjangoBlockManager::appendProjectAndStack(std::ostringstream& os)
 {
-	DjangoUtils::appendProjectAndStack(os, manager._server, manager._project, manager._stack);
+	DjangoUtils::appendProjectAndStack(os, _server, _project, _stack);
 }
 
 int
@@ -422,8 +421,115 @@ DjangoBlockManager::getStack()
 	return _stack;
 }
 
-boost::shared_ptr<Block>
-DjangoBlockManager::blockById(const unsigned int id)
+boost::shared_ptr<Blocks>
+DjangoBlockManager::blocksById(std::vector<unsigned int>& ids)
 {
-	// TODO
+	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
+	std::ostringstream url;
+	std::string delim = "";
+	bool needRequest = false;
+	
+	appendProjectAndStack(url);
+	url << "/blocks_by_id?ids=";
+	
+	foreach (unsigned int id, ids)
+	{
+		if (_idBlockMap.count(id))
+		{
+			blocks->add(_idBlockMap[id]);
+		}
+		else
+		{
+			url << delim << id;
+			delim = ",";
+			needRequest = true;
+		}
+	}
+	
+	if (needRequest)
+	{
+		boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(url.str());
+		
+		if (HttpClient::checkDjangoError(pt))
+		{
+			LOG_ERROR(djangoblockmanagerlog) << "Django error in blocksById" << std::endl;
+		}
+		else
+		{
+			foreach (ptree::value_type v, pt->get_child("blocks"))
+			{
+				boost::shared_ptr<Block> block = parseBlock(v.second);
+
+				insertBlock(block);
+				
+				blocks->add(block);
+			}
+		}
+	}
+	
+	return blocks;
 }
+
+boost::shared_ptr<Cores>
+DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
+{
+	boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
+	std::ostringstream url;
+	std::string delim = "";
+	bool needRequest = false;
+	
+	appendProjectAndStack(url);
+	url << "/cores_by_id?ids=";
+	
+	foreach (unsigned int id, ids)
+	{
+		if (_idCoreMap.count(id))
+		{
+			cores->add(_idCoreMap[id]);
+		}
+		else
+		{
+			url << delim << id;
+			delim = ",";
+			needRequest = true;
+		}
+	}
+	
+	if (needRequest)
+	{
+		boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(url.str());
+		
+		if (HttpClient::checkDjangoError(pt))
+		{
+			LOG_ERROR(djangoblockmanagerlog) << "Django error in coresById" << std::endl;
+		}
+		else
+		{
+			foreach (ptree::value_type v, pt->get_child("cores"))
+			{
+				boost::shared_ptr<Core> core = parseCore(v.second);
+
+				insertCore(core);
+				
+				cores->add(core);
+			}
+		}
+	}
+	
+	return cores;
+}
+
+void
+DjangoBlockManager::insertBlock(const boost::shared_ptr<Block> block)
+{
+	_idBlockMap[block->getId()] = block;
+	_locationBlockMap[block->location()] = block;
+}
+
+void
+DjangoBlockManager::insertCore(const boost::shared_ptr<Core> core)
+{
+	_idCoreMap[core->getId()] = core;
+	_locationCoreMap[core->location()] = core;
+}
+

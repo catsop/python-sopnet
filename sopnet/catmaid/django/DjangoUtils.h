@@ -2,6 +2,8 @@
 #define DJANGO_UTILS_H__
 
 #include <iostream>
+#include <sstream>
+#include <string>
 
 class DjangoUtils
 {

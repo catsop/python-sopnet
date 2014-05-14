@@ -11,6 +11,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <util/httpclient.h>
+#include <map>
 
 class DjangoBlockManager : public boost::enable_shared_from_this<DjangoBlockManager>,
 	public BlockManager
@@ -40,7 +41,16 @@ public:
 	boost::shared_ptr<Core> coreAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates);
 	boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
-	boost::shared_ptr<Block> blockById(const unsigned int id);
+	
+	/**
+	 * Retrieve Blocks by id. Order may not be preserved. 
+	 */
+	boost::shared_ptr<Blocks> blocksById(std::vector<unsigned int>& ids);
+	
+	/**
+	 * Retrieve Cores by id. Order may not be preserved.
+	 */
+	boost::shared_ptr<Cores> coresById(std::vector<unsigned int>& ids);
 	
 	bool getSlicesFlag(boost::shared_ptr<Block> block);
 	bool getSegmentsFlag(boost::shared_ptr<Block> block);
@@ -58,7 +68,7 @@ public:
 	
 private:
 	
-	static void appendProjectAndStack(std::ostringstream& os, const DjangoBlockManager& manager);
+	void appendProjectAndStack(std::ostringstream& os);
 	
 	boost::shared_ptr<Block> parseBlock(const ptree& pt);
 	
@@ -69,11 +79,17 @@ private:
 	void setFlag(const unsigned int id, const std::string& flagName, bool flag,
 				 const std::string& idVar);
 	
+	void insertBlock(const boost::shared_ptr<Block> block);
+	
+	void insertCore(const boost::shared_ptr<Core> core);
+	
 	const std::string _server;
 	const int _stack, _project;
 	
-	BlockManager::PointBlockMap _blockMap;
-	BlockManager::PointCoreMap _coreMap;
+	BlockManager::PointBlockMap _locationBlockMap;
+	BlockManager::PointCoreMap _locationCoreMap;
+	std::map<unsigned int, boost::shared_ptr<Block> > _idBlockMap;
+	std::map<unsigned int, boost::shared_ptr<Core> > _idCoreMap;
 };
 
 #endif //DJANGO_BLOCK_MANAGER_H__
