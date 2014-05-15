@@ -10,6 +10,7 @@
 #include <boost/unordered_map.hpp>
 #include <catmaid/persistence/SlicePointerHash.h>
 #include <iostream>
+#include <map>
 #include <boost/property_tree/ptree.hpp>
 
 
@@ -45,17 +46,18 @@ private:
 						std::ostringstream& osX, std::ostringstream& osY);
 	
 	boost::shared_ptr<Slice> ptreeToSlice(const boost::property_tree::ptree& pt);
+	boost::shared_ptr<ConflictSet> ptreeToConflictSet(const boost::property_tree::ptree& pt);
 	
-	std::string generateSliceHash(const boost::shared_ptr<Slice> slice);
-	std::string getHash(const boost::shared_ptr<Slice> slice);
+	std::string generateSliceHash(const Slice& slice);
+	std::string getHash(const Slice& slice);
 	
 	const std::string _server;
 	const int _stack, _project;
 	
 	boost::shared_ptr<DjangoBlockManager> _blockManager;
 	boost::unordered_map<std::string, boost::shared_ptr<Slice> > _hashSliceMap;
-	boost::unordered_map<boost::shared_ptr<Slice>, std::string,
-		SlicePointerHash, SlicePointerEquals> _sliceHashMap;
+	boost::unordered_map<Slice, std::string> _sliceHashMap;
+	std::map<unsigned int> _idSliceMap;
 };
 
 #endif //DJANGO_SLICE_STORE_H__
