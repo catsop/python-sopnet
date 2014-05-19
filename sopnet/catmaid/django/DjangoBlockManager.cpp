@@ -522,8 +522,11 @@ DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
 void
 DjangoBlockManager::insertBlock(const boost::shared_ptr<Block> block)
 {
-	_idBlockMap[block->getId()] = block;
-	_locationBlockMap[block->location()] = block;
+	if (block)
+	{
+		_idBlockMap[block->getId()] = block;
+		_locationBlockMap[block->location()] = block;
+	}
 }
 
 void
