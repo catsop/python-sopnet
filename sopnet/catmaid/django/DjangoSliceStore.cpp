@@ -1,7 +1,10 @@
 #include "DjangoSliceStore.h"
 #include "DjangoUtils.h"
 #include <util/httpclient.h>
-#include <pipeline/all.h>
+#include <sopnet/slices/ComponentTreeConverter.h>
+#include <imageprocessing/ConnectedComponent.h>
+#include <imageprocessing/Image.h>
+#include <util/point.hpp>
 
 logger::LogChannel djangoslicestorelog("djangoslicestorelog", "[DjangoSliceStore] ");
 
@@ -28,17 +31,15 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 	   insertPostData << "n=" << slices->size();
 	foreach (boost::shared_ptr<Slice> slice, *slices)
 	{
-		// Make sure that the slice is in the id slice map
-		if (!_idSliceMap.count(slice))
-		{
-			_idSliceMap[slice->getId()] = slice;
-		}
-		
-		// TODO: check for slices that are already in the db (don't send these).
+		// TODO: don't send slices that are already in the db.
 		
 		std::ostringstream osX, osY;
 		std::string hash = getHash(*slice);
 		util::point<double> ctr = slice->getComponent()->getCenter();
+		
+		// Make sure that the slice is in the id slice map
+		putSlice(slice, hash);
+		
 		appendGeometry(slice->getComponent(), osX, osY);
 
 		// Section
@@ -57,7 +58,7 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 		++i;
 	}
 	
-	   insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
+	insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
 	
 	if (HttpClient::checkDjangoError(insertPt))
 	{
@@ -74,7 +75,7 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 	
 	foreach (boost::shared_ptr<Slice> slice, *slices)
 	{
-		assocUrl << delim << _sliceHashMap[slice];
+		assocUrl << delim << _sliceHashMap[*slice];
 		delim = ",";
 	}
 	
@@ -117,7 +118,7 @@ DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 			boost::shared_ptr<Slice> slice = ptreeToSlice(sliceV.second);
 			slices->add(slice);
 			// Make sure that the slice is in the id slice map
-			if (!_idSliceMap.count(slice))
+			if (!_idSliceMap.count(slice->getId()))
 			{
 				_idSliceMap[slice->getId()] = slice;
 			}
@@ -141,10 +142,14 @@ DjangoSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream url;
 	std::vector<unsigned int> blockIds;
+	std::string hash = getHash(*slice);
 	unsigned int count;
 	
+	// Uncommenting this next line causes an error.
+	// putSlice(slice, hash);
+	
 	appendProjectAndStack(url);
-	url << "/blocks_by_slice?hash=" << getHash(slice);
+	url << "/blocks_by_slice?hash=" << hash;
 	pt = HttpClient::getPropertyTree(url.str());
 	
 	// Check for problems.
@@ -152,7 +157,7 @@ DjangoSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 		pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 	{
 		LOG_ERROR(djangoslicestorelog) << "Error getting blocks for slice " << slice->getId() <<
-			" with hash " << getHash(*slice) << std::endl;
+			" with hash " << hash << std::endl;
 		return blocks;
 	}
 	
@@ -219,15 +224,18 @@ DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 	{
 		std::ostringstream url;
 		boost::shared_ptr<ptree> pt;
+		std::string hash = getHash(*slice);
+		
+		putSlice(slice, hash);
 		
 		appendProjectAndStack(url);
-		url << "/conflict_sets_by_slice?hash=" << getHash(*slice);
+		url << "/conflict_sets_by_slice?hash=" << hash;
 		pt = HttpClient::getPropertyTree(url.str());
 		
 		if (HttpClient::checkDjangoError(pt))
 		{
 			LOG_ERROR(djangoslicestorelog) << "Django Error while retrieving conflict for slice "
-				<< slice->getId() << " with django hash " << getHash(*slice) << std::endl;
+				<< slice->getId() << " with django hash " << hash << std::endl;
 			return conflictSets;
 		}
 		else
@@ -251,7 +259,7 @@ DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 void
 DjangoSliceStore::dumpStore()
 {
-
+	//TODO: something useful.
 }
 
 std::string
@@ -268,10 +276,14 @@ DjangoSliceStore::appendProjectAndStack(std::ostringstream& os)
 }
 
 void
-DjangoSliceStore::putSlice(const boost::shared_ptr<Slice> slice, const std::string hash)
+DjangoSliceStore::putSlice(boost::shared_ptr<Slice> slice, const std::string hash)
 {
-	_sliceHashMap[slice] = hash;
-	_hashSliceMap[hash] = slice;
+	if (!_idSliceMap.count(slice->getId()))
+	{
+		_sliceHashMap[*slice] = hash;
+		_hashSliceMap[hash] = slice;
+		_idSliceMap[slice->getId()] = slice;
+	}
 }
 
 std::string
@@ -319,19 +331,49 @@ boost::shared_ptr<Slice>
 DjangoSliceStore::ptreeToSlice(const ptree& pt)
 {
 	std::string hash = pt.get_child("hash").get_value<std::string>();
-	unsigned int section = pt.get_child("section").get_value<unsigned int>();
-	double value = pt.get_child("value").get_value<double>();
 	
-	std::vector<unsigned int> vBox, vX, vY;
-	std::vector<double> vCtr;
-	
-	HttpClient::ptreeVector<unsigned int>(pt.get_child("box"), vBox);
-	HttpClient::ptreeVector<unsigned int>(pt.get_child("x"), vX);
-	HttpClient::ptreeVector<unsigned int>(pt.get_child("y"), vY);
-	HttpClient::ptreeVector<double>(pt.get_child("ctr"), vCtr);
-	
-	//TODO: fill
-	
+	// If we have the hash in the map already, just return the already-instantiated slice.
+	if (_hashSliceMap.count(hash))
+	{
+		return _hashSliceMap[hash];
+	}
+	else
+	{
+		boost::shared_ptr<Slice> slice;
+		boost::shared_ptr<ConnectedComponent> component;
+		boost::shared_ptr<Image> nullImage = boost::shared_ptr<Image>();
+		boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList = 
+			boost::make_shared<ConnectedComponent::pixel_list_type>();
+		
+		unsigned int section = pt.get_child("section").get_value<unsigned int>();
+		double value = pt.get_child("value").get_value<double>();
+		unsigned int id = ComponentTreeConverter::getNextSliceId();
+		
+		std::vector<unsigned int> vX, vY;
+		// We expect vX.size() == vY.size(), but take the min for safety.
+		unsigned int n = vX.size() <= vY.size() ? vX.size() : vY.size();
+		
+		// Parse variables from the ptree
+		HttpClient::ptreeVector<unsigned int>(pt.get_child("x"), vX);
+		HttpClient::ptreeVector<unsigned int>(pt.get_child("y"), vY);
+		
+		// Fill the pixel list
+		for (unsigned int i = 0; i < n; ++i)
+		{
+			pixelList->push_back(util::point<unsigned int>(vX[i], vY[i]));
+		}
+		
+		// Create the component
+		component = boost::make_shared<ConnectedComponent>(nullImage, value, pixelList, 0,
+														   pixelList->size());
+		
+		// Create the slice
+		slice = boost::make_shared<Slice>(id, section, component);
+		
+		putSlice(slice, hash);
+		
+		return slice;
+	}
 }
 
 boost::shared_ptr<ConflictSet>
@@ -342,9 +384,9 @@ DjangoSliceStore::ptreeToConflictSet(const ptree& pt)
 	foreach (ptree::value_type vConflict, pt)
 	{
 		ptree hashes = vConflict.second.front().second;
-		foreach (ptree::value vHash, hashes)
+		foreach (ptree::value_type vHash, hashes)
 		{
-			std::string hash = vHash.get_value<std::string>();
+			std::string hash = vHash.second.get_value<std::string>();
 			unsigned int id = _hashSliceMap[hash]->getId();
 			conflictSet->addSlice(id);
 		}
@@ -352,3 +394,4 @@ DjangoSliceStore::ptreeToConflictSet(const ptree& pt)
 	
 	return conflictSet;
 }
+

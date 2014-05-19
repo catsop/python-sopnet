@@ -12,6 +12,7 @@
 #include <iostream>
 #include <map>
 #include <boost/property_tree/ptree.hpp>
+#include <pipeline/all.h>
 
 
 /**
@@ -40,7 +41,8 @@ public:
 
 	void dumpStore();
 private:
-	void putSlice(const boost::shared_ptr<Slice> slice, const std::string hash);
+	void putSlice(boost::shared_ptr<Slice> slice, const std::string hash);
+	
 	void appendProjectAndStack(std::ostringstream& os);
 	void appendGeometry(const boost::shared_ptr<ConnectedComponent> component,
 						std::ostringstream& osX, std::ostringstream& osY);
@@ -57,7 +59,7 @@ private:
 	boost::shared_ptr<DjangoBlockManager> _blockManager;
 	boost::unordered_map<std::string, boost::shared_ptr<Slice> > _hashSliceMap;
 	boost::unordered_map<Slice, std::string> _sliceHashMap;
-	std::map<unsigned int> _idSliceMap;
+	std::map<unsigned int, boost::shared_ptr<Slice> > _idSliceMap;
 };
 
 #endif //DJANGO_SLICE_STORE_H__
