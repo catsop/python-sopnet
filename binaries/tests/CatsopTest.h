@@ -12,14 +12,16 @@
 namespace catsoptest
 {
 
+template <typename T>
 class Test
 {
 public:
 	/**
-	 * Run this test.
+	 * Run this test over the given argument.
+	 * @param arg an argument 
 	 * @return true for a successful test, false otherwise.
 	 */
-	virtual bool test() = 0;
+	virtual bool run(T arg) = 0;
 	
 	/**
 	 * @return the name of this test
@@ -42,8 +44,11 @@ public:
 	/**
 	 * Add a Test to this TestSuite. Tests are executed in the order in which they are
 	 * added.
+	 * @param test the test to run
+	 * @param args the arguments used to run the tests
 	 */
-	void addTest(const boost::shared_ptr<Test> test);
+	template <typename S>
+	void addTest(const boost::shared_ptr<Test<S> > test, const std::vector<S> args);
 	
 	/**
 	 * Run all tests.
@@ -52,8 +57,20 @@ public:
 	bool runAll();
 	
 private:
+	template<typename S>
+	class Tester
+	{
+	public:
+		Tester(const boost::shared_ptr<Test<S> > test, const std::vector<S> args);
+		
+	private:
+		const boost::shared_ptr<Test<S> > _test;
+		const std::vector<S> _args;
+	};
+	
 	std::string _name;
-	std::vector<boost::shared_ptr<Test> > _tests;
+	std::vector<boost::shared_ptr<Test<T> > > _tests;
+	std::vector<arglist_type> _argumentLists;
 };
 
 };
