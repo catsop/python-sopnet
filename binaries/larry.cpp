@@ -17,6 +17,8 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <sopnet/catmaid/django/DjangoBlockManager.h>
 #include <tests/BlockManagerTest.h>
+#include <tests/DjangoTestSuite.h>
+#include <tests/CatsopTest.h>
 
 using std::cout;
 using std::endl;
@@ -48,11 +50,9 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
-		boost::shared_ptr<BlockManager> blockManager =
-			DjangoBlockManager::getBlockManager("catmaid:8000", 1, 1);
-		boost::shared_ptr<catsoptest::BlockManagerTest> blockManagerTest =
-			boost::make_shared<catsoptest::BlockManagerTest>(blockManager);
-		blockManagerTest->test();
+		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
+			catsoptest::DjangoTestSuite::djangoTestSuite("http://catmaid:8000", 1, 1);
+		djangoSuite->runAll();
 		
 	}
 	catch (Exception& e)

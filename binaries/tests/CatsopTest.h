@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 /**
  * A really simple unit test designed for the catsop project.
@@ -21,7 +22,7 @@ public:
 	 * @param arg an argument 
 	 * @return true for a successful test, false otherwise.
 	 */
-	virtual bool run(T arg) = 0;
+	virtual bool run(boost::shared_ptr<T> arg) = 0;
 	
 	/**
 	 * @return the name of this test
@@ -38,7 +39,27 @@ public:
 
 class TestSuite
 {
+	
 public:
+	class Tester
+	{
+	public:
+		virtual bool runTests() = 0;
+	};
+	
+	template<typename S>
+	class TesterImpl : public Tester
+	{
+	public:
+		TesterImpl(const boost::shared_ptr<Test<S> > test,
+				   const std::vector<boost::shared_ptr<S> > args);
+		bool runTests();
+		
+	private:
+		const boost::shared_ptr<Test<S> > _test;
+		const std::vector<boost::shared_ptr<S> >_args;
+	};
+	
 	TestSuite(const std::string& name);
 	
 	/**
@@ -48,7 +69,12 @@ public:
 	 * @param args the arguments used to run the tests
 	 */
 	template <typename S>
-	void addTest(const boost::shared_ptr<Test<S> > test, const std::vector<S> args);
+	void addTest(const boost::shared_ptr<Test<S> > test,
+				 const std::vector<boost::shared_ptr<S> > args)
+	{
+		boost::shared_ptr<Tester> tester = boost::make_shared<TesterImpl<S> >(test, args);
+		_testers.push_back(tester);
+	}
 	
 	/**
 	 * Run all tests.
@@ -57,21 +83,12 @@ public:
 	bool runAll();
 	
 private:
-	template<typename S>
-	class Tester
-	{
-	public:
-		Tester(const boost::shared_ptr<Test<S> > test, const std::vector<S> args);
-		
-	private:
-		const boost::shared_ptr<Test<S> > _test;
-		const std::vector<S> _args;
-	};
-	
 	std::string _name;
-	std::vector<boost::shared_ptr<Test<T> > > _tests;
-	std::vector<arglist_type> _argumentLists;
+	std::vector<boost::shared_ptr<Tester> > _testers;
+
+	
 };
+
 
 };
 

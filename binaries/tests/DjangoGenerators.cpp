@@ -75,7 +75,7 @@ bool clearDJSopnet(const std::string& server, const unsigned int project, const 
 	}
 }
 
-boost::shared_ptr<BlockManager> getNewBlockManager(const std::string& server,
+boost::shared_ptr<BlockManager> getNewDjangoBlockManager(const std::string& server,
 												const unsigned int project,
 												const unsigned int stack,
 												const util::point3<unsigned int> blockSize,

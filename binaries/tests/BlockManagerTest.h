@@ -8,24 +8,52 @@
 
 namespace catsoptest
 {
-class BlockManagerTest : public catsoptest::Test
+	
+class BlockManagerFactory
+{
+public:
+	virtual boost::shared_ptr<BlockManager> createBlockManager(
+		const util::point3<unsigned int> blockSize,
+		const util::point3<unsigned int> coreSizeInBlocks) = 0;
+};
+	
+	
+class BlockManagerTestParam
+{
+public:
+	BlockManagerTestParam();
+	
+	BlockManagerTestParam(const util::point3<unsigned int> bs,
+						  const util::point3<unsigned int> cs) :
+						  blockSize(bs), coreSizeInBlocks(cs) {}
+
+	util::point3<unsigned int> blockSize;
+	util::point3<unsigned int> coreSizeInBlocks;
+};
+
+class BlockManagerTest : public catsoptest::Test<BlockManagerTestParam>
 {
 public:
 	
-	BlockManagerTest(const boost::shared_ptr<BlockManager> blockManager);
+	BlockManagerTest(const boost::shared_ptr<BlockManagerFactory> blockManagerFactory);
 	
-	bool test();
+	bool run(boost::shared_ptr<BlockManagerTestParam> arg);
 	
 	std::string name();
 	
 	std::string reason();
 	
+	static std::vector<boost::shared_ptr<BlockManagerTestParam> >
+		generateTestParameters(const util::point3<unsigned int>& stackSize);
+	
+	
 private:
-	boost::shared_ptr<BlockManager> _blockManager;
+	const boost::shared_ptr<BlockManagerFactory> _blockManagerFactory;
 	std::ostringstream _reason;
-	util::point3<unsigned int> _stackSize, _blockSize, _coreSizeInBlocks;
 };
 
 };
+
+std::ostream& operator<<(std::ostream& os, const catsoptest::BlockManagerTestParam& param);
 
 #endif //TEST_BLOCK_MANAGER_H__

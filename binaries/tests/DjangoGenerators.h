@@ -9,7 +9,7 @@ namespace catsoptest
 	bool clearDJSopnet(const std::string& server, const unsigned int project,
 					   const unsigned int stack);
 	
-	boost::shared_ptr<BlockManager> getNewBlockManager(
+	boost::shared_ptr<BlockManager> getNewDjangoBlockManager(
 		const std::string& server, const unsigned int project, const unsigned int stack,
 		const util::point3<unsigned int> blockSize,
 		const util::point3<unsigned int> coreSizeInBlocks);
