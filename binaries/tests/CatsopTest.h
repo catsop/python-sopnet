@@ -5,6 +5,9 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <util/foreach.h>
+#include <util/Logger.h>
+
 
 /**
  * A really simple unit test designed for the catsop project.
@@ -39,8 +42,18 @@ public:
 
 class TestSuite
 {
+public:
+	class Tester;
+private:
+	std::string _name;
+	std::vector<boost::shared_ptr<Tester> > _testers;
+	
+	static void logUser(std::string msg);
+	static void logError(std::string msg);
+
 	
 public:
+	
 	class Tester
 	{
 	public:
@@ -50,14 +63,51 @@ public:
 	template<typename S>
 	class TesterImpl : public Tester
 	{
-	public:
-		TesterImpl(const boost::shared_ptr<Test<S> > test,
-				   const std::vector<boost::shared_ptr<S> > args);
-		bool runTests();
-		
 	private:
 		const boost::shared_ptr<Test<S> > _test;
 		const std::vector<boost::shared_ptr<S> >_args;
+		const std::string _suiteName;
+		
+	public:
+		TesterImpl(const boost::shared_ptr<Test<S> > test,
+				   const std::vector<boost::shared_ptr<S> > args,
+				   const std::string& suiteName) :
+				   _test(test), _args(args), _suiteName(suiteName) {}
+		
+		bool runTests()
+		{
+			bool ok = true;
+			unsigned int passCount = 0;
+			std::stringstream passStr;
+			foreach (boost::shared_ptr<S> arg, _args)
+			{
+				std::stringstream logStr;
+				if (!_test->run(arg))
+				{
+					logStr << _suiteName << ": " << _test->name() << " FAIL" << std::endl;
+					logStr << "\t" << _test->reason();
+					logStr << std::endl << std::endl;
+					TestSuite::logError(logStr.str());
+					ok = false;
+				}
+				else
+				{
+					
+					logStr << _suiteName << ": " << _test->name() << " Pass" << std::endl;
+					TestSuite::logUser(logStr.str());
+					++passCount;
+				}
+			}
+
+			passStr << _suiteName << ": " << passCount << "/" << _args.size() << " passed." <<
+				std::endl;
+			TestSuite::logUser(passStr.str());
+			
+			return ok;
+		}
+		
+		
+	
 	};
 	
 	TestSuite(const std::string& name);
@@ -72,7 +122,7 @@ public:
 	void addTest(const boost::shared_ptr<Test<S> > test,
 				 const std::vector<boost::shared_ptr<S> > args)
 	{
-		boost::shared_ptr<Tester> tester = boost::make_shared<TesterImpl<S> >(test, args);
+		boost::shared_ptr<Tester> tester = boost::make_shared<TesterImpl<S> >(test, args, _name);
 		_testers.push_back(tester);
 	}
 	
@@ -82,9 +132,6 @@ public:
 	 */
 	bool runAll();
 	
-private:
-	std::string _name;
-	std::vector<boost::shared_ptr<Tester> > _testers;
 
 	
 };
