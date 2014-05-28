@@ -101,42 +101,58 @@ DjangoBlockManager::blockAtLocation(const util::point3<unsigned int>& location)
 	// loc is the point-wise result of location - location mod blockSize
 	// in other words, it represents the infimum location in a hypothetical core containing
 	// location
-	util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
-
-	if (_locationBlockMap.count(loc))
+	
+	if (location < _stackSize)
 	{
-		return _locationBlockMap[loc];
-	}
-	else
-	{
-		std::ostringstream os;
-		boost::shared_ptr<ptree> pt;
-		boost::shared_ptr<Block> block;
+	
+		util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
 
-		appendProjectAndStack(os);
-		os << "/block_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
-
-		pt = HttpClient::getPropertyTree(os.str());
-
-		if (!HttpClient::checkDjangoError(pt))
+		if (_locationBlockMap.count(loc))
 		{
-			block = parseBlock(*pt);
-			insertBlock(block);
-			return block;
+			return _locationBlockMap[loc];
 		}
 		else
 		{
-			LOG_ERROR(djangoblockmanagerlog) << "Django error in blockAtLocation " << location <<
-				std::endl;
-			return boost::shared_ptr<Block>();
+			std::ostringstream os;
+			boost::shared_ptr<ptree> pt;
+			boost::shared_ptr<Block> block;
+
+			appendProjectAndStack(os);
+			os << "/block_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
+
+			pt = HttpClient::getPropertyTree(os.str());
+
+			if (!HttpClient::checkDjangoError(pt))
+			{
+				block = parseBlock(*pt);
+				insertBlock(block);
+				return block;
+			}
+			else
+			{
+				LOG_ERROR(djangoblockmanagerlog) << "Django error in blockAtLocation " <<
+					location << std::endl;
+				return boost::shared_ptr<Block>();
+			}
 		}
+	}
+	else
+	{
+		return boost::shared_ptr<Block>();
 	}
 }
 
 boost::shared_ptr<Block>
 DjangoBlockManager::blockAtCoordinates(const util::point3<unsigned int>& coordinates)
 {
-	return blockAtLocation(coordinates * blockSize());
+	if (coordinates < _maxBlockCoordinates)
+	{
+		return blockAtLocation(coordinates * blockSize());
+	}
+	else
+	{
+		return boost::shared_ptr<Block>();
+	}
 }
 
 boost::shared_ptr<Blocks>
