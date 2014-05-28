@@ -10,6 +10,14 @@
 class SliceWriter : public pipeline::SimpleProcessNode<>
 {
 public:
+	/**
+	 * Construct a SliceWriter, which writes Slices to a given Block in a given SliceStore.
+	 * Inputs:
+	 *   Blocks       - "blocks"
+	 *   Slices       - "slices"
+	 *   SliceStore   - "store"
+	 *   ConflictSets - "conflict sets"
+	 */
 	SliceWriter();
 	
 	void writeSlices();
