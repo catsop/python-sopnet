@@ -51,7 +51,7 @@ int main(int optionc, char** optionv)
 	try
 	{
 		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
-			catsoptest::DjangoTestSuite::djangoTestSuite("http://catmaid:8000", 1, 1);
+			catsoptest::DjangoTestSuite::djangoTestSuite("catmaid:8000", 1, 1);
 		djangoSuite->runAll();
 		
 	}
