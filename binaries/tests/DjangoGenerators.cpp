@@ -87,7 +87,7 @@ boost::shared_ptr<BlockManager> getNewDjangoBlockManager(const std::string& serv
 		boost::shared_ptr<ptree> pt;
 		
 		DjangoUtils::appendProjectAndStack(url, server, project, stack);
-		url << "/setup_blocks?height=" << blockSize.x << "&width=" << blockSize.y << "&depth=" <<
+		url << "/setup_blocks?width=" << blockSize.x << "&height=" << blockSize.y << "&depth=" <<
 			blockSize.z << "&cwidth=" << coreSizeInBlocks.x << "&cheight=" << coreSizeInBlocks.y <<
 			"&cdepth=" << coreSizeInBlocks.z;
 		

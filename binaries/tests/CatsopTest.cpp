@@ -8,6 +8,7 @@ namespace catsoptest
 
 TestSuite::TestSuite(const std::string& name) : _name(name)
 {
+	LOG_USER(catsoptestlog) << "Initiated test suite " << name << std::endl;
 }
 
 bool TestSuite::runAll()
@@ -25,12 +26,17 @@ bool TestSuite::runAll()
 
 void TestSuite::logError(std::string msg)
 {
-	LOG_ERROR(catsoptestlog) << msg;
+	LOG_ERROR(catsoptestlog) << msg << std::endl;
 }
 
 void TestSuite::logUser(std::string msg)
 {
-	LOG_USER(catsoptestlog) << msg;
+	LOG_USER(catsoptestlog) << msg << std::endl;
+}
+
+void TestSuite::logDebug(std::string msg)
+{
+	LOG_DEBUG(catsoptestlog) << msg << std::endl;
 }
 
 

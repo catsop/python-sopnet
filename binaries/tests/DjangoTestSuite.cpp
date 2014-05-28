@@ -2,6 +2,10 @@
 #include <binaries/tests/DjangoGenerators.h>
 #include <catmaid/django/DjangoUtils.h>
 
+#include <util/Logger.h>
+
+logger::LogChannel djangotestlog("djangotestlog", "[DjangoTestSuite] ");
+
 namespace catsoptest
 {
 
@@ -28,6 +32,7 @@ DjangoBlockManagerFactory::createBlockManager(const util::point3<unsigned int> b
 boost::shared_ptr<TestSuite>
 DjangoTestSuite::djangoTestSuite(const std::string& url, unsigned int project, unsigned int stack)
 {
+	LOG_USER(djangotestlog) << "Running django test suite" << std::endl;
 	boost::shared_ptr<TestSuite> suite = boost::make_shared<TestSuite>("Django");
 	util::point3<unsigned int> stackSize = *DjangoUtils::getStackSize(url, project, stack);
 	boost::shared_ptr<BlockManagerFactory> factory =
@@ -36,6 +41,9 @@ DjangoTestSuite::djangoTestSuite(const std::string& url, unsigned int project, u
 	boost::shared_ptr<Test<BlockManagerTestParam> > test =
 		boost::make_shared<BlockManagerTest>(factory);
 	
+	LOG_USER(djangotestlog) << "For server " << url << ", project " << project << ", and stack "
+		<< stack << ", got stack size: " << stackSize << std::endl;
+		
 	if (stackSize > util::point3<unsigned int>(0,0,0))
 	{
 		suite->addTest<BlockManagerTestParam>(

@@ -62,7 +62,7 @@ BlockManagerTest::run(boost::shared_ptr<BlockManagerTestParam> arg)
 	{
 		LOG_DEBUG(blockmanagertestlog) << "Got " << allBlocks->length() << " blocks, expected " <<
 			nB << std::endl;
-		_reason << "Got " << "Got " << allBlocks->length() << " blocks, expected " << nB <<
+		_reason << "Got " << allBlocks->length() << " blocks, expected " << nB <<
 			std::endl;
 		ok = false;
 	}
@@ -72,7 +72,8 @@ BlockManagerTest::run(boost::shared_ptr<BlockManagerTestParam> arg)
 		LOG_DEBUG(blockmanagertestlog) << "\tBlock inf (should be null): " << *blockNull <<
 			std::endl;
 		_reason << "Block inf (should be null): " << *blockNull << std::endl;
-		ok = false;
+		//ok = false;
+		return false;
 	}
 	else
 	{
@@ -85,11 +86,22 @@ BlockManagerTest::run(boost::shared_ptr<BlockManagerTestParam> arg)
 		{
 			ok = false;
 			LOG_DEBUG(blockmanagertestlog) << "Block " << *block << " with coordinates " <<
-				block->getCoordinates() << " did not match block returned by the block manager" <<
+				block->getCoordinates() << " did not match block returned by the block manager " <<
 				"for those coordinates" << std::endl;
 			_reason << "Block " << *block << " with coordinates " <<
-				block->getCoordinates() << " did not match block returned by the block manager" <<
+				block->getCoordinates() << " did not match block returned by the block manager " <<
 				"for those coordinates" << std::endl;
+		}
+		
+		if (! (*block == *blockManager->blockAtLocation(block->location())))
+		{
+			ok = false;
+			LOG_DEBUG(blockmanagertestlog) << "Block " << *block << " with location " <<
+				block->location() << " did not match block returned by the block manager " <<
+				"for that location" << std::endl;
+			_reason << "Block " << *block << " with location " <<
+				block->location() << " did not match block returned by the block manager " <<
+				"for that location" << std::endl;
 		}
 	}
 	
@@ -268,7 +280,6 @@ BlockManagerTest::generateTestParameters(const util::point3<unsigned int>& stack
 	
 	return testParams;
 }
-
 
 };
 

@@ -50,6 +50,7 @@ private:
 	
 	static void logUser(std::string msg);
 	static void logError(std::string msg);
+	static void logDebug(std::string msg);
 
 	
 public:
@@ -82,18 +83,23 @@ public:
 			foreach (boost::shared_ptr<S> arg, _args)
 			{
 				std::stringstream logStr;
+				logStr << "Running test "<< _test->name() << " with argument: " << *arg <<
+					std::endl;
+				TestSuite::logDebug(logStr.str());
+				logStr.clear();
+				
 				if (!_test->run(arg))
 				{
-					logStr << _suiteName << ": " << _test->name() << " FAIL" << std::endl;
+					logStr << _suiteName << ": " << _test->name() << ", " << *arg << " FAIL";
 					logStr << "\t" << _test->reason();
-					logStr << std::endl << std::endl;
+					logStr << std::endl;
 					TestSuite::logError(logStr.str());
 					ok = false;
 				}
 				else
 				{
 					
-					logStr << _suiteName << ": " << _test->name() << " Pass" << std::endl;
+					logStr << _suiteName << ": " << _test->name() << ", " << *arg << " Pass";
 					TestSuite::logUser(logStr.str());
 					++passCount;
 				}
