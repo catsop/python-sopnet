@@ -235,42 +235,56 @@ DjangoBlockManager::parseCore(const ptree& pt)
 boost::shared_ptr<Core>
 DjangoBlockManager::coreAtLocation(const util::point3<unsigned int>& location)
 {
-	// loc is the point-wise result of location - location mod blockSize
-	// in other words, it represents the infimum location in a hypothetical core containing
-	// location
-	util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
-
-	if (_locationCoreMap.count(loc))
+	if (location < _stackSize)
 	{
-		return _locationCoreMap[loc];
-	}
-	else
-	{
-		std::ostringstream os;
-		boost::shared_ptr<ptree> pt;
+		// loc is the point-wise result of location - location mod blockSize
+		// in other words, it represents the infimum location in a hypothetical core containing
+		// location
+		util::point3<unsigned int> loc = (location / _blockSize) * _blockSize;
 
-		appendProjectAndStack(os);
-		os << "/core_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
-
-		pt = HttpClient::getPropertyTree(os.str());
-		if (HttpClient::checkDjangoError(pt))
+		if (_locationCoreMap.count(loc))
 		{
-			LOG_ERROR(djangoblockmanagerlog) << "Django error in coreAtLocation" << std::endl;
-			return boost::shared_ptr<Core>();
+			return _locationCoreMap[loc];
 		}
 		else
 		{
-			boost::shared_ptr<Core> core = parseCore(*pt);
-			insertCore(core);
-			return core;
+			std::ostringstream os;
+			boost::shared_ptr<ptree> pt;
+
+			appendProjectAndStack(os);
+			os << "/core_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
+
+			pt = HttpClient::getPropertyTree(os.str());
+			if (HttpClient::checkDjangoError(pt))
+			{
+				LOG_ERROR(djangoblockmanagerlog) << "Django error in coreAtLocation" << std::endl;
+				return boost::shared_ptr<Core>();
+			}
+			else
+			{
+				boost::shared_ptr<Core> core = parseCore(*pt);
+				insertCore(core);
+				return core;
+			}
 		}
+	}
+	else
+	{
+		return boost::shared_ptr<Core>();
 	}
 }
 
 boost::shared_ptr<Core>
 DjangoBlockManager::coreAtCoordinates(const util::point3<unsigned int> coordinates)
 {
-	return coreAtLocation(coordinates * coreSize());
+	if (coordinates < _maxCoreCoordinates)
+	{
+		return coreAtLocation(coordinates * coreSize());
+	}
+	else
+	{
+		return boost::shared_ptr<Core>();
+	}
 }
 
 boost::shared_ptr<Cores>
