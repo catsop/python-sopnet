@@ -1,0 +1,233 @@
+#include "SliceStoreTest.h"
+#include <catmaid/SliceGuarantor.h>
+#include <catmaid/persistence/LocalSliceStore.h>
+#include <catmaid/persistence/SliceReader.h>
+#include <catmaid/persistence/SliceWriter.h>
+#include <catmaid/persistence/SlicePointerHash.h>
+
+logger::LogChannel slicestoretestlog("slicestoretestlog", "[SliceStoreTest] ");
+
+namespace catsoptest
+{
+SliceStoreTest::SliceStoreTest(const boost::shared_ptr<SliceStoreFactory> factory) :
+	_factory(factory)
+{
+
+}
+
+bool
+SliceStoreTest::run(boost::shared_ptr<SliceStoreTestParam> arg)
+{
+	// Use a local slice store for temporary storage. We'll push/pull into the test store
+	// after extraction.
+	boost::shared_ptr<SliceStore> store = boost::make_shared<LocalSliceStore>();
+	boost::shared_ptr<SliceStore> testStore = _factory->createSliceStore();
+	
+	guaranteeSlices(store, arg);
+	copyStores(store, testStore, arg->blockManager);
+	return verifyStores(store, testStore, arg->blockManager);
+}
+
+
+
+std::string
+SliceStoreTest::name()
+{
+	return "SliceStore test";
+}
+
+std::string
+SliceStoreTest::reason()
+{
+	return _reason.str();
+}
+
+bool
+SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
+							 const boost::shared_ptr<SliceStore> testStore,
+							 const boost::shared_ptr<BlockManager> blockManager)
+{
+	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+															   blockManager->stackSize());
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	
+	boost::shared_ptr<SliceReader> localReader = boost::make_shared<SliceReader>();
+	boost::shared_ptr<SliceReader> testReader = boost::make_shared<SliceReader>();
+	
+	localReader->setInput("store", store);
+	testReader->setInput("store", testStore);
+	
+	foreach (boost::shared_ptr<Block> block, *blocks)
+	{
+		localReader->setInput("blocks", singletonBlocks(block));
+		testReader->setInput("blocks", singletonBlocks(block));
+		
+		pipeline::Value<Slices> localSlices = localReader->getOutput("slices");
+		pipeline::Value<Slices> testSlices = testReader->getOutput("slices");
+		pipeline::Value<ConflictSets> localSets = localReader->getOutput("conflict sets");
+		pipeline::Value<ConflictSets> testSets = testReader->getOutput("conflict sets");
+		
+		if (!slicesEqual(localSlices, testSlices))
+		{
+			_reason << "Slices for block " << *block << " were unequal" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "Unequal Slices objects" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "\tFor local, read " << localSlices->size()
+				<< " slices" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "\tFor test, read " << testSlices->size() << std::endl;
+			return false;
+		}
+		else if(!conflictSetsEqual(localSlices, localSets, testSlices, testSets))
+		{
+			_reason << "ConflictSets for block " << *block << " were unequal" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "Unequals ConflictSets objects" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "\tFor local, read " << localSets->size() <<
+				" ConflictSets" << std::endl;
+			LOG_DEBUG(slicestoretestlog) << "\tFor test, read " << testSets->size() << std::endl;
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+
+void
+SliceStoreTest::copyStores(const boost::shared_ptr<SliceStore> store,
+						   const boost::shared_ptr<SliceStore> testStore,
+						   const boost::shared_ptr<BlockManager> blockManager)
+{
+	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+															   blockManager->stackSize());
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	
+	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
+	boost::shared_ptr<SliceWriter> writer = boost::make_shared<SliceWriter>();
+	
+	reader->setInput("blocks", blocks);
+	reader->setInput("store", store);
+	
+	writer->setInput("blocks", blocks);
+	writer->setInput("store", testStore);
+	writer->setInput("slices", reader->getOutput("slices"));
+	writer->setInput("conflict sets", reader->getOutput("conflict sets"));
+	
+	writer->writeSlices();
+}
+
+
+void
+SliceStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> store,
+								const boost::shared_ptr< SliceStoreTestParam > arg)
+{
+	boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
+	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+															   arg->blockManager->stackSize());
+	boost::shared_ptr<Blocks> blocks = arg->blockManager->blocksInBox(box);
+	
+	guarantor->setInput("blocks", blocks);
+	guarantor->setInput("slice store", store);
+	guarantor->setInput("stack store", arg->stackStore);
+	
+	guarantor->guaranteeSlices();
+}
+
+bool SliceStoreTest::slicesEqual(const boost::shared_ptr<Slices> slices1,
+								 const boost::shared_ptr<Slices> slices2)
+{
+	SliceSet sliceSet;
+	foreach (boost::shared_ptr<Slice> slice, *slices1)
+	{
+		sliceSet.insert(slice);
+	}
+	
+	foreach (boost::shared_ptr<Slice> slice, *slices2)
+	{
+		if (!sliceSet.count(slice))
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+boost::shared_ptr<Blocks>
+SliceStoreTest::singletonBlocks(const boost::shared_ptr<Block> block)
+{
+	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
+	blocks->add(block);
+	return blocks;
+}
+
+
+bool
+SliceStoreTest::conflictSetsEqual(const boost::shared_ptr<Slices> slices1,
+								  const boost::shared_ptr<ConflictSets> sets1,
+								  const boost::shared_ptr<Slices> slices2,
+								  const boost::shared_ptr<ConflictSets> sets2)
+{
+	SliceSet sliceSet;
+	std::map<unsigned int, unsigned int> idMap;
+	boost::shared_ptr<ConflictSets> mappedSets2;
+	
+	foreach (boost::shared_ptr<Slice> slice, *slices1)
+	{
+		sliceSet.insert(slice);
+	}
+	
+	foreach (boost::shared_ptr<Slice> slice2, *slices2)
+	{
+		boost::shared_ptr<Slice> slice1 = *(sliceSet.find(slice2));
+		idMap[slice2->getId()] = slice1->getId();
+	}
+	
+	mappedSets2 = mapConflictSets(sets2, idMap);
+	
+	// AIEEEEE O(n^2)
+	foreach (ConflictSet& set1, *sets1)
+	{
+		if (!conflictContains(mappedSets2, set1))
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+bool
+SliceStoreTest::conflictContains(boost::shared_ptr<ConflictSets> sets, const ConflictSet& set)
+{
+	foreach (ConflictSet& other, *sets)
+	{
+		if (other == set)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+boost::shared_ptr<ConflictSets>
+SliceStoreTest::mapConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
+								 std::map<unsigned int, unsigned int>& idMap)
+{
+	boost::shared_ptr<ConflictSets> mappedSets = boost::make_shared<ConflictSets>();
+	foreach (ConflictSet conflictSet, *conflictSets)
+	{
+		ConflictSet mappedSet;
+		
+		foreach (unsigned int id, conflictSet.getSlices())
+		{
+			mappedSet.addSlice(idMap[id]);
+		}
+		
+		mappedSets->add(mappedSet);
+	}
+	
+	return mappedSets;
+}
+
+};
+
