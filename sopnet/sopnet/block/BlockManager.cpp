@@ -17,15 +17,18 @@ BlockManager::BlockManager(const point3<unsigned int> stackSize,
 							_stackSize(stackSize), _blockSize(blockSize),
 							_coreSizeInBlocks(coreSizeInBlocks)
 {
-    _maxBlockCoordinates =
-		(stackSize + blockSize - point3<unsigned int>(1u, 1u, 1u)) / blockSize;
-	LOG_DEBUG(blockmanagerlog) << "Limit: " << stackSize << " / " << blockSize << " => " <<
-		_maxBlockCoordinates << std::endl;
-	_maxCoreCoordinates = (_maxBlockCoordinates + coreSizeInBlocks -
-		point3<unsigned int>(1u, 1u, 1u)) / coreSizeInBlocks;
+    _maxBlockCoordinates = (stackSize + blockSize - point3<unsigned int>(1u, 1u, 1u)) / blockSize;
 	_coreSize = util::point3<unsigned int>(coreSizeInBlocks.x * blockSize.x,
 										   coreSizeInBlocks.y * blockSize.y,
 										   coreSizeInBlocks.z * blockSize.z);
+	_maxCoreCoordinates = (stackSize + _coreSize - point3<unsigned int>(1u, 1u, 1u)) / _coreSize;
+
+	LOG_DEBUG(blockmanagerlog) << "Stack size: " << stackSize << ", block size: " << blockSize <<
+		std::endl;
+	LOG_DEBUG(blockmanagerlog) << "Maximum block coordinates: " << _maxBlockCoordinates <<
+		std::endl;
+	LOG_DEBUG(blockmanagerlog) << "Maximum core coordinates: " << _maxCoreCoordinates <<
+		std::endl;
 }
 
 boost::shared_ptr<Block>
