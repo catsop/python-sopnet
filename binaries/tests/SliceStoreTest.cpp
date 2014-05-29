@@ -9,6 +9,31 @@ logger::LogChannel slicestoretestlog("slicestoretestlog", "[SliceStoreTest] ");
 
 namespace catsoptest
 {
+
+SliceStoreTestParam::SliceStoreTestParam(const std::string& inName,
+								const boost::shared_ptr<StackStore> inStackStore,
+								const boost::shared_ptr<BlockManagerFactory> blockManagerFactory,
+								const boost::shared_ptr<BlockManagerTestParam> blockManagerArg) :
+	name(inName), stackStore(inStackStore),
+	_factory(blockManagerFactory), _blockManagerParam(blockManagerArg)
+{
+	
+}
+
+boost::shared_ptr<BlockManager>
+SliceStoreTestParam::blockManager()
+{
+	return _factory->createBlockManager(_blockManagerParam->blockSize,
+								 _blockManagerParam->coreSizeInBlocks);
+}
+
+boost::shared_ptr<BlockManagerTestParam>
+SliceStoreTestParam::getBlockManagerParam() const
+{
+	return _blockManagerParam;
+}
+
+
 SliceStoreTest::SliceStoreTest(const boost::shared_ptr<SliceStoreFactory> factory) :
 	_factory(factory)
 {
@@ -22,10 +47,11 @@ SliceStoreTest::run(boost::shared_ptr<SliceStoreTestParam> arg)
 	// after extraction.
 	boost::shared_ptr<SliceStore> store = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SliceStore> testStore = _factory->createSliceStore();
+	boost::shared_ptr<BlockManager> blockManager = arg->blockManager();
 	
-	guaranteeSlices(store, arg);
-	copyStores(store, testStore, arg->blockManager);
-	return verifyStores(store, testStore, arg->blockManager);
+	guaranteeSlices(store, arg->stackStore, blockManager);
+	copyStores(store, testStore, blockManager);
+	return verifyStores(store, testStore, blockManager);
 }
 
 
@@ -41,6 +67,27 @@ SliceStoreTest::reason()
 {
 	return _reason.str();
 }
+
+std::vector<boost::shared_ptr<SliceStoreTestParam> >
+SliceStoreTest::generateTestParameters(const std::string& name,
+									   const util::point3< unsigned int >& stackSize,
+									   const boost::shared_ptr<StackStore> stackStore,
+									   const boost::shared_ptr<BlockManagerFactory> factory)
+{
+	std::vector<boost::shared_ptr<BlockManagerTestParam> > blockParams = 
+		BlockManagerTest::generateTestParameters(stackSize);
+	std::vector<boost::shared_ptr<SliceStoreTestParam> > sliceStoreParams;
+
+	foreach (boost::shared_ptr<BlockManagerTestParam> bParam, blockParams)
+	{
+		boost::shared_ptr<SliceStoreTestParam> sliceStoreParam =
+			boost::make_shared<SliceStoreTestParam>(name, stackStore, factory, bParam);
+		sliceStoreParams.push_back(sliceStoreParam);
+	}
+	
+	return sliceStoreParams;
+}
+
 
 bool
 SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
@@ -116,17 +163,18 @@ SliceStoreTest::copyStores(const boost::shared_ptr<SliceStore> store,
 
 
 void
-SliceStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> store,
-								const boost::shared_ptr< SliceStoreTestParam > arg)
+SliceStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore,
+						 const boost::shared_ptr<StackStore> stackStore,
+						 const boost::shared_ptr<BlockManager> blockManager)
 {
 	boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
 	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   arg->blockManager->stackSize());
-	boost::shared_ptr<Blocks> blocks = arg->blockManager->blocksInBox(box);
+															   blockManager->stackSize());
+	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	guarantor->setInput("blocks", blocks);
-	guarantor->setInput("slice store", store);
-	guarantor->setInput("stack store", arg->stackStore);
+	guarantor->setInput("slice store", sliceStore);
+	guarantor->setInput("stack store", stackStore);
 	
 	guarantor->guaranteeSlices();
 }
@@ -231,3 +279,8 @@ SliceStoreTest::mapConflictSets(const boost::shared_ptr<ConflictSets> conflictSe
 
 };
 
+std::ostream& operator<<(std::ostream& os, const catsoptest::SliceStoreTestParam& param)
+{
+	os << param.name << ": " << *(param.getBlockManagerParam());
+	return os;
+}

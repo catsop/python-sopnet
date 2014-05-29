@@ -2,6 +2,7 @@
 #define TEST_SLICE_STORE_H__
 
 #include "CatsopTest.h"
+#include "BlockManagerTest.h"
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <map>
@@ -21,17 +22,20 @@ public:
 	SliceStoreTestParam() {};
 	SliceStoreTestParam(const std::string& inName,
 						const boost::shared_ptr<StackStore> inStackStore,
-						const boost::shared_ptr<BlockManager> inBlockManager) :
-						name(inName),
-						stackStore(inStackStore),
-						blockManager(inBlockManager) {}
+						const boost::shared_ptr<BlockManagerFactory> blockManagerFactory,
+						const boost::shared_ptr<BlockManagerTestParam> blockManagerArg);
 
 	const std::string name;
 	const boost::shared_ptr<StackStore> stackStore;
-	const boost::shared_ptr<BlockManager> blockManager;
+	boost::shared_ptr<BlockManager> blockManager();
+	boost::shared_ptr<BlockManagerTestParam> getBlockManagerParam() const;
+
+private:
+	boost::shared_ptr<BlockManagerFactory> _factory;
+	boost::shared_ptr<BlockManagerTestParam> _blockManagerParam;
 };
 
-	
+
 class SliceStoreTest : public catsoptest::Test<SliceStoreTestParam>
 {
 public:
@@ -42,9 +46,17 @@ public:
 	std::string name();
 	
 	std::string reason();
+	
+	static std::vector<boost::shared_ptr<SliceStoreTestParam> >
+		generateTestParameters(const std::string& name,
+							   const util::point3<unsigned int>& stackSize,
+							   const boost::shared_ptr<StackStore> stackStore,
+							   const boost::shared_ptr<BlockManagerFactory> factory);
+		
 private:
-	void guaranteeSlices(const boost::shared_ptr<SliceStore> store,
-						 const boost::shared_ptr<SliceStoreTestParam> arg);
+	void guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore,
+						 const boost::shared_ptr<StackStore> stackStore,
+						 const boost::shared_ptr<BlockManager> blockManager);
 	
 	void copyStores(const boost::shared_ptr<SliceStore> store,
 					const boost::shared_ptr<SliceStore> testStore,
@@ -77,5 +89,6 @@ private:
 	
 };
 
+std::ostream& operator<<(std::ostream& os, const catsoptest::SliceStoreTestParam& param);
 
 #endif //TEST_SLICE_STORE_H__

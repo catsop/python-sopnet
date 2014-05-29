@@ -25,18 +25,11 @@ private:
 	
 class DjangoTestSuite
 {
-private:
-	
-	
 public:
 	static boost::shared_ptr<TestSuite> djangoTestSuite(const std::string& url,
 		unsigned int project, unsigned int stack);
-	
-	
 };
-	
-	
-	
+
 };
 
 #endif //TEST_DJANGO_SUITE_H__
