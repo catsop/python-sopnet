@@ -14,7 +14,7 @@ namespace catsoptest
 
 util::ProgramOption optionLocalTestMembranesPath(
 util::_module = 			"core",
-util::_long_name = 			"testMembranes",
+util::_long_name = 			"localTestMembranes",
 util::_description_text = 	"Path to membrane image stack",
 util::_default_value =		"./membranes");
 

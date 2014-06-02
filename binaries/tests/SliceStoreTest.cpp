@@ -45,9 +45,10 @@ SliceStoreTest::run(boost::shared_ptr<SliceStoreTestParam> arg)
 {
 	// Use a local slice store for temporary storage. We'll push/pull into the test store
 	// after extraction.
+	boost::shared_ptr<BlockManager> blockManager = arg->blockManager();
 	boost::shared_ptr<SliceStore> store = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SliceStore> testStore = _factory->createSliceStore();
-	boost::shared_ptr<BlockManager> blockManager = arg->blockManager();
+	
 	
 	guaranteeSlices(store, arg->stackStore, blockManager);
 	copyStores(store, testStore, blockManager);
