@@ -77,6 +77,9 @@ private:
 	bool conflictContains(boost::shared_ptr<ConflictSets> sets,
 						  const ConflictSet& set);
 	
+	void logConflictSets(const boost::shared_ptr<ConflictSets> sets,
+						 const boost::shared_ptr<Slices> slices);
+	
 	boost::shared_ptr<Blocks> singletonBlocks(const boost::shared_ptr<Block> block);
 	
 	boost::shared_ptr<ConflictSets> mapConflictSets(

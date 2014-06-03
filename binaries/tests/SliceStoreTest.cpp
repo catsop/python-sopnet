@@ -124,13 +124,19 @@ SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
 			LOG_DEBUG(slicestoretestlog) << "\tFor test, read " << testSlices->size() << std::endl;
 			return false;
 		}
-		else if(!conflictSetsEqual(localSlices, localSets, testSlices, testSets))
+		else
+		{
+			LOG_DEBUG(slicestoretestlog) << "Retrieved equal slices" << std::endl;
+		}
+		
+		if(!conflictSetsEqual(localSlices, localSets, testSlices, testSets))
 		{
 			_reason << "ConflictSets for block " << *block << " were unequal" << std::endl;
 			LOG_DEBUG(slicestoretestlog) << "Unequals ConflictSets objects" << std::endl;
 			LOG_DEBUG(slicestoretestlog) << "\tFor local, read " << localSets->size() <<
 				" ConflictSets" << std::endl;
 			LOG_DEBUG(slicestoretestlog) << "\tFor test, read " << testSets->size() << std::endl;
+			
 			return false;
 		}
 	}
@@ -237,12 +243,42 @@ SliceStoreTest::conflictSetsEqual(const boost::shared_ptr<Slices> slices1,
 	{
 		if (!conflictContains(mappedSets2, set1))
 		{
+			LOG_ERROR(slicestoretestlog) << "Set 1" << std::endl;
+			logConflictSets(sets1, slices1);
+			LOG_ERROR(slicestoretestlog) << "Set 2" << std::endl;
+			logConflictSets(sets2, slices2);
+			LOG_ERROR(slicestoretestlog) << "Set 2, mapped to Set 1" << std::endl;
+			logConflictSets(mappedSets2, slices1);
 			return false;
 		}
 	}
 	
 	return true;
 }
+
+void
+SliceStoreTest::logConflictSets(const boost::shared_ptr<ConflictSets> sets,
+								const boost::shared_ptr<Slices> slices)
+{
+	std::map<unsigned int, boost::shared_ptr<Slice> > idMap;
+	foreach (boost::shared_ptr<Slice> slice, *slices)
+	{
+		idMap[slice->getId()] = slice;
+	}
+	
+	foreach (const ConflictSet& conflict, *sets)
+	{
+		std::stringstream ss;
+		ss << conflict << ": ";
+		foreach (unsigned int id, conflict.getSlices())
+		{
+			ss << idMap[id]->hashValue() << " ";
+		}
+
+		LOG_DEBUG(slicestoretestlog) << ss.str() << std::endl;
+	}
+}
+
 
 bool
 SliceStoreTest::conflictContains(boost::shared_ptr<ConflictSets> sets, const ConflictSet& set)
