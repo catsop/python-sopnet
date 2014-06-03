@@ -63,6 +63,8 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 	if (HttpClient::checkDjangoError(insertPt))
 	{
 		LOG_ERROR(djangoslicestorelog) << "Error storing slices" << std::endl;
+		LOG_ERROR(djangoslicestorelog) << "\tURL was " << insertUrl.str() << std::endl;
+		LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
 		return;
 	}
 	
@@ -99,7 +101,7 @@ DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
 	
 	appendProjectAndStack(url);
-	url << "/slices_by_block_and_conflict?block_ids=";
+	url << "/slices_by_blocks_and_conflict?block_ids=";
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
@@ -110,7 +112,7 @@ DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 	pt = HttpClient::getPropertyTree(url.str());
 	
 	if (!HttpClient::checkDjangoError(pt) &&
-		pt->get_child("id").get_value<std::string>().compare("true") == 0)
+		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
 	{
 		ptree slicesTree = pt->get_child("slices");
 		foreach (ptree::value_type sliceV, slicesTree)
