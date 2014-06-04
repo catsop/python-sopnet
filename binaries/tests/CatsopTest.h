@@ -83,7 +83,7 @@ public:
 			foreach (boost::shared_ptr<S> arg, _args)
 			{
 				std::stringstream logStr;
-				logStr << "Running test "<< _test->name() << " with argument: " << *arg <<
+				logStr << "Running "<< _test->name() << " with argument: " << *arg <<
 					std::endl;
 				TestSuite::logDebug(logStr.str());
 				logStr.clear();
@@ -105,8 +105,8 @@ public:
 				}
 			}
 
-			passStr << _suiteName << ": " << passCount << "/" << _args.size() << " passed." <<
-				std::endl;
+			passStr << _suiteName << "/" << _test->name() << ": " << passCount << "/" <<
+				_args.size() << " passed." << std::endl;
 			TestSuite::logUser(passStr.str());
 			
 			return ok;
