@@ -383,17 +383,21 @@ DjangoSliceStore::ptreeToConflictSet(const ptree& pt)
 {
 	boost::shared_ptr<ConflictSet> conflictSet = boost::make_shared<ConflictSet>();
 	
-	foreach (ptree::value_type vConflict, pt)
+	ptree::value_type conflictValue = pt.front();
+
+	if (conflictValue.first.compare("conflict_hashes") != 0)
 	{
-		ptree hashes = vConflict.second.front().second;
-		foreach (ptree::value_type vHash, hashes)
-		{
-			std::string hash = vHash.second.get_value<std::string>();
-			unsigned int id = _hashSliceMap[hash]->getId();
-			conflictSet->addSlice(id);
-		}
+		LOG_DEBUG(djangoslicestorelog) << "Expected conflict_hashes, got " <<
+			conflictValue.first << std::endl;
 	}
 	
+	foreach (ptree::value_type vHash, conflictValue.second)
+	{
+		std::string hash = vHash.second.get_value<std::string>();
+		unsigned int id = _hashSliceMap[hash]->getId();
+		conflictSet->addSlice(id);
+	}
+
 	return conflictSet;
 }
 
