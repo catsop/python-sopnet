@@ -39,7 +39,12 @@ public:
 	
 	pipeline::Value<ConflictSets> retrieveConflictSets(pipeline::Value<Slices> slices);
 
+	boost::shared_ptr<DjangoBlockManager> getDjangoBlockManager() const;
+	
 	void dumpStore();
+	
+	std::string getHash(const Slice& slice);
+	
 private:
 	void putSlice(boost::shared_ptr<Slice> slice, const std::string hash);
 	
@@ -51,7 +56,6 @@ private:
 	boost::shared_ptr<ConflictSet> ptreeToConflictSet(const boost::property_tree::ptree& pt);
 	
 	std::string generateSliceHash(const Slice& slice);
-	std::string getHash(const Slice& slice);
 	
 	const std::string _server;
 	const int _stack, _project;
