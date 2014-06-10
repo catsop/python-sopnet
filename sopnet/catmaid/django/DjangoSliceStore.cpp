@@ -5,8 +5,17 @@
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/Image.h>
 #include <util/point.hpp>
+#include <util/ProgramOptions.h>
 
 logger::LogChannel djangoslicestorelog("djangoslicestorelog", "[DjangoSliceStore] ");
+
+
+util::ProgramOption optionDjangoSliceStoreNoCache(
+util::_module = 			"core",
+util::_long_name = 			"djangoSliceStoreNoCache",
+util::_description_text = 	"Do not use cache for Django Slice Store",
+util::_default_value =		false);
+
 
 DjangoSliceStore::DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager) : 
 	_server(blockManager->getServer()), _stack(blockManager->getStack()),
@@ -23,12 +32,12 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 	boost::shared_ptr<ptree> insertPt, assocPt;
 	
 	appendProjectAndStack(insertUrl);
-	   insertUrl << "/insert_slices";
+	insertUrl << "/insert_slices";
 	
 	// -- Step 1 : insert slices into database, if they haven't been already --
 	   
 	// Form POST data
-	   insertPostData << "n=" << slices->size();
+	insertPostData << "n=" << slices->size();
 	foreach (boost::shared_ptr<Slice> slice, *slices)
 	{
 		// TODO: don't send slices that are already in the db.
@@ -335,7 +344,7 @@ DjangoSliceStore::ptreeToSlice(const ptree& pt)
 	std::string hash = pt.get_child("hash").get_value<std::string>();
 	
 	// If we have the hash in the map already, just return the already-instantiated slice.
-	if (_hashSliceMap.count(hash))
+	if (_hashSliceMap.count(hash) && !optionDjangoSliceStoreNoCache)
 	{
 		return _hashSliceMap[hash];
 	}
@@ -401,3 +410,8 @@ DjangoSliceStore::ptreeToConflictSet(const ptree& pt)
 	return conflictSet;
 }
 
+boost::shared_ptr<DjangoBlockManager>
+DjangoSliceStore::getDjangoBlockManager() const
+{
+	return _blockManager;
+}
