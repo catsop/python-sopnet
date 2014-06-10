@@ -1,6 +1,8 @@
 #ifndef DJANGO_SEGMENT_STORE_H__
 #define DJANGO_SEGMENT_STORE_H__
 
+#include <boost/unordered_map.hpp>
+#include <catmaid/persistence/SegmentPointerHash.h>
 #include <catmaid/persistence/SegmentStore.h>
 #include "DjangoSliceStore.h"
 
@@ -39,7 +41,29 @@ public:
 	void dumpStore();
 
 private:
+	void appendProjectAndStack(std::ostringstream& os);
+	
+	void putSegment(const boost::shared_ptr<Segment> segment,
+					const std::string hash);
+	
+	std::string getHash(const boost::shared_ptr<Segment> segment);
+	
+	void setFeatureNames(const std::vector<std::string>& featureNames);
+	
+	static int getSegmentType(const boost::shared_ptr<Segment> segment);
+	static int getSegmentDirection(const boost::shared_ptr<Segment> segment);
+	static unsigned int getSectionInfimum(const boost::shared_ptr<Segment> segment);
+	
+	static boost::shared_ptr<Segment> ptreeToSegment(const boost::property_tree::ptree& pt);
+	
 	const boost::shared_ptr<DjangoSliceStore> _sliceStore;
+	const std::string _server;
+	const unsigned int _project, _stack;
+	const boost::unordered_map<boost::shared_ptr<Segment>, std::string,
+		SegmentPointerHash, SegmentPointerEquals> _segmentHashMap;
+	const std::map<std::string, boost::shared_ptr<Segment> > _hashSegmentMap;
+	const std::map<unsigned int, boost::shared_ptr<Segment> > _idSegmentMap;
+	bool _featureNamesFlag;
 };
 
 
