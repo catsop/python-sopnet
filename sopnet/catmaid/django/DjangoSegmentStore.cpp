@@ -319,7 +319,115 @@ unsigned int
 DjangoSegmentStore::storeCost(pipeline::Value<Segments> segments,
 							  pipeline::Value<LinearObjective> objective)
 {
+	unsigned int i = 0;
+	const std::vector<double> coefs = objective->getCoefficients();
+	std::ostringstream url;
+	boost::shared_ptr<ptree> pt;
 	
+	appendProjectAndStack(url);
+	url << "/store_segment_costs?n=" << segments->size();
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		url << "&hash_" << i << "=" << getHash(segment);
+		url << "&cost_" << i << "=" << coefs[i];
+		
+		++i;
+		
+		if (i > coefs.size())
+		{
+			break;
+		}
+	}
+	
+	pt = HttpClient::getPropertyTree(url.str());
+	
+	if (HttpClient::checkDjangoError(pt))
+	{
+		LOG_ERROR(djangosegmentstorelog) << "Error while storing segment costs" << std::endl;
+		LOG_ERROR(djangosegmentstorelog) << "\tURL was:\n\t" << url.str() << std::endl;
+		if (HttpClient::ptreeHasChild(pt, "count"))
+		{
+			return pt->get_child("count").get_value<int>();
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		return pt->get_child("count").get_value<int>();
+	}
+}
+
+pipeline::Value<LinearObjective>
+DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
+								 double defaultCost, pipeline::Value<Segments> segmentsNF)
+{
+	pipeline::Value<LinearObjective> objective = pipeline::Value<LinearObjective>();
+	std::ostringstream url;
+	boost::shared_ptr<ptree> pt;
+	std::string delim = "";
+	std::map<std::string, double> hashCostMap;
+	
+	appendProjectAndStack(url);
+	url << "/costs_by_segments?hash=";
+	
+	
+	foreach (boost::shared_ptr<Segment> segment, *segments)
+	{
+		std::string hash = getHash(segment);
+		
+		url << delim << hash;
+		delim = ",";
+		
+		putSegment(segment, hash);
+	}
+	
+	pt = HttpClient::getPropertyTree(url.str());
+	
+	if (!HttpClient::checkDjangoError(pt) &&
+		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	{
+		unsigned int i = 0;
+		ptree costTree = pt->get_child("costs");
+		
+		objective->resize(segments->size());
+		
+		// Populate the hash->cost map from the result
+		foreach (ptree::value_type costNode, costTree)
+		{
+			std::string hash = costNode.second.get_child("hash").get_value<std::string>();
+			double cost = costNode.second.get_child("cost").get_value<double>();
+			
+			hashCostMap[hash] = cost;
+		}
+		
+		// Iterate through the segments, pushing their cost to the objective, if it exists
+		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+		{
+			std::string hash = getHash(segment);
+			if (hashCostMap.count(hash))
+			{
+				objective->setCoefficient(i, hashCostMap[hash]);
+			}
+			else
+			{
+				objective->setCoefficient(i, defaultCost);
+				segmentsNF->add(segment);
+			}
+			++i;
+		}
+		
+	}
+	else
+	{
+		LOG_ERROR(djangosegmentstorelog) << "Error while retrieving segment costs from url " <<
+			url.str() << std::endl;
+	}
+	
+	return objective;
 }
 
 
