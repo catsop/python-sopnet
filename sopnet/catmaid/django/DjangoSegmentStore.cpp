@@ -36,8 +36,6 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 		int direction = getSegmentDirection(segment);
 		unsigned int section = getSectionInfimum(segment);
 		
-		putSegment(segment, hash);
-		
 		insertPostData << "&hash_" << i << "=" << hash;
 		insertPostData << "&sectioninf_" << i << "=" << section;
 		insertPostData << "&cx_" << i << "=" << ctr.x;
@@ -53,13 +51,13 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 		{
 			case 2:
 				insertPostData << "&slice_c_" << i << "=" <<
-					_sliceStore->getHash(segment->getSlices()[2]);
+					_sliceStore->getHash(*segment->getSlices()[2]);
 			case 1:
 				insertPostData << "&slice_b_" << i << "=" <<
-					_sliceStore->getHash(segment->getSlices()[1]);
+					_sliceStore->getHash(*segment->getSlices()[1]);
 			case 0:
 				insertPostData << "&slice_a_" << i << "=" <<
-					_sliceStore->getHash(segment->getSlices()[0]);
+					_sliceStore->getHash(*segment->getSlices()[0]);
 				break;
 		}
 
@@ -122,6 +120,10 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
 	{
 		ptree segmentsTree = pt->get_child("segments");
+		
+		// Force the slice store to cache the necessary slices.
+		_sliceStore->retrieveSlices(blocks);
+		
 		foreach (ptree::value_type segmentV, segmentsTree)
 		{
 			boost::shared_ptr<Segment> segment = ptreeToSegment(segmentV.second);
@@ -144,10 +146,8 @@ DjangoSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream url;
 	std::vector<unsigned int> blockIds;
-	std::string hash = getHash(*segment);
+	std::string hash = getHash(segment);
 	unsigned int count;
-	
-	putSegment(segment, hash);
 	
 	appendProjectAndStack(url);
 	url << "/blocks_by_segment?hash=" << hash;
@@ -157,14 +157,14 @@ DjangoSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 	if (HttpClient::checkDjangoError(pt) ||
 		pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 	{
-		LOG_ERROR(djangoslicestorelog) << "Error getting blocks for segment " << segment->getId() <<
+		LOG_ERROR(djangosegmentstorelog) << "Error getting blocks for segment " << segment->getId() <<
 			" with hash " << hash << std::endl;
 		return blocks;
 	}
 	
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("block_ids"), blockIds);
 	
-	LOG_ALL(djangoslicestorelog) << "Retrieved " << count << " blocks for segment " <<
+	LOG_ALL(djangosegmentstorelog) << "Retrieved " << count << " blocks for segment " <<
 		segment->getId() << " with hash " << getHash(segment) << std::endl;
 
 	blocks->addAll(_sliceStore->getDjangoBlockManager()->blocksById(blockIds));
@@ -175,7 +175,6 @@ DjangoSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 int DjangoSegmentStore::storeFeatures(pipeline::Value<Features> features)
 {
 	unsigned int i = 0;
-	int count;
 	std::map<unsigned int, unsigned int> idMap = features->getSegmentsIdsMap();
 	std::map<unsigned int, unsigned int>::const_iterator it;
 	std::ostringstream url;
@@ -250,13 +249,6 @@ DjangoSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
 		std::string hash = getHash(segment);
 		url << delim << hash;
 		delim = ",";
-		
-		// Put the segments into the map for later.
-		// This step is probably unnecessary because any Segments for which we want the features
-		// should already be in the map, but I think it will help us to avoid some finnicky
-		// problems that may arise.
-		
-		putSegment(segment, hash);
 	}
 	
 	pt = HttpClient::getPropertyTree(url.str());
@@ -375,14 +367,12 @@ DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	url << "/costs_by_segments?hash=";
 	
 	
-	foreach (boost::shared_ptr<Segment> segment, *segments)
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
 		std::string hash = getHash(segment);
 		
 		url << delim << hash;
 		delim = ",";
-		
-		putSegment(segment, hash);
 	}
 	
 	pt = HttpClient::getPropertyTree(url.str());
@@ -430,19 +420,264 @@ DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	return objective;
 }
 
+unsigned int
+DjangoSegmentStore::storeSolution(pipeline::Value<Segments> segments,
+								  pipeline::Value<Core> core,
+								  pipeline::Value<Solution> solution,
+								  std::vector<unsigned int> indices)
+{
+	unsigned int count = 0, i = 0;
+	std::ostringstream url;
+	boost::shared_ptr<ptree> pt;
+	
+	appendProjectAndStack(url);
+	url << "/store_segment_solutions?n=" << segments->size();
+	url << "&core_id=" << core->getId();
+
+	if (solution->size() == 0 || indices.empty())
+	{
+		return 0;
+	}
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		
+		std::string hash = getHash(segment);
+		unsigned int j = indices[i];
+		double dSolution = (*solution)[j];
+		
+		url << "&hash_" << i << "=" << hash;
+		url << "&solution_" << i << "=" << dSolution;
+		++i;
+	}
+	
+	pt = HttpClient::getPropertyTree(url.str());
+	
+	if (HttpClient::checkDjangoError(pt))
+	{
+		LOG_ERROR(djangosegmentstorelog) << "Error while storing segment solutions" << std::endl;
+		LOG_ERROR(djangosegmentstorelog) << "\tURL was:\n\t" << url.str() << std::endl;
+		if (HttpClient::ptreeHasChild(pt, "count"))
+		{
+			return pt->get_child("count").get_value<int>();
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+	}
+
+	return count;
+}
+
+pipeline::Value<Solution>
+DjangoSegmentStore::retrieveSolution(pipeline::Value<Segments> segments,
+									 pipeline::Value<Core> core)
+{
+	std::ostringstream url;
+	boost::shared_ptr<ptree> pt;
+	std::string delim = "";
+	pipeline::Value<Solution> solution = pipeline::Value<Solution>();
+	
+	appendProjectAndStack(url);
+	url << "?core_id=" << core->getId() << "&hash=";
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		url << delim << getHash(segment);
+		delim = ",";
+	}
+	
+	pt = HttpClient::getPropertyTree(url.str());
+	
+	if (!HttpClient::checkDjangoError(pt))
+	{
+		std::map<std::string, double> solutionMap;
+		ptree solutionsTree = pt->get_child("solutions");
+		unsigned int i = 0;
+		
+		solution->resize(segments->size());
+		
+		foreach (ptree::value_type solutionNode, solutionsTree)
+		{
+			std::string hash = solutionNode.second.get_child("hash").get_value<std::string>();
+			double solution = solutionNode.second.get_child("solution").get_value<double>();
+			solutionMap[hash] = solution;
+		}
+		
+		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+		{
+			std::string hash = getHash(segment);
+			if (solutionMap.count(hash))
+			{
+				(*solution)[i] = solutionMap[hash];
+			}
+			else
+			{
+				(*solution)[i] = 0;
+			}
+			++i;
+		}
+	}
+	else
+	{
+		LOG_ERROR(djangosegmentstorelog) << "Error while retrieving solutions" << std::endl;
+		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
+	}
+	
+	return solution;
+}
+
+
+void DjangoSegmentStore::dumpStore()
+{
+
+}
+
+unsigned int
+DjangoSegmentStore::getSectionInfimum(const boost::shared_ptr<Segment> segment)
+{
+	unsigned int sinf = segment->getSlices()[0]->getSection();
+	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+	{
+		unsigned int s = slice->getSection();
+		if (sinf > s)
+		{
+			sinf = s;
+		}
+	}
+	
+	return sinf;
+}
+
+std::string
+DjangoSegmentStore::getHash(const boost::shared_ptr<Segment> segment)
+{
+	if (_segmentHashMap.count(segment))
+	{
+		return _segmentHashMap[segment];
+	}
+	else
+	{
+		std::string hash = generateHash(segment);
+		_segmentHashMap[segment] = hash;
+		_hashSegmentMap[hash] = segment;
+		return hash;
+	}
+}
+
+std::string
+DjangoSegmentStore::generateHash(const boost::shared_ptr<Segment> segment)
+{
+	//TODO: generate a provably unique hash
+	std::stringstream ss;
+	ss << segment->hashValue();
+	return ss.str();
+}
+
+void
+DjangoSegmentStore::setFeatureNames(const std::vector< std::string >& featureNames)
+{
+	if (!_featureNamesFlag)
+	{
+		std::ostringstream url;
+		boost::shared_ptr<ptree> pt;
+		std::string delim = "";
+		
+		appendProjectAndStack(url);
+		
+		url << "/set_feature_names?names=";
+		
+		foreach (std::string name, featureNames)
+		{
+			url << delim << name;
+			delim = ",";
+		}
+		
+		pt = HttpClient::getPropertyTree(url.str());
+		
+		if (HttpClient::checkDjangoError(pt) ||
+			pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+		{
+			LOG_ERROR(djangosegmentstorelog) << "Error while setting feature names" << std::endl;
+			LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
+		}
+		else
+		{
+			_featureNamesFlag = true;
+		}
+	}
+}
+
+boost::shared_ptr<Segment> DjangoSegmentStore::ptreeToSegment(const ptree& pt)
+{
+	std::string hash = pt.get_child("hash").get_value<std::string>();
+	if (_hashSegmentMap.count(hash))
+	{
+		return _hashSegmentMap[hash];
+	}
+	else
+	{
+		boost::shared_ptr<Slice> sliceA, sliceB, sliceC;
+		boost::shared_ptr<Segment> segment;
+		int iDir = pt.get_child("direction").get_value<int>();
+		int type = pt.get_child("type").get_value<int>();
+		Direction direction = iDir == 0 ? Left : Right;
+		unsigned int id = Segment::getNextSegmentId();
+		
+		switch(type)
+		{
+			case 2:
+				sliceC = _sliceStore->sliceByHash(
+					pt.get_child("slice_c").get_value<std::string>());
+			case 1:
+				sliceB = _sliceStore->sliceByHash(
+					pt.get_child("slice_b").get_value<std::string>());
+			case 0:
+				sliceA = _sliceStore->sliceByHash(
+					pt.get_child("slice_a").get_value<std::string>());
+		}
+		
+		switch(type)
+		{
+			case 0:
+				segment = boost::make_shared<EndSegment>(id, direction, sliceA);
+				break;
+			case 1:
+				segment = boost::make_shared<ContinuationSegment>(id, direction, sliceA, sliceB);
+				break;
+			case 2:
+				segment = boost::make_shared<BranchSegment>(id, direction, sliceA, sliceB, sliceC);
+				break;
+			default:
+				LOG_ERROR(djangosegmentstorelog) << "Got unknown segment type: " <<
+					type << " for segment with hash " << hash << std::endl;
+				segment = boost::shared_ptr<Segment>();
+				break;
+		}
+		
+		_hashSegmentMap[hash] = segment;
+		_segmentHashMap[segment] = hash;
+		
+		return segment;
+	}
+}
 
 int
 DjangoSegmentStore::getSegmentDirection(const boost::shared_ptr<Segment> segment)
 {
 	switch (segment->getDirection())
-		{
-			case Left:
-				return 0;
-			case Right:
-				return 1;
-			default:
-				return -1;
-		}
+	{
+		case Left:
+			return 0;
+		case Right:
+			return 1;
+		default:
+			return -1;
+	}
 }
 
 int
