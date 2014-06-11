@@ -387,6 +387,21 @@ DjangoSliceStore::ptreeToSlice(const ptree& pt)
 	}
 }
 
+boost::shared_ptr<Slice>
+DjangoSliceStore::sliceByHash(const std::string& hash)
+{
+	if (_hashSliceMap.count(hash))
+	{
+		return _hashSliceMap[hash];
+	}
+	else
+	{
+		boost::shared_ptr<Slice> dummySlice = boost::shared_ptr<Slice>();
+		return dummySlice;
+	}
+}
+
+
 boost::shared_ptr<ConflictSet>
 DjangoSliceStore::ptreeToConflictSet(const ptree& pt)
 {

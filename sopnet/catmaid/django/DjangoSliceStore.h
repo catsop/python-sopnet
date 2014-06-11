@@ -45,6 +45,13 @@ public:
 	
 	std::string getHash(const Slice& slice);
 	
+	/**
+	 * Get a cached Slice given its django hash. This function is intended for use by other
+	 * Django-backed stores. The returned slice may be null even if the hash exists in the 
+	 * django db, if it has not been returned by a previous call to retrieveSlices.
+	 */
+	boost::shared_ptr<Slice> sliceByHash(const std::string& hash);
+	
 private:
 	void putSlice(boost::shared_ptr<Slice> slice, const std::string hash);
 	
