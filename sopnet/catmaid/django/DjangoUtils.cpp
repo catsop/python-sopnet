@@ -1,6 +1,7 @@
 #include "DjangoUtils.h"
 #include <util/httpclient.h>
 #include <sopnet/slices/Slice.h>
+#include <imageprocessing/ConnectedComponent.h>
 
 void
 DjangoUtils::appendProjectAndStack(std::ostringstream& os, const std::string& server,
@@ -46,7 +47,7 @@ DjangoUtils::getStackSize(const std::string& server, const unsigned int project,
 }
 
 util::rect<int>
-DjangoUtils::segmentBound(const boost::shared_ptr segment)
+DjangoUtils::segmentBound(const boost::shared_ptr<Segment> segment)
 {
 	util::rect<int> bound = segment->getSlices()[0]->getComponent()->getBoundingBox();
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
