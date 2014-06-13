@@ -68,6 +68,9 @@ private:
 							const boost::shared_ptr<StackStore> stackStore,
 							const boost::shared_ptr<BlockManager> blockManager);
 	
+	bool segmentsEqual(const boost::shared_ptr<Segments> segments1,
+					   const boost::shared_ptr<Segments> segments2);
+	
 	void copyStores(const boost::shared_ptr<SegmentStore> store,
 					const boost::shared_ptr<SegmentStore> testStore,
 					const boost::shared_ptr<BlockManager> blockManager);
@@ -83,9 +86,9 @@ private:
 					const boost::shared_ptr<LinearObjective> objective2);
 	
 	bool solutionEqual(const boost::shared_ptr<Segments> segments1,
-					   const boost::shared_ptr<Solutions> solutions1,
+					   const boost::shared_ptr<Solution> solution1,
 						const boost::shared_ptr<Segments> segments2,
-						const boost::shared_ptr<Solutions> solutions2);
+						const boost::shared_ptr<Solution> solution2);
 	
 	bool verifyStores(const boost::shared_ptr<SegmentStore> store1,
 					  const boost::shared_ptr<SegmentStore> store2,
