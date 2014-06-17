@@ -59,7 +59,6 @@ SolutionGuarantor::SolutionGuarantor()
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
 	registerInput(_rawImageStore, "raw image store");
-	registerInput(_membraneStore, "membrane image store");
 	registerInput(_forceExplanation, "force explanation");
 	registerInput(_buffer, "buffer");
 	
