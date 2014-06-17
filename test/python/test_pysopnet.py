@@ -22,6 +22,9 @@ config.setBlockSize(ps.point3(16, 16, 8))
 bs = config.getBlockSize()
 print "[" + str(bs.x) + ", " + str(bs.y) + ", " + str(bs.z) + "]"
 
+print "setting core size"
+config.setCoreSize(ps.point3(2, 2, 1))
+
 print
 print
 print "Creating a SliceGuarantor"
@@ -72,6 +75,7 @@ print
 print "Requesting a block"
 
 solutionGuarantorParameters = ps.SolutionGuarantorParameters()
+solutionGuarantorParameters.setCorePadding(2);
 missing = solutionGuarantor.fill(request, solutionGuarantorParameters, config);
 
 print "Missing points:"
