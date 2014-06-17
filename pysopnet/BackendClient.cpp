@@ -17,7 +17,8 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 	pipeline::Value<LocalBlockManager> localBlockManager(
 			LocalBlockManager(
 					configuration.getVolumeSize(),
-					configuration.getBlockSize()));
+					configuration.getBlockSize(),
+					configuration.getCoreSize()));
 
 	return localBlockManager;
 }

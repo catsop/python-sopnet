@@ -36,6 +36,27 @@ class SliceGuarantor : public pipeline::SimpleProcessNode<>
 {
 public:
 
+	/**
+	 * Create a SliceGuarantor.
+	 * Inputs:
+	 *   Blocks         - "blocks"
+	 *   SliceStore     - "slice store"
+	 *   StackStore     - "stack store"
+	 *   unsigned int   - "maximum area", optional
+	 *   MserParameters - "mser parameters", optional
+	 * Outputs:
+	 *   Blocks - "image blocks"
+	 * 
+	 * "maximum area" determines the maximal area to which the extraction area is allowed to grow.
+	 * This defaults to an infinite value.
+	 * 
+	 * When "mser parameters", the default is used internally for the SliceExtractor. See that
+	 * class for more details.
+	 * 
+	 * "image blocks" is a Blocks containing those blocks for which images were not ready. What
+	 * this signfies is dependent on the StackStore.
+	 * 
+	 */
     SliceGuarantor();
 
 	/**

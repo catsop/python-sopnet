@@ -50,4 +50,17 @@ ProjectConfiguration::getVolumeSize() const {
 	return _volumeSize;
 }
 
+void
+ProjectConfiguration::setCoreSize(const util::point3<unsigned int>& coreSizeInBlocks)
+{
+	_coreSizeInBlocks = coreSizeInBlocks;
+}
+
+const util::point3<unsigned int>&
+ProjectConfiguration::getCoreSize() const
+{
+	return _coreSizeInBlocks;
+}
+
+
 } // namespace python

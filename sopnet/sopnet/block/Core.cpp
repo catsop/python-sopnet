@@ -1,10 +1,8 @@
 #include "Core.h"
-#include "CoreManager.h"
 
-Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks,
-	const boost::shared_ptr<CoreManager> coreManager) :
-	BlocksImpl<Block>(blocks), _id(id),
-	_coreManager(coreManager), _solutionSetFlag(false)
+
+Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) :
+	BlocksImpl<Block>(blocks), _id(id)
 {}
 
 boost::shared_ptr<Blocks>
@@ -28,26 +26,18 @@ bool Core::operator==(const Core& other) const
 
 bool Core::getSolutionSetFlag()
 {
-	return _solutionSetFlag;
+	return _blockManager->getSolutionSetFlag(shared_from_this());
 }
 
-bool Core::setSolutionSetFlag(const bool& flag)
+void Core::setSolutionSetFlag(const bool& flag)
 {
-	bool flagOut = _solutionSetFlag;
-	_solutionSetFlag = flag;
-	return flagOut;
-}
-
-boost::shared_ptr<CoreManager>
-Core::getCoreManager()
-{
-	return _coreManager;
+	_blockManager->setSolutionSetFlag(shared_from_this(), flag);
 }
 
 util::point3<unsigned int>
 Core::getCoordinates()
 {
-	util::point3<unsigned int> coreSize = _coreManager->coreSize();
+	util::point3<unsigned int> coreSize = _blocks[0]->getManager()->coreSize();
 	return _location / coreSize;
 }
 

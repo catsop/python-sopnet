@@ -2,6 +2,7 @@
 #define BLOCK_H__
 
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 #include <pipeline/Data.h>
 #include <util/point3.hpp>
@@ -15,7 +16,7 @@ using util::point3;
 class Block;
 class BlockManager;
 
-class Block : public Box<unsigned int>
+class Block : public boost::enable_shared_from_this<Block>, public Box<unsigned int>
 {
 public:
 	Block();
@@ -29,13 +30,13 @@ public:
 	
     unsigned int getId() const;
 	
-	bool setSlicesFlag(bool flag);
-	bool setSegmentsFlag(bool flag);
-	bool setSolutionCostFlag(bool flag);
+	void setSlicesFlag(bool flag);
+	void setSegmentsFlag(bool flag);
+	void setSolutionCostFlag(bool flag);
 	
-	bool getSlicesFlag() const;
-	bool getSegmentsFlag() const;
-	bool getSolutionCostFlag() const;
+	bool getSlicesFlag();
+	bool getSegmentsFlag();
+	bool getSolutionCostFlag();
 	
 	util::point3<unsigned int> getCoordinates() const;
 	
@@ -61,7 +62,6 @@ private:
 		const point3<unsigned int>& location);
 	boost::shared_ptr<BlockManager> _manager;
     unsigned int _id;
-	bool _slicesExtracted, _segmentsExtracted, _solutionCostComputed;
 };
 
 /**

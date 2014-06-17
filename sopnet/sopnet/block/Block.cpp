@@ -1,6 +1,8 @@
 #include "Block.h"
 #include <boost/concept_check.hpp>
 #include <util/Logger.h>
+#include "BlockManager.h"
+
 logger::LogChannel blocklog("blocklog", "[Block] ");
 
 util::point3<unsigned int>
@@ -20,8 +22,7 @@ Block::Block()
 
 Block::Block(unsigned int id, const point3<unsigned int>& loc,
 			boost::shared_ptr<BlockManager> manager) : Box<>(loc, blockSize(manager, loc)),
-			_manager(manager), _id(id), _slicesExtracted(false), _segmentsExtracted(false),
-			_solutionCostComputed(false)
+			_manager(manager), _id(id)
 {
     
 }
@@ -38,44 +39,44 @@ Block::getManager() const
 	return _manager;
 }
 
-bool
+void
 Block::setSlicesFlag(bool flag)
 {
-	bool outFlag = _slicesExtracted;
-	_slicesExtracted = flag;
-	return outFlag;
+	boost::shared_ptr<Block> thisPtr = shared_from_this();
+	_manager->setSlicesFlag(thisPtr, flag);
 }
 
-bool
+void
 Block::setSegmentsFlag(bool flag)
 {
-	bool outFlag = _segmentsExtracted;
-	_segmentsExtracted = flag;
-	return outFlag;
+	_manager->setSegmentsFlag(shared_from_this(), flag);
 }
 
-bool Block::setSolutionCostFlag(bool flag)
+void
+Block::setSolutionCostFlag(bool flag)
 {
-	bool outFlag = _solutionCostComputed;
-	_solutionCostComputed = flag;
-	return outFlag;
-}
-
-bool
-Block::getSegmentsFlag() const
-{
-	return _segmentsExtracted;
+	boost::shared_ptr<Block> thisPtr = shared_from_this();
+	_manager->setSolutionCostFlag(thisPtr, flag);
 }
 
 bool
-Block::getSlicesFlag() const
+Block::getSegmentsFlag()
 {
-	return _slicesExtracted;
+	boost::shared_ptr<Block> thisPtr = shared_from_this();
+	return _manager->getSegmentsFlag(thisPtr);
 }
 
-bool Block::getSolutionCostFlag() const
+bool
+Block::getSlicesFlag()
 {
-	return _solutionCostComputed;
+	boost::shared_ptr<Block> thisPtr = shared_from_this();
+	return _manager->getSlicesFlag(thisPtr);
+}
+
+bool Block::getSolutionCostFlag()
+{
+	boost::shared_ptr<Block> thisPtr = shared_from_this();
+	return _manager->getSolutionCostFlag(thisPtr);
 }
 
 util::point3<unsigned int>

@@ -153,7 +153,7 @@ LocalSliceStore::associate(pipeline::Value<Slices> slicesIn,
 		}
 		else
 		{
-			// If we have not already stored this slice, map it to its id, and sert it into
+			// If we have not already stored this slice, map it to its id, and insert it into
 			// the set.
 			_idSliceMap[slice->getId()] = slice;
 			_sliceMasterSet.insert(slice);

@@ -25,15 +25,3 @@ Cores::asBlocks()
 	return blocks;
 }
 
-boost::shared_ptr<CoreManager>
-Cores::getCoreManager()
-{
-	if (_blocks.empty())
-	{
-		return boost::shared_ptr<CoreManager>();
-	}
-	else
-	{
-		return _blocks[0]->getCoreManager();
-	}
-}
