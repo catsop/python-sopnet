@@ -37,7 +37,7 @@
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
-#include <catmaid/persistence/SolutionReader.h>
+#include <catmaid/persistence/SegmentSolutionReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SegmentPointerHash.h>
 #include <sopnet/segments/SegmentSet.h>
@@ -1039,7 +1039,7 @@ boost::shared_ptr<Solution> readAllSolutions(const boost::shared_ptr<Cores> core
 	
 	foreach (boost::shared_ptr<Core> core, *cores)
 	{
-		boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
+		boost::shared_ptr<SegmentSolutionReader> solutionReader = boost::make_shared<SegmentSolutionReader>();
 		pipeline::Value<Solution> coreSolution;
 		
 		solutionReader->setInput("core", core);
@@ -1080,7 +1080,7 @@ bool coreSolver(
 	// Block pipeline variables
 	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<SliceReader> sliceReader= boost::make_shared<SliceReader>();
-	boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
+	boost::shared_ptr<SegmentSolutionReader> solutionReader = boost::make_shared<SegmentSolutionReader>();
 	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
 	//boost::shared_ptr<CoreSolver> coreSolver = boost::make_shared<CoreSolver>();
 	boost::shared_ptr<Reconstructor> reconstructor = boost::make_shared<Reconstructor>();

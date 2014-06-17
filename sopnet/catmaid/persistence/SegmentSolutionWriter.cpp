@@ -1,6 +1,6 @@
-#include "SolutionWriter.h"
+#include "SegmentSolutionWriter.h"
 
-SolutionWriter::SolutionWriter()
+SegmentSolutionWriter::SegmentSolutionWriter()
 {
 	registerInput(_segments, "segments");
 	registerInput(_cores, "cores");
@@ -9,7 +9,7 @@ SolutionWriter::SolutionWriter()
 }
 
 void
-SolutionWriter::writeSolution()
+SegmentSolutionWriter::writeSolution()
 {
 	updateInputs();
 	
@@ -38,7 +38,7 @@ SolutionWriter::writeSolution()
 }
 
 bool
-SolutionWriter::segmentOverlapsCore(boost::shared_ptr<Segment> segment,
+SegmentSolutionWriter::segmentOverlapsCore(boost::shared_ptr<Segment> segment,
 									const util::rect<int>& coreRect)
 {
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())

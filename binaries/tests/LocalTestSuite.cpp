@@ -41,8 +41,8 @@ LocalTestSuite::localTestSuite(const util::point3<unsigned int> stackSize)
 {
 	boost::shared_ptr<TestSuite> suite = boost::make_shared<TestSuite>("Local");
 	
-// 	addBlockManagerTest(suite, stackSize);
-// 	addSliceStoreTest(suite, stackSize);
+	addBlockManagerTest(suite, stackSize);
+	addSliceStoreTest(suite, stackSize);
 	addSegmentStoreTest(suite, stackSize);
 
 	return suite;

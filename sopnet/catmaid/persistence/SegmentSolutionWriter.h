@@ -7,7 +7,7 @@
 #include <inference/Solution.h>
 #include <sopnet/block/Cores.h>
 
-class SolutionWriter : public pipeline::SimpleProcessNode<>
+class SegmentSolutionWriter : public pipeline::SimpleProcessNode<>
 {
 public:
 	/**
@@ -19,7 +19,7 @@ public:
 	 *   SegmentStore - "store"
 	 * No Outputs.
 	 */
-	SolutionWriter();
+	SegmentSolutionWriter();
 
 	/**
 	 * Write the solution scores for a given set of Segments in a Core to the SegmentStore. The

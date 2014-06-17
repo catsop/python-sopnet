@@ -5,8 +5,8 @@
 #include <sopnet/catmaid/persistence/SegmentReader.h>
 #include <sopnet/catmaid/persistence/CostReader.h>
 #include <sopnet/catmaid/persistence/CostWriter.h>
-#include <sopnet/catmaid/persistence/SolutionReader.h>
-#include <sopnet/catmaid/persistence/SolutionWriter.h>
+#include <sopnet/catmaid/persistence/SegmentSolutionReader.h>
+#include <sopnet/catmaid/persistence/SegmentSolutionWriter.h>
 #include <sopnet/catmaid/persistence/SegmentFeatureReader.h>
 #include <sopnet/catmaid/persistence/SegmentWriter.h>
 #include <sopnet/inference/Reconstructor.h>
@@ -137,8 +137,8 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	
 	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
-	boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
-	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	boost::shared_ptr<SegmentSolutionReader> solutionReader = boost::make_shared<SegmentSolutionReader>();
+	boost::shared_ptr<SegmentSolutionWriter> solutionWriter = boost::make_shared<SegmentSolutionWriter>();
 		
 	boost::shared_ptr<SegmentFeatureReader> featureReader = boost::make_shared<SegmentFeatureReader>();
 	
@@ -334,8 +334,8 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	
 	boost::shared_ptr<CostReader> localCostReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<CostReader> testCostReader = boost::make_shared<CostReader>();	
-	boost::shared_ptr<SolutionReader> localSolutionReader = boost::make_shared<SolutionReader>();
-	boost::shared_ptr<SolutionReader> testSolutionReader = boost::make_shared<SolutionReader>();
+	boost::shared_ptr<SegmentSolutionReader> localSolutionReader = boost::make_shared<SegmentSolutionReader>();
+	boost::shared_ptr<SegmentSolutionReader> testSolutionReader = boost::make_shared<SegmentSolutionReader>();
 	boost::shared_ptr<SegmentFeatureReader> localFeatureReader =
 		boost::make_shared<SegmentFeatureReader>();
 	boost::shared_ptr<SegmentFeatureReader> testFeatureReader =

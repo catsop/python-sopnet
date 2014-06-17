@@ -1,6 +1,6 @@
-#include "SolutionReader.h"
+#include "SegmentSolutionReader.h"
 
-SolutionReader::SolutionReader()
+SegmentSolutionReader::SegmentSolutionReader()
 {
 	registerInput(_store, "store");
 	registerInput(_core, "core");
@@ -9,7 +9,7 @@ SolutionReader::SolutionReader()
 }
 
 void
-SolutionReader::updateOutputs()
+SegmentSolutionReader::updateOutputs()
 {
 	pipeline::Value<Solution> solution = _store->retrieveSolution(_segments, _core);
 

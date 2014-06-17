@@ -4,7 +4,7 @@
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
-#include <catmaid/persistence/SolutionWriter.h>
+#include <catmaid/persistence/SegmentSolutionWriter.h>
 #include <catmaid/persistence/CostReader.h>
 #include <catmaid/persistence/CostWriter.h>
 #include <features/SegmentFeaturesExtractor.h>
@@ -273,7 +273,7 @@ SolutionGuarantor::solve()
 	
 	boost::shared_ptr<EndExtractor> endExtractor = boost::make_shared<EndExtractor>();
 	
-	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
+	boost::shared_ptr<SegmentSolutionWriter> solutionWriter = boost::make_shared<SegmentSolutionWriter>();
 	
 	boost::shared_ptr<LinearObjectiveAssembler> objectiveAssembler =
 		boost::make_shared<LinearObjectiveAssembler>();

@@ -6,7 +6,7 @@
 #include <sopnet/segments/Segments.h>
 #include <inference/Solution.h>
 
-class SolutionReader : public pipeline::SimpleProcessNode<>
+class SegmentSolutionReader : public pipeline::SimpleProcessNode<>
 {
 public:
 	/**
@@ -20,7 +20,7 @@ public:
 	 * Outputs:
 	 *   Solution     - "solution"
 	 */
-	SolutionReader();
+	SegmentSolutionReader();
 	
 private:
 	void updateOutputs();
