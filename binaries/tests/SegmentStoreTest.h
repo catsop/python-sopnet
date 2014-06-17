@@ -55,7 +55,8 @@ public:
 	static std::vector<boost::shared_ptr<SegmentStoreTestParam> >
 		generateTestParameters(const std::string& name,
 							   const util::point3<unsigned int>& stackSize,
-							   const boost::shared_ptr<StackStore> stackStore,
+							   const boost::shared_ptr<StackStore> membraneStackStore,
+							   const boost::shared_ptr<StackStore> rawStackStore,
 							   const boost::shared_ptr<BlockManagerFactory> factory);
 
 private:
@@ -94,7 +95,7 @@ private:
 					  const boost::shared_ptr<SegmentStore> store2,
 					  const boost::shared_ptr<BlockManager> blockManager);
 	
-	
+	std::stringstream _reason;
 	const boost::shared_ptr<SegmentStoreFactory> _factory;
 };
 

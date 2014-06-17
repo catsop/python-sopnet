@@ -44,6 +44,29 @@ SegmentStoreTestParam::getBlockManagerParam() const
 	return _blockManagerParam;
 }
 
+std::vector<boost::shared_ptr<SegmentStoreTestParam> >
+SegmentStoreTest::generateTestParameters(const std::string& name,
+										 const util::point3<unsigned int>& stackSize,
+										 const boost::shared_ptr<StackStore> membraneStackStore,
+										 const boost::shared_ptr<StackStore> rawStackStore,
+										 const boost::shared_ptr<BlockManagerFactory> factory)
+{
+	std::vector<boost::shared_ptr<BlockManagerTestParam> > blockParams = 
+		BlockManagerTest::generateTestParameters(stackSize);
+	std::vector<boost::shared_ptr<SegmentStoreTestParam> > segmentStoreParams;
+
+	foreach (boost::shared_ptr<BlockManagerTestParam> bParam, blockParams)
+	{
+		boost::shared_ptr<SegmentStoreTestParam> sliceStoreParam =
+			boost::make_shared<SegmentStoreTestParam>(name, membraneStackStore, rawStackStore,
+													  factory, bParam);
+		segmentStoreParams.push_back(sliceStoreParam);
+	}
+	
+	return segmentStoreParams;
+}
+
+
 SegmentStoreTest::SegmentStoreTest(const boost::shared_ptr<SegmentStoreFactory> factory):
 	_factory(factory)
 {
@@ -121,7 +144,7 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	boost::shared_ptr<SegmentReader> reader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<SegmentWriter> writer = boost::make_shared<SegmentWriter>();
 	
-	boost::shared_ptr<bool> yeah = boost::make_shared<bool>(true);
+	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
 	
 	reader->setInput("blocks", blocks);
 	reader->setInput("store", store);
@@ -148,7 +171,7 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	solutionReader->setInput("store", store);
 	solutionWriter->setInput("store", testStore);
 	
-	foreach (boost::shared_ptr<Core> core, blockManager->coresInBox(box))
+	foreach (boost::shared_ptr<Core> core, *blockManager->coresInBox(box))
 	{
 		boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 		cores->add(core);
@@ -222,14 +245,12 @@ SegmentStoreTest::featuresEqual(const boost::shared_ptr<Segments> segments1,
 		coreSegmentIdMap[segment] = segment->getId();
 	}
 	
-	i = 0;
-	
 	foreach (boost::shared_ptr<Segment> segment, segments1->getSegments())
 	{
 		if (coreSegmentIdMap.count(segment))
 		{
-			std::vector<double>& fv1 = features1.get(segment->getId());
-			std::vector<double>& fv2 = features2.get(coreSegmentIdMap[segment]);
+			std::vector<double>& fv1 = features1->get(segment->getId());
+			std::vector<double>& fv2 = features2->get(coreSegmentIdMap[segment]);
 			if (fv1 != fv2)
 			{
 				equal = false;
@@ -316,7 +337,7 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	boost::shared_ptr<SegmentFeatureReader> testFeatureReader =
 		boost::make_shared<SegmentFeatureReader>();
 
-	boost::shared_ptr<bool> yeah = boost::make_shared<bool>(true);
+	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
 		
 	localReader->setInput("store", store1);
 	testReader->setInput("store", store2);
@@ -336,16 +357,94 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
 		boost::shared_ptr<Blocks> singletonBlocks = boost::make_shared<Blocks>();
+		pipeline::Value<Segments> localSegments, testSegments;
+		
+		pipeline::Value<Features> localFeatures, testFeatures;
+		pipeline::Value<LinearObjective> localObjective, testObjective;
+		
 		singletonBlocks->add(block);
 		localReader->setInput("blocks", singletonBlocks);
 		testReader->setInput("blocks", singletonBlocks);
 		
-		pipeline::Value<Segments> localSegments = localReader->getOutput("segments");
-		pipeline::Value<Segments> testSegments = testReader->getOutput("segments");
+		localSegments = localReader->getOutput("segments");
+		testSegments = testReader->getOutput("segments");
 		
 		localFeatureReader->setInput("segments", localSegments);
 		testFeatureReader->setInput("segments", testSegments);
+		
+		localCostReader->setInput("segments", localSegments);
+		testCostReader->setInput("segments", testSegments);
+		
+		if (!segmentsEqual(localSegments, testSegments))
+		{
+			LOG_ERROR(segmentstoretestlog) << "Segments unequal in block " << *block << std::endl;
+			_reason << "Segments unequal in block " << *block << std::endl;
+			return false;
+		}
+		else
+		{
+			LOG_DEBUG(segmentstoretestlog) << "Segments were equal for block " << *block << std::endl;
+		}
+		
+		localFeatures = localFeatureReader->getOutput();
+		testFeatures = testFeatureReader->getOutput();
+		
+		if (!featuresEqual(localSegments, localFeatures, testSegments, testFeatures))
+		{
+			LOG_ERROR(segmentstoretestlog) << "Segment features unequal in block " << *block << std::endl;
+			_reason << "Segment features unequal in block " << *block << std::endl;
+			return false;
+		}
+		
+		localObjective = localCostReader->getOutput("objective");
+		testObjective = testCostReader->getOutput("objective");
+		
+		if (!costEqual(localSegments, localObjective, testSegments, testObjective))
+		{
+			LOG_ERROR(segmentstoretestlog) << "LinearObjectives unequal in block " << *block << std::endl;
+			_reason << "LinearObjectives unequal in block " << *block << std::endl;
+			return false;
+		}
 	}
+	
+	foreach (boost::shared_ptr<Core> core, *cores)
+	{
+		pipeline::Value<Segments> localSegments, testSegments;
+		pipeline::Value<Solution> localSolution, testSolution;
+		
+		localReader->setInput("blocks", core);
+		testReader->setInput("blocks", core);
+		
+		localSegments = localReader->getOutput("segments");
+		testSegments = testReader->getOutput("segments");
+		
+		localSolutionReader->setInput("core", core);
+		testSolutionReader->setInput("core", core);
+		
+		localSolutionReader->setInput("segments", localSegments);
+		testSolutionReader->setInput("segments", testSegments);
+		
+		localSolution = localSolutionReader->getOutput();
+		testSolution = testSolutionReader->getOutput();
+		
+		if (!solutionEqual(localSegments, localSolution, testSegments, testSolution))
+		{
+			LOG_ERROR(segmentstoretestlog) << "Solutions unequal for core " << *core << std::endl;
+			_reason << "Solutions unequal for core " << *core << std::endl;
+		}
+	}
+	
+	return true;
+}
+
+std::string SegmentStoreTest::name()
+{
+	return "SegmentStore test";
+}
+
+std::string SegmentStoreTest::reason()
+{
+	return _reason.str();
 }
 
 
