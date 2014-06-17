@@ -101,4 +101,6 @@ private:
 
 };
 
+std::ostream& operator<<(std::ostream& os, const catsoptest::SegmentStoreTestParam& param);
+
 #endif //TEST_SEGMENT_STORE_H__

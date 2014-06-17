@@ -1,12 +1,10 @@
 #include "LocalTestSuite.h"
 #include <sopnet/block/LocalBlockManager.h>
 #include <catmaid/persistence/LocalSliceStore.h>
+#include <catmaid/persistence/LocalSegmentStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <util/ProgramOptions.h>
-
-	
-
 
 namespace catsoptest
 {
@@ -17,6 +15,12 @@ util::_module = 			"core",
 util::_long_name = 			"localTestMembranes",
 util::_description_text = 	"Path to membrane image stack",
 util::_default_value =		"./membranes");
+
+util::ProgramOption optionLocalTestRawImagesPath(
+	util::_module = 			"core",
+	util::_long_name = 			"localTestRaw",
+	util::_description_text = 	"Path to raw image stack",
+	util::_default_value =		"./raw");
 
 LocalBlockManagerFactory::LocalBlockManagerFactory(const util::point3<unsigned int> stackSize) :
 	_stackSize(stackSize)
@@ -37,9 +41,9 @@ LocalTestSuite::localTestSuite(const util::point3<unsigned int> stackSize)
 {
 	boost::shared_ptr<TestSuite> suite = boost::make_shared<TestSuite>("Local");
 	
-	addBlockManagerTest(suite, stackSize);
-	addSliceStoreTest(suite, stackSize);
-	
+// 	addBlockManagerTest(suite, stackSize);
+// 	addSliceStoreTest(suite, stackSize);
+	addSegmentStoreTest(suite, stackSize);
 
 	return suite;
 }
@@ -63,6 +67,30 @@ void LocalTestSuite::addBlockManagerTest(const boost::shared_ptr<TestSuite> suit
 		BlockManagerTest::generateTestParameters(stackSize));
 }
 
+void LocalTestSuite::addSegmentStoreTest(const boost::shared_ptr<TestSuite> suite,
+										 const util::point3<unsigned int>& stackSize)
+{
+	std::string membranePath = optionLocalTestMembranesPath.as<std::string>();
+	std::string rawPath = optionLocalTestRawImagesPath.as<std::string>();
+	
+	boost::shared_ptr<BlockManagerFactory> blockManagerFactory =
+		boost::make_shared<LocalBlockManagerFactory>(stackSize);
+	boost::shared_ptr<SegmentStoreFactory> segmentStoreFactory = 
+		boost::make_shared<LocalSegmentStoreFactory>();
+	boost::shared_ptr<StackStore> membraneStackStore =
+		boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+
+	boost::shared_ptr<Test<SegmentStoreTestParam> > test =
+		boost::make_shared<SegmentStoreTest>(segmentStoreFactory);
+	
+	suite->addTest<SegmentStoreTestParam>(test,
+		SegmentStoreTest::generateTestParameters("local", stackSize, membraneStackStore,
+												 rawStackStore, blockManagerFactory));
+}
+
+
+
 void LocalTestSuite::addSliceStoreTest(const boost::shared_ptr<TestSuite> suite,
 		const util::point3<unsigned int>& stackSize)
 {
@@ -71,14 +99,22 @@ void LocalTestSuite::addSliceStoreTest(const boost::shared_ptr<TestSuite> suite,
 		boost::make_shared<LocalBlockManagerFactory>(stackSize);
 	boost::shared_ptr<SliceStoreFactory> sliceStoreFactory = 
 		boost::make_shared<LocalSliceStoreFactory>();
-	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
-		
+	boost::shared_ptr<StackStore> membraneStackStore =
+		boost::make_shared<LocalStackStore>(membranePath);
+	
 	boost::shared_ptr<Test<SliceStoreTestParam> > test = 
 		boost::make_shared<SliceStoreTest>(sliceStoreFactory);
 	
 	suite->addTest<SliceStoreTestParam>(test,
 		SliceStoreTest::generateTestParameters("local", stackSize,
-											   stackStore, blockManagerFactory));
+											   membraneStackStore, blockManagerFactory));
+}
+
+boost::shared_ptr<SegmentStore>
+LocalSegmentStoreFactory::createSegmentStore()
+{
+	boost::shared_ptr<SegmentStore> store = boost::make_shared<LocalSegmentStore>();
+	return store;
 }
 
 

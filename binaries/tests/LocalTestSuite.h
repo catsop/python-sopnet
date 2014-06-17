@@ -2,6 +2,7 @@
 #define TEST_LOCAL_SUITE_H__
 #include "BlockManagerTest.h"
 #include "SliceStoreTest.h"
+#include "SegmentStoreTest.h"
 #include <sopnet/block/BlockManager.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -14,6 +15,12 @@ class LocalSliceStoreFactory : public SliceStoreFactory
 {
 public:
 	boost::shared_ptr<SliceStore> createSliceStore();
+};
+
+class LocalSegmentStoreFactory : public SegmentStoreFactory
+{
+public:
+	boost::shared_ptr<SegmentStore> createSegmentStore();
 };
 
 class LocalBlockManagerFactory : public BlockManagerFactory
@@ -37,6 +44,8 @@ private:
 	static void addBlockManagerTest(const boost::shared_ptr<TestSuite> suite,
 		const util::point3<unsigned int>& stackSize);
 	static void addSliceStoreTest(const boost::shared_ptr<TestSuite> suite,
+		const util::point3<unsigned int>& stackSize);
+	static void addSegmentStoreTest(const boost::shared_ptr<TestSuite> suite,
 		const util::point3<unsigned int>& stackSize);
 };
 

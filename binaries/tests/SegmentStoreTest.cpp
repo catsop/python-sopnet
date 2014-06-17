@@ -133,12 +133,13 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
 															   blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
 	
 	boost::shared_ptr<CostReader> costReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<CostWriter> costWriter = boost::make_shared<CostWriter>();
 	boost::shared_ptr<SolutionReader> solutionReader = boost::make_shared<SolutionReader>();
 	boost::shared_ptr<SolutionWriter> solutionWriter = boost::make_shared<SolutionWriter>();
-	
+		
 	boost::shared_ptr<SegmentFeatureReader> featureReader = boost::make_shared<SegmentFeatureReader>();
 	
 	boost::shared_ptr<SegmentReader> reader = boost::make_shared<SegmentReader>();
@@ -171,17 +172,20 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	solutionReader->setInput("store", store);
 	solutionWriter->setInput("store", testStore);
 	
-	foreach (boost::shared_ptr<Core> core, *blockManager->coresInBox(box))
+	solutionWriter->setInput("solution", solutionReader->getOutput());
+	solutionReader->setInput("segments", reader->getOutput("segments"));
+	solutionWriter->setInput("segments", reader->getOutput("segments"));
+	
+	foreach (boost::shared_ptr<Core> core, *cores)
 	{
-		boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
-		cores->add(core);
-		reader->setInput("blocks", core);
+		boost::shared_ptr<Cores> singletonCores = boost::make_shared<Cores>();
+		boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>();
+		coreBlocks->addAll(core);
+		singletonCores->add(core);
+		reader->setInput("blocks", coreBlocks);
 		solutionReader->setInput("core", core);
-		solutionReader->setInput("segments", reader->getOutput("segments"));
-		solutionWriter->setInput("segments", reader->getOutput("segments"));
-		solutionWriter->setInput("cores", cores);
-		solutionWriter->setInput("solution", solutionReader->getOutput());
-		
+		solutionWriter->setInput("cores", singletonCores);
+
 		solutionWriter->writeSolution();
 	}
 	
@@ -411,9 +415,12 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	{
 		pipeline::Value<Segments> localSegments, testSegments;
 		pipeline::Value<Solution> localSolution, testSolution;
+		boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>();
+		coreBlocks->addAll(core);
 		
-		localReader->setInput("blocks", core);
-		testReader->setInput("blocks", core);
+		
+		localReader->setInput("blocks", coreBlocks);
+		testReader->setInput("blocks", coreBlocks);
 		
 		localSegments = localReader->getOutput("segments");
 		testSegments = testReader->getOutput("segments");
@@ -447,5 +454,10 @@ std::string SegmentStoreTest::reason()
 	return _reason.str();
 }
 
-
 };
+
+std::ostream& operator<<(std::ostream& os, const catsoptest::SegmentStoreTestParam& param)
+{
+	os << param.name << ": " << *(param.getBlockManagerParam());
+	return os;
+}
