@@ -17,15 +17,15 @@ SliceGuarantor::fill(
 
 	LOG_USER(pylog) << "[SliceGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager> blockManager       = createBlockManager(configuration);
-	pipeline::Value<StackStore>   membraneStackStore = createStackStore(configuration, Membrane);
-	pipeline::Value<SliceStore>   sliceStore         = createSliceStore(configuration);
+	boost::shared_ptr<BlockManager> blockManager       = createBlockManager(configuration);
+	boost::shared_ptr<StackStore>   membraneStackStore = createStackStore(configuration, Membrane);
+	boost::shared_ptr<SliceStore>   sliceStore         = createSliceStore(configuration);
 
 	// create a valid request block
 	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
 
 	// wrap requested block into Blocks
-	pipeline::Value<Blocks> blocks;
+	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	blocks->add(requestBlock);
 
 	// slice extraction parameters

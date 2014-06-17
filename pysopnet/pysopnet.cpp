@@ -56,6 +56,12 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 
 	// ProjectConfiguration
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
+			.def("setBackendType", &ProjectConfiguration::setBackendType)
+			.def("getBackendType", &ProjectConfiguration::getBackendType)
+			.def("setCatmaidStackId", &ProjectConfiguration::setCatmaidStackId)
+			.def("getCatmaidStackId", &ProjectConfiguration::getCatmaidStackId)
+			.def("setCatmaidProjectId", &ProjectConfiguration::setCatmaidProjectId)
+			.def("getCatmaidProjectId", &ProjectConfiguration::getCatmaidProjectId)
 			.def("setDjangoUrl", &ProjectConfiguration::setDjangoUrl)
 			.def("getDjangoUrl", &ProjectConfiguration::getDjangoUrl, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)

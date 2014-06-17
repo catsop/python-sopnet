@@ -14,6 +14,22 @@ class ProjectConfiguration {
 
 public:
 
+	enum BackendType {
+
+		Local,
+		Django
+	};
+
+	/**
+	 * Set the backend type (Local or Django).
+	 */
+	void setBackendType(BackendType type);
+
+	/**
+	 * Get the backend type (Local or Django).
+	 */
+	BackendType getBackendType() const;
+
 	/**
 	 * Set the Django URL needed to access the Catsop database.
 	 */
@@ -25,6 +41,26 @@ public:
 	const std::string& getDjangoUrl() const;
 
 	/**
+	 * Set the CATMAID stack id to be used in the Django backend.
+	 */
+	void setCatmaidStackId(unsigned int stackId);
+
+	/**
+	 * Get the CATMAID stack id to be used in the Django backend.
+	 */
+	unsigned int getCatmaidStackId() const;
+
+	/**
+	 * Set the CATMAID project id to be used in the Django backend.
+	 */
+	void setCatmaidProjectId(unsigned int projectId);
+
+	/**
+	 * Get the CATMAID project id to be used in the Django backend.
+	 */
+	unsigned int getCatmaidProjectId() const;
+
+	/**
 	 * Set the size of a block in voxels.
 	 */
 	void setBlockSize(const util::point3<unsigned int>& blockSize);
@@ -33,16 +69,6 @@ public:
 	 * Get the size of a block in voxels.
 	 */
 	const util::point3<unsigned int>& getBlockSize() const;
-
-	/**
-	 * Set the size of a core in blocks.
-	 */
-	void setCoreSize(const util::point3<unsigned int>& coreSize);
-
-	/**
-	 * Get the size of a core in blocks.
-	 */
-	const util::point3<unsigned int>& getCoreSize() const;
 
 	/**
 	 * Set the size of the whole volume in voxels.
@@ -66,7 +92,13 @@ public:
 
 private:
 
+	BackendType _backendType;
+
 	std::string _djangoUrl;
+
+	unsigned int _stackId;
+
+	unsigned int _projectId;
 
 	util::point3<unsigned int> _blockSize;
 	util::point3<unsigned int> _coreSize;

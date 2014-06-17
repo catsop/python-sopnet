@@ -1,4 +1,5 @@
 #include <sopnet/block/LocalBlockManager.h>
+#include <catmaid/django/DjangoSegmentStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
@@ -8,63 +9,114 @@
 
 namespace python {
 
-pipeline::Value<BlockManager>
+boost::shared_ptr<BlockManager>
 BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[BackendClient] create local block manager" << std::endl;
 
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalBlockManager> localBlockManager(
-			LocalBlockManager(
-					configuration.getVolumeSize(),
-					configuration.getBlockSize(),
-					configuration.getCoreSize()));
+	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-	return localBlockManager;
+		boost::shared_ptr<LocalBlockManager> localBlockManager = boost::make_shared<LocalBlockManager>(
+				LocalBlockManager(
+						configuration.getVolumeSize(),
+						configuration.getBlockSize(),
+						configuration.getCoreSize()));
+
+		return localBlockManager;
+	}
+
+	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		_djangoBlockManager = DjangoBlockManager::getBlockManager(
+				configuration.getDjangoUrl(),
+				configuration.getCatmaidStackId(),
+				configuration.getCatmaidProjectId());
+
+		return _djangoBlockManager;
+	}
+
+	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
-pipeline::Value<StackStore>
-BackendClient::createStackStore(const ProjectConfiguration& /*configuration*/, StackType type) {
+boost::shared_ptr<StackStore>
+BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
 
 	LOG_USER(pylog) << "[BackendClient] create local stack store for membranes" << std::endl;
 
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalStackStore> localStackStore(LocalStackStore(type == Raw ? "./raw" : "./membranes"));
+	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-	return localStackStore;
+		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
+	}
+
+	// catmaid image stack store does not exist, yet
+	//if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+	//}
+
+	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
-pipeline::Value<SliceStore>
-BackendClient::createSliceStore(const ProjectConfiguration& /*configuration*/) {
+boost::shared_ptr<SliceStore>
+BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[BackendClient] create local slice store" << std::endl;
 
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalSliceStore> localSliceStore;
+	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-	return localSliceStore;
+		return boost::make_shared<LocalSliceStore>();
+	}
+
+	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		if (!_djangoBlockManager)
+			createBlockManager(configuration);
+
+		_djangoSliceStore = boost::make_shared<DjangoSliceStore>(_djangoBlockManager);
+
+		return _djangoSliceStore;
+	}
+
+	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
-pipeline::Value<SegmentStore>
-BackendClient::createSegmentStore(const ProjectConfiguration& /*configuration*/) {
+boost::shared_ptr<SegmentStore>
+BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[BackendClient] create local segment store" << std::endl;
 
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalSegmentStore> localSegmentStore;
+	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-	return localSegmentStore;
+		return boost::make_shared<LocalSegmentStore>();
+	}
+
+	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		if (!_djangoSliceStore)
+			createSliceStore(configuration);
+
+		return boost::make_shared<DjangoSegmentStore>(_djangoSliceStore);
+	}
+
+	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
-pipeline::Value<SolutionStore>
-BackendClient::createSolutionStore(const ProjectConfiguration& /*configuration*/) {
+boost::shared_ptr<SolutionStore>
+BackendClient::createSolutionStore(const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
 
-	// TODO: create one based on provided configuration
-	pipeline::Value<LocalSolutionStore> localSolutionStore;
+	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-	return localSolutionStore;
+		return boost::make_shared<LocalSolutionStore>();
+	}
+
+	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		// there is no solution store for the django backend
+		return boost::shared_ptr<SolutionStore>();
+	}
+
+	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
 } // namespace python

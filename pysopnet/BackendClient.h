@@ -1,8 +1,9 @@
 #ifndef SOPNET_PYTHON_BACKEND_CLIENT_H__
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
-#include <pipeline/Value.h>
 #include <sopnet/block/BlockManager.h>
+#include <catmaid/django/DjangoBlockManager.h>
+#include <catmaid/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
@@ -28,15 +29,21 @@ protected:
 		Membrane
 	};
 
-	pipeline::Value<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
+	boost::shared_ptr<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
 
-	pipeline::Value<StackStore>   createStackStore(const ProjectConfiguration& configuration, StackType type);
+	boost::shared_ptr<StackStore>   createStackStore(const ProjectConfiguration& configuration, StackType type);
 
-	pipeline::Value<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
+	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
-	pipeline::Value<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
+	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
 
-	pipeline::Value<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
+	boost::shared_ptr<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
+
+private:
+
+	boost::shared_ptr<DjangoBlockManager> _djangoBlockManager;
+
+	boost::shared_ptr<DjangoSliceStore>   _djangoSliceStore;
 };
 
 } // namespace python

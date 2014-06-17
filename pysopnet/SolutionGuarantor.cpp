@@ -2,7 +2,6 @@
 #include <pipeline/Process.h>
 #include <catmaid/SolutionGuarantor.h>
 #include <sopnet/block/Cores.h>
-#include <sopnet/block/CoreManager.h>
 #include "SolutionGuarantor.h"
 #include "logging.h"
 
@@ -16,18 +15,17 @@ SolutionGuarantor::fill(
 
 	LOG_USER(pylog) << "[SolutionGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager>  blockManager  = createBlockManager(configuration);
-	pipeline::Value<StackStore>    rawStackStore = createStackStore(configuration, Raw);
-	pipeline::Value<SliceStore>    sliceStore    = createSliceStore(configuration);
-	pipeline::Value<SegmentStore>  segmentStore  = createSegmentStore(configuration);
-	pipeline::Value<SolutionStore> solutionStore = createSolutionStore(configuration);
+	boost::shared_ptr<BlockManager>  blockManager  = createBlockManager(configuration);
+	boost::shared_ptr<StackStore>    rawStackStore = createStackStore(configuration, Raw);
+	boost::shared_ptr<SliceStore>    sliceStore    = createSliceStore(configuration);
+	boost::shared_ptr<SegmentStore>  segmentStore  = createSegmentStore(configuration);
+	boost::shared_ptr<SolutionStore> solutionStore = createSolutionStore(configuration);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] requesting block at " << request << std::endl;
 
 	// find the cores that correspond to request
-	CoreManager coreManager(blockManager, configuration.getCoreSize());
-	boost::shared_ptr<Core> core = coreManager.coreAtLocation(request);
-	pipeline::Value<Cores> cores;
+	boost::shared_ptr<Core> core = blockManager->coreAtLocation(request);
+	boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 	cores->add(core);
 
 	// create the SolutionGuarantor process node

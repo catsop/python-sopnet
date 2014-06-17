@@ -15,15 +15,15 @@ SegmentGuarantor::fill(
 
 	LOG_USER(pylog) << "[SegmentGuarantor] fill called for block at " << request << std::endl;
 
-	pipeline::Value<BlockManager> blockManager = createBlockManager(configuration);
-	pipeline::Value<SliceStore>   sliceStore   = createSliceStore(configuration);
-	pipeline::Value<SegmentStore> segmentStore = createSegmentStore(configuration);
+	boost::shared_ptr<BlockManager> blockManager = createBlockManager(configuration);
+	boost::shared_ptr<SliceStore>   sliceStore   = createSliceStore(configuration);
+	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);
 
 	// create a valid request block
 	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
 
 	// wrap requested block into Blocks
-	pipeline::Value<Blocks> blocks;
+	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	blocks->add(requestBlock);
 
 	// create the SegmentGuarantor process node
