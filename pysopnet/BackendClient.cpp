@@ -23,12 +23,12 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 }
 
 pipeline::Value<StackStore>
-BackendClient::createStackStore(const ProjectConfiguration& /*configuration*/) {
+BackendClient::createStackStore(const ProjectConfiguration& /*configuration*/, StackType type) {
 
 	LOG_USER(pylog) << "[BackendClient] create local stack store for membranes" << std::endl;
 
 	// TODO: create one based on provided configuration
-	pipeline::Value<LocalStackStore> localStackStore(LocalStackStore("./membranes"));
+	pipeline::Value<LocalStackStore> localStackStore(LocalStackStore(type == Raw ? "./raw" : "./membranes"));
 
 	return localStackStore;
 }

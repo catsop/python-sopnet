@@ -51,7 +51,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	boost::python::class_<SegmentGuarantorParameters>("SegmentGuarantorParameters");
 
 	// SolutionGuarantorParameters
-	boost::python::class_<SolutionGuarantorParameters>("SolutionGuarantorParameters");
+	boost::python::class_<SolutionGuarantorParameters>("SolutionGuarantorParameters")
+			.def("setCorePadding", &SolutionGuarantorParameters::setCorePadding);
 
 	// ProjectConfiguration
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
@@ -59,6 +60,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("getDjangoUrl", &ProjectConfiguration::getDjangoUrl, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)
 			.def("getBlockSize", &ProjectConfiguration::getBlockSize, boost::python::return_internal_reference<>())
+			.def("setCoreSize", &ProjectConfiguration::setCoreSize)
+			.def("getCoreSize", &ProjectConfiguration::getCoreSize, boost::python::return_internal_reference<>())
 			.def("setVolumeSize", &ProjectConfiguration::setVolumeSize)
 			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>());
 

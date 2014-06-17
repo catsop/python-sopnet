@@ -27,6 +27,18 @@ ProjectConfiguration::getBlockSize() const {
 }
 
 void
+ProjectConfiguration::setCoreSize(const util::point3<unsigned int>& coreSize) {
+
+	_coreSize = coreSize;
+}
+
+const util::point3<unsigned int>&
+ProjectConfiguration::getCoreSize() const {
+
+	return _coreSize;
+}
+
+void
 ProjectConfiguration::setVolumeSize(const util::point3<unsigned int>& volumeSize) {
 
 	_volumeSize = volumeSize;

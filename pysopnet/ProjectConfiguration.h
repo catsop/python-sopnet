@@ -35,6 +35,16 @@ public:
 	const util::point3<unsigned int>& getBlockSize() const;
 
 	/**
+	 * Set the size of a core in blocks.
+	 */
+	void setCoreSize(const util::point3<unsigned int>& coreSize);
+
+	/**
+	 * Get the size of a core in blocks.
+	 */
+	const util::point3<unsigned int>& getCoreSize() const;
+
+	/**
 	 * Set the size of the whole volume in voxels.
 	 */
 	void setVolumeSize(const util::point3<unsigned int>& volumeSize);
@@ -49,6 +59,7 @@ private:
 	std::string _djangoUrl;
 
 	util::point3<unsigned int> _blockSize;
+	util::point3<unsigned int> _coreSize;
 	util::point3<unsigned int> _volumeSize;
 };
 

@@ -1,7 +1,8 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
 #include <catmaid/SolutionGuarantor.h>
-#include <sopnet/block/Blocks.h>
+#include <sopnet/block/Cores.h>
+#include <sopnet/block/CoreManager.h>
 #include "SolutionGuarantor.h"
 #include "logging.h"
 
@@ -16,43 +17,45 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] fill called for block at " << request << std::endl;
 
 	pipeline::Value<BlockManager>  blockManager  = createBlockManager(configuration);
+	pipeline::Value<StackStore>    rawStackStore = createStackStore(configuration, Raw);
 	pipeline::Value<SliceStore>    sliceStore    = createSliceStore(configuration);
 	pipeline::Value<SegmentStore>  segmentStore  = createSegmentStore(configuration);
 	pipeline::Value<SolutionStore> solutionStore = createSolutionStore(configuration);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] requesting block at " << request << std::endl;
 
-	// create a valid request block
-	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
-
-	// wrap requested block into Blocks
-	pipeline::Value<Blocks> blocks;
-	blocks->add(requestBlock);
+	// find the cores that correspond to request
+	CoreManager coreManager(blockManager, configuration.getCoreSize());
+	boost::shared_ptr<Core> core = coreManager.coreAtLocation(request);
+	pipeline::Value<Cores> cores;
+	cores->add(core);
 
 	// create the SolutionGuarantor process node
 	pipeline::Process< ::SolutionGuarantor> solutionGuarantor;
 
 	LOG_USER(pylog) << "[SolutionGuarantor] setting inputs" << std::endl;
 
-	// TODO:
-	// there might be more inputs that need to be set
-	//solutionGuarantor->setInput("blocks", blocks);
-	//solutionGuarantor->setInput("slice store", sliceStore);
-	//solutionGuarantor->setInput("segment store", segmentStore);
-	//solutionGuarantor->setInput("solution store", solutionStore);
+	pipeline::Value<bool>         forceExplanation(parameters.forceExplanation());
+	pipeline::Value<unsigned int> corePadding(parameters.getCorePadding());
+
+	solutionGuarantor->setInput("cores", cores);
+	solutionGuarantor->setInput("segment store", segmentStore);
+	solutionGuarantor->setInput("slice store", sliceStore);
+	solutionGuarantor->setInput("raw image store", rawStackStore);
+	solutionGuarantor->setInput("force explanation", forceExplanation);
+	solutionGuarantor->setInput("buffer", corePadding);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 
 	// let it do what it was build for
-	//solutionGuarantor->guaranteeSolutions();
+	pipeline::Value<Blocks> missingBlocks = solutionGuarantor->guaranteeSolution();
 
 	LOG_USER(pylog) << "[SolutionGuarantor] collecting missing segment blocks" << std::endl;
 
-	// TODO:
-	// read output of missing slice blocks
+	// collect missing block locations
 	Locations missing;
-	missing.push_back(util::point3<unsigned int>(1,2,3));
-	missing.push_back(util::point3<unsigned int>(3,2,1));
+	foreach (boost::shared_ptr<Block> block, *missingBlocks)
+		missing.push_back(block->getCoordinates());
 
 	return missing;
 }

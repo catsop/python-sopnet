@@ -19,9 +19,18 @@ class BackendClient {
 
 protected:
 
+	/**
+	 * The type of image stack to request.
+	 */
+	enum StackType {
+
+		Raw,
+		Membrane
+	};
+
 	pipeline::Value<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
 
-	pipeline::Value<StackStore>   createStackStore(const ProjectConfiguration& configuration);
+	pipeline::Value<StackStore>   createStackStore(const ProjectConfiguration& configuration, StackType type);
 
 	pipeline::Value<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
