@@ -51,12 +51,12 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
-		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
-			catsoptest::DjangoTestSuite::djangoTestSuite("catmaid:8000", 4, 3);
-		djangoSuite->runAll();
-// 		boost::shared_ptr<catsoptest::TestSuite> localSuite = 
-// 			catsoptest::LocalTestSuite::localTestSuite(util::point3<unsigned int>(179, 168, 5));
-// 		localSuite->runAll();
+// 		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
+// 			catsoptest::DjangoTestSuite::djangoTestSuite("catmaid:8000", 4, 3);
+// 		djangoSuite->runAll();
+		boost::shared_ptr<catsoptest::TestSuite> localSuite = 
+			catsoptest::LocalTestSuite::localTestSuite(util::point3<unsigned int>(179, 168, 5));
+		localSuite->runAll();
 		
 	}
 	catch (Exception& e)
