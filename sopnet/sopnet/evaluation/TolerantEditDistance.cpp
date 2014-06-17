@@ -44,7 +44,12 @@ TolerantEditDistance::TolerantEditDistance() :
 	_haveBackgroundLabel(optionHaveBackgroundLabel),
 	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
 	_recBackgroundLabel(optionReconstructionBackgroundLabel),
-	_errors(_haveBackgroundLabel ? boost::make_shared<Errors>(_gtBackgroundLabel, _recBackgroundLabel) : boost::make_shared<Errors>()) {
+	_correctedReconstruction(new ImageStack()),
+	_splitLocations(new ImageStack()),
+	_mergeLocations(new ImageStack()),
+	_fpLocations(new ImageStack()),
+	_fnLocations(new ImageStack()),
+	_errors(_haveBackgroundLabel ? new Errors(_gtBackgroundLabel, _recBackgroundLabel) : new Errors()) {
 
 	if (optionHaveBackgroundLabel) {
 		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;
@@ -97,6 +102,8 @@ TolerantEditDistance::clear() {
 	_correctedReconstruction->clear();
 	_splitLocations->clear();
 	_mergeLocations->clear();
+	_fpLocations->clear();
+	_fnLocations->clear();
 }
 
 void
@@ -364,10 +371,11 @@ TolerantEditDistance::findErrors() {
 
 	for (unsigned int i = 0; i < _depth; i++) {
 
-		_splitLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_mergeLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_fpLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_fnLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
+		// initialize with gray (no cell label)
+		_splitLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_mergeLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_fpLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_fnLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
 	}
 
 	// prepare error data structure

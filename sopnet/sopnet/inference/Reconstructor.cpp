@@ -5,11 +5,13 @@
 static logger::LogChannel reconstructorlog("reconstructorlog", "[Reconstructor] ");
 
 Reconstructor::Reconstructor() :
-	_reconstruction(boost::make_shared<Segments>()) {
+	_reconstruction(new Segments()),
+	_discardedSegments(new Segments()) {
 
 	registerInput(_solution, "solution");
 	registerInput(_segments, "segments");
 	registerOutput(_reconstruction, "reconstruction");
+	registerOutput(_discardedSegments, "discarded segments");
 }
 
 void
@@ -25,6 +27,7 @@ Reconstructor::updateReconstruction() {
 
 	// remove all previous segment in the reconstruction
 	_reconstruction->clear();
+	_discardedSegments->clear();
 
 	LOG_DEBUG(reconstructorlog) << "Got " << _segments->size() << " segments in total" << std::endl;
 	LOG_DEBUG(reconstructorlog) << _segments->getEnds().size() << " ends, " <<
@@ -59,6 +62,10 @@ Reconstructor::probe(boost::shared_ptr<SegmentType> segment) {
 		_reconstruction->add(segment);
 
 		LOG_ALL(reconstructorlog) << segment->getId() << " ";
+
+	} else  {
+
+		_discardedSegments->add(segment);
 	}
 
 	_currentSegmentNum++;

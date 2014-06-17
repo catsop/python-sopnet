@@ -60,6 +60,11 @@ public:
 		_conflictSets.clear();
 	}
 
+	unsigned int size() const {
+
+		return _conflictSets.size();
+	}
+
 private:
 
 	std::vector<ConflictSet> _conflictSets;

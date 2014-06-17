@@ -66,12 +66,12 @@ public:
 	 * underlying ConnectedComponent.
 	 */
 	std::size_t hashValue() const;
-	
+
 	/**
 	 * Translate this Slice
 	 * @param pt a point representing the translation to perform.
 	 */
-	void translate(const util::point<unsigned int>& pt);
+	void translate(const util::point<int>& pt);
 	
 	bool operator==(const Slice& other) const;
 	
@@ -79,7 +79,7 @@ public:
 	{
 		return _id < other._id;
 	}
-	
+
 private:
 
 	unsigned int _id;

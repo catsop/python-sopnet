@@ -23,7 +23,9 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
-#include <sopnet/training/RandomForestTrainer.h>
+#include <sopnet/training/SegmentRandomForestTrainer.h>
+#include <sopnet/training/io/StructuredProblemWriter.h>
+#include <sopnet/training/io/MinimalImpactTEDWriter.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -74,42 +76,27 @@ Sopnet::Sopnet(
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
+	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
+	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
+	_spWriter(boost::make_shared<StructuredProblemWriter>()),
+	_mitWriter(boost::make_shared<MinimalImpactTEDWriter>()),
 	_projectDirectory(projectDirectory),
-	_problemWriter(problemWriter) {
+	_problemWriter(problemWriter),
+	_pipelineCreated(false) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes, "membranes");
-	registerInput(_neuronSlices, "neuron slices");
-	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories");
-	registerInput(_mitochondriaSlices, "mitochondria slices");
-	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories");
-	registerInput(_synapseSlices, "synapse slices");
-	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories");
-	registerInput(_groundTruth, "ground truth");
+	registerInput(_neuronSlices, "neuron slices", pipeline::Optional);
+	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories", pipeline::Optional);
+	registerInput(_mitochondriaSlices, "mitochondria slices", pipeline::Optional);
+	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories", pipeline::Optional);
+	registerInput(_synapseSlices, "synapse slices", pipeline::Optional);
+	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories", pipeline::Optional);
+	registerInput(_groundTruth, "ground truth", pipeline::Optional);
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
-
-	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
-	_neuronSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_neuronSlices.registerBackwardSlot(_update);
-	_neuronSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_neuronSliceStackDirectories.registerBackwardSlot(_update);
-	_mitochondriaSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_mitochondriaSlices.registerBackwardSlot(_update);
-	_mitochondriaSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_mitochondriaSliceStackDirectories.registerBackwardSlot(_update);
-	_synapseSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_synapseSlices.registerBackwardSlot(_update);
-	_synapseSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_synapseSliceStackDirectories.registerBackwardSlot(_update);
-	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
-	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
-	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
-	_priorCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
-	_forceExplanation.registerBackwardCallback(&Sopnet::onParametersSet, this);
 
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
@@ -117,49 +104,16 @@ Sopnet::Sopnet(
 	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
 	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
-	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
-	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
+	registerOutput(_goldStandardExtractor->getOutput("gold standard"), "gold standard");
+	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
-	registerOutput(_segmentRfTrainer->getOutput("ground truth score"), "ground truth score");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 }
 
 void
-Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>&) {
+Sopnet::updateOutputs() {
 
-	LOG_DEBUG(sopnetlog) << "membranes set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "slices set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onRawSectionsSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "raw sections set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "ground-truth set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onParametersSet(const pipeline::InputSetBase&) {
-
-	LOG_DEBUG(sopnetlog) << "parameters set" << std::endl;
+	LOG_DEBUG(sopnetlog) << "update requested" << std::endl;
 
 	createPipeline();
 }
@@ -167,25 +121,29 @@ Sopnet::onParametersSet(const pipeline::InputSetBase&) {
 void
 Sopnet::createPipeline() {
 
-	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
+	if (_pipelineCreated) {
 
-	if (
-			!_membranes ||
-			!(_neuronSlices || _neuronSliceStackDirectories) ||
-			!_rawSections ||
-			!_segmentationCostFunctionParameters ||
-			!_priorCostFunctionParameters ||
-			!_forceExplanation) {
-
-		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
+		LOG_DEBUG(sopnetlog) << "pipeline has been created already, skipping" << std::endl;
 		return;
 	}
 
-	createBasicPipeline();
+	LOG_DEBUG(sopnetlog) << "creating pipeline" << std::endl;
 
+	if (!_neuronSlices.isSet() && !_neuronSliceStackDirectories.isSet())
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"either an image stack of slices or a list of directory names has to be set as 'neuron slices' or 'neuron slice stack directories'");
+
+	createBasicPipeline();
 	createInferencePipeline();
-	if (_groundTruth)
+	if (_groundTruth.isSet()) {
+
 		createTrainingPipeline();
+		createStructuredProblemPipeline();
+		createMinimalImpactTEDPipeline();
+	}
+
+	_pipelineCreated = true;
 }
 
 void
@@ -201,25 +159,32 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("synapse segments");
 	_problemAssembler->clearInputs("synapse linear constraints");
 
-	// make sure relevant input information is available
-	_update();
+	bool finishLastSection = !_problemWriter;
 
-	if (_neuronSliceStackDirectories)
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories, !_problemWriter);
+	LOG_DEBUG(sopnetlog) << "creating neuron segment part..." << std::endl;
+
+	if (_neuronSliceStackDirectories.isSet())
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories.getSharedPointer(), finishLastSection);
 	else
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices, _forceExplanation, !_problemWriter);
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices.getSharedPointer(), _forceExplanation, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "creating mitochondria segment part..." << std::endl;
 
 	_mitochondriaSegmentExtractorPipeline.reset();
-	if (_mitochondriaSliceStackDirectories)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories, !_problemWriter);
-	else if (_mitochondriaSlices)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, false, !_problemWriter);
+	if (_mitochondriaSliceStackDirectories.isSet())
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories.getSharedPointer(), finishLastSection);
+	else if (_mitochondriaSlices.isSet())
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices.getSharedPointer(), false, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "creating synapse segment part..." << std::endl;
 
 	_synapseSegmentExtractorPipeline.reset();
-	if (_synapseSliceStackDirectories)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories, !_problemWriter);
-	else if (_synapseSlices)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices, false, !_problemWriter);
+	if (_synapseSliceStackDirectories.isSet())
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories.getSharedPointer(), finishLastSection);
+	else if (_synapseSlices.isSet())
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices.getSharedPointer(), false, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "feeding output into problem assembler..." << std::endl;
 
 	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 
@@ -239,6 +204,9 @@ Sopnet::createBasicPipeline() {
 			_problemAssembler->addInput("synapse linear constraints", _synapseSegmentExtractorPipeline->getConstraints(i));
 		}
 	}
+
+	if (_groundTruth.isSet())
+		_groundTruthExtractor->setInput(_groundTruth);
 }
 
 void
@@ -348,9 +316,71 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
-	_groundTruthExtractor->setInput(_groundTruth.getAssignedOutput());
+	_goldStandardExtractor->setInput("ground truth", _groundTruthExtractor->getOutput());
+	_goldStandardExtractor->setInput("all segments", _problemAssembler->getOutput("segments"));
+	_goldStandardExtractor->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 
-	_segmentRfTrainer->setInput("ground truth", _groundTruthExtractor->getOutput());
-	_segmentRfTrainer->setInput("all segments", _problemAssembler->getOutput("segments"));
-	_segmentRfTrainer->setInput("raw sections", _rawSections.getAssignedOutput());
+	_segmentRfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
+	_segmentRfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
+	_segmentRfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 }
+
+void
+Sopnet::createStructuredProblemPipeline() {
+
+	LOG_DEBUG(sopnetlog) << "re-creating structured problem part..." << std::endl;
+
+	_spWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+	_spWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+	_spWriter->setInput("ground truth segments", _groundTruthExtractor->getOutput("ground truth segments"));
+	_spWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));
+}
+
+void
+Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints) {
+
+	LOG_DEBUG(sopnetlog) << "requested to write structured problem, updating inputs" << std::endl;
+
+	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
+	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing structured learning files" << std::endl;
+
+	_spWriter->write(filename_labels, filename_features, filename_constraints);
+}
+
+void
+Sopnet::createMinimalImpactTEDPipeline() {
+
+	LOG_DEBUG(sopnetlog) << "re-creating minimal impact TED part..." << std::endl;
+
+	// Set inputs to MinimalImpactTEDWriter
+	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_mitWriter->setInput("reference", _rawSections);
+	_mitWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+
+}
+
+void
+Sopnet::writeMinimalImpactTEDCoefficients(std::string filename) {
+
+	LOG_DEBUG(sopnetlog) << "requested to write minimal impact TED coefficients, updating inputs" << std::endl;
+
+	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
+	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing minimal impact TED coefficient files..." << std::endl;
+
+	_mitWriter->write(filename);
+}
+

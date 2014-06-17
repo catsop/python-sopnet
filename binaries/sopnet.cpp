@@ -41,6 +41,8 @@
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
+#include <config.h>
+
 using std::cout;
 using std::endl;
 using namespace gui;
@@ -61,6 +63,14 @@ util::ProgramOption optionTraining(
 		_long_name        = "train",
 		_short_name       = "t",
 		_description_text = "Train the segment random forest classifier.");
+
+util::ProgramOption optionWriteStructuredProblem(
+		_long_name        = "writeStructuredProblem",
+		_description_text = "Dump the gold standard, all features and constraints for structured learning.");
+
+util::ProgramOption optionWriteMinimalImpactTED(
+		_long_name	  = "writeMinimalImpactTED",
+		_description_text = "Dump coefficients for minimal impact TED for structured learning.");
 
 util::ProgramOption optionFirstSection(
 		_module           = "sopnet",
@@ -135,25 +145,6 @@ util::ProgramOption optionGridSearch(
 		_long_name        = "gridSearch",
 		_description_text = "Preform a grid search.");
 
-void handleException(boost::exception& e) {
-
-	LOG_ERROR(out) << "[window thread] caught exception: ";
-
-	if (boost::get_error_info<error_message>(e))
-		LOG_ERROR(out) << *boost::get_error_info<error_message>(e);
-
-	LOG_ERROR(out) << std::endl;
-
-	LOG_ERROR(out) << "[window thread] stack trace:" << std::endl;
-
-	if (boost::get_error_info<stack_trace>(e))
-		LOG_ERROR(out) << *boost::get_error_info<stack_trace>(e);
-
-	LOG_ERROR(out) << std::endl;
-
-	exit(-1);
-}
-
 void processEvents(boost::shared_ptr<gui::Window>& window) {
 
 	LOG_USER(out) << " started as " << window->getCaption() << " at " << window.get() << std::endl;
@@ -166,7 +157,7 @@ void processEvents(boost::shared_ptr<gui::Window>& window) {
 
 		} catch (boost::exception& e) {
 
-			handleException(e);
+			handleException(e, std::cerr);
 		}
 
 		usleep(1000);
@@ -242,7 +233,7 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<pipeline::ProcessNode> synapseReader;
 		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
-		boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > sliceStackDirectories = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+		pipeline::Value<std::vector<std::string> > sliceStackDirectories;
 
 		// create image stack readers
 		if (!optionProjectName) {
@@ -290,9 +281,11 @@ int main(int optionc, char** optionv) {
 			// for every image directory in the given directory
 			foreach (boost::filesystem::path directory, sorted)
 				if (boost::filesystem::is_directory(directory))
-					sliceStackDirectories->get().push_back(directory.string());
+					sliceStackDirectories->push_back(directory.string());
 
 		} else {
+
+#ifdef HAVE_HDF5
 
 			// get the project filename
 			std::string projectFilename = optionProjectName;
@@ -302,10 +295,16 @@ int main(int optionc, char** optionv) {
 			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
 			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
 			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
+
+#else
+
+			LOG_ERROR(out) << "HDF5 not supported -- please recompile with HDF5 enabled" << std::endl;
+
+#endif
 		}
 
 		// select a substack, if options are set
-		if (optionFirstSection || optionLastSection) {
+		if (firstSection != 0 || lastSection != -1) {
 
 			// create section selectors
 			boost::shared_ptr<SubStackSelector> rawSelector          = boost::make_shared<SubStackSelector>(firstSection, lastSection);
@@ -337,17 +336,17 @@ int main(int optionc, char** optionv) {
 			// special case: select a subset of the slice hypotheses
 			if (optionSlicesFromStacks) {
 
-				if (firstSection >= (int)sliceStackDirectories->get().size())
+				if (firstSection >= (int)sliceStackDirectories->size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
-				if (lastSection >= (int)sliceStackDirectories->get().size())
+				if (lastSection >= (int)sliceStackDirectories->size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
-				boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+				pipeline::Value<std::vector<std::string> > tmp;
 				std::copy(
-						sliceStackDirectories->get().begin() + firstSection,
-						sliceStackDirectories->get().begin() + lastSection + 1,
-						back_inserter(tmp->get()));
+						sliceStackDirectories->begin() + firstSection,
+						sliceStackDirectories->begin() + lastSection + 1,
+						back_inserter(*tmp));
 				sliceStackDirectories = tmp;
 
 			} else {
@@ -393,17 +392,12 @@ int main(int optionc, char** optionv) {
 			sopnet->setInput("mitochondria slices", mitochondriaReader->getOutput());
 		if (synapseReader)
 			sopnet->setInput("synapse slices", synapseReader->getOutput());
-		if (optionTraining) {
+		if (groundTruthReader)
+			sopnet->setInput("ground truth", groundTruthReader->getOutput());
+		else if (optionTraining || optionWriteStructuredProblem) {
 
-			if (!groundTruthReader) {
-
-				LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
-				return -1;
-
-			} else {
-
-				sopnet->setInput("ground truth", groundTruthReader->getOutput());
-			}
+			LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
+			return -1;
 		}
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
@@ -462,9 +456,6 @@ int main(int optionc, char** optionv) {
 				featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 				featuresView->setInput("objective", sopnet->getOutput("objective"));
 				container->addInput(featuresView->getOutput());
-
-				if (optionShowGroundTruth)
-					featuresView->setInput("ground truth score", sopnet->getOutput("ground truth score"));
 			}
 			container->addInput(rotateView->getOutput());
 
@@ -585,6 +576,19 @@ int main(int optionc, char** optionv) {
 			namedView->setInput(errorsView->getOutput());
 
 			resultContainer->addInput(namedView->getOutput());
+
+			// gold standard error
+			pipeline::Process<NamedView>       goldStandardNamedView("Error bounds with current hypotheses:");
+			pipeline::Process<ResultEvaluator> goldStandardEvaluator;
+			pipeline::Process<ErrorsView>      goldStandardErrorsView;
+
+			goldStandardEvaluator->setInput("result", sopnet->getOutput("gold standard"));
+			goldStandardEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+
+			goldStandardErrorsView->setInput("slice errors", goldStandardEvaluator->getOutput());
+			goldStandardNamedView->setInput(goldStandardErrorsView->getOutput());
+
+			resultContainer->addInput(goldStandardNamedView->getOutput());
 		}
 
 		if (optionTraining) {
@@ -595,6 +599,20 @@ int main(int optionc, char** optionv) {
 			rfWriter->write();
 
 			LOG_USER(out) << "[main] training finished!" << std::endl;
+		}
+
+		if (optionWriteStructuredProblem) {
+
+			sopnet->writeStructuredProblem("./labels.txt", "./features.txt", "./constraints.txt");
+
+			LOG_USER(out) << "[main] files for structured learning written!" << std::endl;
+		}
+
+		if (optionWriteMinimalImpactTED) {
+			
+			sopnet->writeMinimalImpactTEDCoefficients("./minimalImpactTEDcoefficients.txt");
+
+			LOG_USER(out) << "[main] file for minimal impact TED written!" << std::endl;
 		}
 
 		if (optionSaveResultDirectory) {
@@ -658,6 +676,6 @@ int main(int optionc, char** optionv) {
 
 	} catch (Exception& e) {
 
-		handleException(e);
+		handleException(e, std::cerr);
 	}
 }

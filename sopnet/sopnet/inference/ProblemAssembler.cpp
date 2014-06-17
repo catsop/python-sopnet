@@ -32,6 +32,12 @@ util::ProgramOption optionSynapseEnclosingThreshold(
 static logger::LogChannel problemassemblerlog("problemassemblerlog", "[ProblemAssembler] ");
 
 ProblemAssembler::ProblemAssembler() :
+	_allSegments(new Segments()),
+	_allNeuronSegments(new Segments()),
+	_allMitochondriaSegments(new Segments()),
+	_allSynapseSegments(new Segments()),
+	_allLinearConstraints(new LinearConstraints()),
+	_problemConfiguration(new ProblemConfiguration()),
 	_overlap(false, false) {
 
 	registerInputs(_neuronSegments, "neuron segments");
@@ -54,20 +60,17 @@ ProblemAssembler::updateOutputs() {
 
 	collectSegments();
 
-	if (_allLinearConstraints) {
+	// make sure slices are used from both sides
+	addExplanationConstraints();
 
-		// make sure slices are used from both sides
-		addExplanationConstraints();
+	// make sure segments don't overlap
+	addConsistencyConstraints();
 
-		// make sure segments don't overlap
-		addConsistencyConstraints();
+	// make sure mitochondria are enclosed by a single neuron
+	addMitochondriaConstraints();
 
-		// make sure mitochondria are enclosed by a single neuron
-		addMitochondriaConstraints();
-
-		// make sure synapses are enclosed by a single neuron
-		addSynapseConstraints();
-	}
+	// make sure synapses are enclosed by a single neuron
+	addSynapseConstraints();
 }
 
 void
@@ -241,6 +244,9 @@ ProblemAssembler::addSynapseConstraints() {
 		unsigned int n = getSynapseEnclosingNeuronSegments(synapseSegmentId).size();
 
 		LOG_ALL(problemassemblerlog) << "synapse segment has " << n << " enclosing neuron segments" << std::endl;
+
+		if (n == 0)
+			continue;
 
 		constraint->setValue(n);
 		constraint->setRelation(LessEqual);

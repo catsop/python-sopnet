@@ -17,9 +17,9 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 
 	registerOutput(_featuresAssembler->getOutput("all features"), "all features");
 
-	_segments.registerBackwardCallback(&SegmentFeaturesExtractor::onInputSet, this);
-	_rawSections.registerBackwardCallback(&SegmentFeaturesExtractor::onInputSet, this);
-	_cropOffset.registerBackwardCallback(&SegmentFeaturesExtractor::onOffsetSet, this);
+	_segments.registerCallback(&SegmentFeaturesExtractor::onInputSet, this);
+	_rawSections.registerCallback(&SegmentFeaturesExtractor::onInputSet, this);
+	_cropOffset.registerCallback(&SegmentFeaturesExtractor::onOffsetSet, this);
 
 	_featuresAssembler->addInput(_geometryFeatureExtractor->getOutput());
 	_featuresAssembler->addInput(_histogramFeatureExtractor->getOutput());
@@ -29,11 +29,12 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 void
 SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 
-	if (_segments && _rawSections) {
-		_geometryFeatureExtractor->setInput("segments", _segments);
-		_histogramFeatureExtractor->setInput("segments", _segments);
-		_histogramFeatureExtractor->setInput("raw sections", _rawSections);
-		_typeFeatureExtractor->setInput("segments", _segments);
+	if (_segments.isSet() && _rawSections.isSet()) {
+
+		_geometryFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
+		_histogramFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
+		_histogramFeatureExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
+		_typeFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 	}
 }
 
@@ -44,7 +45,8 @@ SegmentFeaturesExtractor::onOffsetSet(const pipeline::InputSetBase&)
 }
 
 
-SegmentFeaturesExtractor::FeaturesAssembler::FeaturesAssembler() {
+SegmentFeaturesExtractor::FeaturesAssembler::FeaturesAssembler() :
+	_allFeatures(new Features()) {
 
 	registerInputs(_features, "features");
 	registerOutput(_allFeatures, "all features");

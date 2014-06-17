@@ -4,12 +4,49 @@
 logger::LogChannel splitmergepainterlog("splitmergepainterlog", "[SplitMergePainter] ");
 
 SplitMergePainter::SplitMergePainter() :
-		_section(0) {}
+		_section(0) {
+
+	updateSize();
+}
+
+void
+SplitMergePainter::setSliceImage(boost::shared_ptr<Image> sliceImage, const util::point<int>& offset) {
+
+	_sliceImagePainter = boost::make_shared<gui::ImagePainter<Image> >();
+	_sliceImagePainter->setImage(sliceImage);
+	_sliceImagePainter->setTransparent(true);
+	_sliceImagePainter->setColor(1.0, 0.5, 0.4);
+	_sliceImageOffset = offset;
+}
+
+void
+SplitMergePainter::reloadSliceImage() {
+
+	_sliceImagePainter->reload();
+}
+
+void
+SplitMergePainter::unsetSliceImage() {
+
+	_sliceImagePainter.reset();
+}
 
 bool
 SplitMergePainter::draw(
-		const util::rect<double>&  /*roi*/,
-		const util::point<double>& /*resolution*/) {
+		const util::rect<double>&  roi,
+		const util::point<double>& resolution) {
+
+	if (_sliceImagePainter) {
+
+		LOG_ALL(splitmergepainterlog) << "drawing slice image for section " << _section << std::endl;
+
+		glPushMatrix();
+		glTranslatef(_sliceImageOffset.x, _sliceImageOffset.y, 0);
+		_sliceImagePainter->draw(roi - _sliceImageOffset, resolution);
+		glPopMatrix();
+
+		return false;
+	}
 
 	LOG_ALL(splitmergepainterlog) << "drawing selection for section " << _section << std::endl;
 
@@ -23,14 +60,22 @@ SplitMergePainter::draw(
 void
 SplitMergePainter::updateSize() {
 
-	util::rect<double> bb;
+	util::rect<double> bb(0, 0, 0, 0);
 
-	foreach (boost::shared_ptr<Slice> slice, *_selection) {
+	if (_sliceImagePainter) {
 
-		if (bb.isZero())
-			bb = slice->getComponent()->getBoundingBox();
-		else
-			bb.fit(slice->getComponent()->getBoundingBox());
+		bb = _sliceImagePainter->getSize() + _sliceImageOffset;
+	}
+
+	if (_selection) {
+
+		foreach (boost::shared_ptr<Slice> slice, *_selection) {
+
+			if (bb.isZero())
+				bb = slice->getComponent()->getBoundingBox();
+			else
+				bb.fit(slice->getComponent()->getBoundingBox());
+		}
 	}
 
 	setSize(bb);

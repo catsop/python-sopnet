@@ -326,15 +326,6 @@ NeuronsStackPainter::drawNeuron(
 	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)); GLfloat emission[4] = { 0, 0, 0, 1 };
 	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
 
-	// enable alpha blending
-	glCheck(glEnable(GL_BLEND));
-	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-	glCheck(glEnable(GL_CULL_FACE));
-	glCheck(glEnable(GL_LIGHTING));
-	glCheck(glEnable(GL_LIGHT0));
-	glCheck(glEnable(GL_COLOR_MATERIAL));
-
 	double red   = _colors[neuronNum][0];
 	double green = _colors[neuronNum][1];
 	double blue  = _colors[neuronNum][2];
@@ -565,6 +556,14 @@ NeuronsStackPainter::drawSlice(
 
 	glCheck(glEnable(GL_TEXTURE_2D));
 
+	glCheck(glEnable(GL_BLEND));
+	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+	glCheck(glEnable(GL_CULL_FACE));
+	glCheck(glEnable(GL_LIGHTING));
+	glCheck(glEnable(GL_LIGHT0));
+	glCheck(glEnable(GL_COLOR_MATERIAL));
+
 	try {
 
 		_textures.get(slice.getId())->bind();
@@ -577,15 +576,15 @@ NeuronsStackPainter::drawSlice(
 
 	glBegin(GL_QUADS);
 
-	const util::rect<double>& bb = slice.getComponent()->getBoundingBox();
-
-	double offset = 0;
+	util::rect<double> bb = slice.getComponent()->getBoundingBox();
+	bb.maxX += 2;
+	bb.maxY += 2;
 
 	// right side
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY + offset, 0);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY + offset, 0);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY + offset, 0);
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, 0);
+	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY, 0);
+	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY, 0);
+	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY, 0);
+	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY, 0);
 
 	glCheck(glEnd());
 
@@ -596,11 +595,12 @@ NeuronsStackPainter::drawSlice(
 		idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
 
 		double x = slice.getComponent()->getCenter().x;
-		double y = slice.getComponent()->getCenter().y + offset;
+		double y = slice.getComponent()->getCenter().y;
 
+		glPushMatrix();
 		glTranslatef(x, y, 0);
 		idPainter.draw(roi - util::point<double>(x, y), resolution);
-		glTranslatef(-x, -y, 0);
+		glPopMatrix();
 	}
 }
 

@@ -10,6 +10,7 @@
  */
 class Problems : public pipeline::Data {
 
+public:
 	typedef std::vector<boost::shared_ptr<Problem> > problems_type;
 
 public:
@@ -27,7 +28,7 @@ public:
 		return _problems[i];
 	}
 
-	unsigned int size() {
+	unsigned int size() const {
 
 		return _problems.size();
 	}

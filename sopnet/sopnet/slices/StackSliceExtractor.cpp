@@ -28,9 +28,9 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	registerInput(_sliceImageStack, "slices");
 	registerInput(_forceExplanation, "force explanation");
 	registerOutput(_sliceCollector->getOutput("slices"), "slices");
-	registerOutput(_sliceCollector->getOutput("linear constraints"), "linear constraints");
+	registerOutput(_sliceCollector->getOutput("conflict sets"), "conflict sets");
 
-	_sliceImageStack.registerBackwardCallback(&StackSliceExtractor::onInputSet, this);
+	_sliceImageStack.registerCallback(&StackSliceExtractor::onInputSet, this);
 
 	// set default mser parameters from program options
 	_mserParameters->darkToBright = false;
@@ -68,11 +68,13 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 	LOG_DEBUG(stacksliceextractorlog) << "internal pipeline set up" << std::endl;
 }
 
-StackSliceExtractor::SliceCollector::SliceCollector() {
+StackSliceExtractor::SliceCollector::SliceCollector() :
+	_allSlices(new Slices()),
+	_conflictSets(new ConflictSets()) {
 
 	registerInputs(_slices, "slices");
 	registerOutput(_allSlices, "slices");
-	registerOutput(_linearConstraints, "linear constraints");
+	registerOutput(_conflictSets, "conflict sets");
 }
 
 void
@@ -83,7 +85,7 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 	 */
 
 	_allSlices->clear();
-	_linearConstraints->clear();
+	_conflictSets->clear();
 
 	// create a copy of the input slice collections
 	std::vector<Slices> inputSlices;
@@ -98,7 +100,7 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 	extractConstraints(inputSlices);
 
 	LOG_DEBUG(stacksliceextractorlog) << _allSlices->size() << " slices found" << std::endl;
-	LOG_DEBUG(stacksliceextractorlog) << _linearConstraints->size() << " consistency constraints found" << std::endl;
+	LOG_DEBUG(stacksliceextractorlog) << _conflictSets->size() << " conflict sets found" << std::endl;
 }
 
 unsigned int
@@ -252,13 +254,11 @@ StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices
 
 						_allSlices->addConflicts(conflictIds);
 
-						LinearConstraint linearConstraint;
-						linearConstraint.setCoefficient(slice->getId(), 1.0);
-						linearConstraint.setCoefficient(subSlice->getId(), 1.0);
-						linearConstraint.setRelation(LessEqual);
-						linearConstraint.setValue(1.0);
+						ConflictSet conflictSet;
+						conflictSet.addSlice(slice->getId());
+						conflictSet.addSlice(subSlice->getId());
 
-						_linearConstraints->add(linearConstraint);
+						_conflictSets->add(conflictSet);
 					}
 				}
 			}
@@ -267,12 +267,10 @@ StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices
 			// slice will be picked at most once
 			if (numOverlaps == 0) {
 
-				LinearConstraint linearConstraint;
-				linearConstraint.setCoefficient(slice->getId(), 1.0);
-				linearConstraint.setRelation(LessEqual);
-				linearConstraint.setValue(1.0);
+				ConflictSet conflictSet;
+				conflictSet.addSlice(slice->getId());
 
-				_linearConstraints->add(linearConstraint);
+				_conflictSets->add(conflictSet);
 			}
 		}
 	}

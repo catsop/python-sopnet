@@ -72,6 +72,7 @@ DistanceToleranceFunction::extractCells(
 			}
 	}
 
+	_relabelCandidates.clear();
 	for (unsigned int cellIndex = 0; cellIndex < numCells; cellIndex++)
 		if (maxBoundaryDistances[cellIndex] <= _maxDistanceThreshold*_maxDistanceThreshold)
 			_relabelCandidates.push_back(cellIndex);
@@ -168,6 +169,15 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 
 bool
 DistanceToleranceFunction::isBoundaryVoxel(int x, int y, int z, const ImageStack& stack) {
+
+	// voxels at the volume borders are always boundary voxels
+	if (x == 0 || x == (int)_width - 1)
+		return true;
+	if (y == 0 || y == (int)_height - 1)
+		return true;
+	// in z only if there are multiple sections
+	if (_depth > 1 && (z == 0 || z == (int)_depth - 1))
+		return true;
 
 	float center = (*stack[z])(x, y);
 

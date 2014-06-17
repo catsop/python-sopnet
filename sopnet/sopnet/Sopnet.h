@@ -9,25 +9,28 @@
 #include <sopnet/segments/SegmentExtractionPipeline.h>
 
 // forward declarations
+class GoldStandardExtractor;
 class GroundTruthExtractor;
 class ImageExtractor;
 class ImageStack;
 class LinearSolver;
 class ObjectiveGenerator;
-class ProblemAssembler;
 class PriorCostFunction;
+class ProblemAssembler;
+class RandomForestCostFunction;
 class RandomForestHdf5Reader;
 class Reconstructor;
 class SectionSelector;
-class SegmentationCostFunction;
 class SegmentEvaluator;
 class SegmentExtractor;
 class SegmentFeaturesExtractor;
-class RandomForestCostFunction;
-class RandomForestTrainer;
+class SegmentRandomForestTrainer;
+class SegmentationCostFunction;
+class StructuredProblemWriter;
+class MinimalImpactTEDWriter;
 template <typename Precision> class SliceExtractor;
 
-class Sopnet : public pipeline::ProcessNode {
+class Sopnet : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -39,17 +42,13 @@ public:
 	 */
 	Sopnet(const std::string& projectDirectory, boost::shared_ptr<ProcessNode> problemWriter = boost::shared_ptr<ProcessNode>());
 
+	void writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints);
+
+	void writeMinimalImpactTEDCoefficients(std::string filename);
+
 private:
 
-	void onMembranesSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onSlicesSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onParametersSet(const pipeline::InputSetBase& signal);
+	void updateOutputs();
 
 	void createPipeline();
 
@@ -58,6 +57,10 @@ private:
 	void createInferencePipeline();
 
 	void createTrainingPipeline();
+
+	void createStructuredProblemPipeline();
+
+	void createMinimalImpactTEDPipeline();
 
 	/**********
 	 * INPUTS *
@@ -99,12 +102,6 @@ private:
 	// force the explanation of every component tree
 	pipeline::Input<bool> _forceExplanation;
 
-	/***********
-	 * SIGNALS *
-	 ***********/
-
-	signals::Slot<pipeline::Update> _update;
-
 	/*********************
 	 * INTERNAL PIPELINE *
 	 *********************/
@@ -113,47 +110,57 @@ private:
 	 * basic part
 	 */
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _neuronSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_neuronSegmentExtractorPipeline;
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _mitochondriaSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_mitochondriaSegmentExtractorPipeline;
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _synapseSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_synapseSegmentExtractorPipeline;
 
 	// the problem assembler that collects all segments and linear constraints
-	boost::shared_ptr<ProblemAssembler>               _problemAssembler;
+	boost::shared_ptr<ProblemAssembler>               	_problemAssembler;
 
 	/*
 	 * inference part
 	 */
 
 	// a feature extractor computing features for each segment
-	boost::shared_ptr<SegmentFeaturesExtractor>       _segmentFeaturesExtractor;
+	boost::shared_ptr<SegmentFeaturesExtractor>       	_segmentFeaturesExtractor;
 
 	// a random forest file reader
-	boost::shared_ptr<RandomForestHdf5Reader>         _randomForestReader;
+	boost::shared_ptr<RandomForestHdf5Reader>         	_randomForestReader;
 
 	// a segment evaluator that provides a cost function for segment types
-	boost::shared_ptr<PriorCostFunction>              _priorCostFunction;
+	boost::shared_ptr<PriorCostFunction>              	_priorCostFunction;
 
 	// the objective generator that computes the costs for each segment
-	boost::shared_ptr<ObjectiveGenerator>             _objectiveGenerator;
+	boost::shared_ptr<ObjectiveGenerator>             	_objectiveGenerator;
 
 	// the linear solver
-	boost::shared_ptr<LinearSolver>                   _linearSolver;
+	boost::shared_ptr<LinearSolver>                   	_linearSolver;
 
 	// the last proess node in the internal pipeline, providing the final
 	// solution
-	boost::shared_ptr<Reconstructor>                  _reconstructor;
+	boost::shared_ptr<Reconstructor>                  	_reconstructor;
 
 	/*
 	 * training part
 	 */
 
 	// the ground truth extractor, gives segments from ground truth images
-	boost::shared_ptr<GroundTruthExtractor>           _groundTruthExtractor;
+	boost::shared_ptr<GroundTruthExtractor>           	_groundTruthExtractor;
 
-	// the training node, trains a random forest classifier on the ground truth
-	boost::shared_ptr<RandomForestTrainer>            _segmentRfTrainer;
+	// the gold standard extractor, gives the closest candidate solution to the 
+	// groundtruth
+	boost::shared_ptr<GoldStandardExtractor>          _goldStandardExtractor;
+
+	// the training node, trains a random forest classifier on the gold standard
+	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
+
+	// a writer to produce output for structured learning
+	boost::shared_ptr<StructuredProblemWriter>		_spWriter;
+
+	// a writer to write the coefficients for minimal imapact TED for structured learning
+	boost::shared_ptr<MinimalImpactTEDWriter>		_mitWriter;
 
 	/**************************
 	 * PROJECT INFRASTRUCTURE *
@@ -164,7 +171,8 @@ private:
 
 	// a writer to dump a description of the problem
 	boost::shared_ptr<ProcessNode> _problemWriter;
-	
+
+	bool _pipelineCreated;
 };
 
 #endif // CELLTRACKER_CELLTRACKER_H__
