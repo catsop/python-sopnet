@@ -1625,7 +1625,7 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 // 		writeSegmentTrees(blockwiseNeurons, blockwiseOutputPath);
 // 	}
 	
-	checkSolutionSegments(sopnetSolutionSegments, blockwiseSolutionSegments, stackSize.z - 1);
+	ok &= checkSolutionSegments(sopnetSolutionSegments, blockwiseSolutionSegments, stackSize.z - 1);
 	
 	
 	if (ok)
