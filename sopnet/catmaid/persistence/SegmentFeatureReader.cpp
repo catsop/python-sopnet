@@ -16,7 +16,7 @@ SegmentFeatureReader::SegmentFeatureReader()
 
 void SegmentFeatureReader::updateOutputs()
 {
-	bool storedOnly = (_storedOnly && *_storedOnly);
+	bool storedOnly = (_storedOnly.isSet() && *_storedOnly);
 	boost::shared_ptr<Features> features;
 	boost::shared_ptr<Segments> featurelessSegments = boost::make_shared<Segments>();
 	
@@ -29,7 +29,7 @@ void SegmentFeatureReader::updateOutputs()
 	
 	if (!storedOnly && featurelessSegments->size() > 0)
 	{
-		if (_blockManager && _rawStackStore)
+		if (_blockManager.isSet() && _rawStackStore.isSet())
 		{
 			LOG_DEBUG(segmentfeaturereaderlog) << "Assembling features" << std::endl;
 			features = assembleFeatures(features, featurelessSegments);
@@ -42,6 +42,7 @@ void SegmentFeatureReader::updateOutputs()
 		}
 	}
 	
+	_features = new Features();
 	*_features = *features;
 }
 

@@ -12,6 +12,8 @@ void
 SolutionReader::updateOutputs()
 {
 	pipeline::Value<Solution> solution = _store->retrieveSolution(_segments, _core);
+
+	_solution = new Solution();
 	*_solution = *solution;
 }
 

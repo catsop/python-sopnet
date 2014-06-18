@@ -159,6 +159,7 @@ Slices::setConflicts(unsigned int id, std::vector<unsigned int> conflicts)
 	{
 		_conflicts[id] = conflicts;
 	}
+}
 
 void
 Slices::translate(const util::point<int>& offset) {

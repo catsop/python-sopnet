@@ -97,7 +97,7 @@ SegmentExtractor::updateOutputs() {
 		_slicesChanged = false;
 	}
 
-	if (_conflictSetsChanged && _prevConflictSets) {
+	if (_conflictSetsChanged && _prevConflictSets.isSet()) {
 
 		assembleLinearConstraints();
 		_conflictSetsChanged = false;
@@ -211,7 +211,7 @@ SegmentExtractor::extractSegments() {
 	oldSize = _segments->size();
 
 	// end segments for every next slice, if we are the last segment extractor
-	if (_nextConflictSets) {
+	if (_nextConflictSets.isSet()) {
 
 		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
 

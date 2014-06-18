@@ -30,7 +30,7 @@ void SegmentWriter::writeSegments()
 		_store->associate(segments, valueBlock);
 	}
 	
-	if (_features)
+	if (_features.isSet())
 	{
 		_store->storeFeatures(_features);
 	}

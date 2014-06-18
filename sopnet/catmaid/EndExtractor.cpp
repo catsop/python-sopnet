@@ -17,7 +17,7 @@ void EndExtractor::updateOutputs()
 {
 	unsigned int z = 0;
 	SegmentSet segmentSet;
-	boost::shared_ptr<Segments> outputSegments = boost::make_shared<Segments>();
+	_allSegments = new Segments();
 	
 	LOG_DEBUG(endextractorlog) << "End extractor recieved " << _eeSegments->size() <<
 		" segments" << std::endl;
@@ -62,11 +62,9 @@ void EndExtractor::updateOutputs()
 	
 	foreach (boost::shared_ptr<Segment> segment, segmentSet)
 	{
-		outputSegments->add(segment);
+		_allSegments->add(segment);
 	}
 	
-	LOG_DEBUG(endextractorlog) << "End extractor returning " << outputSegments->size() <<
+	LOG_DEBUG(endextractorlog) << "End extractor returning " << _allSegments->size() <<
 		" segments" << std::endl;
-	
-	*_allSegments = *outputSegments;
 }

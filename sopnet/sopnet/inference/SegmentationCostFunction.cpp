@@ -177,7 +177,7 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	if (_sliceSegmentationCosts.count(slice.getId()))
 		return _sliceSegmentationCosts[slice.getId()];
 
-	util::point3<unsigned int> offset = _cropOffset ? *_cropOffset :
+	util::point3<unsigned int> offset = _cropOffset.isSet() ? *_cropOffset :
 		util::point3<unsigned int>(0, 0, 0);
 	
 	unsigned int section = slice.getSection() - offset.z;

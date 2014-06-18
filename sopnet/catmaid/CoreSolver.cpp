@@ -283,6 +283,9 @@ CoreSolver::updateOutputs()
 	
 	neurons = neuronExtractor->getOutput();
 	segments = problemAssembler->getOutput("segments");
+
+	_outputSegments = new Segments();
+	_neurons = new SegmentTrees();
 	
 	*_outputSegments = *segments;
 	*_neurons = *neurons;

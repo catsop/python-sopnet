@@ -22,5 +22,6 @@ SegmentReader::updateOutputs()
 	segments = _store->retrieveSegments(_blocks);
 	LOG_DEBUG(segmentreaderlog) << "Read " << segments->size() << " segments" << std::endl;
 	
+	_segments = new Segments();
 	*_segments = *segments;
 }

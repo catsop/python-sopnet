@@ -113,7 +113,7 @@ SolutionGuarantor::ConstraintAssembler::assembleConstraint(const ConflictSet& co
 void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 {
 	map<unsigned int, vector<unsigned int> > sliceSegmentMap;
-	boost::shared_ptr<LinearConstraints> constraints = boost::make_shared<LinearConstraints>();
+	_constraints = new LinearConstraints();
 	
 	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
 	{
@@ -135,10 +135,8 @@ void SolutionGuarantor::ConstraintAssembler::updateOutputs()
 	
 	foreach (const ConflictSet conflictSet, *_conflictSets)
 	{
-		constraints->add(*assembleConstraint(conflictSet, sliceSegmentMap));
+		_constraints->add(*assembleConstraint(conflictSet, sliceSegmentMap));
 	}
-	
-	*_constraints = *constraints;
 }
 
 SolutionGuarantor::LinearObjectiveAssembler::LinearObjectiveAssembler()
@@ -167,6 +165,10 @@ SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
 	
 	objective = costReader->getOutput("objective");
 	noCostSegments = costReader->getOutput("costless segments");
+
+	_objective = new LinearObjective();
+	*_objective = *objective;
+
 	
 	LOG_DEBUG(solutionguarantorlog) << "Read no objective coefficients for " <<
 		noCostSegments->size() << " of " << _segments->size() << " segments" << std::endl;
@@ -229,7 +231,7 @@ SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
 			if (segmentCostMap.count(segment))
 			{
 				// So replace the dummy entry in objective with the real one
-				objective->setCoefficient(i, segmentCostMap[segment]);
+				_objective->setCoefficient(i, segmentCostMap[segment]);
 			}
 			++i;
 		}
@@ -240,8 +242,6 @@ SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
 		costWriter->setInput("objective", computedObjective);
 		costWriter->writeCosts();
 	}
-	
-	*_objective = *objective;
 }
 
 
@@ -342,6 +342,7 @@ SolutionGuarantor::updateOutputs()
 {
 	pipeline::Value<Blocks> needBlocks = guaranteeSolution();
 	
+	_needBlocks = new Blocks();
 	*_needBlocks = *needBlocks;
 }
 

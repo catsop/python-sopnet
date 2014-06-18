@@ -25,6 +25,9 @@ void SliceReader::updateOutputs()
 	conflict = _store->retrieveConflictSets(slices);
 	
 	std::sort(slices->begin(), slices->end(), SliceReader::slicePtrComparator);
+
+	_slices = new Slices();
+	_conflictSets = new ConflictSets();
 	
 	*_slices = *slices;
 	*_conflictSets = *conflict;

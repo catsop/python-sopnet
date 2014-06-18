@@ -28,7 +28,7 @@ ConsistencyConstraintExtractor::ConsistencyConstraintExtractor()
 void ConsistencyConstraintExtractor::updateOutputs()
 {
 	LOG_DEBUG(consistencyconstraintextractorlog) << "Updating outputs" << std::endl;
-	boost::shared_ptr<LinearConstraints> linearConstraints = boost::make_shared<LinearConstraints>();
+	_linearConstraints = new LinearConstraints();
 	SectionSlices sliceMap;
 	SectionSlices::const_iterator iter;
 	_sliceSet.clear();
@@ -54,10 +54,8 @@ void ConsistencyConstraintExtractor::updateOutputs()
 			collectSliceConstraints(iter->first, iter->second);
 		boost::shared_ptr<LinearConstraints> segmentConstraints = 
 			assembleSegmentConstraints(sliceConstraints);
-		linearConstraints->addAll(*segmentConstraints);
+		_linearConstraints->addAll(*segmentConstraints);
 	}
-	
-	*_linearConstraints = *linearConstraints;
 }
 
 boost::shared_ptr<LinearConstraints>
@@ -153,7 +151,7 @@ ConsistencyConstraintExtractor::assembleSegmentConstraints(
 				constraint.setCoefficient(segmentId, 1.0);
 		}
 
-		if (_forceExplanation && ! *_forceExplanation)
+		if (_forceExplanation.isSet() && ! *_forceExplanation)
 		{
 			constraint.setRelation(LessEqual);
 		}

@@ -74,6 +74,7 @@ print
 print
 print "Requesting a block"
 
+request = ps.point3(0,0,0)
 solutionGuarantorParameters = ps.SolutionGuarantorParameters()
 solutionGuarantorParameters.setCorePadding(2);
 missing = solutionGuarantor.fill(request, solutionGuarantorParameters, config);

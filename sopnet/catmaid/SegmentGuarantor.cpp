@@ -131,7 +131,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	segmentWriter->setInput("blocks", _blocks);
 	segmentWriter->setInput("store", _segmentStore);
 	
-	if (_rawImageStore)
+	if (_rawImageStore.isSet())
 	{
 		segmentWriter->setInput("features", guaranteeFeatures(segments));
 	}
@@ -150,6 +150,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 
 void SegmentGuarantor::updateOutputs()
 {
+	_needBlocks = new Blocks();
 	*_needBlocks = *guaranteeSegments();
 }
 

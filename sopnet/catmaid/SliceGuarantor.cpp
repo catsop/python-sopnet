@@ -32,6 +32,7 @@ SliceGuarantor::SliceGuarantor()
 void
 SliceGuarantor::updateOutputs()
 {
+	_needBlocks = new Blocks();
 	*_needBlocks = *guaranteeSlices();
 }
 
@@ -57,7 +58,7 @@ SliceGuarantor::checkSlices()
 bool
 SliceGuarantor::sizeOk(util::point3<unsigned int> size)
 {
-	if (_maximumArea)
+	if (_maximumArea.isSet())
 	{
 		return size.x * size.y < *_maximumArea;
 	}
@@ -163,7 +164,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	
 	bool okSlices = false;
 	shared_ptr<SliceExtractor<unsigned char> > sliceExtractor =
-		make_shared<SliceExtractor<unsigned char> >(z);
+		make_shared<SliceExtractor<unsigned char> >(z, true);
 
 	pipeline::Value<Slices> slicesValue;
 	pipeline::Value<ConflictSets> conflictValue;
@@ -191,7 +192,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 
 		sliceExtractor->setInput("membrane", image);
 
-		if (_mserParameters)
+		if (_mserParameters.isSet())
 		{
 			sliceExtractor->setInput("mser parameters", _mserParameters);
 		}

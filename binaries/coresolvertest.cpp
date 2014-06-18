@@ -415,7 +415,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 	foreach (boost::shared_ptr<Image> image, *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
-			boost::make_shared<SliceExtractor<unsigned char> >(i++);
+			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
 		pipeline::Value<Slices> slices;
 		pipeline::Value<ConflictSets> conflictSets;
 		extractor->setInput("membrane", image);
@@ -767,7 +767,7 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	foreach (boost::shared_ptr<Image> image, *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
-			boost::make_shared<SliceExtractor<unsigned char> >(i++);
+			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
 		extractor->setInput("membrane", image);
 		nextSlices = extractor->getOutput("slices");
 		
