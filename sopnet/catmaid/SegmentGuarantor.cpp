@@ -73,7 +73,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	slices = sliceReader->getOutput("slices");
 	
 	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() <<
-		" slices from requested geometry. Expanding blocks to fit." << std::endl;
+		" slices from blocks " << *sliceBlocks << ". Expanding blocks to fit." << std::endl;
 	
 	sliceBlocks = _blocks->getManager()->blocksInBox(slicesBoundingBox(slices));
 
@@ -86,6 +86,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	sliceReader->setInput("blocks", sliceBlocks);
 	slices = sliceReader->getOutput("slices");
 
+	LOG_DEBUG(segmentguarantorlog) << "Altogether, I have " << slices->size() << " slices" << std::endl;
 	
 	for (unsigned int z = zBegin; z < zEnd; ++z)
 	{

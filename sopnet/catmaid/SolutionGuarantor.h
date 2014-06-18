@@ -26,9 +26,10 @@ public:
 	 *                               "segmentation cost parameters" - optional
 	 *   SegmentStore                "segment store"
 	 *   SliceStore                  "slice store"
-	 *   StackStore                  "raw image store"
-	 *   StackStore                  "membrane image store"
+	 *   StackStore                  "raw stack store"
+	 *   StackStore                  "membrane stack store"
 	 *   bool                        "force explanation"
+	 *   unsigned int                "buffer"
 	 * Outputs:
 	 *   Blocks                      "need blocks"
 	 * 

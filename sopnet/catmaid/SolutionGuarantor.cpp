@@ -58,7 +58,8 @@ SolutionGuarantor::SolutionGuarantor()
 	
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
-	registerInput(_rawImageStore, "raw image store");
+	registerInput(_rawImageStore, "raw stack store");
+	registerInput(_membraneStore, "membrane stack store");
 	registerInput(_forceExplanation, "force explanation");
 	registerInput(_buffer, "buffer");
 	
@@ -177,11 +178,11 @@ SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
 	{
 		// When noCostSegments is non-empty, there are Segments for which
 		// no cost was retrieved.
-		boost::shared_ptr<FileContentProvider> contentProvider
-				= boost::make_shared<FileContentProvider>(
-					optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>());
+		std::string filename =
+			optionLinearCostFunctionParametersFileSolutionGuarantor.as<std::string>();
+			
 		boost::shared_ptr<LinearCostFunctionParametersReader> reader
-				= boost::make_shared<LinearCostFunctionParametersReader>();
+				= boost::make_shared<LinearCostFunctionParametersReader>(filename);
 		boost::shared_ptr<SegmentFeatureReader> segmentFeatureReader =
 			boost::make_shared<SegmentFeatureReader>();
 		boost::shared_ptr<LinearCostFunction> linearCostFunction =
@@ -195,17 +196,21 @@ SolutionGuarantor::LinearObjectiveAssembler::updateOutputs()
 		std::vector<double> coefficientVector;
 		unsigned int i = 0;
 		pipeline::Value<LinearObjective> computedObjective;
+		pipeline::Value<Features> features;
+		pipeline::Value<LinearCostFunctionParameters> costFunctionParams = reader->getOutput();
 		
 		// Compute the objective for the costless segments.
-		reader->setInput(contentProvider->getOutput());
+		//reader->setInput(paramFileStream);
 		
 		segmentFeatureReader->setInput("segments", noCostSegments);
 		segmentFeatureReader->setInput("store", _store);
 		segmentFeatureReader->setInput("block manager", _blocks->getManager());
 		segmentFeatureReader->setInput("raw stack store", _rawStackStore);
 		
-		linearCostFunction->setInput("features", segmentFeatureReader->getOutput("features"));
-		linearCostFunction->setInput("parameters", reader->getOutput());
+		features = segmentFeatureReader->getOutput();
+		
+		linearCostFunction->setInput("features", features);
+		linearCostFunction->setInput("parameters", costFunctionParams);
 		
 		objectiveGenerator->setInput("segments", noCostSegments);
 		objectiveGenerator->addInput("cost functions",

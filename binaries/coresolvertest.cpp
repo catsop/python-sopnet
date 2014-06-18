@@ -1108,7 +1108,8 @@ bool coreSolver(
 	solutionGuarantor->setInput("cores", cores);
 	solutionGuarantor->setInput("slice store", sliceStore);
 	solutionGuarantor->setInput("segment store", segmentStore);
-	solutionGuarantor->setInput("raw image store", rawStackStore);
+	solutionGuarantor->setInput("raw stack store", rawStackStore);
+	solutionGuarantor->setInput("membrane stack store", membraneStackStore);
 	solutionGuarantor->setInput("buffer", bufferValue);
 	solutionGuarantor->setInput("force explanation", forceExplanation);
 	solutionGuarantor->setInput("segmentation cost parameters", segmentationCostParameters);
