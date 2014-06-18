@@ -95,6 +95,7 @@ private:
 	pipeline::Input<SegmentStore> _segmentStore;
 	pipeline::Input<SliceStore> _sliceStore;
 	pipeline::Input<StackStore> _rawImageStore;
+	pipeline::Input<StackStore> _membraneStore;
 	pipeline::Input<bool> _forceExplanation;
 	pipeline::Input<unsigned int> _buffer;
 	
