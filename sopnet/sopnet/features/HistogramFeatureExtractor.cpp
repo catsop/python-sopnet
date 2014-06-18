@@ -23,10 +23,19 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 void
 HistogramFeatureExtractor::updateOutputs() {
 
+	LOG_DEBUG(histogramfeaturelog) << "clearing features" << std::endl;
+
 	_features->clear();
 	
-	LOG_DEBUG(histogramfeaturelog) << "Got images of size" << (*_sections)[0]->width() << " x " <<
-		(*_sections)[0]->height() << std::endl;
+	if (_sections->size() > 0) {
+
+		LOG_DEBUG(histogramfeaturelog) << "Got images of size " << (*_sections)[0]->width() << " x " <<
+			(*_sections)[0]->height() << std::endl;
+
+	} else {
+
+		LOG_DEBUG(histogramfeaturelog) << "image stack is empty" << std::endl;
+	}
 
 	for (unsigned int i = 0; i < _numBins; i++)
 		_features->addName("e histogram " + boost::lexical_cast<std::string>(i));

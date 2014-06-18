@@ -31,10 +31,10 @@ SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 
 	if (_segments.isSet() && _rawSections.isSet()) {
 
-		_geometryFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
-		_histogramFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
-		_histogramFeatureExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
-		_typeFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
+		_geometryFeatureExtractor->setInput("segments", _segments);
+		_histogramFeatureExtractor->setInput("segments", _segments);
+		_histogramFeatureExtractor->setInput("raw sections", _rawSections);
+		_typeFeatureExtractor->setInput("segments", _segments);
 	}
 }
 

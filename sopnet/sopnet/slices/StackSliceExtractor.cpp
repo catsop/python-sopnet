@@ -45,7 +45,7 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 	LOG_DEBUG(stacksliceextractorlog) << "image stack set" << std::endl;
 
 	// connect input image stack to slice image extractor
-	_sliceImageExtractor->setInput(_sliceImageStack.getAssignedOutput());
+	_sliceImageExtractor->setInput(_sliceImageStack);
 
 	// clear slice collector content
 	_sliceCollector->clearInputs(0);
