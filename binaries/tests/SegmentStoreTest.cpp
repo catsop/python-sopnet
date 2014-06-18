@@ -2,6 +2,7 @@
 #include <sopnet/catmaid/persistence/LocalSliceStore.h>
 #include <sopnet/catmaid/persistence/LocalSegmentStore.h>
 #include <sopnet/catmaid/SegmentGuarantor.h>
+#include <sopnet/catmaid/SolutionGuarantor.h>
 #include <sopnet/catmaid/persistence/SegmentReader.h>
 #include <sopnet/catmaid/persistence/CostReader.h>
 #include <sopnet/catmaid/persistence/CostWriter.h>
@@ -82,7 +83,8 @@ SegmentStoreTest::run(boost::shared_ptr<SegmentStoreTestParam> arg)
 	boost::shared_ptr<SegmentStore> testSegmentStore = _factory->createSegmentStore();
 	
 	guaranteeSlices(sliceStore, arg->membraneStackStore, blockManager);
-	guaranteeSegments(segmentStore, sliceStore, arg->rawStackStore, blockManager);
+	guaranteeSegments(segmentStore, sliceStore, arg->membraneStackStore,
+					  arg->rawStackStore, blockManager);
 	copyStores(segmentStore, testSegmentStore, blockManager);
 	return verifyStores(segmentStore, testSegmentStore, blockManager);
 }
@@ -108,20 +110,56 @@ SegmentStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore
 void
 SegmentStoreTest::guaranteeSegments(const boost::shared_ptr<SegmentStore> segmentStore,
 									const boost::shared_ptr<SliceStore> sliceStore,
-									const boost::shared_ptr<StackStore> stackStore,
+									const boost::shared_ptr<StackStore> membraneStackStore,
+									const boost::shared_ptr<StackStore> rawStackStore,
 									const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<SegmentGuarantor> guarantor = boost::make_shared<SegmentGuarantor>();
+	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
+	boost::shared_ptr<SolutionGuarantor> solutionGuarantor =
+		boost::make_shared<SolutionGuarantor>();
 	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
 															   blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
+	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
+	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
+	pipeline::Value<unsigned int> one = pipeline::Value<unsigned int>(1u);
 	
-	guarantor->setInput("blocks", blocks);
-	guarantor->setInput("slice store", sliceStore);
-	guarantor->setInput("segment store", segmentStore);
-	guarantor->setInput("stack store", stackStore);
+	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
+		boost::make_shared<PriorCostFunctionParameters>();
+
+	pipeline::Value<Blocks> shouldBeEmptyBlocks;
+
+	priorCostFunctionParameters->priorContinuation = -50;
+	priorCostFunctionParameters->priorBranch = -100;
+
+	segmentGuarantor->setInput("blocks", blocks);
+	segmentGuarantor->setInput("slice store", sliceStore);
+	segmentGuarantor->setInput("segment store", segmentStore);
+	segmentGuarantor->setInput("stack store", rawStackStore);
+
+	segmentGuarantor->guaranteeSegments();
 	
-	guarantor->guaranteeSegments();
+	solutionGuarantor->setInput("prior cost parameters", priorCostFunctionParameters);
+	solutionGuarantor->setInput("cores", cores);
+	solutionGuarantor->setInput("slice store", sliceStore);
+	solutionGuarantor->setInput("segment store", segmentStore);
+	solutionGuarantor->setInput("force explanation", yeah);
+	solutionGuarantor->setInput("raw stack store", rawStackStore);
+	solutionGuarantor->setInput("membrane stack store", membraneStackStore);
+	solutionGuarantor->setInput("buffer", one);
+	
+	shouldBeEmptyBlocks = solutionGuarantor->guaranteeSolution();
+	
+	if (!shouldBeEmptyBlocks->empty())
+	{
+		LOG_ERROR(segmentstoretestlog) <<
+			"Output of solutiongurantor should have been empty, instead got:" << std::endl;
+		foreach (boost::shared_ptr<Block> block, *shouldBeEmptyBlocks)
+		{
+			LOG_ERROR(segmentstoretestlog) << "\t" << *block << std::endl;
+		}
+	}
+	
 }
 
 
@@ -145,26 +183,30 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	boost::shared_ptr<SegmentReader> reader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<SegmentWriter> writer = boost::make_shared<SegmentWriter>();
 	
+	pipeline::Value<Segments> segments;
+	
 	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
 	
 	reader->setInput("blocks", blocks);
 	reader->setInput("store", store);
 	
-	featureReader->setInput("segments", reader->getOutput("segments"));
+	segments = reader->getOutput();
+	
+	featureReader->setInput("segments", segments);
 	featureReader->setInput("store", store);
 	featureReader->setInput("stored only", yeah);
 	
 	costReader->setInput("store", store);
-	costReader->setInput("segments", reader->getOutput("segments"));
+	costReader->setInput("segments", segments);
 	
 	writer->setInput("blocks", blocks);
 	writer->setInput("store", testStore);
-	writer->setInput("segments", reader->getOutput("segments"));
+	writer->setInput("segments", segments);
 	writer->setInput("features", featureReader->getOutput());
 	
 	costWriter->setInput("store", testStore);
-	costWriter->setInput("segments", reader->getOutput("segments"));
-	costWriter->setInput("objective", costReader->getOutput());
+	costWriter->setInput("segments", segments);
+	costWriter->setInput("objective", costReader->getOutput("objective"));
 	
 	writer->writeSegments();
 	costWriter->writeCosts();
@@ -173,8 +215,8 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	solutionWriter->setInput("store", testStore);
 	
 	solutionWriter->setInput("solution", solutionReader->getOutput());
-	solutionReader->setInput("segments", reader->getOutput("segments"));
-	solutionWriter->setInput("segments", reader->getOutput("segments"));
+	solutionReader->setInput("segments", segments);
+	solutionWriter->setInput("segments", segments);
 	
 	foreach (boost::shared_ptr<Core> core, *cores)
 	{
@@ -210,7 +252,8 @@ SegmentStoreTest::costEqual(const boost::shared_ptr<Segments> segments1,
 	}
 	
 	i = 0;
-	
+	LOG_DEBUG(segmentstoretestlog) << "Testing cost equality over " << segments1->size() <<
+		" segments" << std::endl;
 	foreach (boost::shared_ptr<Segment> segment, segments1->getSegments())
 	{
 		if (coreSegmentIdMap.count(segment))
@@ -230,6 +273,7 @@ SegmentStoreTest::costEqual(const boost::shared_ptr<Segments> segments1,
 			equal = false;
 		}
 	}
+	LOG_DEBUG(segmentstoretestlog) << std::endl;
 	
 	return equal;
 }
@@ -361,7 +405,7 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
 		boost::shared_ptr<Blocks> singletonBlocks = boost::make_shared<Blocks>();
-		pipeline::Value<Segments> localSegments, testSegments;
+		pipeline::Value<Segments> localSegments, testSegments, localNF, testNF;
 		
 		pipeline::Value<Features> localFeatures, testFeatures;
 		pipeline::Value<LinearObjective> localObjective, testObjective;
@@ -402,11 +446,16 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 		
 		localObjective = localCostReader->getOutput("objective");
 		testObjective = testCostReader->getOutput("objective");
+		localNF = localCostReader->getOutput("costless segments");
+		testNF = testCostReader->getOutput("costless segments");
+		
+		LOG_DEBUG(segmentstoretestlog) << "Local NF has " << localNF->size() << ", test " <<
+			testNF->size() << std::endl;
 		
 		if (!costEqual(localSegments, localObjective, testSegments, testObjective))
 		{
 			LOG_ERROR(segmentstoretestlog) << "LinearObjectives unequal in block " << *block << std::endl;
-			_reason << "LinearObjectives unequal in block " << *block << std::endl;
+			_reason << std::endl << "LinearObjectives unequal in block " << *block << std::endl;
 			return false;
 		}
 	}

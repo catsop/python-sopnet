@@ -66,7 +66,8 @@ private:
 	
 	void guaranteeSegments(const boost::shared_ptr<SegmentStore> segmentStore,
 							const boost::shared_ptr<SliceStore> sliceStore,
-							const boost::shared_ptr<StackStore> stackStore,
+							const boost::shared_ptr<StackStore> membraneStackStore,
+							const boost::shared_ptr<StackStore> rawStackStore,
 							const boost::shared_ptr<BlockManager> blockManager);
 	
 	bool segmentsEqual(const boost::shared_ptr<Segments> segments1,
