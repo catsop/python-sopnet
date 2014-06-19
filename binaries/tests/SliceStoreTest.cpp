@@ -102,6 +102,11 @@ SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
 	boost::shared_ptr<SliceReader> localReader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<SliceReader> testReader = boost::make_shared<SliceReader>();
 	
+	pipeline::Value<Slices> localSlices = localReader->getOutput("slices");
+	pipeline::Value<Slices> testSlices = testReader->getOutput("slices");
+	pipeline::Value<ConflictSets> localSets = localReader->getOutput("conflict sets");
+	pipeline::Value<ConflictSets> testSets = testReader->getOutput("conflict sets");
+	
 	localReader->setInput("store", store);
 	testReader->setInput("store", testStore);
 	
@@ -110,10 +115,8 @@ SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
 		localReader->setInput("blocks", singletonBlocks(block));
 		testReader->setInput("blocks", singletonBlocks(block));
 		
-		pipeline::Value<Slices> localSlices = localReader->getOutput("slices");
-		pipeline::Value<Slices> testSlices = testReader->getOutput("slices");
-		pipeline::Value<ConflictSets> localSets = localReader->getOutput("conflict sets");
-		pipeline::Value<ConflictSets> testSets = testReader->getOutput("conflict sets");
+		localSlices->size();
+		testSlices->size();
 		
 		if (!slicesEqual(localSlices, testSlices))
 		{
