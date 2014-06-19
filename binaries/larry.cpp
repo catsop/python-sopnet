@@ -56,26 +56,26 @@ int main(int optionc, char** optionv)
 	
 	try
 	{
-// 		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
-// 			catsoptest::DjangoTestSuite::djangoTestSuite("catmaid:8000", 4, 3);
-// 		djangoSuite->runAll();
+		boost::shared_ptr<catsoptest::TestSuite> djangoSuite =
+			catsoptest::DjangoTestSuite::djangoTestSuite("catmaid:8000", 4, 3);
+		djangoSuite->runAll();
 // 		boost::shared_ptr<catsoptest::TestSuite> localSuite = 
 // 			catsoptest::LocalTestSuite::localTestSuite(util::point3<unsigned int>(179, 168, 5));
 // 		localSuite->runAll();
-		boost::shared_ptr<StackStore> stackStore = boost::make_shared<CatmaidStackStore>("catmaid:8000", 1, 1);
-		boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-																   util::point3<unsigned int>(1000,1000,5));
-		boost::shared_ptr<ImageStack> stack = stackStore->getImageStack(*box);
-		
-		pipeline::Process<ImageStackView> stackView;
-		pipeline::Process<gui::ZoomView> zoomView;
-		pipeline::Process<gui::Window> window("yay");
-		
-		stackView->setInput(stack);
-		zoomView->setInput(stackView->getOutput());
-		window->setInput(zoomView->getOutput());
-		
-		window->processEvents();
+// 		boost::shared_ptr<StackStore> stackStore = boost::make_shared<CatmaidStackStore>("catmaid:8000", 1, 1);
+// 		boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
+// 																   util::point3<unsigned int>(1000,1000,5));
+// 		boost::shared_ptr<ImageStack> stack = stackStore->getImageStack(*box);
+// 		
+// 		pipeline::Process<ImageStackView> stackView;
+// 		pipeline::Process<gui::ZoomView> zoomView;
+// 		pipeline::Process<gui::Window> window("yay");
+// 		
+// 		stackView->setInput(stack);
+// 		zoomView->setInput(stackView->getOutput());
+// 		window->setInput(zoomView->getOutput());
+// 		
+// 		window->processEvents();
 		
 	}
 	catch (Exception& e)

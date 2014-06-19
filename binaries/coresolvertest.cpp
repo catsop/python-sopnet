@@ -42,7 +42,9 @@
 #include <catmaid/persistence/SegmentPointerHash.h>
 #include <sopnet/segments/SegmentSet.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
-
+#include <tests/DjangoGenerators.h>
+#include <catmaid/django/DjangoSliceStore.h>
+#include <catmaid/django/DjangoSegmentStore.h>
 
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>
@@ -1537,6 +1539,16 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	
 	LOG_USER(out) << "Testing solutions" << std::endl;
 	
+	std::string server = "catmaid:8000";
+	unsigned int project = 4, stack = 3;
+	
+	catsoptest::clearDJSopnet(server, project, stack);
+	
+	boost::shared_ptr<DjangoBlockManager> djBlockManager =
+		catsoptest::getNewDjangoBlockManager(server, project, stack, blockSize, tempCoreSize);
+	boost::shared_ptr<BlockManager> blockManager = djBlockManager;
+		
+	
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
 	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
@@ -1547,8 +1559,7 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<PriorCostFunctionParameters> priorCostFunctionParameters = 
 		boost::make_shared<PriorCostFunctionParameters>();
 		
-	boost::shared_ptr<BlockManager> blockManager =
-		boost::make_shared<LocalBlockManager>(stackSize, blockSize, tempCoreSize);
+	
 	
 	boost::shared_ptr<Box<> > stackBox =
 		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
@@ -1567,8 +1578,9 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 	boost::shared_ptr<LinearObjective> sopnetObjective = boost::make_shared<LinearObjective>();
 	boost::shared_ptr<LinearObjective> blockwiseObjective =
 		boost::make_shared<LinearObjective>();
-	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
-	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
+	boost::shared_ptr<DjangoSliceStore> djSliceStore = boost::make_shared<DjangoSliceStore>(djBlockManager);
+	boost::shared_ptr<SliceStore> sliceStore = djSliceStore;
+	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<DjangoSegmentStore>(djSliceStore);
 
 	boost::shared_ptr<Segments> dummySegments = boost::make_shared<Segments>();
 	boost::shared_ptr<LinearObjective> dummyObjective = boost::make_shared<LinearObjective>();
