@@ -3,13 +3,14 @@
 
 #include <string>
 #include <sopnet/block/BlockManager.h>
+#include <catmaid/django/DjangoBlockManager.h>
 
 namespace catsoptest
 {
 	bool clearDJSopnet(const std::string& server, const unsigned int project,
 					   const unsigned int stack);
 	
-	boost::shared_ptr<BlockManager> getNewDjangoBlockManager(
+	boost::shared_ptr<DjangoBlockManager> getNewDjangoBlockManager(
 		const std::string& server, const unsigned int project, const unsigned int stack,
 		const util::point3<unsigned int> blockSize,
 		const util::point3<unsigned int> coreSizeInBlocks);

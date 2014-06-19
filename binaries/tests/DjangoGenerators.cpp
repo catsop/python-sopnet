@@ -75,7 +75,7 @@ bool clearDJSopnet(const std::string& server, const unsigned int project, const 
 	}
 }
 
-boost::shared_ptr<BlockManager> getNewDjangoBlockManager(const std::string& server,
+boost::shared_ptr<DjangoBlockManager> getNewDjangoBlockManager(const std::string& server,
 												const unsigned int project,
 												const unsigned int stack,
 												const util::point3<unsigned int> blockSize,
@@ -96,7 +96,7 @@ boost::shared_ptr<BlockManager> getNewDjangoBlockManager(const std::string& serv
 		if (HttpClient::checkDjangoError(pt) ||
 			pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 		{
-			boost::shared_ptr<BlockManager> nullManager = boost::shared_ptr<BlockManager>();
+			boost::shared_ptr<DjangoBlockManager> nullManager = boost::shared_ptr<DjangoBlockManager>();
 			LOG_ERROR(djangogeneratorslog) << "Error during block setup for project " << project <<
 				" and stack " << stack << " on server " << server << std::endl;
 			return nullManager;
@@ -108,7 +108,7 @@ boost::shared_ptr<BlockManager> getNewDjangoBlockManager(const std::string& serv
 	}
 	else
 	{
-		boost::shared_ptr<BlockManager> nullManager = boost::shared_ptr<BlockManager>();
+		boost::shared_ptr<DjangoBlockManager> nullManager = boost::shared_ptr<DjangoBlockManager>();
 		return nullManager;
 	}
 }
