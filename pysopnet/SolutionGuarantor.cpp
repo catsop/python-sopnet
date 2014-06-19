@@ -39,7 +39,7 @@ SolutionGuarantor::fill(
 	solutionGuarantor->setInput("cores", cores);
 	solutionGuarantor->setInput("segment store", segmentStore);
 	solutionGuarantor->setInput("slice store", sliceStore);
-	solutionGuarantor->setInput("raw image store", rawStackStore);
+	solutionGuarantor->setInput("raw stack store", rawStackStore);
 	solutionGuarantor->setInput("force explanation", forceExplanation);
 	solutionGuarantor->setInput("buffer", corePadding);
 
