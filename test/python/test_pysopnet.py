@@ -9,6 +9,7 @@ ps.setLogLevel(4);
 print "Creating a poject configuration"
 
 config = ps.ProjectConfiguration()
+config.setBackendType(ps.BackendType.Local)
 
 print "setting Django URL"
 config.setDjangoUrl("http://django.url")

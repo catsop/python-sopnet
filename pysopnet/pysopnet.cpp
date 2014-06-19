@@ -71,6 +71,11 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setVolumeSize", &ProjectConfiguration::setVolumeSize)
 			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>());
 
+	// BackendType
+	boost::python::enum_<ProjectConfiguration::BackendType>("BackendType")
+			.value("Local", ProjectConfiguration::Local)
+			.value("Django", ProjectConfiguration::Django);
+
 	// Locations
 	boost::python::class_<Locations>("Locations")
 			.def(boost::python::vector_indexing_suite<Locations>());
