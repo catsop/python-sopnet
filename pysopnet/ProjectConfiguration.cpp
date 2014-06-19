@@ -27,6 +27,18 @@ ProjectConfiguration::getDjangoUrl() const {
 }
 
 void
+ProjectConfiguration::setCatmaidHost(const std::string& url) {
+
+	_catmaidHost = url;
+}
+
+const std::string&
+ProjectConfiguration::getCatmaidHost() const {
+
+	return _catmaidHost;
+}
+
+void
 ProjectConfiguration::setCatmaidStackId(unsigned int stackId) {
 
 	_stackId = stackId;

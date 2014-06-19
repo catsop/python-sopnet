@@ -1,5 +1,6 @@
 #include <sopnet/block/LocalBlockManager.h>
 #include <catmaid/django/DjangoSegmentStore.h>
+#include <catmaid/django/CatmaidStackStore.h>
 #include <catmaid/persistence/LocalStackStore.h>
 #include <catmaid/persistence/LocalSliceStore.h>
 #include <catmaid/persistence/LocalSegmentStore.h>
@@ -48,10 +49,13 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
 	}
 
-	// catmaid image stack store does not exist, yet
-	//if (configuration.getBackendType() == ProjectConfiguration::Django) {
+	if (configuration.getBackendType() == ProjectConfiguration::Django) {
 
-	//}
+		return boost::make_shared<CatmaidStackStore>(
+				configuration.getCatmaidHost(),
+				configuration.getCatmaidProjectId(),
+				configuration.getCatmaidStackId());
+	}
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }

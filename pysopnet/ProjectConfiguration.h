@@ -16,7 +16,17 @@ public:
 
 	enum BackendType {
 
+		/**
+		 * Use local stores. For this, the block size, the volume size, and the 
+		 * core size have to be set.
+		 */
 		Local,
+
+		/**
+		 * Use Django stores. For this, the URL to the Django server, the 
+		 * hostname of the CATMAID instance, and the CATMAID project and stack 
+		 * id have to be set.
+		 */
 		Django
 	};
 
@@ -39,6 +49,17 @@ public:
 	 * Get the Django URL needed to access the Catsop database.
 	 */
 	const std::string& getDjangoUrl() const;
+
+	/**
+	 * Set the CATMAID host name in the form "host:port". The ":port" can be 
+	 * omited if it is 80 (http).
+	 */
+	void setCatmaidHost(const std::string& host);
+
+	/**
+	 * Get the CATMAID host name.
+	 */
+	const std::string& getCatmaidHost() const;
 
 	/**
 	 * Set the CATMAID stack id to be used in the Django backend.
@@ -95,6 +116,8 @@ private:
 	BackendType _backendType;
 
 	std::string _djangoUrl;
+
+	std::string _catmaidHost;
 
 	unsigned int _stackId;
 
