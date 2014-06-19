@@ -15,18 +15,6 @@ ProjectConfiguration::getBackendType() const {
 }
 
 void
-ProjectConfiguration::setDjangoUrl(const std::string& url) {
-
-	_djangoUrl = url;
-}
-
-const std::string&
-ProjectConfiguration::getDjangoUrl() const {
-
-	return _djangoUrl;
-}
-
-void
 ProjectConfiguration::setCatmaidHost(const std::string& url) {
 
 	_catmaidHost = url;

@@ -41,16 +41,6 @@ public:
 	BackendType getBackendType() const;
 
 	/**
-	 * Set the Django URL needed to access the Catsop database.
-	 */
-	void setDjangoUrl(const std::string& url);
-
-	/**
-	 * Get the Django URL needed to access the Catsop database.
-	 */
-	const std::string& getDjangoUrl() const;
-
-	/**
 	 * Set the CATMAID host name in the form "host:port". The ":port" can be 
 	 * omited if it is 80 (http).
 	 */
@@ -114,8 +104,6 @@ public:
 private:
 
 	BackendType _backendType;
-
-	std::string _djangoUrl;
 
 	std::string _catmaidHost;
 

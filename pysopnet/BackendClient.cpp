@@ -29,7 +29,7 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
 
 		_djangoBlockManager = DjangoBlockManager::getBlockManager(
-				configuration.getDjangoUrl(),
+				configuration.getCatmaidHost(),
 				configuration.getCatmaidStackId(),
 				configuration.getCatmaidProjectId());
 
