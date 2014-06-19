@@ -2,6 +2,7 @@
 #include <util/httpclient.h>
 #include <util/Logger.h>
 #include <catmaid/django/DjangoUtils.h>
+#include <boost/algorithm/string/replace.hpp>
 
 logger::LogChannel djangosegmentstorelog("djangosegmentstorelog", "[DjangoSegmentStore] ");
 
@@ -69,7 +70,7 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 	if (HttpClient::checkDjangoError(insertPt))
 	{
 		LOG_ERROR(djangosegmentstorelog) << "Error storing segments" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was" << insertUrl.str() << std::endl;
+		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << insertUrl.str() << std::endl;
 		LOG_ERROR(djangosegmentstorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
 		return;
 	}
@@ -106,7 +107,7 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 	pipeline::Value<Segments> segments = pipeline::Value<Segments>();
 	
 	appendProjectAndStack(url);
-	url << "segments_by_blocks?block_ids=";
+	url << "/segments_by_blocks?block_ids=";
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
@@ -184,6 +185,7 @@ int DjangoSegmentStore::storeFeatures(pipeline::Value<Features> features)
 	setFeatureNames(features->getNames());
 	
 	appendProjectAndStack(url);
+	url << "/store_segment_features";
 	
 	for (it = idMap.begin(); it != idMap.end(); ++it)
 	{
@@ -213,7 +215,7 @@ int DjangoSegmentStore::storeFeatures(pipeline::Value<Features> features)
 	if (HttpClient::checkDjangoError(pt))
 	{
 		LOG_ERROR(djangosegmentstorelog) << "Error storing features" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was" << url.str() << std::endl;
+		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
 		LOG_ERROR(djangosegmentstorelog) << "\tData was\n\t" << data.str() << std::endl;
 		
 		if (HttpClient::ptreeHasChild(pt, "count"))
@@ -483,7 +485,7 @@ DjangoSegmentStore::retrieveSolution(pipeline::Value<Segments> segments,
 	pipeline::Value<Solution> solution = pipeline::Value<Solution>();
 	
 	appendProjectAndStack(url);
-	url << "?core_id=" << core->getId() << "&hash=";
+	url << "/solutions_by_core_and_segments?core_id=" << core->getId() << "&hash=";
 	
 	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
@@ -504,7 +506,8 @@ DjangoSegmentStore::retrieveSolution(pipeline::Value<Segments> segments,
 		foreach (ptree::value_type solutionNode, solutionsTree)
 		{
 			std::string hash = solutionNode.second.get_child("hash").get_value<std::string>();
-			double solution = solutionNode.second.get_child("solution").get_value<double>();
+			double solution = solutionNode.second.get_child(
+				"solution").get_value<std::string>().compare("true") == 0 ? 1.0 : 0.0;
 			solutionMap[hash] = solution;
 		}
 		
@@ -579,7 +582,7 @@ DjangoSegmentStore::generateHash(const boost::shared_ptr<Segment> segment)
 }
 
 void
-DjangoSegmentStore::setFeatureNames(const std::vector< std::string >& featureNames)
+DjangoSegmentStore::setFeatureNames(const std::vector<std::string>& featureNames)
 {
 	if (!_featureNamesFlag)
 	{
@@ -593,9 +596,14 @@ DjangoSegmentStore::setFeatureNames(const std::vector< std::string >& featureNam
 		
 		foreach (std::string name, featureNames)
 		{
+			boost::replace_all(name, " ", "+");
+			boost::replace_all(name, ",", "+");
+			boost::replace_all(name, "&", "+");
 			url << delim << name;
 			delim = ",";
 		}
+		
+		LOG_USER(djangosegmentstorelog) << "Setting feature names via url: " << url.str() << std::endl;
 		
 		pt = HttpClient::getPropertyTree(url.str());
 		
