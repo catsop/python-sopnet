@@ -603,7 +603,7 @@ DjangoSegmentStore::setFeatureNames(const std::vector<std::string>& featureNames
 			delim = ",";
 		}
 		
-		LOG_USER(djangosegmentstorelog) << "Setting feature names via url: " << url.str() << std::endl;
+		LOG_DEBUG(djangosegmentstorelog) << "Setting feature names via url: " << url.str() << std::endl;
 		
 		pt = HttpClient::getPropertyTree(url.str());
 		
