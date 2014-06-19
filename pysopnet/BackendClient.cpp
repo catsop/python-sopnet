@@ -13,9 +13,9 @@ namespace python {
 boost::shared_ptr<BlockManager>
 BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 
-	LOG_USER(pylog) << "[BackendClient] create local block manager" << std::endl;
-
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+
+		LOG_USER(pylog) << "[BackendClient] create local block manager" << std::endl;
 
 		boost::shared_ptr<LocalBlockManager> localBlockManager = boost::make_shared<LocalBlockManager>(
 				LocalBlockManager(
@@ -28,9 +28,11 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
 
+		LOG_USER(pylog) << "[BackendClient] create django block manager" << std::endl;
+
 		_djangoBlockManager = DjangoBlockManager::getBlockManager(
 				configuration.getCatmaidHost(),
-				configuration.getCatmaidStackId(),
+				configuration.getCatmaidRawStackId(),
 				configuration.getCatmaidProjectId());
 
 		return _djangoBlockManager;
@@ -42,19 +44,27 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 boost::shared_ptr<StackStore>
 BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
 
-	LOG_USER(pylog) << "[BackendClient] create local stack store for membranes" << std::endl;
-
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+
+		LOG_USER(pylog) << "[BackendClient] create local stack store for membranes" << std::endl;
 
 		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
 
-		return boost::make_shared<CatmaidStackStore>(
-				configuration.getCatmaidHost(),
-				configuration.getCatmaidProjectId(),
-				configuration.getCatmaidStackId());
+		LOG_USER(pylog) << "[BackendClient] create django stack store for membranes" << std::endl;
+
+		if (type == Raw)
+			return boost::make_shared<CatmaidStackStore>(
+					configuration.getCatmaidHost(),
+					configuration.getCatmaidProjectId(),
+					configuration.getCatmaidRawStackId());
+		else
+			return boost::make_shared<CatmaidStackStore>(
+					configuration.getCatmaidHost(),
+					configuration.getCatmaidProjectId(),
+					configuration.getCatmaidMembraneStackId());
 	}
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
@@ -63,14 +73,16 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 boost::shared_ptr<SliceStore>
 BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 
-	LOG_USER(pylog) << "[BackendClient] create local slice store" << std::endl;
-
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+
+		LOG_USER(pylog) << "[BackendClient] create local slice store" << std::endl;
 
 		return boost::make_shared<LocalSliceStore>();
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		LOG_USER(pylog) << "[BackendClient] create django slice store" << std::endl;
 
 		if (!_djangoBlockManager)
 			createBlockManager(configuration);
@@ -86,14 +98,16 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 boost::shared_ptr<SegmentStore>
 BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
-	LOG_USER(pylog) << "[BackendClient] create local segment store" << std::endl;
-
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+
+		LOG_USER(pylog) << "[BackendClient] create local segment store" << std::endl;
 
 		return boost::make_shared<LocalSegmentStore>();
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		LOG_USER(pylog) << "[BackendClient] create django segment store" << std::endl;
 
 		if (!_djangoSliceStore)
 			createSliceStore(configuration);
@@ -107,14 +121,16 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 boost::shared_ptr<SolutionStore>
 BackendClient::createSolutionStore(const ProjectConfiguration& configuration) {
 
-	LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
-
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+
+		LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
 
 		return boost::make_shared<LocalSolutionStore>();
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+
+		LOG_USER(pylog) << "[BackendClient] create django solution store" << std::endl;
 
 		// there is no solution store for the django backend
 		return boost::shared_ptr<SolutionStore>();

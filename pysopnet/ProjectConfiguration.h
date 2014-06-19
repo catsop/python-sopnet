@@ -52,14 +52,28 @@ public:
 	const std::string& getCatmaidHost() const;
 
 	/**
-	 * Set the CATMAID stack id to be used in the Django backend.
+	 * Set the CATMAID stack id of the raw data to be used in the Django 
+	 * backend.
 	 */
-	void setCatmaidStackId(unsigned int stackId);
+	void setCatmaidRawStackId(unsigned int stackId);
 
 	/**
-	 * Get the CATMAID stack id to be used in the Django backend.
+	 * Get the CATMAID stack id of the raw data to be used in the Django 
+	 * backend.
 	 */
-	unsigned int getCatmaidStackId() const;
+	unsigned int getCatmaidRawStackId() const;
+
+	/**
+	 * Set the CATMAID stack id of the membrane data to be used in the Django 
+	 * backend.
+	 */
+	void setCatmaidMembraneStackId(unsigned int stackId);
+
+	/**
+	 * Get the CATMAID stack id of the membrane data to be used in the Django 
+	 * backend.
+	 */
+	unsigned int getCatmaidMembraneStackId() const;
 
 	/**
 	 * Set the CATMAID project id to be used in the Django backend.
@@ -107,8 +121,8 @@ private:
 
 	std::string _catmaidHost;
 
-	unsigned int _stackId;
-
+	unsigned int _rawStackId;
+	unsigned int _membraneStackId;
 	unsigned int _projectId;
 
 	util::point3<unsigned int> _blockSize;

@@ -27,15 +27,27 @@ ProjectConfiguration::getCatmaidHost() const {
 }
 
 void
-ProjectConfiguration::setCatmaidStackId(unsigned int stackId) {
+ProjectConfiguration::setCatmaidRawStackId(unsigned int stackId) {
 
-	_stackId = stackId;
+	_rawStackId = stackId;
 }
 
 unsigned int
-ProjectConfiguration::getCatmaidStackId() const {
+ProjectConfiguration::getCatmaidRawStackId() const {
 
-	return _stackId;
+	return _rawStackId;
+}
+
+void
+ProjectConfiguration::setCatmaidMembraneStackId(unsigned int stackId) {
+
+	_membraneStackId = stackId;
+}
+
+unsigned int
+ProjectConfiguration::getCatmaidMembraneStackId() const {
+
+	return _membraneStackId;
 }
 
 void
