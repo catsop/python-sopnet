@@ -444,10 +444,10 @@ DjangoSegmentStore::storeSolution(pipeline::Value<Segments> segments,
 		
 		std::string hash = getHash(segment);
 		unsigned int j = indices[i];
-		double dSolution = (*solution)[j];
+		bool bSolution = (*solution)[j] == 1.0;
 		
 		url << "&hash_" << i << "=" << hash;
-		url << "&solution_" << i << "=" << dSolution;
+		url << "&solution_" << i << "=" << bSolution;
 		++i;
 	}
 	
