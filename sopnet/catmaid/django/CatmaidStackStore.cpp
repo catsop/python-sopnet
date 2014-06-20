@@ -69,14 +69,17 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 	boost::shared_ptr<Image> imageOut = boost::make_shared<Image>(bound.width(), bound.height());
 	
 	tileCMin = bound.minX / _tileWidth;
-	tileCMax = bound.maxX / _tileWidth;
 	tileRMin = bound.minY / _tileHeight;
-	tileRMax = bound.maxY / _tileHeight;
+	// For the max, we want the integer division to round up to get exclusive 
+	// (c,r)-max coordinates. We do that by adding the tilesize - 1 before 
+	// dividing and rounding down.
+	tileCMax = (bound.maxX + _tileWidth - 1) / _tileWidth;
+	tileRMax = (bound.maxY + _tileHeight -1) / _tileHeight;
 	
-	for (unsigned int r = tileRMin; r <= tileRMax; ++r)
+	for (unsigned int r = tileRMin; r < tileRMax; ++r)
 	{
 		std::vector<boost::shared_ptr<Image> > imageVector;
-		for (unsigned int c = tileCMin; c <= tileCMax; ++c)
+		for (unsigned int c = tileCMin; c < tileCMax; ++c)
 		{
 			boost::shared_ptr<ImageHttpReader> reader =
 				boost::make_shared<ImageHttpReader>(tileURL(c, r, section));
