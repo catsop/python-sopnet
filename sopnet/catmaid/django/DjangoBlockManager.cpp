@@ -343,10 +343,7 @@ bool DjangoBlockManager::getFlag(const unsigned int id, const std::string& flagN
 		return false;
 	}
 	
-	flagStatus = pt->get_child(flagName).get_value<std::string>();
-	
-	return flagStatus.compare("true") == 0;
-
+	return pt->get_child(flagName).get_value<bool>();
 }
 
 void DjangoBlockManager::setFlag(const unsigned int id, const std::string& flagName,
