@@ -22,7 +22,7 @@ SliceGuarantor::fill(
 	boost::shared_ptr<SliceStore>   sliceStore         = createSliceStore(configuration);
 
 	// create a valid request block
-	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
+	boost::shared_ptr<Block> requestBlock = blockManager->blockAtCoordinates(request);
 
 	// wrap requested block into Blocks
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();

@@ -24,7 +24,7 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] requesting block at " << request << std::endl;
 
 	// find the cores that correspond to request
-	boost::shared_ptr<Core> core = blockManager->coreAtLocation(request);
+	boost::shared_ptr<Core> core = blockManager->coreAtCoordinates(request);
 	boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 	cores->add(core);
 

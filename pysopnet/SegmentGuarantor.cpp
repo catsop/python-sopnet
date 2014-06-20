@@ -20,7 +20,7 @@ SegmentGuarantor::fill(
 	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);
 
 	// create a valid request block
-	boost::shared_ptr<Block> requestBlock = blockManager->blockAtLocation(request);
+	boost::shared_ptr<Block> requestBlock = blockManager->blockAtCoordinates(request);
 
 	// wrap requested block into Blocks
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
