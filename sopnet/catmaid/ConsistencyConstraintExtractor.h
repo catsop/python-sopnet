@@ -11,6 +11,9 @@
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/ComponentTrees.h>
 
+/**
+ * A class that is apparently unused.
+ */
 class ConsistencyConstraintExtractor : public pipeline::SimpleProcessNode<>
 {
 	typedef boost::unordered_map<unsigned int, boost::shared_ptr<Slices> > SectionSlices;

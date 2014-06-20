@@ -24,8 +24,7 @@ class DjangoSliceStore : public SliceStore
 {
 public:
 	/**
-	 * Create a DjangoSliceStore for the given server (which may include port number, as in
-	 * 'catmaid:8000'), stack id and project id.
+	 * Create a DjangoSliceStore over the same parameters given to the DjangoBlockManager here.
 	 */
 	DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager);
 	

@@ -13,6 +13,10 @@
 #include <util/httpclient.h>
 #include <map>
 
+/**
+ * A CATMAID/Django-backed BlockManager. Returns Blocks whose id's are the same as the
+ * database primary key.
+ */
 class DjangoBlockManager : public boost::enable_shared_from_this<DjangoBlockManager>,
 	public BlockManager
 {
@@ -20,6 +24,13 @@ public:
 	/**
 	 * Create and return a DjangoBlockManager given the server, stack, and project.
 	 * Returns a null pointer if something goes wrong.
+	 * @param server - the hostname for the CATMAID server hosting the stack in question, ie
+	 *                 "catmaid:8000" for the server at dns name catmaid hosting on port 8000.
+	 *                 For port 80, one could use just "catmaid"
+	 * @param stack - the stack id for the stack in question
+	 * @param project - the project id for the project in question
+	 * @return a DjangoBlockManager that operates over the geometry of the stack in question, or 
+	 * else a null shared_ptr if something goes wrong.
 	 */
 	static boost::shared_ptr<DjangoBlockManager>
 		getBlockManager(const std::string& server,
@@ -62,8 +73,18 @@ public:
 	void setSolutionCostFlag(boost::shared_ptr<Block> block, bool flag);
 	void setSolutionSetFlag(boost::shared_ptr<Core> core, bool flag);
 	
+	/**
+	 * @return the name of the server that this DjangoBlockManager communicates with.
+	 */
 	std::string getServer();
+	/**
+	 * @return the stack id
+	 */
 	int getStack();
+	
+	/**
+	 * @return the project id
+	 */
 	int getProject();
 	
 private:
