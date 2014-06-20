@@ -116,20 +116,22 @@ pipeline::Value<Slices>
 DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 {
 	std::ostringstream url;
+	std::ostringstream post;
 	std::string delim = "";
 	boost::shared_ptr<ptree> pt;
 	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
 	
 	appendProjectAndStack(url);
-	url << "/slices_by_blocks_and_conflict?block_ids=";
+	url << "/slices_by_blocks_and_conflict";
+	post << "block_ids=";
 	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
-		url << delim << block->getId();
+		post << delim << block->getId();
 		delim = ",";
 	}
 	
-	pt = HttpClient::getPropertyTree(url.str());
+	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
 	if (!HttpClient::checkDjangoError(pt) &&
 		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
@@ -199,11 +201,13 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 	foreach (const ConflictSet& conflictSet, *conflictSets)
 	{
 		std::ostringstream url;
+		std::ostringstream post;
 		std::string delim = "";
 		bool go = false;
 		
 		appendProjectAndStack(url);
-		url << "/store_conflict_set?hash=";
+		url << "/store_conflict_set";
+		post << "hash=";
 
 		foreach (unsigned int id, conflictSet.getSlices())
 		{
@@ -211,7 +215,7 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 			{
 				boost::shared_ptr<Slice> slice = _idSliceMap[id];
 				
-				url << delim << getHash(*slice);
+				post << delim << getHash(*slice);
 				go = true;
 				delim = ",";
 			}
@@ -224,7 +228,7 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 		
 		if (go)
 		{
-			boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(url.str());
+			boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 			if (HttpClient::checkDjangoError(pt)
 				|| pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 			{

@@ -456,11 +456,13 @@ DjangoBlockManager::blocksById(std::vector<unsigned int>& ids)
 {
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	std::ostringstream url;
+	std::ostringstream post;
 	std::string delim = "";
 	bool needRequest = false;
 	
 	appendProjectAndStack(url);
-	url << "/blocks_by_id?ids=";
+	url << "/blocks_by_id";
+	post << "ids=";
 	
 	foreach (unsigned int id, ids)
 	{
@@ -470,7 +472,7 @@ DjangoBlockManager::blocksById(std::vector<unsigned int>& ids)
 		}
 		else
 		{
-			url << delim << id;
+			post << delim << id;
 			delim = ",";
 			needRequest = true;
 		}
@@ -478,7 +480,7 @@ DjangoBlockManager::blocksById(std::vector<unsigned int>& ids)
 	
 	if (needRequest)
 	{
-		boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(url.str());
+		boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 		
 		if (HttpClient::checkDjangoError(pt))
 		{
@@ -505,11 +507,13 @@ DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
 {
 	boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 	std::ostringstream url;
+	std::ostringstream post;
 	std::string delim = "";
 	bool needRequest = false;
 	
 	appendProjectAndStack(url);
-	url << "/cores_by_id?ids=";
+	url << "/cores_by_id";
+	post << "ids=";
 	
 	foreach (unsigned int id, ids)
 	{
@@ -519,7 +523,7 @@ DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
 		}
 		else
 		{
-			url << delim << id;
+			post << delim << id;
 			delim = ",";
 			needRequest = true;
 		}
@@ -527,7 +531,7 @@ DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
 	
 	if (needRequest)
 	{
-		boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(url.str());
+		boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 		
 		if (HttpClient::checkDjangoError(pt))
 		{
