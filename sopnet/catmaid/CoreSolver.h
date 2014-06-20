@@ -33,11 +33,10 @@ public:
 	 *   SegmentTrees                "neurons"
 	 *   Segments                    "segments"
 	 * 
-	 * CoreSolver is a transitional test class that will eventually be refactored as the class
-	 * SolutionGuarantor
-	 * 
 	 * This process node takes the Slices and Segments from their given stores and Blocks, and
 	 * computes a Sopnet segmentation solution over them, given the various other inputs.
+	 *
+	 * This class is deprecated in favor of SolutionGuarantor
 	 */
 	CoreSolver();
 	

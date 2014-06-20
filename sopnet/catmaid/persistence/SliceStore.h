@@ -54,9 +54,18 @@ public:
 	 */
 	virtual void storeConflict(pipeline::Value<ConflictSets> conflictSets) = 0;
 	
+	/**
+	 * Retrieve all ConflictSets for the given Slices
+	 * @param slices - the Slices for which ConflictSets are to be returned
+	 * @return a ConflictSets object containing each ConflictSet to which any Slice in slices
+	 * belongs.
+	 */
 	virtual pipeline::Value<ConflictSets>
 		retrieveConflictSets(pipeline::Value<Slices> slices) = 0;
 
+	/**
+	 * Dump the contents of the store to a log channel.
+	 */
 	virtual void dumpStore() = 0;
 };
 
