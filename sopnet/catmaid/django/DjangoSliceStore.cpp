@@ -102,8 +102,12 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 
 		if (HttpClient::checkDjangoError(assocPt))
 		{
-			LOG_ERROR(djangoslicestorelog) << "Error associating slices to block " <<
-				*block << std::endl;
+			LOG_ERROR(djangoslicestorelog)
+					<< "Error associating slices to block "
+					<< *block << std::endl;
+			LOG_ERROR(djangoslicestorelog) << "\tURL was " << assocUrl.str() << std::endl;
+			LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << assocPostData.str() << std::endl;
+			return;
 		}
 	}
 }
