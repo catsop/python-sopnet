@@ -27,77 +27,84 @@ DjangoSliceStore::DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> b
 void
 DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block)
 {
-	int i = 0;
-	std::ostringstream insertUrl, insertPostData, assocUrl;
 	boost::shared_ptr<ptree> insertPt, assocPt;
-	
-	appendProjectAndStack(insertUrl);
-	insertUrl << "/insert_slices";
-	
-	// -- Step 1 : insert slices into database, if they haven't been already --
-	   
-	// Form POST data
-	insertPostData << "n=" << slices->size();
-	foreach (boost::shared_ptr<Slice> slice, *slices)
-	{
-		// TODO: don't send slices that are already in the db.
-		
-		std::ostringstream osX, osY;
-		std::string hash = getHash(*slice);
-		util::point<double> ctr = slice->getComponent()->getCenter();
-		
-		// Make sure that the slice is in the id slice map
-		putSlice(slice, hash);
-		
-		appendGeometry(slice->getComponent(), osX, osY);
 
-		// Section
-		insertPostData << "&section_" << i << "=" << slice->getSection();
-		// Hash
-		insertPostData << "&hash_" << i << "=" << hash;
-		// Centroid
-		insertPostData << "&cx_" << i << "=" << ctr.x;
-		insertPostData << "&cy_" << i << "=" << ctr.y;
-		// Geometry
-		insertPostData << "&x_" << i << "=" << osX.str();
-		insertPostData << "&y_" << i << "=" << osY.str();
-		// Value
-		insertPostData << "&value_" << i << "=" << slice->getComponent()->getValue();
+	{
+		int i = 0;
+		std::ostringstream insertUrl, insertPostData;
+
+		appendProjectAndStack(insertUrl);
+		insertUrl << "/insert_slices";
 		
-		++i;
+		// -- Step 1 : insert slices into database, if they haven't been already --
+		   
+		// Form POST data
+		insertPostData << "n=" << slices->size();
+		foreach (boost::shared_ptr<Slice> slice, *slices)
+		{
+			// TODO: don't send slices that are already in the db.
+			
+			std::ostringstream osX, osY;
+			std::string hash = getHash(*slice);
+			util::point<double> ctr = slice->getComponent()->getCenter();
+			
+			// Make sure that the slice is in the id slice map
+			putSlice(slice, hash);
+			
+			appendGeometry(slice->getComponent(), osX, osY);
+
+			// Section
+			insertPostData << "&section_" << i << "=" << slice->getSection();
+			// Hash
+			insertPostData << "&hash_" << i << "=" << hash;
+			// Centroid
+			insertPostData << "&cx_" << i << "=" << ctr.x;
+			insertPostData << "&cy_" << i << "=" << ctr.y;
+			// Geometry
+			insertPostData << "&x_" << i << "=" << osX.str();
+			insertPostData << "&y_" << i << "=" << osY.str();
+			// Value
+			insertPostData << "&value_" << i << "=" << slice->getComponent()->getValue();
+			
+			++i;
+		}
+		
+		insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
+
+		if (HttpClient::checkDjangoError(insertPt))
+		{
+			LOG_ERROR(djangoslicestorelog) << "Error storing slices" << std::endl;
+			LOG_ERROR(djangoslicestorelog) << "\tURL was " << insertUrl.str() << std::endl;
+			LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
+			return;
+		}
 	}
-	
-	insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
-	
-	if (HttpClient::checkDjangoError(insertPt))
+
 	{
-		LOG_ERROR(djangoslicestorelog) << "Error storing slices" << std::endl;
-		LOG_ERROR(djangoslicestorelog) << "\tURL was " << insertUrl.str() << std::endl;
-		LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
-		return;
-	}
-	
-	// -- Step 2 : associate the slices with the given block --
-	std::string delim = "";
-	
-	appendProjectAndStack(assocUrl);
-	
-	assocUrl << "/slices_block?hash=";
-	
-	foreach (boost::shared_ptr<Slice> slice, *slices)
-	{
-		assocUrl << delim << _sliceHashMap[*slice];
-		delim = ",";
-	}
-	
-	assocUrl << "&block=" << block->getId();
-	
-	assocPt = HttpClient::getPropertyTree(assocUrl.str());
-	
-	if (HttpClient::checkDjangoError(assocPt))
-	{
-		LOG_ERROR(djangoslicestorelog) << "Error associating slices to block " <<
-			*block << std::endl;
+		// -- Step 2 : associate the slices with the given block --
+		std::ostringstream assocUrl, assocPostData;
+		std::string delim = "";
+
+		appendProjectAndStack(assocUrl);
+
+		assocUrl << "/slices_block";
+
+		assocPostData << "hash=";
+		foreach (boost::shared_ptr<Slice> slice, *slices)
+		{
+			assocPostData << delim << _sliceHashMap[*slice];
+			delim = ",";
+		}
+		
+		assocPostData << "&block=" << block->getId();
+		
+		assocPt = HttpClient::postPropertyTree(assocUrl.str(), assocPostData.str());
+
+		if (HttpClient::checkDjangoError(assocPt))
+		{
+			LOG_ERROR(djangoslicestorelog) << "Error associating slices to block " <<
+				*block << std::endl;
+		}
 	}
 }
 
