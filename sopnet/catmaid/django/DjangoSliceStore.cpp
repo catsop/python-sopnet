@@ -236,11 +236,6 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 			post << conflictSetPost.str() << ";";
 	}
 
-	LOG_DEBUG(djangoslicestorelog)
-		<< "storing conflict with:" << std::endl
-		<< "\t" << url.str() << std::endl
-		<< "\t" << post.str() << std::endl;
-
 	boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 	if (HttpClient::checkDjangoError(pt)
 		|| pt->get_child("ok").get_value<std::string>().compare("true") != 0)
