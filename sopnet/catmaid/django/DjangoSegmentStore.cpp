@@ -20,6 +20,8 @@ void
 DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 							  pipeline::Value<Block> block)
 {
+	if (segments->size() == 0)
+		return;
 
 	{
 		int i = 0;
