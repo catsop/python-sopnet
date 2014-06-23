@@ -15,6 +15,7 @@ SegmentGuarantor::fill(
 
 	LOG_USER(pylog) << "[SegmentGuarantor] fill called for block at " << request << std::endl;
 
+	boost::shared_ptr<StackStore>   rawStackStore = createStackStore(configuration, Raw);
 	boost::shared_ptr<BlockManager> blockManager = createBlockManager(configuration);
 	boost::shared_ptr<SliceStore>   sliceStore   = createSliceStore(configuration);
 	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);
@@ -32,6 +33,7 @@ SegmentGuarantor::fill(
 	segmentGuarantor->setInput("blocks", blocks);
 	segmentGuarantor->setInput("slice store", sliceStore);
 	segmentGuarantor->setInput("segment store", segmentStore);
+	segmentGuarantor->setInput("stack store", rawStackStore);
 
 	// let it do what it was build for
 	pipeline::Value<Blocks> missingBlocks = segmentGuarantor->guaranteeSegments();
