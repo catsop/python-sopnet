@@ -372,10 +372,22 @@ pipeline::Value<Blocks> SolutionGuarantor::guaranteeSolution()
 	pipeline::Value<Blocks> needBlocks;
 	
 	updateInputs();
+
+	LOG_USER(solutionguarantorlog) << "guaranteeSolution called for cores:" << std::endl;
+	foreach (boost::shared_ptr<Core> core, *_inCores)
+		LOG_USER(solutionguarantorlog) << "\t" << core->getCoordinates() << std::endl;
 	
 	_bufferedBlocks = bufferCores(_inCores, *_buffer);
+
+	LOG_USER(solutionguarantorlog) << "with padding, this is the following blocks:" << std::endl;
+	foreach (boost::shared_ptr<Block> block, *_bufferedBlocks)
+		LOG_USER(solutionguarantorlog) << "\t" << block->getCoordinates() << std::endl;
 	
 	needBlocks = checkBlocks();
+
+	LOG_USER(solutionguarantorlog) << "of those blocks, the following don't have their segments, yet:" << std::endl;
+	foreach (boost::shared_ptr<Block> block, *needBlocks)
+		LOG_USER(solutionguarantorlog) << "\t" << block->getCoordinates() << std::endl;
 	
 	if (needBlocks->empty())
 	{
