@@ -12,12 +12,16 @@
 #include "Locations.h"
 #include "logging.h"
 
+#ifdef HAVE_GUROBI
+#include <gurobi_c++.h>
+#endif
+
 namespace python {
 
 /**
- * Translates a std::exception into a python exception.
+ * Translates an Exception into a python exception.
  */
-void translate(const Exception& e) {
+void translateException(const Exception& e) {
 
 	if (boost::get_error_info<error_message>(e))
 		PyErr_SetString(PyExc_RuntimeError, boost::get_error_info<error_message>(e)->c_str());
@@ -25,13 +29,27 @@ void translate(const Exception& e) {
 		PyErr_SetString(PyExc_RuntimeError, e.what());
 }
 
+#ifdef HAVE_GUROBI
+/**
+ * Translates a Gurobi exception into a python exception.
+ */
+void translateGRBException(const GRBException& e) {
+
+	PyErr_SetString(PyExc_RuntimeError, e.getMessage().c_str());
+}
+#endif
+
 /**
  * Defines all the python classes in the module libpysopnet. Here we decide 
  * which functions and data members we wish to expose.
  */
 BOOST_PYTHON_MODULE(libpysopnet) {
 
-	boost::python::register_exception_translator<Exception>(&translate);
+	boost::python::register_exception_translator<Exception>(&translateException);
+
+#ifdef HAVE_GUROBI
+	boost::python::register_exception_translator<GRBException>(&translateGRBException);
+#endif
 
 	// setLogLevel
 	boost::python::def("setLogLevel", setLogLevel);
