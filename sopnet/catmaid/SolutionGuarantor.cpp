@@ -408,6 +408,14 @@ SolutionGuarantor::bufferCore(boost::shared_ptr<Core> core, unsigned int buffer)
 boost::shared_ptr<Blocks>
 SolutionGuarantor::bufferCores(boost::shared_ptr<Cores> cores, unsigned int buffer)
 {
+	LOG_USER(solutionguarantorlog) << "cores consist of:" << std::endl;
+	foreach (boost::shared_ptr<Core> core, *cores) {
+		LOG_USER(solutionguarantorlog) << "\tcore at " << core->getCoordinates() << " with:" << std::endl;
+		foreach (boost::shared_ptr<Block> block, *core) {
+			LOG_USER(solutionguarantorlog) << "\t\tblock at " << block->getCoordinates() << std::endl;
+		}
+	}
+
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(cores->asBlocks());
 
 	for (unsigned int i = 0; i < buffer; ++i)
