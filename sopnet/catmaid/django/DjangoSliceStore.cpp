@@ -244,36 +244,45 @@ DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 {
 	boost::unordered_set<ConflictSet> conflictSetSet;
 	pipeline::Value<ConflictSets> conflictSets = pipeline::Value<ConflictSets>();
-	
+
+	std::ostringstream url;
+	std::ostringstream post;
+	boost::shared_ptr<ptree> pt;
+
+	appendProjectAndStack(url);
+	url << "/conflict_sets_by_slice";
+	post << "hash=";
+
 	//TODO: verify that conflict sets are returned in consistent order.
 	foreach (boost::shared_ptr<Slice> slice, *slices)
 	{
-		std::ostringstream url;
-		boost::shared_ptr<ptree> pt;
 		std::string hash = getHash(*slice);
-		
+		post << hash << ",";
 		putSlice(slice, hash);
-		
-		appendProjectAndStack(url);
-		url << "/conflict_sets_by_slice?hash=" << hash;
-		pt = HttpClient::getPropertyTree(url.str());
-		
-		if (HttpClient::checkDjangoError(pt))
+	}
+
+	pt = HttpClient::postPropertyTree(url.str(), post.str());
+
+	if (HttpClient::checkDjangoError(pt))
+	{
+		LOG_ERROR(djangoslicestorelog)
+				<< "Django Error while retrieving conflict for slices"
+				<< std::endl;
+		LOG_ERROR(djangoslicestorelog)
+				<< "url was " << url.str()
+				<< " post was" << std::endl
+				<< "\t" << post.str() << std::endl;
+		return conflictSets;
+	}
+	else
+	{
+		foreach (ptree::value_type v, pt->get_child("conflict"))
 		{
-			LOG_ERROR(djangoslicestorelog) << "Django Error while retrieving conflict for slice "
-				<< slice->getId() << " with django hash " << hash << std::endl;
-			return conflictSets;
-		}
-		else
-		{
-			foreach (ptree::value_type v, pt->get_child("conflict"))
-			{
-				boost::shared_ptr<ConflictSet> conflictSet = ptreeToConflictSet(v.second);
-				conflictSetSet.insert(*conflictSet);
-			}
+			boost::shared_ptr<ConflictSet> conflictSet = ptreeToConflictSet(v.second);
+			conflictSetSet.insert(*conflictSet);
 		}
 	}
-	
+
 	foreach (ConflictSet conflictSet, conflictSetSet)
 	{
 		conflictSets->add(conflictSet);
