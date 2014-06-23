@@ -4,7 +4,18 @@
 
 int main(int, char**) {
 
-	DefaultFactory solverFactory;
-	LinearSolverBackend* solver = solverFactory.createLinearSolverBackend();
-	delete solver;
+	LinearSolverBackend* solver = 0;
+
+	try {
+
+		DefaultFactory solverFactory;
+		solver = solverFactory.createLinearSolverBackend();
+
+	} catch (std::exception& e) {
+
+		std::cerr << "error: " << e.what() << std::endl;
+	}
+
+	if (solver)
+		delete solver;
 }
