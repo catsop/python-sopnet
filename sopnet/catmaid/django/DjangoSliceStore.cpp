@@ -27,6 +27,9 @@ DjangoSliceStore::DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> b
 void
 DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block)
 {
+	if (slices->size() == 0)
+		return;
+
 	boost::shared_ptr<ptree> insertPt, assocPt;
 
 	{
