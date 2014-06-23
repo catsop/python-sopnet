@@ -16,6 +16,12 @@ SliceReader::SliceReader()
 
 void SliceReader::updateOutputs()
 {
+	_slices = new Slices();
+	_conflictSets = new ConflictSets();
+
+	if (_blocks->length() == 0)
+		return;
+
 	pipeline::Value<Slices> slices;
 	pipeline::Value<ConflictSets> conflict;
 
@@ -25,9 +31,6 @@ void SliceReader::updateOutputs()
 	conflict = _store->retrieveConflictSets(slices);
 	
 	std::sort(slices->begin(), slices->end(), SliceReader::slicePtrComparator);
-
-	_slices = new Slices();
-	_conflictSets = new ConflictSets();
 	
 	*_slices = *slices;
 	*_conflictSets = *conflict;
