@@ -233,7 +233,7 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 
 		if (go)
 			// end each conflict set with a ';'
-			post << conflictSetPost << ";";
+			post << conflictSetPost.str() << ";";
 	}
 
 	LOG_DEBUG(djangoslicestorelog)
