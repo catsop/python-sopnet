@@ -38,6 +38,10 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	
 	// Expand sliceBlocks by z+1. We need to grab Slices from the first section of the next block
 	sliceBlocks->expand(util::point3<int>(0, 0, 1));
+
+	LOG_DEBUG(segmentguarantorlog) << "asking for slices in the following blocks:" << std::endl;
+	foreach (boost::shared_ptr<Block> block, *sliceBlocks)
+		LOG_DEBUG(segmentguarantorlog) << "\t" << block->getCoordinates() << std::endl;
 	
 	// Check to see if we have any blocks for which the extraction is necessary.
 	foreach (boost::shared_ptr<Block> block, *_blocks)
