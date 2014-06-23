@@ -198,16 +198,18 @@ DjangoSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 void
 DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 {
+	std::ostringstream url;
+	std::ostringstream post;
+
+	appendProjectAndStack(url);
+	url << "/store_conflict_set";
+	post << "hash=";
+
 	foreach (const ConflictSet& conflictSet, *conflictSets)
 	{
-		std::ostringstream url;
-		std::ostringstream post;
+		std::ostringstream conflictSetPost;
 		std::string delim = "";
 		bool go = false;
-		
-		appendProjectAndStack(url);
-		url << "/store_conflict_set";
-		post << "hash=";
 
 		foreach (unsigned int id, conflictSet.getSlices())
 		{
@@ -215,7 +217,7 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 			{
 				boost::shared_ptr<Slice> slice = _idSliceMap[id];
 				
-				post << delim << getHash(*slice);
+				conflictSetPost << delim << getHash(*slice);
 				go = true;
 				delim = ",";
 			}
@@ -225,17 +227,18 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 					std::endl;
 			}
 		}
-		
+
 		if (go)
-		{
-			boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
-			if (HttpClient::checkDjangoError(pt)
-				|| pt->get_child("ok").get_value<std::string>().compare("true") != 0)
-			{
-				LOG_ERROR(djangoslicestorelog) << "Django Error while storing conflict" <<
-					std::endl;
-			}
-		}
+			// end each conflict set with a ';'
+			post << conflictSetPost << ";";
+	}
+
+	boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
+	if (HttpClient::checkDjangoError(pt)
+		|| pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		LOG_ERROR(djangoslicestorelog) << "Django Error while storing conflict" <<
+			std::endl;
 	}
 }
 
