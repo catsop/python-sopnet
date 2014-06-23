@@ -29,13 +29,15 @@ void SliceReader::updateOutputs()
 
 	slices = _store->retrieveSlices(_blocks);
 	conflict = _store->retrieveConflictSets(slices);
+
+	LOG_DEBUG(slicereaderlog) << "Retrieved " << slices->size() << " slices." << std::endl;
 	
 	std::sort(slices->begin(), slices->end(), SliceReader::slicePtrComparator);
 	
 	*_slices = *slices;
 	*_conflictSets = *conflict;
 
-	LOG_DEBUG(slicereaderlog) << "Done." << std::endl;
+	LOG_DEBUG(slicereaderlog) << "Return " << _slices->size() << " slices." << std::endl;
 }
 
 bool
