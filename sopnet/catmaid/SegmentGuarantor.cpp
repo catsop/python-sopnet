@@ -191,7 +191,7 @@ SegmentGuarantor::slicesBoundingBox(const boost::shared_ptr<Slices> slices)
 	{
 		util::rect<unsigned int> bound = (*slices)[0]->getComponent()->getBoundingBox();
 		unsigned int zMax = (*slices)[0]->getSection() + 1;
-		unsigned int zMin = zMax;
+		unsigned int zMin = (*slices)[0]->getSection();
 		
 		foreach (const boost::shared_ptr<Slice> slice, *slices)
 		{
