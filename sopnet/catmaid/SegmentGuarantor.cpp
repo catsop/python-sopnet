@@ -12,7 +12,7 @@ SegmentGuarantor::SegmentGuarantor()
 	registerInput(_blocks, "blocks");
 	registerInput(_segmentStore, "segment store");
 	registerInput(_sliceStore, "slice store");
-	registerInput(_rawImageStore, "stack store", pipeline::Optional);
+	registerInput(_rawImageStore, "stack store");
 	
 	registerOutput(_needBlocks, "slice blocks");
 }
@@ -190,16 +190,16 @@ SegmentGuarantor::slicesBoundingBox(const boost::shared_ptr<Slices> slices)
 	else
 	{
 		util::rect<unsigned int> bound = (*slices)[0]->getComponent()->getBoundingBox();
-		unsigned int zMax = (*slices)[0]->getSection();
+		unsigned int zMax = (*slices)[0]->getSection() + 1;
 		unsigned int zMin = zMax;
 		
 		foreach (const boost::shared_ptr<Slice> slice, *slices)
 		{
 			bound.fit(slice->getComponent()->getBoundingBox());
 			
-			if (zMax < slice->getSection())
+			if (zMax < slice->getSection() + 1)
 			{
-				zMax = slice->getSection();
+				zMax = slice->getSection() + 1;
 			}
 			
 			if (zMin > slice->getSection())
