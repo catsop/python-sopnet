@@ -400,18 +400,24 @@ DjangoSliceStore::ptreeToSlice(const ptree& pt)
 		double value = pt.get_child("value").get_value<double>();
 		unsigned int id = ComponentTreeConverter::getNextSliceId();
 		
-		std::vector<unsigned int> vX, vY;
-		// We expect vX.size() == vY.size(), but take the min for safety.
-		unsigned int n = vX.size() <= vY.size() ? vX.size() : vY.size();
+		std::vector<unsigned int> pixelListX, pixelListY;
 		
 		// Parse variables from the ptree
-		HttpClient::ptreeVector<unsigned int>(pt.get_child("x"), vX);
-		HttpClient::ptreeVector<unsigned int>(pt.get_child("y"), vY);
+		HttpClient::ptreeVector<unsigned int>(pt.get_child("x"), pixelListX);
+		HttpClient::ptreeVector<unsigned int>(pt.get_child("y"), pixelListY);
+
+		if (pixelListX.size() != pixelListY.size())
+			UTIL_THROW_EXCEPTION(
+					IOError,
+					"pixel lists for x and y in django answer are not of same size: " <<
+					pixelListX.size() << " (x) vs. " << pixelListY.size() << "(y)");
+
+		unsigned int n = pixelListX.size();
 		
 		// Fill the pixel list
 		for (unsigned int i = 0; i < n; ++i)
 		{
-			pixelList->push_back(util::point<unsigned int>(vX[i], vY[i]));
+			pixelList->push_back(util::point<unsigned int>(pixelListX[i], pixelListY[i]));
 		}
 		
 		// Create the component
