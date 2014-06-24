@@ -41,7 +41,7 @@ public:
 	SliceExtractor(
 			unsigned int section,
 			bool downsample,
-			unsigned int maxSliceMerges = std::numeric_limits<unsigned int>::max());
+			unsigned int maxSliceMerges = 3);
 
 private:
 
