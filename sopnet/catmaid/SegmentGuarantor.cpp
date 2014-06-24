@@ -79,7 +79,7 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	LOG_DEBUG(segmentguarantorlog) << "Read " << slices->size() <<
 		" slices from blocks " << *sliceBlocks << ". Expanding blocks to fit." << std::endl;
 	
-	sliceBlocks = _blocks->getManager()->blocksInBox(slicesBoundingBox(slices));
+	sliceBlocks->addAll(_blocks->getManager()->blocksInBox(slicesBoundingBox(slices)));
 
 	LOG_ALL(segmentguarantorlog) << "First found slices are:" << std::endl;
 	foreach (boost::shared_ptr<Slice> slice, *slices)

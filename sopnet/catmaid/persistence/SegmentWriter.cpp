@@ -1,5 +1,7 @@
 #include "SegmentWriter.h"
 
+logger::LogChannel segmentwriterlog("segmentwriterlog", "[SegmentWriter] ");
+
 SegmentWriter::SegmentWriter()
 {
 	registerInput(_segments, "segments");
@@ -32,6 +34,7 @@ void SegmentWriter::writeSegments()
 	
 	if (_features.isSet())
 	{
+		LOG_DEBUG(segmentwriterlog) << "storing features: " << *_features << std::endl;
 		_store->storeFeatures(_features);
 	}
 }

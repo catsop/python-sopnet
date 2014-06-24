@@ -29,7 +29,12 @@ SliceGuarantor::fill(
 	blocks->add(requestBlock);
 
 	// slice extraction parameters
-	pipeline::Value<unsigned int> maxSliceSize(parameters.getMaxSliceSize());
+	pipeline::Value<MserParameters> mserParameters;
+	mserParameters->darkToBright =  parameters.membraneIsBright();
+	mserParameters->brightToDark = !parameters.membraneIsBright();
+	mserParameters->minArea      =  parameters.getMinSliceSize();
+	mserParameters->maxArea      =  parameters.getMaxSliceSize();
+	mserParameters->fullComponentTree = true;
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] creating slice guarantor" << std::endl;
 
@@ -39,7 +44,7 @@ SliceGuarantor::fill(
 	sliceGuarantor->setInput("blocks", blocks);
 	sliceGuarantor->setInput("stack store", membraneStackStore);
 	sliceGuarantor->setInput("slice store", sliceStore);
-	sliceGuarantor->setInput("maximum area", maxSliceSize);
+	sliceGuarantor->setInput("mser parameters", mserParameters);
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] asking for slices..." << std::endl;
 

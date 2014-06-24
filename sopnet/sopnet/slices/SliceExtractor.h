@@ -32,8 +32,16 @@ public:
 	 * @param downsample
 	 *              Do not extract slices that are single children of their 
 	 *              parents in the component tree.
+	 *
+	 * @param maxSliceMerges
+	 *              Limit the height of the slice component tree, counting the 
+	 *              height from the leafs. This will be overwritten by a program 
+	 *              option of the same name, if set.
 	 */
-	SliceExtractor(unsigned int section, bool downsample);
+	SliceExtractor(
+			unsigned int section,
+			bool downsample,
+			unsigned int maxSliceMerges = std::numeric_limits<unsigned int>::max());
 
 private:
 

@@ -63,7 +63,11 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	// SliceGuarantorParameters
 	boost::python::class_<SliceGuarantorParameters>("SliceGuarantorParameters")
 			.def("setMaxSliceSize", &SliceGuarantorParameters::setMaxSliceSize)
-			.def("getMaxSliceSize", &SliceGuarantorParameters::getMaxSliceSize);
+			.def("getMaxSliceSize", &SliceGuarantorParameters::getMaxSliceSize)
+			.def("setMinSliceSize", &SliceGuarantorParameters::setMinSliceSize)
+			.def("getMinSliceSize", &SliceGuarantorParameters::getMinSliceSize)
+			.def("membraneIsBright", &SliceGuarantorParameters::membraneIsBright)
+			.def("setMembraneIsBright", &SliceGuarantorParameters::setMembraneIsBright);
 
 	// SegmentGuarantorParameters
 	boost::python::class_<SegmentGuarantorParameters>("SegmentGuarantorParameters");
