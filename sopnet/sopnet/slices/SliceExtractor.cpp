@@ -27,12 +27,6 @@ util::ProgramOption optionMaxSliceSize(
 		util::_description_text = "The maximal size of a neuron slice in pixels.",
 		util::_default_value    = 100*100);
 
-util::ProgramOption optionMaxSliceMerges(
-		util::_module           = "sopnet",
-		util::_long_name        = "maxSliceMerges",
-		util::_description_text = "Limit the height of the slice component tree, counting the height from the leafs.",
-		util::_default_value    = 3);
-
 template <typename Precision>
 SliceExtractor<Precision>::SliceExtractor(
 		unsigned int section,
@@ -57,9 +51,6 @@ SliceExtractor<Precision>::SliceExtractor(
 	_defaultMserParameters->minArea           =  optionMinSliceSize;
 	_defaultMserParameters->maxArea           =  optionMaxSliceSize;
 	_defaultMserParameters->fullComponentTree = true;
-
-	if (optionMaxSliceMerges)
-		maxSliceMerges = optionMaxSliceMerges.as<int>();
 
 	LOG_DEBUG(sliceextractorlog)
 			<< "extracting slices with min size " << optionMinSliceSize.as<int>()
