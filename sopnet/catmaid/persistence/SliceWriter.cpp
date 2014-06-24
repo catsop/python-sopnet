@@ -61,24 +61,21 @@ SliceWriter::containsAny(ConflictSet& conflictSet, pipeline::Value<Slices>& slic
 pipeline::Value<ConflictSets>
 SliceWriter::collectConflictBySlices(pipeline::Value<Slices> slices)
 {
-	boost::unordered_set<ConflictSet> conflictSetSet;
 	pipeline::Value<ConflictSets> conflictSets;
 	
 	foreach (ConflictSet conflictSet, *_conflictSets)
 	{
 		if (containsAny(conflictSet, slices))
 		{
-			conflictSetSet.insert(conflictSet);
+			conflictSets->add(conflictSet);
+
+			LOG_ALL(slicewriterlog)
+					<< "Collected conflict of size "
+					<< conflictSet.getSlices().size()
+					<< std::endl;
 		}
 	}
-	
-	foreach (const ConflictSet conflictSet, conflictSetSet)
-	{
-		LOG_ALL(slicewriterlog) << "Collected conflict of size " << conflictSet.getSlices().size()
-			<< std::endl;
-		conflictSets->add(conflictSet);
-	}
-	
+
 	return conflictSets;
 }
 
