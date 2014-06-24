@@ -208,6 +208,8 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 	url << "/store_conflict_set";
 	post << "hash=";
 
+	std::string setdelim = "";
+
 	foreach (const ConflictSet& conflictSet, *conflictSets)
 	{
 		std::ostringstream conflictSetPost;
@@ -233,7 +235,8 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 
 		if (go)
 			// end each conflict set with a ';'
-			post << conflictSetPost.str() << ";";
+			post << setdelim << conflictSetPost.str();
+			setdelim = "|";
 	}
 
 	boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
