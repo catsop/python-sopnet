@@ -81,6 +81,12 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	
 	sliceBlocks = _blocks->getManager()->blocksInBox(slicesBoundingBox(slices));
 
+	LOG_ALL(segmentguarantorlog) << "First found slices are:" << std::endl;
+	foreach (boost::shared_ptr<Slice> slice, *slices)
+		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
+	
+	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << *sliceBlocks << "." << std::endl;
+
 	// Check again
 	if (!checkBlockSlices(sliceBlocks, needBlocks))
 	{
@@ -91,6 +97,10 @@ pipeline::Value<Blocks> SegmentGuarantor::guaranteeSegments()
 	slices = sliceReader->getOutput("slices");
 
 	LOG_DEBUG(segmentguarantorlog) << "Altogether, I have " << slices->size() << " slices" << std::endl;
+
+	LOG_ALL(segmentguarantorlog) << "Finally found slices are:" << std::endl;
+	foreach (boost::shared_ptr<Slice> slice, *slices)
+		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
 	
 	for (unsigned int z = zBegin; z < zEnd; ++z)
 	{
