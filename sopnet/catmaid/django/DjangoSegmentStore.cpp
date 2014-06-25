@@ -128,6 +128,10 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 		post << delim << block->getId();
 		delim = ",";
 	}
+
+	LOG_DEBUG(djangosegmentstorelog)
+			<< "requesting segments from " << url.str()
+			<< ", " << post.str() << std::endl;
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
@@ -135,9 +139,14 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
 	{
 		ptree segmentsTree = pt->get_child("segments");
+
+		LOG_DEBUG(djangosegmentstorelog)
+			<< "requesting all slices in the same blocks" << std::endl;
 		
 		// Force the slice store to cache the necessary slices.
 		_sliceStore->retrieveSlices(blocks);
+
+		LOG_DEBUG(djangosegmentstorelog) << "create segments from ptree" << std::endl;
 		
 		foreach (ptree::value_type segmentV, segmentsTree)
 		{
@@ -148,6 +157,8 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 				_idSegmentMap[segment->getId()] = segment;
 			}
 		}
+
+		LOG_DEBUG(djangosegmentstorelog) << "done" << std::endl;
 	}
 	
 	return segments;
