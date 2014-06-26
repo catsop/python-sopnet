@@ -671,6 +671,8 @@ boost::shared_ptr<Segment> DjangoSegmentStore::ptreeToSegment(const ptree& pt)
 		int type = pt.get_child("type").get_value<int>();
 		Direction direction = iDir == 0 ? Left : Right;
 		unsigned int id = Segment::getNextSegmentId();
+
+		LOG_ALL(djangosegmentstorelog) << "creating a segment of type " << type << std::endl;
 		
 		switch(type)
 		{
@@ -705,6 +707,8 @@ boost::shared_ptr<Segment> DjangoSegmentStore::ptreeToSegment(const ptree& pt)
 		
 		_hashSegmentMap[hash] = segment;
 		_segmentHashMap[segment] = hash;
+
+		LOG_ALL(djangosegmentstorelog) << "done" << std::endl;;
 		
 		return segment;
 	}

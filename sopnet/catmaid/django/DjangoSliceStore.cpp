@@ -439,12 +439,18 @@ DjangoSliceStore::ptreeToSlice(const ptree& pt)
 boost::shared_ptr<Slice>
 DjangoSliceStore::sliceByHash(const std::string& hash)
 {
+
+	LOG_ALL(djangoslicestorelog) << "asking for slice with hash " << hash << std::endl;
+
 	if (_hashSliceMap.count(hash))
 	{
+		LOG_ALL(djangoslicestorelog) << "slice found" << std::endl;
 		return _hashSliceMap[hash];
 	}
 	else
 	{
+		LOG_ALL(djangoslicestorelog) << "this slice does not exist -- return null-pointer" << std::endl;
+
 		boost::shared_ptr<Slice> dummySlice = boost::shared_ptr<Slice>();
 		return dummySlice;
 	}
