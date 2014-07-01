@@ -96,8 +96,9 @@ SegmentStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore
 								  const boost::shared_ptr<BlockManager> blockManager)
 {
 	boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	guarantor->setInput("blocks", blocks);
@@ -114,11 +115,11 @@ SegmentStoreTest::guaranteeSegments(const boost::shared_ptr<SegmentStore> segmen
 									const boost::shared_ptr<StackStore> rawStackStore,
 									const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
 	boost::shared_ptr<SolutionGuarantor> solutionGuarantor =
 		boost::make_shared<SolutionGuarantor>();
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
 	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
@@ -132,12 +133,12 @@ SegmentStoreTest::guaranteeSegments(const boost::shared_ptr<SegmentStore> segmen
 	priorCostFunctionParameters->priorContinuation = -50;
 	priorCostFunctionParameters->priorBranch = -100;
 
-	segmentGuarantor->setInput("blocks", blocks);
-	segmentGuarantor->setInput("slice store", sliceStore);
-	segmentGuarantor->setInput("segment store", segmentStore);
-	segmentGuarantor->setInput("stack store", rawStackStore);
+	SegmentGuarantor segmentGuarantor;
+	segmentGuarantor.setSegmentStore(segmentStore);
+	segmentGuarantor.setSliceStore(sliceStore);
+	segmentGuarantor.setRawStackStore(rawStackStore);
 
-	segmentGuarantor->guaranteeSegments();
+	segmentGuarantor.guaranteeSegments(*blocks);
 	
 	solutionGuarantor->setInput("prior cost parameters", priorCostFunctionParameters);
 	solutionGuarantor->setInput("cores", cores);
@@ -168,8 +169,9 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 							 const boost::shared_ptr<SegmentStore> testStore,
 							 const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
 	
@@ -368,8 +370,9 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 							   const boost::shared_ptr<SegmentStore> store2,
 							   const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
 	

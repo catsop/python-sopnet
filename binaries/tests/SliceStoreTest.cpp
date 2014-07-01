@@ -95,8 +95,9 @@ SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
 							 const boost::shared_ptr<SliceStore> testStore,
 							 const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	boost::shared_ptr<SliceReader> localReader = boost::make_shared<SliceReader>();
@@ -153,8 +154,9 @@ SliceStoreTest::copyStores(const boost::shared_ptr<SliceStore> store,
 						   const boost::shared_ptr<SliceStore> testStore,
 						   const boost::shared_ptr<BlockManager> blockManager)
 {
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
@@ -178,8 +180,9 @@ SliceStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore,
 						 const boost::shared_ptr<BlockManager> blockManager)
 {
 	boost::shared_ptr<SliceGuarantor> guarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   blockManager->stackSize());
+	Box<> box(
+			util::point3<unsigned int>(0,0,0),
+			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
 	guarantor->setInput("blocks", blocks);

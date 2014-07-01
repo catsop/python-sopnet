@@ -290,7 +290,7 @@ public:
 	
 	bool operator==(const Segments& other) const;
 	
-	boost::shared_ptr<Box<> > boundingBox();
+	Box<> boundingBox();
 
 private:
 

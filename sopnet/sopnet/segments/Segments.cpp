@@ -373,43 +373,36 @@ Segments::operator==(const Segments& other) const
 	return true;
 }
 
-boost::shared_ptr<Box<> >
+Box<>
 Segments::boundingBox()
 {
-	boost::shared_ptr<Box<> > bound;
-	if (size() > 0)
+	if (size() == 0)
+		return Box<>();
+
+	util::rect<int>rectBound =
+		getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
+	unsigned int minZ, maxZ;
+	
+	minZ = getSegments()[0]->getSlices()[0]->getSection();
+	maxZ = minZ;
+	
+	foreach (boost::shared_ptr<Segment> segment, getSegments())
 	{
-		util::rect<int>rectBound =
-			getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
-		unsigned int minZ, maxZ;
-		
-		minZ = getSegments()[0]->getSlices()[0]->getSection();
-		maxZ = minZ;
-		
-		foreach (boost::shared_ptr<Segment> segment, getSegments())
+		foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 		{
-			foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+			util::rect<int> componentBound = slice->getComponent()->getBoundingBox();
+						rectBound.fit(componentBound);
+			unsigned int z = slice->getSection();
+			if (z > maxZ)
 			{
-				util::rect<int> componentBound = slice->getComponent()->getBoundingBox();
-				            rectBound.fit(componentBound);
-			    unsigned int z = slice->getSection();
-				if (z > maxZ)
-				{
-					maxZ = z;
-				}
-				if (z < minZ)
-				{
-					minZ = z;
-				}
+				maxZ = z;
+			}
+			if (z < minZ)
+			{
+				minZ = z;
 			}
 		}
-		
-		bound = boost::make_shared<Box<> >(rectBound, minZ, maxZ - minZ + 1);
-	}
-	else
-	{
-		bound = boost::make_shared<Box<> >();
 	}
 	
-	return bound;
+	return  Box<>(rectBound, minZ, maxZ - minZ + 1);
 }

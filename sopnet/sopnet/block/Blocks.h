@@ -105,7 +105,7 @@ public:
 		}
 	}
 
-	virtual boost::shared_ptr<BlockManager> getManager()
+	virtual boost::shared_ptr<BlockManager> getManager() const
 	{
 		return _blockManager;
 	}

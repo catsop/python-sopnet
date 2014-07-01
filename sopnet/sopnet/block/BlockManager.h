@@ -98,13 +98,13 @@ public:
 	 * Returns a Blocks containing all Block's overlapped by the given Box.
 	 * @param box the box for which Blocks have been requested.
 	 */
-	virtual boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<unsigned int> >& box);
+	virtual boost::shared_ptr<Blocks> blocksInBox(const Box<unsigned int>& box);
 
 	/**
 	 * Returns a Cores containing all Cores's overlapped by the given Box.
 	 * @param box the box for which Cores have been requested.
 	 */
-	virtual boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
+	virtual boost::shared_ptr<Cores> coresInBox(const Box<>& box);
 	
 	/**
 	 * Determines whether a z-coordinate represents a valid section

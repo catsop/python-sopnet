@@ -47,11 +47,11 @@ public:
 
 	boost::shared_ptr<Block> blockAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Block> blockAtCoordinates(const util::point3<unsigned int>& coordinates);
-	boost::shared_ptr<Blocks> blocksInBox(const boost::shared_ptr<Box<> >& box);
-	
+	boost::shared_ptr<Blocks> blocksInBox(const Box<>& box);
+
 	boost::shared_ptr<Core> coreAtLocation(const util::point3<unsigned int>& location);
 	boost::shared_ptr<Core> coreAtCoordinates(const util::point3<unsigned int> coordinates);
-	boost::shared_ptr<Cores> coresInBox(const boost::shared_ptr<Box<> > box);
+	boost::shared_ptr<Cores> coresInBox(const Box<>& box);
 	
 	/**
 	 * Retrieve Blocks by id. Order may not be preserved. 

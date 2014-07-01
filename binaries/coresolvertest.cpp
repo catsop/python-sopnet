@@ -437,8 +437,9 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 																					blockSize,
 																					tempCoreSize);
 	boost::shared_ptr<StackStore> stackStore = boost::make_shared<LocalStackStore>(membranePath);
-	boost::shared_ptr<Box<> > stackBox = boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0),
-															   stackSize);
+	Box<> stackBox(
+			util::point3<unsigned int>(0,0,0),
+			stackSize);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	
@@ -457,7 +458,7 @@ bool testSlices(util::point3<unsigned int> stackSize, util::point3<unsigned int>
 		foreach (const boost::shared_ptr<Block> block, *blocks)
 		{
 			pipeline::Value<Blocks> needBlocks;
-			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
+			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(*block);
 			sliceGuarantor->setInput("blocks", singleBlock);
 			
 			LOG_USER(out) << "Extracting slices from block " << *block << endl;
@@ -633,29 +634,28 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 	const boost::shared_ptr<StackStore> rawStackStore)
 {
 	boost::shared_ptr<SliceGuarantor> sliceGuarantor = boost::make_shared<SliceGuarantor>();
-	boost::shared_ptr<SegmentGuarantor> segmentGuarantor = boost::make_shared<SegmentGuarantor>();
+	SegmentGuarantor segmentGuarantor;
 	boost::shared_ptr<BlockManager> blockManager = blocks->getManager();
 	
 	LOG_USER(out) << "Begin extracting segments" << std::endl;
 	
 	sliceGuarantor->setInput("slice store", sliceStore);
 	sliceGuarantor->setInput("stack store", membraneStackStore);
-	segmentGuarantor->setInput("segment store", segmentStore);
-	segmentGuarantor->setInput("slice store", sliceStore);
-	segmentGuarantor->setInput("stack store", rawStackStore);
+	segmentGuarantor.setSegmentStore(segmentStore);
+	segmentGuarantor.setSliceStore(sliceStore);
+	segmentGuarantor.setRawStackStore(rawStackStore);
 	
 	if (optionCoreTestSequential)
 	{
 		foreach (const boost::shared_ptr<Block> block, *blocks)
 		{
 			int count = 0;
-			pipeline::Value<Blocks> needBlocks;
-			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(block);
-			segmentGuarantor->setInput("blocks", singleBlock);
+			boost::shared_ptr<Blocks> needBlocks;
+			boost::shared_ptr<Blocks> singleBlock = blockManager->blocksInBox(*block);
 			
 			do
 			{
-				needBlocks = segmentGuarantor->guaranteeSegments();
+				*needBlocks = segmentGuarantor.guaranteeSegments(*singleBlock);
 				if (!needBlocks->empty())
 				{
 					sliceGuarantor->setInput("blocks", needBlocks);
@@ -675,15 +675,14 @@ bool guaranteeSegments(const boost::shared_ptr<Blocks> blocks,
 	}
 	else
 	{
-		pipeline::Value<Blocks> needBlocks;
+		boost::shared_ptr<Blocks> needBlocks;
 		
 		LOG_USER(out) << "Extracting slices from entire stack" << endl;
 		
 		sliceGuarantor->setInput("blocks", blocks);
-		segmentGuarantor->setInput("blocks", blocks);
 		
 		sliceGuarantor->guaranteeSlices();
-		needBlocks = segmentGuarantor->guaranteeSegments();
+		*needBlocks = segmentGuarantor.guaranteeSegments(*blocks);
 		
 		if (!needBlocks->empty())
 		{
@@ -811,8 +810,9 @@ bool testSegments(util::point3<unsigned int> stackSize, util::point3<unsigned in
 	boost::shared_ptr<StackStore> membraneStackStore =
 		boost::make_shared<LocalStackStore>(membranePath);
 	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
-	boost::shared_ptr<Box<> > stackBox =
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize);
+	Box<> stackBox(
+			util::point3<unsigned int>(0,0,0),
+			stackSize);
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(stackBox);
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
@@ -1097,7 +1097,7 @@ bool coreSolver(
 	boost::shared_ptr<Blocks> blocks;
 	pipeline::Value<Blocks> needBlocks;
 	boost::shared_ptr<Cores> cores = blockManager->coresInBox(
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
+		Box<>(util::point3<unsigned int>(0,0,0), stackSize));
 	
 	// Result Values
 	//pipeline::Value<SliceStoreResult> sliceResult;
@@ -1358,7 +1358,7 @@ bool checkSegmentTrees(boost::shared_ptr<SegmentTrees> sopnetNeurons,
 bool testCostIO(boost::shared_ptr<BlockManager> blockManager,
 				boost::shared_ptr<Segments> segments,
 				boost::shared_ptr<LinearObjective> objective,
-				boost::shared_ptr<Box<> > stackBox)
+				Box<> stackBox)
 {
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>();
 	boost::shared_ptr<SegmentWriter> segmentWriter = boost::make_shared<SegmentWriter>();
@@ -1561,8 +1561,9 @@ bool testSolutions(util::point3<unsigned int> stackSize, util::point3<unsigned i
 		
 	
 	
-	boost::shared_ptr<Box<> > stackBox =
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0, 0, 0), stackSize);
+	Box<> stackBox(
+			util::point3<unsigned int>(0, 0, 0),
+			stackSize);
 	
 	segmentationCostParameters->weightPotts = 0;
 	segmentationCostParameters->weight = 0;
@@ -1701,7 +1702,7 @@ bool blockManagerCheck(util::point3<unsigned int> stackSize,
 	boost::shared_ptr<Block> blockSup = 
 		blockManager->blockAtLocation(stackSize - util::point3<unsigned int>(1, 1, 1));
 	boost::shared_ptr<Blocks> allBlocks = blockManager->blocksInBox(
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
+		Box<>(util::point3<unsigned int>(0,0,0), stackSize));
 	util::point3<unsigned int> maxCoords = blockManager->maximumBlockCoordinates();
 	unsigned int n = maxCoords.x * maxCoords.y * maxCoords.z;
 

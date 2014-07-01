@@ -1,5 +1,3 @@
-#include <pipeline/Value.h>
-#include <pipeline/Process.h>
 #include <catmaid/SegmentGuarantor.h>
 #include <sopnet/block/Blocks.h>
 #include "SegmentGuarantor.h"
@@ -27,20 +25,19 @@ SegmentGuarantor::fill(
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	blocks->add(requestBlock);
 
-	// create the SegmentGuarantor process node
-	pipeline::Process< ::SegmentGuarantor> segmentGuarantor;
+	// create a SegmentGuarantor
+	::SegmentGuarantor segmentGuarantor;
 
-	segmentGuarantor->setInput("blocks", blocks);
-	segmentGuarantor->setInput("slice store", sliceStore);
-	segmentGuarantor->setInput("segment store", segmentStore);
-	segmentGuarantor->setInput("stack store", rawStackStore);
+	segmentGuarantor.setSegmentStore(segmentStore);
+	segmentGuarantor.setSliceStore(sliceStore);
+	segmentGuarantor.setRawStackStore(rawStackStore);
 
 	// let it do what it was build for
-	pipeline::Value<Blocks> missingBlocks = segmentGuarantor->guaranteeSegments();
+	Blocks missingBlocks = segmentGuarantor.guaranteeSegments(*blocks);
 
 	// collect missing block locations
 	Locations missing;
-	foreach (boost::shared_ptr<Block> block, *missingBlocks)
+	foreach (boost::shared_ptr<Block> block, missingBlocks)
 		missing.push_back(block->getCoordinates());
 
 	return missing;

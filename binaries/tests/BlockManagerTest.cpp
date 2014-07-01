@@ -32,7 +32,7 @@ BlockManagerTest::run(boost::shared_ptr<BlockManagerTestParam> arg)
 	boost::shared_ptr<Block> blockSup = 
 		blockManager->blockAtLocation(stackSize - util::point3<unsigned int>(1, 1, 1));
 	boost::shared_ptr<Blocks> allBlocks = blockManager->blocksInBox(
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
+		Box<>(util::point3<unsigned int>(0,0,0), stackSize));
 	
 	boost::shared_ptr<Core> core0 = 
 		blockManager->coreAtLocation(util::point3<unsigned int>(0,0,0));
@@ -41,7 +41,7 @@ BlockManagerTest::run(boost::shared_ptr<BlockManagerTestParam> arg)
 	boost::shared_ptr<Core> coreSup = 
 		blockManager->coreAtLocation(stackSize - util::point3<unsigned int>(1, 1, 1));
 	boost::shared_ptr<Cores> allCores = blockManager->coresInBox(
-		boost::make_shared<Box<> >(util::point3<unsigned int>(0,0,0), stackSize));
+		Box<>(util::point3<unsigned int>(0,0,0), stackSize));
 	
 	util::point3<unsigned int> maxBlockCoords = blockManager->maximumBlockCoordinates();
 	util::point3<unsigned int> maxCoreCoords = blockManager->maximumCoreCoordinates();

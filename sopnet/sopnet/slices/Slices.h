@@ -194,7 +194,7 @@ public:
 
 	unsigned int size() const { return _slices.size(); }
 
-	boost::shared_ptr<Slice> operator[](unsigned int i) { return _slices[i]; }
+	boost::shared_ptr<Slice> operator[](unsigned int i) const { return _slices[i]; }
 
 	/**
 	 * Find all slices within distance to the given center.

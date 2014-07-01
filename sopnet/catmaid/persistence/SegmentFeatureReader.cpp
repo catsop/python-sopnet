@@ -97,10 +97,10 @@ boost::shared_ptr<Features>
 SegmentFeatureReader::assembleFeatures(const boost::shared_ptr<Features> storedFeatures,
 									   const boost::shared_ptr<Segments> segments)
 {
-	boost::shared_ptr<Box<> > boundingBox = segments->boundingBox();
+	Box<> boundingBox = segments->boundingBox();
 	boost::shared_ptr<Blocks> boundingBlocks = _blockManager->blocksInBox(boundingBox);
 	
-	LOG_DEBUG(segmentfeaturereaderlog) << "Bounding box is " << *boundingBox << std::endl;
+	LOG_DEBUG(segmentfeaturereaderlog) << "Bounding box is " << boundingBox << std::endl;
 	LOG_DEBUG(segmentfeaturereaderlog) << "Bounding blocks: " << *boundingBlocks <<
 		" with " << boundingBlocks->length() << " blocks" << std::endl;
 	

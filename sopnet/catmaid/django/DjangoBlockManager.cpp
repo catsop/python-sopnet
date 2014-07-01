@@ -156,7 +156,7 @@ DjangoBlockManager::blockAtCoordinates(const util::point3<unsigned int>& coordin
 }
 
 boost::shared_ptr<Blocks>
-DjangoBlockManager::blocksInBox(const boost::shared_ptr<Box<> >& box)
+DjangoBlockManager::blocksInBox(const Box<>& box)
 {
     boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
 	boost::shared_ptr<ptree> pt;
@@ -164,15 +164,15 @@ DjangoBlockManager::blocksInBox(const boost::shared_ptr<Box<> >& box)
 	
 	appendProjectAndStack(os);
 	
-	os << "/blocks_in_box?xmin=" << box->location().x << "&ymin=" << box->location().y << "&zmin=" <<
-		box->location().z << "&width=" << box->size().x << "&height=" << box->size().y <<
-		"&depth=" << box->size().z;
+	os << "/blocks_in_box?xmin=" << box.location().x << "&ymin=" << box.location().y << "&zmin=" <<
+		box.location().z << "&width=" << box.size().x << "&height=" << box.size().y <<
+		"&depth=" << box.size().z;
 	
 	pt = HttpClient::getPropertyTree(os.str());
 	
 	if (HttpClient::checkDjangoError(pt))
 	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in blocksInBox: " << *box << std::endl;
+		LOG_ERROR(djangoblockmanagerlog) << "Django error in blocksInBox: " << box << std::endl;
 	}
 	else
 	{
@@ -219,7 +219,7 @@ DjangoBlockManager::parseCore(const ptree& pt)
 			util::point3<unsigned int> loc = util::point3<unsigned int>(vGeometry);
 			util::point3<unsigned int> size = util::point3<unsigned int>(
 				vGeometry[3], vGeometry[4], vGeometry[5]) - loc;
-			boost::shared_ptr<Box<> > box = boost::make_shared<Box<> >(loc, size);
+			Box<> box(loc, size);
 			boost::shared_ptr<Blocks> blocks = blocksInBox(box);
 			core = boost::make_shared<Core>(id, blocks);
 		}
@@ -288,7 +288,7 @@ DjangoBlockManager::coreAtCoordinates(const util::point3<unsigned int> coordinat
 }
 
 boost::shared_ptr<Cores>
-DjangoBlockManager::coresInBox(const boost::shared_ptr<Box<> > box)
+DjangoBlockManager::coresInBox(const Box<>& box)
 {
     boost::shared_ptr<Cores> cores = boost::make_shared<Cores>();
 	boost::shared_ptr<ptree> pt;
@@ -296,15 +296,15 @@ DjangoBlockManager::coresInBox(const boost::shared_ptr<Box<> > box)
 	
 	appendProjectAndStack(os);
 	
-	os << "/cores_in_box?xmin=" << box->location().x << "&ymin=" << box->location().y << "&zmin=" <<
-		box->location().z << "&width=" << box->size().x << "&height=" << box->size().y <<
-		"&depth=" << box->size().z;
+	os << "/cores_in_box?xmin=" << box.location().x << "&ymin=" << box.location().y << "&zmin=" <<
+		box.location().z << "&width=" << box.size().x << "&height=" << box.size().y <<
+		"&depth=" << box.size().z;
 
 	pt = HttpClient::getPropertyTree(os.str());
 	
 	if (HttpClient::checkDjangoError(pt))
 	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in coresInBox: " << *box << std::endl;
+		LOG_ERROR(djangoblockmanagerlog) << "Django error in coresInBox: " << box << std::endl;
 	}
 	else
 	{
