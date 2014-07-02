@@ -249,12 +249,12 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 }
 
 pipeline::Value<ConflictSets>
-DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
+DjangoSliceStore::retrieveConflictSets(const Slices& slices)
 {
 	boost::unordered_set<ConflictSet> conflictSetSet;
 	pipeline::Value<ConflictSets> conflictSets = pipeline::Value<ConflictSets>();
 
-	if (slices->size() == 0)
+	if (slices.size() == 0)
 		return conflictSets;
 
 	std::ostringstream url;
@@ -268,7 +268,7 @@ DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 	//TODO: verify that conflict sets are returned in consistent order.
 
 	// all but the last slice
-	std::pair<Slices::const_iterator, Slices::const_iterator> firstSlices(slices->begin(), slices->end() - 1);
+	std::pair<Slices::const_iterator, Slices::const_iterator> firstSlices(slices.begin(), slices.end() - 1);
 	foreach (boost::shared_ptr<Slice> slice, firstSlices)
 	{
 		std::string hash = getHash(*slice);
@@ -276,9 +276,9 @@ DjangoSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
 		putSlice(slice, hash);
 	}
 	// last slice
-	std::string hash = getHash(**(slices->end() - 1));
+	std::string hash = getHash(**(slices.end() - 1));
 	post << hash;
-	putSlice(*(slices->end() - 1), hash);
+	putSlice(*(slices.end() - 1), hash);
 
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 

@@ -36,7 +36,7 @@ public:
 	
 	void storeConflict(pipeline::Value<ConflictSets> conflictSets);
 	
-	pipeline::Value<ConflictSets> retrieveConflictSets(pipeline::Value<Slices> slices);
+	pipeline::Value<ConflictSets> retrieveConflictSets(const Slices& slices);
 
 	boost::shared_ptr<DjangoBlockManager> getDjangoBlockManager() const;
 	

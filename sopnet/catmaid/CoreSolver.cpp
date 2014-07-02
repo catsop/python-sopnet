@@ -1,7 +1,6 @@
 #include <boost/make_shared.hpp>
 
 #include <catmaid/persistence/SegmentFeatureReader.h>
-#include <catmaid/persistence/SliceReader.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <inference/LinearConstraint.h>
 #include <inference/LinearConstraints.h>
@@ -207,7 +206,6 @@ void
 CoreSolver::updateOutputs()
 {
 	// A whole mess of pipeline variables
-	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
 	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
 		boost::make_shared<ObjectiveGenerator>();
@@ -236,17 +234,16 @@ CoreSolver::updateOutputs()
 	pipeline::Value<Segments> segments;
 
 	LOG_DEBUG(coresolverlog) << "Variables instantiated, setting up pipeline" << std::endl;
-	
-	sliceReader->setInput("blocks", _blocks);
-	sliceReader->setInput("store", _sliceStore);
 
-	boost::shared_ptr<Segments> blockSegments = _segmentStore->retrieveSegments(*_blocks);
+	boost::shared_ptr<Slices>       blockSlices   = _sliceStore->retrieveSlices(*_blocks);
+	boost::shared_ptr<ConflictSets> conflictSets  = _sliceStore->retrieveConflictSets(*blockSlices);
+	boost::shared_ptr<Segments>     blockSegments = _segmentStore->retrieveSegments(*_blocks);
 
 	endExtractor->setInput("segments", blockSegments);
-	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
+	endExtractor->setInput("slices", blockSlices);
 	
 	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
-	constraintAssembler->setInput("conflict sets", sliceReader->getOutput("conflict sets"));
+	constraintAssembler->setInput("conflict sets", conflictSets);
 	constraintAssembler->setInput("force explanation", _forceExplanation);
 	
 	problemAssembler->addInput("neuron segments", endExtractor->getOutput("segments"));

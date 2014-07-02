@@ -210,13 +210,13 @@ LocalSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 }
 
 pipeline::Value<ConflictSets>
-LocalSliceStore::retrieveConflictSets(pipeline::Value<Slices> slices)
+LocalSliceStore::retrieveConflictSets(const Slices& slices)
 {
 	pipeline::Value<ConflictSets> allConflictSets;
 	boost::unordered_set<ConflictSet> conflictSetUSet;
 	
 	// Oh, man. This could be really expensive. We're only doing it for testing, so it should be ok
-	foreach (boost::shared_ptr<Slice> slice, *slices)
+	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
 		boost::shared_ptr<Slice> eqSlice = equivalentSlice(slice);
 		pipeline::Value<ConflictSets> conflictSets = _conflictMap[eqSlice->getId()];

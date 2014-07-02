@@ -61,7 +61,7 @@ public:
 	 * belongs.
 	 */
 	virtual pipeline::Value<ConflictSets>
-		retrieveConflictSets(pipeline::Value<Slices> slices) = 0;
+		retrieveConflictSets(const Slices& slices) = 0;
 
 	/**
 	 * Dump the contents of the store to a log channel.

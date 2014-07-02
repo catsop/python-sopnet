@@ -4,7 +4,6 @@
 #include <catmaid/SliceGuarantor.h>
 #include <catmaid/persistence/SegmentStore.h>
 #include <sopnet/block/BlockManager.h>
-#include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/StackStore.h>
 #include <sopnet/features/Features.h>
 
