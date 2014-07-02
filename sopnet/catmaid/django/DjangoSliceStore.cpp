@@ -116,7 +116,7 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 }
 
 pipeline::Value<Slices>
-DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
+DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 {
 	std::ostringstream url;
 	std::ostringstream post;
@@ -128,7 +128,7 @@ DjangoSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 	url << "/slices_by_blocks_and_conflict";
 	post << "block_ids=";
 	
-	foreach (boost::shared_ptr<Block> block, *blocks)
+	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 		post << delim << block->getId();
 		delim = ",";

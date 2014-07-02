@@ -39,13 +39,13 @@ LocalSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 }
 
 pipeline::Value<Segments>
-LocalSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
+LocalSegmentStore::retrieveSegments(const Blocks& blocks)
 {
 	pipeline::Value<Segments> segments;
 	std::vector<boost::shared_ptr<Segment> > segmentVector;
 	SegmentSetType segmentSet;
 	
-	foreach (boost::shared_ptr<Block> block, *blocks)
+	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 		if (_blockSegmentMap.count(*block))
 		{

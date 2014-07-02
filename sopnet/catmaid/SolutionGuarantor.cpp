@@ -2,7 +2,6 @@
 
 #include <catmaid/EndExtractor.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
-#include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <catmaid/persistence/SegmentSolutionWriter.h>
 #include <catmaid/persistence/CostReader.h>
@@ -256,7 +255,6 @@ SolutionGuarantor::solve()
 {
 	// A whole mess of pipeline variables
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
 	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
 		boost::make_shared<ObjectiveGenerator>();
@@ -287,18 +285,16 @@ SolutionGuarantor::solve()
 	boost::shared_ptr<LinearSolverParameters> binarySolverParameters = 
 		boost::make_shared<LinearSolverParameters>(Binary);
 	pipeline::Value<SegmentTrees> neurons;
-	pipeline::Value<Segments> segments;
 	boost::shared_ptr<Blocks> needBlocks = boost::make_shared<Blocks>();
 
 	LOG_DEBUG(solutionguarantorlog) << "Variables instantiated, setting up pipeline" << std::endl;
 	
-	segmentReader->setInput("blocks", _bufferedBlocks);
 	sliceReader->setInput("blocks", _bufferedBlocks);
-	
-	segmentReader->setInput("store", _segmentStore);
 	sliceReader->setInput("store", _sliceStore);
-	
-	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
+
+	boost::shared_ptr<Segments> segments = _segmentStore->retrieveSegments(*_bufferedBlocks);
+
+	endExtractor->setInput("segments", segments);
 	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
 	
 	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));

@@ -111,7 +111,7 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 }
 
 pipeline::Value<Segments>
-DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
+DjangoSegmentStore::retrieveSegments(const Blocks& blocks)
 {
 	std::ostringstream url;
 	std::ostringstream post;
@@ -123,7 +123,7 @@ DjangoSegmentStore::retrieveSegments(pipeline::Value<Blocks> blocks)
 	url << "/segments_by_blocks";
 	post << "block_ids=";
 	
-	foreach (boost::shared_ptr<Block> block, *blocks)
+	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 		post << delim << block->getId();
 		delim = ",";

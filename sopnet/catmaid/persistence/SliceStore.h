@@ -38,7 +38,7 @@ public:
 	 * 
      * @param blocks - the Blocks for which to retrieve all slices.
      */
-    virtual pipeline::Value<Slices> retrieveSlices(pipeline::Value<Blocks> blocks) = 0;
+    virtual pipeline::Value<Slices> retrieveSlices(const Blocks& blocks) = 0;
 
 	/**
 	 * Retrieve all Blocks associated with the given slice.

@@ -30,7 +30,7 @@ public:
 	
 	void associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block);
 
-    pipeline::Value<Slices> retrieveSlices(pipeline::Value<Blocks> blocks);
+    pipeline::Value<Slices> retrieveSlices(const Blocks& blocks);
 
 	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Slice> slice);
 	

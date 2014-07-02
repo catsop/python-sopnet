@@ -28,7 +28,7 @@ LocalSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 }
 
 pipeline::Value<Slices>
-LocalSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
+LocalSliceStore::retrieveSlices(const Blocks& blocks)
 {
 	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
 	// Use a set to ensure that we don't accidentally push the same Slice multiple times into to
@@ -38,7 +38,7 @@ LocalSliceStore::retrieveSlices(pipeline::Value<Blocks> blocks)
 	boost::unordered_set<ConflictSet> conflictSetUSet;
 	
 	// Retrieve the slices that belong to the requested blocks
-	foreach (boost::shared_ptr<Block> block, *blocks)
+	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 	if (_blockSliceMap.count(*block))
 		{

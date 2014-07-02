@@ -39,7 +39,7 @@ public:
      * Retrieve all segments that are at least partially contained in the given block.
      * @param block - the Block for which to retrieve all segments.
      */
-    virtual pipeline::Value<Segments> retrieveSegments(pipeline::Value<Blocks> blocks) = 0;
+    virtual pipeline::Value<Segments> retrieveSegments(const Blocks& blocks) = 0;
 
 	/**
 	 * Retrieve a set of Blocks that are associated with the given Segment.

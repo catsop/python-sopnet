@@ -21,7 +21,7 @@ public:
 	
 	void associate(pipeline::Value<Segments> segments, pipeline::Value<Block> block);
 
-	pipeline::Value<Segments> retrieveSegments(pipeline::Value<Blocks> blocks);
+	pipeline::Value<Segments> retrieveSegments(const Blocks& blocks);
 
 	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment);
 

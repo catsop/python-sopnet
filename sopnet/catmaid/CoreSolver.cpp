@@ -1,7 +1,6 @@
 #include <boost/make_shared.hpp>
 
 #include <catmaid/persistence/SegmentFeatureReader.h>
-#include <catmaid/persistence/SegmentReader.h>
 #include <catmaid/persistence/SliceReader.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <inference/LinearConstraint.h>
@@ -209,7 +208,6 @@ CoreSolver::updateOutputs()
 {
 	// A whole mess of pipeline variables
 	boost::shared_ptr<SliceReader> sliceReader = boost::make_shared<SliceReader>();
-	boost::shared_ptr<SegmentReader> segmentReader = boost::make_shared<SegmentReader>();
 	boost::shared_ptr<ProblemAssembler> problemAssembler = boost::make_shared<ProblemAssembler>();
 	boost::shared_ptr<ObjectiveGenerator> objectiveGenerator =
 		boost::make_shared<ObjectiveGenerator>();
@@ -239,13 +237,12 @@ CoreSolver::updateOutputs()
 
 	LOG_DEBUG(coresolverlog) << "Variables instantiated, setting up pipeline" << std::endl;
 	
-	segmentReader->setInput("blocks", _blocks);
 	sliceReader->setInput("blocks", _blocks);
-	
-	segmentReader->setInput("store", _segmentStore);
 	sliceReader->setInput("store", _sliceStore);
-	
-	endExtractor->setInput("segments", segmentReader->getOutput("segments"));
+
+	boost::shared_ptr<Segments> blockSegments = _segmentStore->retrieveSegments(*_blocks);
+
+	endExtractor->setInput("segments", blockSegments);
 	endExtractor->setInput("slices", sliceReader->getOutput("slices"));
 	
 	constraintAssembler->setInput("segments", endExtractor->getOutput("segments"));
