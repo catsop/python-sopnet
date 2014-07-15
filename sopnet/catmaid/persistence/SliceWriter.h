@@ -27,10 +27,10 @@ private:
 	void updateOutputs(){}
 	
 	bool containsAny(ConflictSet& conflictSet,
-					 pipeline::Value<Slices>& slices);
+					 const boost::shared_ptr<Slices> slices);
 	
-	pipeline::Value<Slices> collectSlicesByBlocks(const boost::shared_ptr<Block> block);
-	pipeline::Value<ConflictSets> collectConflictBySlices(pipeline::Value<Slices> slices);
+	boost::shared_ptr<Slices> collectSlicesByBlocks(const boost::shared_ptr<Block> block);
+	boost::shared_ptr<ConflictSets> collectConflictBySlices(const boost::shared_ptr<Slices> slices);
 
 	pipeline::Input<Blocks> _blocks;
 	pipeline::Input<Slices> _slices;

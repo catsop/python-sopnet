@@ -28,15 +28,15 @@ public:
 	 */
 	DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager);
 	
-	void associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block);
+	void associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<Block> block);
 
-    pipeline::Value<Slices> retrieveSlices(const Blocks& blocks);
+    boost::shared_ptr<Slices> retrieveSlices(const Blocks& blocks);
 
-	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Slice> slice);
+	boost::shared_ptr<Blocks> getAssociatedBlocks(boost::shared_ptr<Slice> slice);
 	
-	void storeConflict(pipeline::Value<ConflictSets> conflictSets);
+	void storeConflict(boost::shared_ptr<ConflictSets> conflictSets);
 	
-	pipeline::Value<ConflictSets> retrieveConflictSets(const Slices& slices);
+	boost::shared_ptr<ConflictSets> retrieveConflictSets(const Slices& slices);
 
 	boost::shared_ptr<DjangoBlockManager> getDjangoBlockManager() const;
 	

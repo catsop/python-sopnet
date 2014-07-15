@@ -20,14 +20,14 @@ SliceWriter::SliceWriter()
 void
 SliceWriter::writeSlices()
 {
-	pipeline::Value<ConflictSets> slicesConflictSets;
-	pipeline::Value<Slices> writtenSlices;
+	boost::shared_ptr<ConflictSets> slicesConflictSets;
+	boost::shared_ptr<Slices> writtenSlices = boost::make_shared<Slices>();
 	SliceSet sliceSet;
 	updateInputs();
 	
 	foreach (boost::shared_ptr<Block> block, *_blocks)
 	{
-		pipeline::Value<Slices> blockSlices = collectSlicesByBlocks(block);
+		boost::shared_ptr<Slices> blockSlices = collectSlicesByBlocks(block);
 		_store->associate(blockSlices, pipeline::Value<Block>(*block));
 		sliceSet.insert(blockSlices->begin(), blockSlices->end());
 	}
@@ -44,7 +44,7 @@ SliceWriter::writeSlices()
 
 
 bool
-SliceWriter::containsAny(ConflictSet& conflictSet, pipeline::Value<Slices>& slices)
+SliceWriter::containsAny(ConflictSet& conflictSet, const boost::shared_ptr<Slices> slices)
 {
 	foreach (const boost::shared_ptr<Slice> slice, *slices)
 	{
@@ -58,10 +58,10 @@ SliceWriter::containsAny(ConflictSet& conflictSet, pipeline::Value<Slices>& slic
 }
 
 
-pipeline::Value<ConflictSets>
-SliceWriter::collectConflictBySlices(pipeline::Value<Slices> slices)
+boost::shared_ptr<ConflictSets>
+SliceWriter::collectConflictBySlices(boost::shared_ptr<Slices> slices)
 {
-	pipeline::Value<ConflictSets> conflictSets;
+	boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
 	
 	foreach (ConflictSet conflictSet, *_conflictSets)
 	{
@@ -79,10 +79,10 @@ SliceWriter::collectConflictBySlices(pipeline::Value<Slices> slices)
 	return conflictSets;
 }
 
-pipeline::Value<Slices>
+boost::shared_ptr<Slices>
 SliceWriter::collectSlicesByBlocks(const boost::shared_ptr<Block> block)
 {
-	pipeline::Value<Slices> blockSlices;
+	boost::shared_ptr<Slices> blockSlices = boost::make_shared<Slices>();
 	util::rect<unsigned int> blockRect = *block;
 
 	foreach (boost::shared_ptr<Slice> slice, *_slices)

@@ -25,7 +25,7 @@ DjangoSliceStore::DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> b
 
 
 void
-DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block)
+DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<Block> block)
 {
 	if (slices->size() == 0)
 		return;
@@ -115,14 +115,14 @@ DjangoSliceStore::associate(pipeline::Value<Slices> slices, pipeline::Value<Bloc
 	}
 }
 
-pipeline::Value<Slices>
+boost::shared_ptr<Slices>
 DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 {
 	std::ostringstream url;
 	std::ostringstream post;
 	std::string delim = "";
 	boost::shared_ptr<ptree> pt;
-	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
+	boost::shared_ptr<Slices> slices = boost::shared_ptr<Slices>();
 	
 	appendProjectAndStack(url);
 	url << "/slices_by_blocks_and_conflict";
@@ -161,10 +161,10 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 }
 
 
-pipeline::Value<Blocks>
-DjangoSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
+boost::shared_ptr<Blocks>
+DjangoSliceStore::getAssociatedBlocks(boost::shared_ptr<Slice> slice)
 {
-	pipeline::Value<Blocks> blocks = pipeline::Value<Blocks>();
+	boost::shared_ptr<Blocks> blocks = boost::shared_ptr<Blocks>();
 
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream url;
@@ -199,7 +199,7 @@ DjangoSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 }
 
 void
-DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
+DjangoSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 {
 	std::ostringstream url;
 	std::ostringstream post;
@@ -248,11 +248,11 @@ DjangoSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 	}
 }
 
-pipeline::Value<ConflictSets>
+boost::shared_ptr<ConflictSets>
 DjangoSliceStore::retrieveConflictSets(const Slices& slices)
 {
 	boost::unordered_set<ConflictSet> conflictSetSet;
-	pipeline::Value<ConflictSets> conflictSets = pipeline::Value<ConflictSets>();
+	boost::shared_ptr<ConflictSets> conflictSets = boost::shared_ptr<ConflictSets>();
 
 	if (slices.size() == 0)
 		return conflictSets;

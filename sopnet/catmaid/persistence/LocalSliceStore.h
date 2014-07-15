@@ -14,23 +14,23 @@
 
 class LocalSliceStore : public SliceStore
 {
-	typedef std::map<Slice, pipeline::Value<Blocks> > SliceBlockMap;
-	typedef std::map<Block, pipeline::Value<Slices> > BlockSliceMap;
+	typedef std::map<Slice, boost::shared_ptr<Blocks> > SliceBlockMap;
+	typedef std::map<Block, boost::shared_ptr<Slices> > BlockSliceMap;
 	typedef std::map<unsigned int, boost::shared_ptr<Slice> > IdSliceMap;
-	typedef std::map<unsigned int, pipeline::Value<ConflictSets> > IdConflictsMap;
+	typedef std::map<unsigned int, boost::shared_ptr<ConflictSets> > IdConflictsMap;
 
 public:
 	LocalSliceStore();
 
-    void associate(pipeline::Value<Slices> slices, pipeline::Value<Block> block);
+    void associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<Block> block);
 
-    pipeline::Value<Slices> retrieveSlices(const Blocks& blocks);
+    boost::shared_ptr<Slices> retrieveSlices(const Blocks& blocks);
 
-	pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Slice> slice);
+	boost::shared_ptr<Blocks> getAssociatedBlocks(boost::shared_ptr<Slice> slice);
 
-	void storeConflict(pipeline::Value<ConflictSets> conflictSets);
+	void storeConflict(boost::shared_ptr<ConflictSets> conflictSets);
 	
-	pipeline::Value<ConflictSets> retrieveConflictSets(const Slices& slices);
+	boost::shared_ptr<ConflictSets> retrieveConflictSets(const Slices& slices);
 
 	void dumpStore();
 private:

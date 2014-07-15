@@ -24,8 +24,8 @@ public:
      * @param slices - the slices to store.
      * @param block - the block containing the slices.
      */
-    virtual void associate(pipeline::Value<Slices> slices,
-						   pipeline::Value<Block> block) = 0;
+    virtual void associate(boost::shared_ptr<Slices> slices,
+						   boost::shared_ptr<Block> block) = 0;
 
     /**
      * Retrieve all slices that are at least partially contained in the given blocks as well as
@@ -38,21 +38,21 @@ public:
 	 * 
      * @param blocks - the Blocks for which to retrieve all slices.
      */
-    virtual pipeline::Value<Slices> retrieveSlices(const Blocks& blocks) = 0;
+    virtual boost::shared_ptr<Slices> retrieveSlices(const Blocks& blocks) = 0;
 
 	/**
 	 * Retrieve all Blocks associated with the given slice.
 	 * @param slice - the slice for which Blocks are to be retrieved.
 	 */
-	virtual pipeline::Value<Blocks> getAssociatedBlocks(
-		pipeline::Value<Slice> slice) = 0;
+	virtual boost::shared_ptr<Blocks> getAssociatedBlocks(
+		boost::shared_ptr<Slice> slice) = 0;
 	
 	/**
 	 * Store a conflict set relationship. This requires the slices in question to already be
 	 * stored in this SliceStore.
 	 * @param conflictSets - the ConflictSets in question
 	 */
-	virtual void storeConflict(pipeline::Value<ConflictSets> conflictSets) = 0;
+	virtual void storeConflict(boost::shared_ptr<ConflictSets> conflictSets) = 0;
 	
 	/**
 	 * Retrieve all ConflictSets for the given Slices
@@ -60,7 +60,7 @@ public:
 	 * @return a ConflictSets object containing each ConflictSet to which any Slice in slices
 	 * belongs.
 	 */
-	virtual pipeline::Value<ConflictSets>
+	virtual boost::shared_ptr<ConflictSets>
 		retrieveConflictSets(const Slices& slices) = 0;
 
 	/**

@@ -14,8 +14,8 @@ LocalSliceStore::LocalSliceStore()
 }
 
 
-pipeline::Value<Blocks>
-LocalSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
+boost::shared_ptr<Blocks>
+LocalSliceStore::getAssociatedBlocks(boost::shared_ptr<Slice> slice)
 {
 	if (_sliceBlockMap.count(*slice))
 	{
@@ -23,14 +23,15 @@ LocalSliceStore::getAssociatedBlocks(pipeline::Value<Slice> slice)
 	}
 	else
 	{
-		return pipeline::Value<Blocks>();
+		boost::shared_ptr<Blocks> emptyBlocks = boost::make_shared<Blocks>();
+		return emptyBlocks;
 	}
 }
 
-pipeline::Value<Slices>
+boost::shared_ptr<Slices>
 LocalSliceStore::retrieveSlices(const Blocks& blocks)
 {
-	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
+	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
 	// Use a set to ensure that we don't accidentally push the same Slice multiple times into to
 	// the returned Slices.
 	SliceSet blockSliceSet;
@@ -44,7 +45,7 @@ LocalSliceStore::retrieveSlices(const Blocks& blocks)
 		{
 			LOG_ALL(localslicestorelog) << "Found block " << *block << " in block slice map" <<
 				std::endl;
-			pipeline::Value<Slices> blockSlices = _blockSliceMap[*block];
+			boost::shared_ptr<Slices> blockSlices = _blockSliceMap[*block];
 			blockSliceSet.insert(blockSlices->begin(), blockSlices->end());
 			LOG_ALL(localslicestorelog) << "Retrieved " << blockSlices->size() <<
 				" slices from block" << std::endl;
@@ -59,7 +60,7 @@ LocalSliceStore::retrieveSlices(const Blocks& blocks)
 		// First, push all ConflictSets into an actual unordered_set. Otherwise, we might
 		// try to add the slices from each conflict set n times, where n is the size of the
 		// conflictSet.
-		pipeline::Value<ConflictSets> conflictSets = _conflictMap[blockSlice->getId()];
+		boost::shared_ptr<ConflictSets> conflictSets = _conflictMap[blockSlice->getId()];
 		conflictSetUSet.insert(conflictSets->begin(), conflictSets->end());
 	}
 	
@@ -95,7 +96,7 @@ LocalSliceStore::mapBlockToSlice(const boost::shared_ptr< Block > block, const b
 {
 	// Place entry in block slice map
 
-	pipeline::Value<Slices> slices = _blockSliceMap[*block];
+	boost::shared_ptr<Slices> slices = _blockSliceMap[*block];
 	
 	foreach (boost::shared_ptr<Slice> cSlice, *slices)
 	{
@@ -114,7 +115,7 @@ void
 LocalSliceStore::mapSliceToBlock(const boost::shared_ptr< Slice > slice, const boost::shared_ptr< Block > block)
 {
 	// Place entry in slice block map
-	pipeline::Value<Blocks> blocks = _sliceBlockMap[*slice];
+	boost::shared_ptr<Blocks> blocks = _sliceBlockMap[*slice];
 	
 	foreach (boost::shared_ptr<Block> cBlock, *blocks)
 	{
@@ -131,8 +132,8 @@ LocalSliceStore::mapSliceToBlock(const boost::shared_ptr< Slice > slice, const b
 }
 
 void
-LocalSliceStore::associate(pipeline::Value<Slices> slicesIn,
-							pipeline::Value<Block> block)
+LocalSliceStore::associate(boost::shared_ptr<Slices> slicesIn,
+							boost::shared_ptr<Block> block)
 {
 	foreach (boost::shared_ptr<Slice> slice, *slicesIn)
 	{
@@ -176,7 +177,7 @@ LocalSliceStore::equivalentSlice(const boost::shared_ptr<Slice> slice)
 }
 
 void
-LocalSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
+LocalSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 {
 	
 	
@@ -209,17 +210,17 @@ LocalSliceStore::storeConflict(pipeline::Value<ConflictSets> conflictSets)
 	}
 }
 
-pipeline::Value<ConflictSets>
+boost::shared_ptr<ConflictSets>
 LocalSliceStore::retrieveConflictSets(const Slices& slices)
 {
-	pipeline::Value<ConflictSets> allConflictSets;
+	boost::shared_ptr<ConflictSets> allConflictSets = boost::make_shared<ConflictSets>();
 	boost::unordered_set<ConflictSet> conflictSetUSet;
 	
 	// Oh, man. This could be really expensive. We're only doing it for testing, so it should be ok
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
 		boost::shared_ptr<Slice> eqSlice = equivalentSlice(slice);
-		pipeline::Value<ConflictSets> conflictSets = _conflictMap[eqSlice->getId()];
+		boost::shared_ptr<ConflictSets> conflictSets = _conflictMap[eqSlice->getId()];
 		conflictSetUSet.insert(conflictSets->begin(), conflictSets->end());
 	}
 	
