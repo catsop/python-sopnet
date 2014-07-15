@@ -4,7 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <string>
 
-#include "StackStore.h"
+#include <catmaid/persistence/StackStore.h>
 
 class LocalStackStore : public StackStore
 {

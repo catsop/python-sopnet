@@ -1,10 +1,10 @@
 #include <sopnet/block/LocalBlockManager.h>
 #include <catmaid/django/DjangoSegmentStore.h>
 #include <catmaid/django/CatmaidStackStore.h>
-#include <catmaid/persistence/LocalStackStore.h>
-#include <catmaid/persistence/LocalSliceStore.h>
-#include <catmaid/persistence/LocalSegmentStore.h>
-#include <catmaid/persistence/LocalSolutionStore.h>
+#include <catmaid/persistence/local/LocalStackStore.h>
+#include <catmaid/persistence/local/LocalSliceStore.h>
+#include <catmaid/persistence/local/LocalSegmentStore.h>
+#include <catmaid/persistence/local/LocalSolutionStore.h>
 #include "BackendClient.h"
 #include "logging.h"
 

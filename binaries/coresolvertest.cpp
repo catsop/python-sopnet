@@ -33,9 +33,9 @@
 #include <catmaid/SolutionGuarantor.h>
 #include <catmaid/persistence/CostReader.h>
 #include <catmaid/persistence/CostWriter.h>
-#include <catmaid/persistence/LocalSegmentStore.h>
-#include <catmaid/persistence/LocalSliceStore.h>
-#include <catmaid/persistence/LocalStackStore.h>
+#include <catmaid/persistence/local/LocalSegmentStore.h>
+#include <catmaid/persistence/local/LocalSliceStore.h>
+#include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/SegmentFeatureReader.h>
 #include <catmaid/persistence/SegmentSolutionReader.h>
 #include <catmaid/persistence/SegmentReader.h>
