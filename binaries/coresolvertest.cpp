@@ -43,8 +43,8 @@
 #include <sopnet/segments/SegmentSet.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
 #include <tests/DjangoGenerators.h>
-#include <catmaid/django/DjangoSliceStore.h>
-#include <catmaid/django/DjangoSegmentStore.h>
+#include <catmaid/persistence/django/DjangoSliceStore.h>
+#include <catmaid/persistence/django/DjangoSegmentStore.h>
 
 #include <sopnet/block/Box.h>
 #include <vigra/impex.hxx>

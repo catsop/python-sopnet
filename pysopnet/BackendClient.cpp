@@ -1,6 +1,6 @@
 #include <sopnet/block/LocalBlockManager.h>
-#include <catmaid/django/DjangoSegmentStore.h>
-#include <catmaid/django/CatmaidStackStore.h>
+#include <catmaid/persistence/django/DjangoSegmentStore.h>
+#include <catmaid/persistence/django/CatmaidStackStore.h>
 #include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/local/LocalSegmentStore.h>

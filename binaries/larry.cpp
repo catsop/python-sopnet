@@ -16,12 +16,12 @@
 #include <util/httpclient.h>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include <sopnet/catmaid/django/DjangoBlockManager.h>
+#include <sopnet/catmaid/persistence/django/DjangoBlockManager.h>
 #include <tests/BlockManagerTest.h>
 #include <tests/DjangoTestSuite.h>
 #include <tests/LocalTestSuite.h>
 #include <tests/CatsopTest.h>
-#include <catmaid/django/CatmaidStackStore.h>
+#include <catmaid/persistence/django/CatmaidStackStore.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>

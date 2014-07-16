@@ -1,10 +1,10 @@
 #include "DjangoTestSuite.h"
 #include <binaries/tests/DjangoGenerators.h>
-#include <catmaid/django/DjangoUtils.h>
+#include <catmaid/persistence/django/DjangoUtils.h>
 #include <catmaid/persistence/StackStore.h>
-#include <catmaid/persistence/LocalStackStore.h>
-#include <catmaid/django/DjangoBlockManager.h>
-#include <catmaid/django/DjangoSliceStore.h>
+#include <catmaid/persistence/local/LocalStackStore.h>
+#include <catmaid/persistence/django/DjangoBlockManager.h>
+#include <catmaid/persistence/django/DjangoSliceStore.h>
 
 #include <util/Logger.h>
 

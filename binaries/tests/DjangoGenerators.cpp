@@ -1,6 +1,6 @@
 #include "DjangoGenerators.h"
-#include <catmaid/django/DjangoUtils.h>
-#include <catmaid/django/DjangoBlockManager.h>
+#include <catmaid/persistence/django/DjangoUtils.h>
+#include <catmaid/persistence/django/DjangoBlockManager.h>
 #include <util/ProgramOptions.h>
 #include <util/httpclient.h>
 #include <string>

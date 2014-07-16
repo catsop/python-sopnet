@@ -3,7 +3,7 @@
 
 #include <string>
 #include <sopnet/block/BlockManager.h>
-#include <catmaid/django/DjangoBlockManager.h>
+#include <catmaid/persistence/DjangoBlockManager.h>
 
 namespace catsoptest
 {
