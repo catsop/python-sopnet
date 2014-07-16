@@ -63,8 +63,9 @@ bool clearDJSopnet(const std::string& server, const unsigned int project, const 
 	os << "/clear_djsopnet?sure=yes";
 	pt = HttpClient::getPropertyTree(os.str());
 	
-	if (HttpClient::checkDjangoError(pt) ||
-		pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	DjangoUtils::checkDjangoError(pt, os.str());
+	
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 	{
 		LOG_ERROR(djangogeneratorslog) << "Unable to clear Django data" << std::endl;
 		return false;

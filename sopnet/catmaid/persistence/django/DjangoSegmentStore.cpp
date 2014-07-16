@@ -71,13 +71,7 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 		
 		insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
 		
-		if (HttpClient::checkDjangoError(insertPt))
-		{
-			LOG_ERROR(djangosegmentstorelog) << "Error storing segments" << std::endl;
-			LOG_ERROR(djangosegmentstorelog) << "\tURL was " << insertUrl.str() << std::endl;
-			LOG_ERROR(djangosegmentstorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
-			return;
-		}
+		DjangoUtils::checkDjangoError(insertPt, insertUrl.str());
 	}
 	
 	{
@@ -100,13 +94,7 @@ DjangoSegmentStore::associate(pipeline::Value<Segments> segments,
 		
 		assocPt = HttpClient::postPropertyTree(assocUrl.str(), assocPost.str());
 		
-		if (HttpClient::checkDjangoError(assocPt))
-		{
-			LOG_ERROR(djangosegmentstorelog)
-					<< "Error associated segments to block "
-					<< *block << std::endl;
-			return;
-		}
+		DjangoUtils::checkDjangoError(assocPt, assocUrl.str());
 	}
 }
 
@@ -118,6 +106,7 @@ DjangoSegmentStore::retrieveSegments(const Blocks& blocks)
 	std::string delim = "";
 	boost::shared_ptr<ptree> pt;
 	pipeline::Value<Segments> segments = pipeline::Value<Segments>();
+	ptree segmentsTree;
 	
 	appendProjectAndStack(url);
 	url << "/segments_by_blocks";
@@ -135,31 +124,29 @@ DjangoSegmentStore::retrieveSegments(const Blocks& blocks)
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (!HttpClient::checkDjangoError(pt) &&
-		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	DjangoUtils::checkDjangoError(pt, url.str());
+	// TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	segmentsTree = pt->get_child("segments");
+
+	LOG_DEBUG(djangosegmentstorelog)
+		<< "requesting all slices in the same blocks" << std::endl;
+	
+	// Force the slice store to cache the necessary slices.
+	_sliceStore->retrieveSlices(blocks);
+
+	LOG_DEBUG(djangosegmentstorelog) << "create segments from ptree" << std::endl;
+	
+	foreach (ptree::value_type segmentV, segmentsTree)
 	{
-		ptree segmentsTree = pt->get_child("segments");
-
-		LOG_DEBUG(djangosegmentstorelog)
-			<< "requesting all slices in the same blocks" << std::endl;
-		
-		// Force the slice store to cache the necessary slices.
-		_sliceStore->retrieveSlices(blocks);
-
-		LOG_DEBUG(djangosegmentstorelog) << "create segments from ptree" << std::endl;
-		
-		foreach (ptree::value_type segmentV, segmentsTree)
+		boost::shared_ptr<Segment> segment = ptreeToSegment(segmentV.second);
+		segments->add(segment);
+		if (!_idSegmentMap.count(segment->getId()))
 		{
-			boost::shared_ptr<Segment> segment = ptreeToSegment(segmentV.second);
-			segments->add(segment);
-			if (!_idSegmentMap.count(segment->getId()))
-			{
-				_idSegmentMap[segment->getId()] = segment;
-			}
+			_idSegmentMap[segment->getId()] = segment;
 		}
-
-		LOG_DEBUG(djangosegmentstorelog) << "done" << std::endl;
 	}
+
+	LOG_DEBUG(djangosegmentstorelog) << "done" << std::endl;
 	
 	return segments;
 }
@@ -180,13 +167,8 @@ DjangoSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 	pt = HttpClient::getPropertyTree(url.str());
 	
 	// Check for problems.
-	if (HttpClient::checkDjangoError(pt) ||
-		pt->get_child("ok").get_value<std::string>().compare("true") != 0)
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error getting blocks for segment " << segment->getId() <<
-			" with hash " << hash << std::endl;
-		return blocks;
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
+	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 	
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("block_ids"), blockIds);
 	
@@ -237,25 +219,9 @@ int DjangoSegmentStore::storeFeatures(pipeline::Value<Features> features)
 	
 	pt = HttpClient::postPropertyTree(url.str(), data.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error storing features" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tData was\n\t" << data.str() << std::endl;
-		
-		if (HttpClient::ptreeHasChild(pt, "count"))
-		{
-			return pt->get_child("count").get_value<int>();
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		return pt->get_child("count").get_value<int>();
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
+	
+	return pt->get_child("count").get_value<int>();
 }
 
 pipeline::Value<SegmentStore::SegmentFeaturesMap>
@@ -267,6 +233,7 @@ DjangoSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
 	std::ostringstream url;
 	std::ostringstream post;
 	std::string delim = "";
+	ptree featuresTree;
 	
 	appendProjectAndStack(url);
 	
@@ -282,28 +249,22 @@ DjangoSegmentStore::retrieveFeatures(pipeline::Value<Segments> segments)
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error while retrieving features" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
-		return featureMap;
-	}
-	else
-	{
-		ptree featuresTree = pt->get_child("features");
-		foreach (ptree::value_type featureNode, featuresTree)
-		{
-			
-			std::string hash = featureNode.second.get_child("hash").get_value<std::string>();
+	DjangoUtils::checkDjangoError(pt, url.str());
 
-			if (_hashSegmentMap.count(hash))
-			{
-				std::vector<double> fvect;
-				HttpClient::ptreeVector<double>(featureNode.second.get_child("fv"), fvect);
-				(*featureMap)[_hashSegmentMap[hash]] = fvect;
-			}
+	featuresTree = pt->get_child("features");
+	foreach (ptree::value_type featureNode, featuresTree)
+	{
+		
+		std::string hash = featureNode.second.get_child("hash").get_value<std::string>();
+
+		if (_hashSegmentMap.count(hash))
+		{
+			std::vector<double> fvect;
+			HttpClient::ptreeVector<double>(featureNode.second.get_child("fv"), fvect);
+			(*featureMap)[_hashSegmentMap[hash]] = fvect;
 		}
 	}
+
 	
 	return featureMap;
 }
@@ -321,12 +282,7 @@ DjangoSegmentStore::getFeatureNames()
 	
 	pt = HttpClient::getPropertyTree(url.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error reading feature names from url " << url.str()
-			<< std::endl;
-		return featureNames;
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
 	
 	foreach (ptree::value_type nameNode, pt->get_child("names"))
 	{
@@ -365,23 +321,9 @@ DjangoSegmentStore::storeCost(pipeline::Value<Segments> segments,
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error while storing segment costs" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was:\n\t" << url.str() << std::endl;
-		if (HttpClient::ptreeHasChild(pt, "count"))
-		{
-			return pt->get_child("count").get_value<int>();
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	else
-	{
-		return pt->get_child("count").get_value<int>();
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
+	
+	return pt->get_child("count").get_value<int>();
 }
 
 pipeline::Value<LinearObjective>
@@ -394,6 +336,8 @@ DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	boost::shared_ptr<ptree> pt;
 	std::string delim = "";
 	std::map<std::string, double> hashCostMap;
+	unsigned int i = 0;
+	ptree costTree;
 	
 	appendProjectAndStack(url);
 	url << "/costs_by_segments";
@@ -410,46 +354,39 @@ DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (!HttpClient::checkDjangoError(pt) &&
-		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	DjangoUtils::checkDjangoError(pt, url.str());
+	// TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	
+	costTree = pt->get_child("costs");
+	
+	objective->resize(segments->size());
+	
+	// Populate the hash->cost map from the result
+	foreach (ptree::value_type costNode, costTree)
 	{
-		unsigned int i = 0;
-		ptree costTree = pt->get_child("costs");
+		std::string hash = costNode.second.get_child("hash").get_value<std::string>();
+		double cost = costNode.second.get_child("cost").get_value<double>();
 		
-		objective->resize(segments->size());
-		
-		// Populate the hash->cost map from the result
-		foreach (ptree::value_type costNode, costTree)
-		{
-			std::string hash = costNode.second.get_child("hash").get_value<std::string>();
-			double cost = costNode.second.get_child("cost").get_value<double>();
-			
-			hashCostMap[hash] = cost;
-		}
-		
-		// Iterate through the segments, pushing their cost to the objective, if it exists
-		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
-		{
-			std::string hash = getHash(segment);
-			if (hashCostMap.count(hash))
-			{
-				objective->setCoefficient(i, hashCostMap[hash]);
-			}
-			else
-			{
-				objective->setCoefficient(i, defaultCost);
-				segmentsNF->add(segment);
-			}
-			++i;
-		}
-		
-	}
-	else
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error while retrieving segment costs from url " <<
-			url.str() << std::endl;
+		hashCostMap[hash] = cost;
 	}
 	
+	// Iterate through the segments, pushing their cost to the objective, if it exists
+	// If it doesn't, set the default cost, and add the segment to segmentsNF (NF = not found)
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
+	{
+		std::string hash = getHash(segment);
+		if (hashCostMap.count(hash))
+		{
+			objective->setCoefficient(i, hashCostMap[hash]);
+		}
+		else
+		{
+			objective->setCoefficient(i, defaultCost);
+			segmentsNF->add(segment);
+		}
+		++i;
+	}
+
 	return objective;
 }
 
@@ -487,23 +424,8 @@ DjangoSegmentStore::storeSolution(pipeline::Value<Segments> segments,
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangosegmentstorelog) << "Error while storing segment solutions" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was:\n\t" << url.str() << std::endl;
-		if (HttpClient::ptreeHasChild(pt, "count"))
-		{
-			return pt->get_child("count").get_value<int>();
-		}
-		else
-		{
-			return 0;
-		}
-	}
-	else
-	{
-	}
-
+	DjangoUtils::checkDjangoError(pt, url.str());
+	
 	return count;
 }
 
@@ -528,41 +450,35 @@ DjangoSegmentStore::retrieveSolution(pipeline::Value<Segments> segments,
 	}
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
+
+	DjangoUtils::checkDjangoError(pt, url.str());
 	
-	if (!HttpClient::checkDjangoError(pt))
+	std::map<std::string, double> solutionMap;
+	ptree solutionsTree = pt->get_child("solutions");
+	unsigned int i = 0;
+	
+	solution->resize(segments->size());
+	
+	foreach (ptree::value_type solutionNode, solutionsTree)
 	{
-		std::map<std::string, double> solutionMap;
-		ptree solutionsTree = pt->get_child("solutions");
-		unsigned int i = 0;
-		
-		solution->resize(segments->size());
-		
-		foreach (ptree::value_type solutionNode, solutionsTree)
-		{
-			std::string hash = solutionNode.second.get_child("hash").get_value<std::string>();
-			double solution = solutionNode.second.get_child(
-				"solution").get_value<std::string>().compare("true") == 0 ? 1.0 : 0.0;
-			solutionMap[hash] = solution;
-		}
-		
-		foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
-		{
-			std::string hash = getHash(segment);
-			if (solutionMap.count(hash))
-			{
-				(*solution)[i] = solutionMap[hash];
-			}
-			else
-			{
-				(*solution)[i] = 0;
-			}
-			++i;
-		}
+		std::string hash = solutionNode.second.get_child("hash").get_value<std::string>();
+		double solution = solutionNode.second.get_child(
+			"solution").get_value<std::string>().compare("true") == 0 ? 1.0 : 0.0;
+		solutionMap[hash] = solution;
 	}
-	else
+	
+	foreach (boost::shared_ptr<Segment> segment, segments->getSegments())
 	{
-		LOG_ERROR(djangosegmentstorelog) << "Error while retrieving solutions" << std::endl;
-		LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
+		std::string hash = getHash(segment);
+		if (solutionMap.count(hash))
+		{
+			(*solution)[i] = solutionMap[hash];
+		}
+		else
+		{
+			(*solution)[i] = 0;
+		}
+		++i;
 	}
 	
 	return solution;
@@ -642,17 +558,13 @@ DjangoSegmentStore::setFeatureNames(const std::vector<std::string>& featureNames
 		LOG_DEBUG(djangosegmentstorelog) << "Setting feature names via url: " << url.str() << ", post: " << post.str() << std::endl;
 		
 		pt = HttpClient::postPropertyTree(url.str(), post.str());
+
+		DjangoUtils::checkDjangoError(pt, url.str());
+
+		// TODO: decide what to do about the following check.
+		// pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 		
-		if (HttpClient::checkDjangoError(pt) ||
-			pt->get_child("ok").get_value<std::string>().compare("true") != 0)
-		{
-			LOG_ERROR(djangosegmentstorelog) << "Error while setting feature names" << std::endl;
-			LOG_ERROR(djangosegmentstorelog) << "\tURL was " << url.str() << std::endl;
-		}
-		else
-		{
-			_featureNamesFlag = true;
-		}
+		_featureNamesFlag = true;
 	}
 }
 

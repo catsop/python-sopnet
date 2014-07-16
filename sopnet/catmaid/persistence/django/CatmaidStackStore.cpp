@@ -19,38 +19,24 @@ CatmaidStackStore::CatmaidStackStore(const std::string& url,
 	
 	pt = HttpClient::getPropertyTree(os.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(catmaidstackstorelog) << "Error while retrieving stack info. URL was " <<
-			os.str() << std::endl;
-		_ok = false;
-		_imageBase = "";
-		_extension = "";
-		_tileWidth = 0;
-		_tileHeight = 0;
-		_stackWidth = 0;
-		_stackHeight = 0;
-		_stackDepth = 0;
-	}
-	else
-	{
-		std::vector<unsigned int> tileSizeVector, stackSizeVector;
-		
-		_imageBase = pt->get_child("image_base").get_value<std::string>();
-		_extension = pt->get_child("file_extension").get_value<std::string>();
-		
-		HttpClient::ptreeVector<unsigned int>(pt->get_child("tile_size"), tileSizeVector);
-		HttpClient::ptreeVector<unsigned int>(pt->get_child("stack_size"), stackSizeVector);
-		
-		_tileWidth = tileSizeVector[0];
-		_tileHeight = tileSizeVector[1];
-		
-		_stackWidth = stackSizeVector[0];
-		_stackHeight = stackSizeVector[1];
-		_stackDepth = stackSizeVector[2];
-		
-		_ok = true;
-	}
+	DjangoUtils::checkDjangoError(pt, os.str());
+
+	std::vector<unsigned int> tileSizeVector, stackSizeVector;
+	
+	_imageBase = pt->get_child("image_base").get_value<std::string>();
+	_extension = pt->get_child("file_extension").get_value<std::string>();
+	
+	HttpClient::ptreeVector<unsigned int>(pt->get_child("tile_size"), tileSizeVector);
+	HttpClient::ptreeVector<unsigned int>(pt->get_child("stack_size"), stackSizeVector);
+	
+	_tileWidth = tileSizeVector[0];
+	_tileHeight = tileSizeVector[1];
+	
+	_stackWidth = stackSizeVector[0];
+	_stackHeight = stackSizeVector[1];
+	_stackDepth = stackSizeVector[2];
+	
+	_ok = true;
 }
 
 

@@ -33,12 +33,7 @@ DjangoBlockManager::getBlockManager(const std::string& server,
 	
 	boost::shared_ptr<ptree> pt = HttpClient::getPropertyTree(os.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in getBlockManager" << std::endl;
-		return boost::shared_ptr<DjangoBlockManager>();
-	}
-	
+	DjangoUtils::checkDjangoError(pt, os.str());
 	
 	coreSizeCount = HttpClient::ptreeVector<unsigned int>(pt->get_child("core_size"), vCoreSize);
 	blockSizeCount =
@@ -122,18 +117,11 @@ DjangoBlockManager::blockAtLocation(const util::point3<unsigned int>& location)
 
 			pt = HttpClient::getPropertyTree(os.str());
 
-			if (!HttpClient::checkDjangoError(pt))
-			{
-				block = parseBlock(*pt);
-				insertBlock(block);
-				return block;
-			}
-			else
-			{
-				LOG_ERROR(djangoblockmanagerlog) << "Django error in blockAtLocation " <<
-					location << std::endl;
-				return boost::shared_ptr<Block>();
-			}
+			DjangoUtils::checkDjangoError(pt, os.str());
+			
+			block = parseBlock(*pt);
+			insertBlock(block);
+			return block;
 		}
 	}
 	else
@@ -169,24 +157,19 @@ DjangoBlockManager::blocksInBox(const Box<>& box)
 		"&depth=" << box.size().z;
 	
 	pt = HttpClient::getPropertyTree(os.str());
-	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in blocksInBox: " << box << std::endl;
-	}
-	else
-	{
-		foreach (ptree::value_type v, pt->get_child("blocks"))
-		{
-			boost::shared_ptr<Block> block = parseBlock(v.second);
 
-			if (block && !_locationBlockMap.count(block->location()))
-			{
-				insertBlock(block);
-			}
-			
-			blocks->add(block);
+	
+	DjangoUtils::checkDjangoError(pt, os.str());
+	foreach (ptree::value_type v, pt->get_child("blocks"))
+	{
+		boost::shared_ptr<Block> block = parseBlock(v.second);
+
+		if (block && !_locationBlockMap.count(block->location()))
+		{
+			insertBlock(block);
 		}
+		
+		blocks->add(block);
 	}
 
 	return blocks;
@@ -255,17 +238,11 @@ DjangoBlockManager::coreAtLocation(const util::point3<unsigned int>& location)
 			os << "/core_at_location?x=" << loc.x << "&y=" << loc.y << "&z=" <<loc.z;
 
 			pt = HttpClient::getPropertyTree(os.str());
-			if (HttpClient::checkDjangoError(pt))
-			{
-				LOG_ERROR(djangoblockmanagerlog) << "Django error in coreAtLocation" << std::endl;
-				return boost::shared_ptr<Core>();
-			}
-			else
-			{
-				boost::shared_ptr<Core> core = parseCore(*pt);
-				insertCore(core);
-				return core;
-			}
+			DjangoUtils::checkDjangoError(pt, os.str());
+
+			boost::shared_ptr<Core> core = parseCore(*pt);
+			insertCore(core);
+			return core;
 		}
 	}
 	else
@@ -302,23 +279,18 @@ DjangoBlockManager::coresInBox(const Box<>& box)
 
 	pt = HttpClient::getPropertyTree(os.str());
 	
-	if (HttpClient::checkDjangoError(pt))
+	DjangoUtils::checkDjangoError(pt, os.str());
+
+	foreach (ptree::value_type v, pt->get_child("cores"))
 	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in coresInBox: " << box << std::endl;
-	}
-	else
-	{
-		foreach (ptree::value_type v, pt->get_child("cores"))
+		boost::shared_ptr<Core> core = parseCore(v.second);
+
+		if (core && !_locationCoreMap.count(core->location()))
 		{
-			boost::shared_ptr<Core> core = parseCore(v.second);
-
-			if (core && !_locationCoreMap.count(core->location()))
-			{
-				insertCore(core);
-			}
-
-			cores->add(core);
+			insertCore(core);
 		}
+
+		cores->add(core);
 	}
 
 	return cores;
@@ -336,12 +308,7 @@ bool DjangoBlockManager::getFlag(const unsigned int id, const std::string& flagN
 
 	pt = HttpClient::getPropertyTree(os.str());
 
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in get_"  << flagName <<
-			" for " << idVar << " = " << id << std::endl;
-		return false;
-	}
+	DjangoUtils::checkDjangoError(pt, os.str());
 	
 	return pt->get_child(flagName).get_value<bool>();
 }
@@ -359,12 +326,7 @@ void DjangoBlockManager::setFlag(const unsigned int id, const std::string& flagN
 	
 	pt = HttpClient::getPropertyTree(os.str());
 	
-	if (HttpClient::checkDjangoError(pt))
-	{
-		LOG_ERROR(djangoblockmanagerlog) << "Django error in set_" << flagName <<
-			" for " << idVar << " = " << id << std::endl;
-		return;
-	}
+	DjangoUtils::checkDjangoError(pt, os.str());
 	
 	ok = pt->get_child("ok").get_value<std::string>().compare("true") == 0;
 	
@@ -479,20 +441,15 @@ DjangoBlockManager::blocksById(std::vector<unsigned int>& ids)
 	{
 		boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 		
-		if (HttpClient::checkDjangoError(pt))
-		{
-			LOG_ERROR(djangoblockmanagerlog) << "Django error in blocksById" << std::endl;
-		}
-		else
-		{
-			foreach (ptree::value_type v, pt->get_child("blocks"))
-			{
-				boost::shared_ptr<Block> block = parseBlock(v.second);
+		DjangoUtils::checkDjangoError(pt, url.str());
 
-				insertBlock(block);
-				
-				blocks->add(block);
-			}
+		foreach (ptree::value_type v, pt->get_child("blocks"))
+		{
+			boost::shared_ptr<Block> block = parseBlock(v.second);
+
+			insertBlock(block);
+			
+			blocks->add(block);
 		}
 	}
 	
@@ -530,20 +487,15 @@ DjangoBlockManager::coresById(std::vector<unsigned int>& ids)
 	{
 		boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 		
-		if (HttpClient::checkDjangoError(pt))
-		{
-			LOG_ERROR(djangoblockmanagerlog) << "Django error in coresById" << std::endl;
-		}
-		else
-		{
-			foreach (ptree::value_type v, pt->get_child("cores"))
-			{
-				boost::shared_ptr<Core> core = parseCore(v.second);
+		DjangoUtils::checkDjangoError(pt, url.str());
 
-				insertCore(core);
-				
-				cores->add(core);
-			}
+		foreach (ptree::value_type v, pt->get_child("cores"))
+		{
+			boost::shared_ptr<Core> core = parseCore(v.second);
+
+			insertCore(core);
+			
+			cores->add(core);
 		}
 	}
 	

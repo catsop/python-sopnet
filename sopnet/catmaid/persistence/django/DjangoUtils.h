@@ -7,7 +7,14 @@
 #include <boost/shared_ptr.hpp>
 #include <util/point3.hpp>
 #include <util/rect.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <sopnet/segments/Segment.h>
+
+#include <util/exceptions.h>
+
+struct DjangoException : virtual Exception {};
+struct HttpException : virtual Exception {};
+struct JSONException : virtual Exception {};
 
 class DjangoUtils
 {
@@ -39,6 +46,14 @@ public:
 	 * A helper function to return a rect that bounds the given segment in 2D
 	 */
 	static util::rect<int> segmentBound(const boost::shared_ptr<Segment> segment);
+	
+	/**
+	 * Check a property tree for django errors. If an error is detected, this function
+	 * will throw a DjangoException, HttpException or JSONException
+	 * @param pt the property tree to check
+	 */
+	static void checkDjangoError(const boost::shared_ptr<boost::property_tree::ptree> pt,
+		const std::string url = "");
 };
 
 #endif //DJANGO_UTILS_H__

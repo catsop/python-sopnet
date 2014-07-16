@@ -74,13 +74,7 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 		
 		insertPt = HttpClient::postPropertyTree(insertUrl.str(), insertPostData.str());
 
-		if (HttpClient::checkDjangoError(insertPt))
-		{
-			LOG_ERROR(djangoslicestorelog) << "Error storing slices" << std::endl;
-			LOG_ERROR(djangoslicestorelog) << "\tURL was " << insertUrl.str() << std::endl;
-			LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << insertPostData.str() << std::endl;
-			return;
-		}
+		DjangoUtils::checkDjangoError(insertPt, insertUrl.str());
 	}
 
 	{
@@ -103,15 +97,7 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 		
 		assocPt = HttpClient::postPropertyTree(assocUrl.str(), assocPostData.str());
 
-		if (HttpClient::checkDjangoError(assocPt))
-		{
-			LOG_ERROR(djangoslicestorelog)
-					<< "Error associating slices to block "
-					<< *block << std::endl;
-			LOG_ERROR(djangoslicestorelog) << "\tURL was " << assocUrl.str() << std::endl;
-			LOG_ERROR(djangoslicestorelog) << "\tData was\n\t" << assocPostData.str() << std::endl;
-			return;
-		}
+		DjangoUtils::checkDjangoError(assocPt, assocUrl.str());
 	}
 }
 
@@ -123,6 +109,7 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 	std::string delim = "";
 	boost::shared_ptr<ptree> pt;
 	boost::shared_ptr<Slices> slices = boost::shared_ptr<Slices>();
+	ptree slicesTree;
 	
 	appendProjectAndStack(url);
 	url << "/slices_by_blocks_and_conflict";
@@ -136,27 +123,20 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 	
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
-	if (!HttpClient::checkDjangoError(pt) &&
-		pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	DjangoUtils::checkDjangoError(pt, url.str());
+	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	slicesTree = pt->get_child("slices");
+	foreach (ptree::value_type sliceV, slicesTree)
 	{
-		ptree slicesTree = pt->get_child("slices");
-		foreach (ptree::value_type sliceV, slicesTree)
+		boost::shared_ptr<Slice> slice = ptreeToSlice(sliceV.second);
+		slices->add(slice);
+		// Make sure that the slice is in the id slice map
+		if (!_idSliceMap.count(slice->getId()))
 		{
-			boost::shared_ptr<Slice> slice = ptreeToSlice(sliceV.second);
-			slices->add(slice);
-			// Make sure that the slice is in the id slice map
-			if (!_idSliceMap.count(slice->getId()))
-			{
-				_idSliceMap[slice->getId()] = slice;
-			}
+			_idSliceMap[slice->getId()] = slice;
 		}
-		
 	}
-	else
-	{
-		LOG_ERROR(djangoslicestorelog) << "Error retrieving slices" << std::endl;
-	}
-	
+
 	return slices;
 }
 
@@ -180,13 +160,8 @@ DjangoSliceStore::getAssociatedBlocks(boost::shared_ptr<Slice> slice)
 	pt = HttpClient::getPropertyTree(url.str());
 	
 	// Check for problems.
-	if (HttpClient::checkDjangoError(pt) ||
-		pt->get_child("ok").get_value<std::string>().compare("true") != 0)
-	{
-		LOG_ERROR(djangoslicestorelog) << "Error getting blocks for slice " << slice->getId() <<
-			" with hash " << hash << std::endl;
-		return blocks;
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
+	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 	
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("block_ids"), blockIds);
 	
@@ -240,12 +215,8 @@ DjangoSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 	}
 
 	boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
-	if (HttpClient::checkDjangoError(pt)
-		|| pt->get_child("ok").get_value<std::string>().compare("true") != 0)
-	{
-		LOG_ERROR(djangoslicestorelog) << "Django Error while storing conflict" <<
-			std::endl;
-	}
+	DjangoUtils::checkDjangoError(pt, url.str());
+	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
 }
 
 boost::shared_ptr<ConflictSets>
@@ -282,24 +253,12 @@ DjangoSliceStore::retrieveConflictSets(const Slices& slices)
 
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 
-	if (HttpClient::checkDjangoError(pt))
+	DjangoUtils::checkDjangoError(pt, url.str());
+	
+	foreach (ptree::value_type v, pt->get_child("conflict"))
 	{
-		LOG_ERROR(djangoslicestorelog)
-				<< "Django Error while retrieving conflict for slices"
-				<< std::endl;
-		LOG_ERROR(djangoslicestorelog)
-				<< "url was " << url.str()
-				<< " post was" << std::endl
-				<< "\t" << post.str() << std::endl;
-		return conflictSets;
-	}
-	else
-	{
-		foreach (ptree::value_type v, pt->get_child("conflict"))
-		{
-			boost::shared_ptr<ConflictSet> conflictSet = ptreeToConflictSet(v.second);
-			conflictSetSet.insert(*conflictSet);
-		}
+		boost::shared_ptr<ConflictSet> conflictSet = ptreeToConflictSet(v.second);
+		conflictSetSet.insert(*conflictSet);
 	}
 
 	foreach (ConflictSet conflictSet, conflictSetSet)
