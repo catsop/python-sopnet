@@ -125,7 +125,12 @@ DjangoSegmentStore::retrieveSegments(const Blocks& blocks)
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
 	DjangoUtils::checkDjangoError(pt, url.str());
-	// TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error while retrieving segments associated to blocks. URL: " << url.str());
+	}
 	segmentsTree = pt->get_child("segments");
 
 	LOG_DEBUG(djangosegmentstorelog)
@@ -168,7 +173,12 @@ DjangoSegmentStore::getAssociatedBlocks(pipeline::Value<Segment> segment)
 	
 	// Check for problems.
 	DjangoUtils::checkDjangoError(pt, url.str());
-	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	if(pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error while retrieving blocks associated to segments. URL: " << url.str());
+	}
 	
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("block_ids"), blockIds);
 	
@@ -355,7 +365,12 @@ DjangoSegmentStore::retrieveCost(pipeline::Value<Segments> segments,
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
 	DjangoUtils::checkDjangoError(pt, url.str());
-	// TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error while retrieving segment costs. URL: " << url.str());
+	}
 	
 	costTree = pt->get_child("costs");
 	
@@ -561,8 +576,12 @@ DjangoSegmentStore::setFeatureNames(const std::vector<std::string>& featureNames
 
 		DjangoUtils::checkDjangoError(pt, url.str());
 
-		// TODO: decide what to do about the following check.
-		// pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+		if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+		{
+			UTIL_THROW_EXCEPTION(
+				DjangoException,
+				"Error while setting feature names. URL: " << url.str());
+		}
 		
 		_featureNamesFlag = true;
 	}

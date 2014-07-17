@@ -124,7 +124,12 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 	pt = HttpClient::postPropertyTree(url.str(), post.str());
 	
 	DjangoUtils::checkDjangoError(pt, url.str());
-	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") == 0)
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error finding slices associated to blocks. URL: " << url.str());
+	}
 	slicesTree = pt->get_child("slices");
 	foreach (ptree::value_type sliceV, slicesTree)
 	{
@@ -161,7 +166,12 @@ DjangoSliceStore::getAssociatedBlocks(boost::shared_ptr<Slice> slice)
 	
 	// Check for problems.
 	DjangoUtils::checkDjangoError(pt, url.str());
-	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error finding blocks associated to slices. URL: " << url.str());
+	}
 	
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("block_ids"), blockIds);
 	
@@ -216,7 +226,12 @@ DjangoSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 
 	boost::shared_ptr<ptree> pt = HttpClient::postPropertyTree(url.str(), post.str());
 	DjangoUtils::checkDjangoError(pt, url.str());
-	//TODO: pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	if (pt->get_child("ok").get_value<std::string>().compare("true") != 0)
+	{
+		UTIL_THROW_EXCEPTION(
+			DjangoException,
+			"Error storing conflict sets. URL: " << url.str());
+	}
 }
 
 boost::shared_ptr<ConflictSets>
