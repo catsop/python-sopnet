@@ -179,8 +179,6 @@ LocalSliceStore::equivalentSlice(const boost::shared_ptr<Slice> slice)
 void
 LocalSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 {
-	
-	
 	foreach (const ConflictSet conflict, *conflictSets)
 	{
 		ConflictSet eqConflict;
@@ -192,8 +190,9 @@ LocalSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 			}
 			else
 			{
-				LOG_ALL(localslicestorelog) << "Missing slices while storing conflict: " << id <<
-					std::endl;
+				UTIL_THROW_EXCEPTION(
+					SliceCacheError,
+					"Slice " << id << " not found in cache");
 			}
 			
 		}

@@ -12,6 +12,10 @@
 #include <pipeline/Value.h>
 #include <pipeline/Data.h>
 
+#include <util/exceptions.h>
+
+struct SliceCacheError : virtual Exception {};
+
 /**
  * Abstract Data class that handles the practicalities of storing and retrieving Slices from a
  * store.
@@ -49,7 +53,8 @@ public:
 	
 	/**
 	 * Store a conflict set relationship. This requires the slices in question to already be
-	 * stored in this SliceStore.
+	 * stored in this SliceStore. If this is not the case, this function will throw a 
+	 * SliceCacheError
 	 * @param conflictSets - the ConflictSets in question
 	 */
 	virtual void storeConflict(boost::shared_ptr<ConflictSets> conflictSets) = 0;
