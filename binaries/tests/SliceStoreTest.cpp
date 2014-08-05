@@ -1,7 +1,6 @@
 #include "SliceStoreTest.h"
 #include <catmaid/SliceGuarantor.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
-#include <catmaid/persistence/SliceWriter.h>
 #include <catmaid/persistence/SlicePointerHash.h>
 
 logger::LogChannel slicestoretestlog("slicestoretestlog", "[SliceStoreTest] ");
@@ -150,16 +149,10 @@ SliceStoreTest::copyStores(const boost::shared_ptr<SliceStore> store,
 			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
-	boost::shared_ptr<SliceWriter> writer = boost::make_shared<SliceWriter>();
 	boost::shared_ptr<Slices> slices = store->retrieveSlices(*blocks);
 	boost::shared_ptr<ConflictSets> conflictSets = store->retrieveConflictSets(*slices);
 	
-	writer->setInput("blocks", blocks);
-	writer->setInput("store", testStore);
-	writer->setInput("slices", slices);
-	writer->setInput("conflict sets", conflictSets);
-	
-	writer->writeSlices();
+	testStore->writeSlices(*slices, *conflictSets, *blocks);
 }
 
 
