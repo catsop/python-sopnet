@@ -3,13 +3,11 @@
 #include <sopnet/catmaid/persistence/local/LocalSegmentStore.h>
 #include <sopnet/catmaid/SegmentGuarantor.h>
 #include <sopnet/catmaid/SolutionGuarantor.h>
-#include <sopnet/catmaid/persistence/SegmentReader.h>
 #include <sopnet/catmaid/persistence/CostReader.h>
 #include <sopnet/catmaid/persistence/CostWriter.h>
 #include <sopnet/catmaid/persistence/SegmentSolutionReader.h>
 #include <sopnet/catmaid/persistence/SegmentSolutionWriter.h>
 #include <sopnet/catmaid/persistence/SegmentFeatureReader.h>
-#include <sopnet/catmaid/persistence/SegmentWriter.h>
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/catmaid/persistence/SegmentPointerHash.h>
 #include <util/Logger.h>
@@ -182,17 +180,14 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 		
 	boost::shared_ptr<SegmentFeatureReader> featureReader = boost::make_shared<SegmentFeatureReader>();
 	
-	boost::shared_ptr<SegmentReader> reader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<SegmentWriter> writer = boost::make_shared<SegmentWriter>();
+// 	boost::shared_ptr<SegmentReader> reader = boost::make_shared<SegmentReader>();
+// 	boost::shared_ptr<SegmentWriter> writer = boost::make_shared<SegmentWriter>();
 	
 	pipeline::Value<Segments> segments;
 	
 	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
 	
-	reader->setInput("blocks", blocks);
-	reader->setInput("store", store);
-	
-	segments = reader->getOutput();
+	segments = store->retrieveSegments(*blocks);
 	
 	featureReader->setInput("segments", segments);
 	featureReader->setInput("store", store);
@@ -201,16 +196,13 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	costReader->setInput("store", store);
 	costReader->setInput("segments", segments);
 	
-	writer->setInput("blocks", blocks);
-	writer->setInput("store", testStore);
-	writer->setInput("segments", segments);
-	writer->setInput("features", featureReader->getOutput());
+	testStore->writeSegments(*segments, *blocks);
+	testStore->storeFeatures(featureReader->getOutput());
 	
 	costWriter->setInput("store", testStore);
 	costWriter->setInput("segments", segments);
 	costWriter->setInput("objective", costReader->getOutput("objective"));
 	
-	writer->writeSegments();
 	costWriter->writeCosts();
 	
 	solutionReader->setInput("store", store);
@@ -219,14 +211,15 @@ SegmentStoreTest::copyStores(const boost::shared_ptr<SegmentStore> store,
 	solutionWriter->setInput("solution", solutionReader->getOutput());
 	solutionReader->setInput("segments", segments);
 	solutionWriter->setInput("segments", segments);
-	
+
+	//TODO: fix this. It will no longer work since the removal of SegmentReader
 	foreach (boost::shared_ptr<Core> core, *cores)
 	{
 		boost::shared_ptr<Cores> singletonCores = boost::make_shared<Cores>();
 		boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>();
 		coreBlocks->addAll(core);
 		singletonCores->add(core);
-		reader->setInput("blocks", coreBlocks);
+		//reader->setInput("blocks", coreBlocks);
 		solutionReader->setInput("core", core);
 		solutionWriter->setInput("cores", singletonCores);
 
@@ -376,9 +369,6 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	boost::shared_ptr<Cores> cores = blockManager->coresInBox(box);
 	
-	boost::shared_ptr<SegmentReader> localReader = boost::make_shared<SegmentReader>();
-	boost::shared_ptr<SegmentReader> testReader = boost::make_shared<SegmentReader>();
-	
 	boost::shared_ptr<CostReader> localCostReader = boost::make_shared<CostReader>();
 	boost::shared_ptr<CostReader> testCostReader = boost::make_shared<CostReader>();	
 	boost::shared_ptr<SegmentSolutionReader> localSolutionReader = boost::make_shared<SegmentSolutionReader>();
@@ -389,9 +379,6 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 		boost::make_shared<SegmentFeatureReader>();
 
 	pipeline::Value<bool> yeah = pipeline::Value<bool>(true);
-		
-	localReader->setInput("store", store1);
-	testReader->setInput("store", store2);
 	
 	localCostReader->setInput("store", store1);
 	testCostReader->setInput("store", store2);
@@ -414,11 +401,9 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 		pipeline::Value<LinearObjective> localObjective, testObjective;
 		
 		singletonBlocks->add(block);
-		localReader->setInput("blocks", singletonBlocks);
-		testReader->setInput("blocks", singletonBlocks);
 		
-		localSegments = localReader->getOutput("segments");
-		testSegments = testReader->getOutput("segments");
+		localSegments = store1->retrieveSegments(*singletonBlocks);
+		testSegments = store2->retrieveSegments(*singletonBlocks);
 		
 		localFeatureReader->setInput("segments", localSegments);
 		testFeatureReader->setInput("segments", testSegments);
@@ -470,12 +455,8 @@ SegmentStoreTest::verifyStores(const boost::shared_ptr<SegmentStore> store1,
 		boost::shared_ptr<Blocks> coreBlocks = boost::make_shared<Blocks>();
 		coreBlocks->addAll(core);
 		
-		
-		localReader->setInput("blocks", coreBlocks);
-		testReader->setInput("blocks", coreBlocks);
-		
-		localSegments = localReader->getOutput("segments");
-		testSegments = testReader->getOutput("segments");
+		localSegments = store1->retrieveSegments(*coreBlocks);
+		testSegments = store2->retrieveSegments(*coreBlocks);
 		
 		localSolutionReader->setInput("core", core);
 		testSolutionReader->setInput("core", core);

@@ -1,7 +1,6 @@
 #include "SliceStoreTest.h"
 #include <catmaid/SliceGuarantor.h>
-#include <catmaid/persistence/LocalSliceStore.h>
-#include <catmaid/persistence/SliceReader.h>
+#include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/SliceWriter.h>
 #include <catmaid/persistence/SlicePointerHash.h>
 
@@ -100,21 +99,13 @@ SliceStoreTest::verifyStores(const boost::shared_ptr<SliceStore> store,
 			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
-	boost::shared_ptr<SliceReader> localReader = boost::make_shared<SliceReader>();
-	boost::shared_ptr<SliceReader> testReader = boost::make_shared<SliceReader>();
-	
-	pipeline::Value<Slices> localSlices = localReader->getOutput("slices");
-	pipeline::Value<Slices> testSlices = testReader->getOutput("slices");
-	pipeline::Value<ConflictSets> localSets = localReader->getOutput("conflict sets");
-	pipeline::Value<ConflictSets> testSets = testReader->getOutput("conflict sets");
-	
-	localReader->setInput("store", store);
-	testReader->setInput("store", testStore);
-	
 	foreach (boost::shared_ptr<Block> block, *blocks)
 	{
-		localReader->setInput("blocks", singletonBlocks(block));
-		testReader->setInput("blocks", singletonBlocks(block));
+		boost::shared_ptr<Blocks> singleton = singletonBlocks(block);
+		boost::shared_ptr<Slices> localSlices = store->retrieveSlices(*singleton);
+		boost::shared_ptr<Slices> testSlices = testStore->retrieveSlices(*singleton);
+		boost::shared_ptr<ConflictSets> localSets = store->retrieveConflictSets(*localSlices);
+		boost::shared_ptr<ConflictSets> testSets = store->retrieveConflictSets(*testSlices);
 		
 		localSlices->size();
 		testSlices->size();
@@ -159,16 +150,14 @@ SliceStoreTest::copyStores(const boost::shared_ptr<SliceStore> store,
 			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
 	
-	boost::shared_ptr<SliceReader> reader = boost::make_shared<SliceReader>();
 	boost::shared_ptr<SliceWriter> writer = boost::make_shared<SliceWriter>();
-	
-	reader->setInput("blocks", blocks);
-	reader->setInput("store", store);
+	boost::shared_ptr<Slices> slices = store->retrieveSlices(*blocks);
+	boost::shared_ptr<ConflictSets> conflictSets = store->retrieveConflictSets(*slices);
 	
 	writer->setInput("blocks", blocks);
 	writer->setInput("store", testStore);
-	writer->setInput("slices", reader->getOutput("slices"));
-	writer->setInput("conflict sets", reader->getOutput("conflict sets"));
+	writer->setInput("slices", slices);
+	writer->setInput("conflict sets", conflictSets);
 	
 	writer->writeSlices();
 }
