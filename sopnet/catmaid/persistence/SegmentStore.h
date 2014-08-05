@@ -26,7 +26,12 @@ public:
 								 std::vector<double>,
 								 SegmentPointerHash,
 								 SegmentPointerEquals> SegmentFeaturesMap;
-	
+
+	/**
+	 * Write Segments over the given Blocks to this SegmentStore.
+	 */
+	void writeSegments(const Segments& segments, const Blocks& blocks);
+
     /**
      * Associates a segment with a block
      * @param segment - the segment to store.
@@ -144,6 +149,14 @@ public:
 	 * Print the contents of this store to the DEBUG logging channel.
 	 */
 	virtual void dumpStore() = 0;
+	
+protected:
+	/**
+	 * Determine whether the given Segment should be associated to the given Block.
+	 */
+	bool associated(const Segment& segment, const Block& block);
+
+	
 };
 
 
