@@ -18,24 +18,6 @@ using boost::make_shared;
 using std::map;
 using std::set;
 
-SliceGuarantor::SliceGuarantor()
-{
-	registerInput(_blocks, "blocks");
-	registerInput(_sliceStore, "slice store");
-	registerInput(_stackStore, "stack store");
-	registerInput(_maximumArea, "maximum area", pipeline::Optional);
-	registerInput(_mserParameters, "mser parameters", pipeline::Optional);
-
-	registerOutput(_needBlocks, "image blocks");
-}
-
-void
-SliceGuarantor::updateOutputs()
-{
-	_needBlocks = new Blocks();
-	*_needBlocks = *guaranteeSlices();
-}
-
 /**
  * Checks whether slices have already been extracted for our Block request.
  */
@@ -58,7 +40,7 @@ SliceGuarantor::checkSlices()
 bool
 SliceGuarantor::sizeOk(util::point3<unsigned int> size)
 {
-	if (_maximumArea.isSet())
+	if (_maximumArea)
 	{
 		return size.x * size.y < *_maximumArea;
 	}
@@ -69,19 +51,18 @@ SliceGuarantor::sizeOk(util::point3<unsigned int> size)
 }
 
 
-pipeline::Value<Blocks>
-SliceGuarantor::guaranteeSlices()
+Blocks
+SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 {
-	pipeline::Value<Blocks> extractBlocks = pipeline::Value<Blocks>();
-	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
-	pipeline::Value<ConflictSets> conflictSets = pipeline::Value<ConflictSets>();
-	
-	updateInputs();
+	Blocks extractBlocks = Blocks();
+	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
+	boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
 	
 	
-	LOG_DEBUG(sliceguarantorlog) << "Guaranteeing slices for region " << *_blocks << std::endl;
+
+	LOG_DEBUG(sliceguarantorlog) << "Guaranteeing slices for region " << blocks << std::endl;
 	
-	if (checkSlices())
+	if (checkSlices(blocks))
 	{
 		LOG_DEBUG(sliceguarantorlog) << "All blocks have already been extracted" << std::endl;
 		return extractBlocks;
@@ -95,27 +76,27 @@ SliceGuarantor::guaranteeSlices()
 	// to multi-thread this later.
 	
 	// extracted Slices.
-	vector<shared_ptr<Slices> > slicesVector(_blocks->size().z);
+	vector<shared_ptr<Slices> > slicesVector(blocks.size().z);
 	// extracted conflict sets
-	vector<shared_ptr<ConflictSets> > conflictSetsVector(_blocks->size().z); 
+	vector<shared_ptr<ConflictSets> > conflictSetsVector(blocks.size().z); 
 	
 	// This isn't *really* true.
 	bool allBad = true;
 
 	// Extract slices independently by z.
-	for (unsigned int i = 0; i < _blocks->size().z; ++i)
+	for (unsigned int i = 0; i < blocks.size().z; ++i)
 	{
-		unsigned int z = i + _blocks->location().z;
-		shared_ptr<Slices> zSlices = make_shared<Slices>();
-		shared_ptr<ConflictSets> zConflict = make_shared<ConflictSets>();
-		shared_ptr<Blocks> zBlocks = make_shared<Blocks>();
+		unsigned int z = i + blocks.location().z;
+		boost::shared_ptr<Slices> zSlices = boost::make_shared<Slices>();
+		boost::shared_ptr<ConflictSets> zConflict = boost::make_shared<ConflictSets>();
+		boost::shared_ptr<Blocks> zBlocks = boost::make_shared<Blocks>();
 		
 		allBad = !extractSlices(z, zSlices, zConflict, zBlocks) && allBad;
 		
 		slicesVector[i] = zSlices;
 		conflictSetsVector[i] = zConflict;
 		
-		extractBlocks->addAll(zBlocks);
+		extractBlocks.addAll(zBlocks);
 	}
 
 	// If all sections yielded empty images, then we need to regenerate the image stack.
@@ -125,7 +106,7 @@ SliceGuarantor::guaranteeSlices()
 		return extractBlocks;
 	}
 	
-	for (unsigned int i = 0; i < _blocks->size().z; ++i)
+	for (unsigned int i = 0; i < blocks.size().z; ++i)
 	{
 		slices->addAll(*slicesVector[i]);
 		conflictSets->addAll(*conflictSetsVector[i]);
@@ -136,25 +117,26 @@ SliceGuarantor::guaranteeSlices()
 	
 	_sliceStore->writeSlices(*slices, *conflictSets, *extractBlocks);
 	
-	foreach (boost::shared_ptr<Block> block, *_blocks)
+	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 		block->setSlicesFlag(true);
 	}
 	
 	LOG_DEBUG(sliceguarantorlog) << "Done." << std::endl;
 	
-	return pipeline::Value<Blocks>();
+	return Blocks();
 }
 
 bool
 SliceGuarantor::extractSlices(const unsigned int z,
-							  const shared_ptr<Slices> slices,
-							  const shared_ptr<ConflictSets> conflictSets,
-							  const shared_ptr<Blocks> extractBlocks)
+							  const boost::shared_ptr<Slices> slices,
+							  const boost::shared_ptr<ConflictSets> conflictSets,
+							  Blocks& extractBlocks,
+							  const Blocks& requestBlocks)
 {
 	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline for section " << z << std::endl;
 	shared_ptr<Blocks> nbdBlocks;
-	util::rect<unsigned int> blocksRect = *_blocks;
+	util::rect<unsigned int> blocksRect = requestBlocks;
 	
 	bool okSlices = false;
 	shared_ptr<SliceExtractor<unsigned char> > sliceExtractor =
@@ -162,7 +144,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 
 	pipeline::Value<Slices> slicesValue;
 	pipeline::Value<ConflictSets> conflictValue;
-	boost::shared_ptr<Blocks> inputBlocks = _blocks;
+	boost::shared_ptr<Blocks> inputBlocks = boost::make_shared<Blocks>(requestBlocks);
 	
 	extractBlocks->addAll(inputBlocks);
 	// Dilate once beforehand.

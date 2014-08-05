@@ -34,43 +34,24 @@
 class SliceGuarantor : public pipeline::SimpleProcessNode<>
 {
 public:
-
 	/**
-	 * Create a SliceGuarantor.
-	 * Inputs:
-	 *   Blocks         - "blocks"
-	 *   SliceStore     - "slice store"
-	 *   StackStore     - "stack store"
-	 *   unsigned int   - "maximum area", optional
-	 *   MserParameters - "mser parameters", optional
-	 * Outputs:
-	 *   Blocks - "image blocks"
-	 * 
-	 * "maximum area" determines the maximal area to which the extraction area is allowed to grow.
-	 * This defaults to an infinite value.
-	 * 
-	 * When "mser parameters", the default is used internally for the SliceExtractor. See that
-	 * class for more details.
-	 * 
-	 * "image blocks" is a Blocks containing those blocks for which images were not ready. What
-	 * this signfies is dependent on the StackStore.
-	 * 
-	 */
-    SliceGuarantor();
-
-	/**
-	 * Makes sure the inputs are up-to-date and extracts the slices for the 
+	 * Extracts the slices for the 
 	 * requested blocks. Returns empty Blocks for success. If extraction
 	 * was not possible, Blocks in the output will indicate those for
 	 * which it failed. Typically, this means that not all images were available in
 	 * the given Blocks.
 	 */
-	pipeline::Value<Blocks> guaranteeSlices();
+	Blocks guaranteeSlices(const Blocks& blocks);
+	
+	void setMserParameters(const boost::shared_ptr<MserParameters> mserParameters);
+	
+	void setSliceStore(const boost::shared_ptr<SliceStore> sliceStore);
+	
+	void setMaximumArea(const unsigned int area);
+	
+	void setStackStore(const boost::shared_ptr<StackStore> stackStore);
 
 private:
-	
-	void updateOutputs();
-	
 	bool checkSlices();
 	
 	bool sizeOk(util::point3<unsigned int> size);
@@ -94,13 +75,10 @@ private:
 					const boost::shared_ptr<Blocks>& extractBlocks,
 					const boost::shared_ptr<Blocks>& nbdBlocks) const;
 	
-	pipeline::Input<MserParameters> _mserParameters;
-	pipeline::Input<SliceStore> _sliceStore;
-	pipeline::Input<unsigned int> _maximumArea;
-	pipeline::Input<Blocks> _blocks;
-	pipeline::Input<StackStore> _stackStore;
-	
-	pipeline::Output<Blocks> _needBlocks;
+	boost::shared_ptr<MserParameters> _mserParameters;
+	boost::shared_ptr<SliceStore> _sliceStore;
+	boost::shared_ptr<unsigned int> _maximumArea;
+	boost::shared_ptr<StackStore> _stackStore;
 };
 
 #endif //SLICE_GUARANTOR_H__
