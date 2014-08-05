@@ -2,8 +2,8 @@
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
 #include <sopnet/block/BlockManager.h>
-#include <catmaid/django/DjangoBlockManager.h>
-#include <catmaid/django/DjangoSliceStore.h>
+#include <catmaid/persistence/django/DjangoBlockManager.h>
+#include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
@@ -37,7 +37,7 @@ protected:
 
 	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
 
-	boost::shared_ptr<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
+// 	boost::shared_ptr<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
 
 private:
 

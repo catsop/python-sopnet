@@ -4,7 +4,6 @@
 #include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/local/LocalSegmentStore.h>
-#include <catmaid/persistence/local/LocalSolutionStore.h>
 #include "BackendClient.h"
 #include "logging.h"
 
@@ -118,25 +117,25 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
-boost::shared_ptr<SolutionStore>
-BackendClient::createSolutionStore(const ProjectConfiguration& configuration) {
-
-	if (configuration.getBackendType() == ProjectConfiguration::Local) {
-
-		LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
-
-		return boost::make_shared<LocalSolutionStore>();
-	}
-
-	if (configuration.getBackendType() == ProjectConfiguration::Django) {
-
-		LOG_USER(pylog) << "[BackendClient] create django solution store" << std::endl;
-
-		// there is no solution store for the django backend
-		return boost::shared_ptr<SolutionStore>();
-	}
-
-	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
-}
+// boost::shared_ptr<SolutionStore>
+// BackendClient::createSolutionStore(const ProjectConfiguration& configuration) {
+// 
+// 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
+// 
+// 		LOG_USER(pylog) << "[BackendClient] create local solution store" << std::endl;
+// 
+// 		return boost::make_shared<LocalSolutionStore>();
+// 	}
+// 
+// 	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+// 
+// 		LOG_USER(pylog) << "[BackendClient] create django solution store" << std::endl;
+// 
+// 		// there is no solution store for the django backend
+// 		return boost::shared_ptr<SolutionStore>();
+// 	}
+// 
+// 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
+// }
 
 } // namespace python

@@ -19,7 +19,7 @@ SolutionGuarantor::fill(
 	boost::shared_ptr<StackStore>    rawStackStore = createStackStore(configuration, Raw);
 	boost::shared_ptr<SliceStore>    sliceStore    = createSliceStore(configuration);
 	boost::shared_ptr<SegmentStore>  segmentStore  = createSegmentStore(configuration);
-	boost::shared_ptr<SolutionStore> solutionStore = createSolutionStore(configuration);
+	//boost::shared_ptr<SolutionStore> solutionStore = createSolutionStore(configuration);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] requesting block at " << request << std::endl;
 
