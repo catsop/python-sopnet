@@ -23,6 +23,13 @@ struct SliceCacheError : virtual Exception {};
 class SliceStore : public pipeline::Data
 {
 public:
+	
+	/**
+	 * Write Slices and ConflictSets to the store.
+	 * conflictSets is considered optional. Leave empty in order not to write.
+	 */
+	void writeSlices(const Slices& slices, const ConflictSets& conflictSets, const Blocks& blocks);
+	
     /**
      * Associates a slice with a block
      * @param slices - the slices to store.
@@ -72,6 +79,14 @@ public:
 	 * Dump the contents of the store to a log channel.
 	 */
 	virtual void dumpStore() = 0;
+	
+private:
+	bool containsAny(ConflictSet& conflictSet, const boost::shared_ptr<Slices> slices);
+	
+	boost::shared_ptr<Slices> collectSlicesByBlocks(const Slices& slices,
+													const boost::shared_ptr<Block> block);
+	boost::shared_ptr<ConflictSets> collectConflictBySlices(const boost::shared_ptr<Slices> slices,
+															const ConflictSets& conflictSets);
 };
 
 #endif //SLICE_STORE_H__
