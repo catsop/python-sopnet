@@ -75,7 +75,6 @@ SliceGuarantor::guaranteeSlices()
 	pipeline::Value<Blocks> extractBlocks = pipeline::Value<Blocks>();
 	pipeline::Value<Slices> slices = pipeline::Value<Slices>();
 	pipeline::Value<ConflictSets> conflictSets = pipeline::Value<ConflictSets>();
-	boost::shared_ptr<SliceWriter> sliceWriter = boost::make_shared<SliceWriter>();
 	
 	updateInputs();
 	
@@ -135,12 +134,7 @@ SliceGuarantor::guaranteeSlices()
 	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices->size() << " slices to " <<
 		extractBlocks->length() << " blocks" << std::endl;
 	
-	sliceWriter->setInput("blocks", extractBlocks);
-	sliceWriter->setInput("slices", slices);
-	sliceWriter->setInput("conflict sets", conflictSets);
-	sliceWriter->setInput("store", _sliceStore);
-	
-	sliceWriter->writeSlices();
+	_sliceStore->writeSlices(*slices, *conflictSets, *extractBlocks);
 	
 	foreach (boost::shared_ptr<Block> block, *_blocks)
 	{

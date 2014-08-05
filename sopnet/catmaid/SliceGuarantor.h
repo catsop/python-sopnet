@@ -4,7 +4,6 @@
 #include <set>
 #include <boost/shared_ptr.hpp>
 
-#include <catmaid/persistence/SliceWriter.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <sopnet/sopnet/block/Box.h>
