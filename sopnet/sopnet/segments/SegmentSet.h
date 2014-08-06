@@ -25,10 +25,10 @@ public:
 class SegmentSet
 {
 	typedef std::set<boost::shared_ptr<Segment>, SegmentComparator> segment_set;
+public:
 	typedef segment_set::iterator iterator;
 	typedef segment_set::const_iterator const_iterator;
 	
-public:
 	SegmentSet(){}
 
 	void add(const boost::shared_ptr<Segment> segment);
