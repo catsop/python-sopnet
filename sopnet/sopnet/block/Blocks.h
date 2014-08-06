@@ -31,6 +31,12 @@ public:
 		addAll(blocksImpl->_blocks);
 	}
 	
+	BlocksImpl(const BlocksImpl<T>& blocksImpl) : Box<>(),
+		_blockManager(blocksImpl.getManager())
+	{
+		addAll(blocksImpl._blocks);
+	}
+	
 	virtual const const_iterator begin() const { return _blocks.begin(); }
 
 	virtual iterator begin() { return _blocks.begin(); }
@@ -85,6 +91,11 @@ public:
 	virtual void addAll(const boost::shared_ptr<BlocksImpl<T> > blocks)
 	{
 		addAll(blocks->_blocks);
+	}
+	
+	virtual void addAll(const BlocksImpl& blocks)
+	{
+		addAll(blocks._blocks);
 	}
 	
 	virtual void remove(const boost::shared_ptr<T> otherBlock)
@@ -168,6 +179,8 @@ public:
 	Blocks(const boost::shared_ptr<Block> block);
 	
 	Blocks(const boost::shared_ptr<BlocksImpl> blocks);
+	
+	Blocks(const BlocksImpl<Block>& blocks);
 	
 	void dilateXY();
 	

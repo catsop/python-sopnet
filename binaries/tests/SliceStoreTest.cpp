@@ -166,12 +166,10 @@ SliceStoreTest::guaranteeSlices(const boost::shared_ptr<SliceStore> sliceStore,
 			util::point3<unsigned int>(0,0,0),
 			blockManager->stackSize());
 	boost::shared_ptr<Blocks> blocks = blockManager->blocksInBox(box);
-	
-	guarantor->setInput("blocks", blocks);
-	guarantor->setInput("slice store", sliceStore);
-	guarantor->setInput("stack store", stackStore);
-	
-	guarantor->guaranteeSlices();
+
+	guarantor->setSliceStore(sliceStore);
+	guarantor->setStackStore(stackStore);
+	guarantor->guaranteeSlices(*blocks);
 }
 
 bool SliceStoreTest::slicesEqual(const boost::shared_ptr<Slices> slices1,

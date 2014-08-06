@@ -31,7 +31,7 @@
  * 
  */
 
-class SliceGuarantor : public pipeline::SimpleProcessNode<>
+class SliceGuarantor
 {
 public:
 	/**
@@ -52,18 +52,20 @@ public:
 	void setStackStore(const boost::shared_ptr<StackStore> stackStore);
 
 private:
-	bool checkSlices();
+	bool checkSlices(const Blocks& blocks);
 	
 	bool sizeOk(util::point3<unsigned int> size);
 	
-	void collectOutputSlices(pipeline::Value<Slices>& extractedSlices,
-							pipeline::Value<ConflictSets>& extractedConflict,
-							const boost::shared_ptr<Slices>& slices);
+	void collectOutputSlices(const Slices& extractedSlices,
+							const ConflictSets& extractedConflict,
+							Slices& slices,
+							const Blocks& blocks);
 	
 	bool extractSlices(const unsigned int z,
-							  const boost::shared_ptr<Slices> slices,
-							  const boost::shared_ptr<ConflictSets> conflictSets,
-							  const boost::shared_ptr<Blocks> extractBlocks);
+						Slices& slices,
+						ConflictSets& conflictSets,
+						Blocks& extractBlocks,
+						const Blocks& requestBlocks);
 	
 	bool containsAny(const ConflictSet& conflictSet, const std::set<unsigned int>& idSet);
 	
@@ -71,9 +73,9 @@ private:
 	 * Helper function that checks whether a Slice can be considered whole or
 	 * not
 	 */
-	void checkWhole(const boost::shared_ptr<Slice>& slice,
-					const boost::shared_ptr<Blocks>& extractBlocks,
-					const boost::shared_ptr<Blocks>& nbdBlocks) const;
+	void checkWhole(const Slice& slice,
+					const Blocks& extractBlocks,
+					Blocks& nbdBlocks) const;
 	
 	boost::shared_ptr<MserParameters> _mserParameters;
 	boost::shared_ptr<SliceStore> _sliceStore;

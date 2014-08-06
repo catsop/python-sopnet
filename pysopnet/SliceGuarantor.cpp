@@ -41,15 +41,14 @@ SliceGuarantor::fill(
 	// create the SliceGuarantor process node
 	pipeline::Process< ::SliceGuarantor> sliceGuarantor;
 
-	sliceGuarantor->setInput("blocks", blocks);
-	sliceGuarantor->setInput("stack store", membraneStackStore);
-	sliceGuarantor->setInput("slice store", sliceStore);
-	sliceGuarantor->setInput("mser parameters", mserParameters);
+	sliceGuarantor->setStackStore(membraneStackStore);
+	sliceGuarantor->setSliceStore(sliceStore);
+	sliceGuarantor->setMserParameters(mserParameters);
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] asking for slices..." << std::endl;
 
 	// let it do what it was build for
-	pipeline::Value<Blocks> missing = sliceGuarantor->guaranteeSlices();
+	pipeline::Value<Blocks> missing = sliceGuarantor->guaranteeSlices(*blocks);
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] " << missing->length() << " blocks missing" << std::endl;
 

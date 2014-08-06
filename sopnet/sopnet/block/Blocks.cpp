@@ -17,6 +17,9 @@ Blocks::Blocks(const boost::shared_ptr<Block> block) : BlocksImpl<Block>(block)
 Blocks::Blocks(const boost::shared_ptr<BlocksImpl> blocks) : BlocksImpl<Block>(blocks)
 {}
 
+Blocks::Blocks(const BlocksImpl<Block>& blocks) : BlocksImpl<Block>(blocks)
+{}
+
 
 void Blocks::dilateXY()
 {
