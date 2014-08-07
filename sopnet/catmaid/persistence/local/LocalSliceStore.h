@@ -41,6 +41,9 @@ private:
 						 const boost::shared_ptr<Slice> slice);
 
 	boost::shared_ptr<Slice> equivalentSlice(const boost::shared_ptr<Slice> slice);
+	boost::shared_ptr<Slices> getSlices(const Block& block);
+	boost::shared_ptr<Blocks> getBlocks(const Slice& slice);
+	boost::shared_ptr<ConflictSets> getConflictSet(const unsigned int id);
 	
 	SliceSet _sliceMasterSet;
 	SliceBlockMap _sliceBlockMap;

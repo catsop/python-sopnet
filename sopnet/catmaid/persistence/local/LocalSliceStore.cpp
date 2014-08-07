@@ -6,6 +6,7 @@
 #include <sopnet/slices/ConflictSet.h>
 #include <sopnet/slices/ConflictSets.h>
 
+#include <util/exceptions.h>
 #include <util/Logger.h>
 logger::LogChannel localslicestorelog("localslicestorelog", "[LocalSliceStore] ");
 
@@ -96,7 +97,7 @@ LocalSliceStore::mapBlockToSlice(const boost::shared_ptr< Block > block, const b
 {
 	// Place entry in block slice map
 
-	boost::shared_ptr<Slices> slices = _blockSliceMap[*block];
+	boost::shared_ptr<Slices> slices = getSlices(*block);
 	
 	foreach (boost::shared_ptr<Slice> cSlice, *slices)
 	{
@@ -115,7 +116,7 @@ void
 LocalSliceStore::mapSliceToBlock(const boost::shared_ptr< Slice > slice, const boost::shared_ptr< Block > block)
 {
 	// Place entry in slice block map
-	boost::shared_ptr<Blocks> blocks = _sliceBlockMap[*slice];
+	boost::shared_ptr<Blocks> blocks = getBlocks(*slice);
 	
 	foreach (boost::shared_ptr<Block> cBlock, *blocks)
 	{
@@ -137,11 +138,21 @@ LocalSliceStore::associate(boost::shared_ptr<Slices> slicesIn,
 {
 	foreach (boost::shared_ptr<Slice> slice, *slicesIn)
 	{
+		if (!slice)
+		{
+			UTIL_THROW_EXCEPTION(UsageError, "Null Slice");
+		}
+		
 		// Check to see if we've already stored this Slice, in the sense that we stored a different
 		// Slice object that contains the same geometry. If so, eqSlice will point to the old one.
 		// If not, the eqSlice pointer will be equal to the slice pointer.
 		boost::shared_ptr<Slice> eqSlice = equivalentSlice(slice);
 
+		if (!eqSlice)
+		{
+			UTIL_THROW_EXCEPTION(UsageError, "Null Equivalent Slice");
+		}
+		
 		// Map the old pointer
 		mapBlockToSlice(block, eqSlice);
 		mapSliceToBlock(eqSlice, block);
@@ -203,7 +214,7 @@ LocalSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 
 		foreach (const unsigned int id, eqConflict.getSlices())
 		{
-			_conflictMap[id]->add(eqConflict);
+			getConflictSet(id)->add(eqConflict);
 		}
 
 	}
@@ -275,3 +286,49 @@ LocalSliceStore::dumpStore()
 		LOG_DEBUG(localslicestorelog) << std::endl;
 	}
 }
+
+boost::shared_ptr<Slices>
+LocalSliceStore::getSlices(const Block& block)
+{
+	if (_blockSliceMap.count(block))
+	{
+		return _blockSliceMap[block];
+	}
+	else
+	{
+		boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
+		_blockSliceMap[block] = slices;
+		return slices;
+	}
+}
+
+boost::shared_ptr<Blocks>
+LocalSliceStore::getBlocks(const Slice& slice)
+{
+	if (_sliceBlockMap.count(slice))
+	{
+		return _sliceBlockMap[slice];
+	}
+	else
+	{
+		boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
+		_sliceBlockMap[slice] = blocks;
+		return blocks;
+	}
+}
+
+boost::shared_ptr<ConflictSets>
+LocalSliceStore::getConflictSet(const unsigned int id)
+{
+	if (_conflictMap.count(id))
+	{
+		return _conflictMap[id];
+	}
+	else
+	{
+		boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
+		_conflictMap[id] = conflictSets;
+		return conflictSets;
+	}
+}
+
