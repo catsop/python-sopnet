@@ -411,10 +411,7 @@ SolutionGuarantor::bufferCores(boost::shared_ptr<Cores> cores, unsigned int buff
 
 	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(cores->asBlocks());
 
-	for (unsigned int i = 0; i < buffer; ++i)
-	{
-		blocks->dilateXY();
-	}
+	blocks->dilate(buffer, buffer, buffer);
 
 	return blocks;
 }

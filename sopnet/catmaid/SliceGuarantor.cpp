@@ -163,7 +163,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	
 	extractBlocks.addAll(requestBlocks);
 	// Dilate once beforehand.
-	extractBlocks.dilateXY();
+	extractBlocks->dilate(1, 1, 0);
 
 	while (!okSlices && sizeOk(extractBlocks.size()))
 	{

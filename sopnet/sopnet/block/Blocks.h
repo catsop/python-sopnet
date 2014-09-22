@@ -180,9 +180,12 @@ public:
 	
 	Blocks(const boost::shared_ptr<BlocksImpl> blocks);
 	
-	Blocks(const BlocksImpl<Block>& blocks);
-	
-	void dilateXY();
+	/**
+	 * Dilate the blocks by the given amount in each direction.
+	 *
+	 * @param x, y, z The number of blocks to add in each direction.
+	 */
+	void dilate(int x, int y, int z);
 	
 	void expand(const point3<int>& direction);
 

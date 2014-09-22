@@ -17,22 +17,20 @@ Blocks::Blocks(const boost::shared_ptr<Block> block) : BlocksImpl<Block>(block)
 Blocks::Blocks(const boost::shared_ptr<BlocksImpl> blocks) : BlocksImpl<Block>(blocks)
 {}
 
-Blocks::Blocks(const BlocksImpl<Block>& blocks) : BlocksImpl<Block>(blocks)
-{}
-
-
-void Blocks::dilateXY()
+void Blocks::dilate(int x, int y, int z)
 {
 	std::vector<boost::shared_ptr<Block> > blocks;
 	std::vector<util::point3<int> > offsets;
-	offsets.push_back(util::point3<int>(-1, -1, 0));
-	offsets.push_back(util::point3<int>(0, -1, 0));
-	offsets.push_back(util::point3<int>(1, -1, 0));
-	offsets.push_back(util::point3<int>(1, 0, 0));
-	offsets.push_back(util::point3<int>(1, 1, 0));
-	offsets.push_back(util::point3<int>(0, 1, 0));
-	offsets.push_back(util::point3<int>(-1, 1, 0));
-	offsets.push_back(util::point3<int>(-1, 0, 0));
+
+	for (int i = -x; i <= x; i++)
+		for (int j = -x; j <= x; j++)
+			for (int k = -x; k <= x; k++) {
+
+				if (i == 0 && j == 0 && k == 0)
+					continue;
+
+				offsets.push_back(util::point3<int>(i, j, k));
+			}
 	
 	foreach(boost::shared_ptr<Block> block, _blocks)
 	{
