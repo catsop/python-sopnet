@@ -1,6 +1,6 @@
 [submodule "modules/util"]
 	path = modules/util
-	url = https://github.com/larrylindsey/util.git
+	url = https://github.com/funkey/util.git
 [submodule "modules/signals"]
 	path = modules/signals
 	url = https://github.com/funkey/signals.git
