@@ -23,8 +23,8 @@ void Blocks::dilate(int x, int y, int z)
 	std::vector<util::point3<int> > offsets;
 
 	for (int i = -x; i <= x; i++)
-		for (int j = -x; j <= x; j++)
-			for (int k = -x; k <= x; k++) {
+		for (int j = -y; j <= y; j++)
+			for (int k = -z; k <= z; k++) {
 
 				if (i == 0 && j == 0 && k == 0)
 					continue;
