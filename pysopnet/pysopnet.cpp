@@ -93,7 +93,9 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setCoreSize", &ProjectConfiguration::setCoreSize)
 			.def("getCoreSize", &ProjectConfiguration::getCoreSize, boost::python::return_internal_reference<>())
 			.def("setVolumeSize", &ProjectConfiguration::setVolumeSize)
-			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>());
+			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>())
+			.def("setComponentDirectory", &ProjectConfiguration::setComponentDirectory)
+			.def("getComponentDirectory", &ProjectConfiguration::getComponentDirectory, boost::python::return_value_policy<boost::python::copy_const_reference>());
 
 	// BackendType
 	boost::python::enum_<ProjectConfiguration::BackendType>("BackendType")

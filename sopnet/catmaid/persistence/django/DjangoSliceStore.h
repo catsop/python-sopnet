@@ -24,9 +24,15 @@ class DjangoSliceStore : public SliceStore
 {
 public:
 	/**
-	 * Create a DjangoSliceStore over the same parameters given to the DjangoBlockManager here.
+	 * Create a DjangoSliceStore over the same parameters given to the 
+	 * DjangoBlockManager here.
+	 *
+	 * @param blockManager
+	 *             The block manager to use.
+	 * @param componentDirectory
+	 *             A directory to use for storing the pixel lists of slices.
 	 */
-	DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager);
+	DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager, const std::string& componentDirectory = "/tmp");
 	
 	void associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<Block> block);
 
@@ -55,8 +61,17 @@ private:
 	void putSlice(boost::shared_ptr<Slice> slice, const std::string hash);
 	
 	void appendProjectAndStack(std::ostringstream& os);
-	void appendGeometry(const boost::shared_ptr<ConnectedComponent> component,
-						std::ostringstream& osX, std::ostringstream& osY);
+
+	/**
+	 * Stores the connected component that constitutes a slice as a pixel list 
+	 * in a local file.
+	 */
+	void saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component);
+
+	/**
+	 * Reads a connected component from a pixel list file, given the slice hash.
+	 */
+	boost::shared_ptr<ConnectedComponent> readConnectedComponent(std::string sliceHash);
 	
 	boost::shared_ptr<Slice> ptreeToSlice(const boost::property_tree::ptree& pt);
 	boost::shared_ptr<ConflictSet> ptreeToConflictSet(const boost::property_tree::ptree& pt);
@@ -67,6 +82,10 @@ private:
 	const int _stack, _project;
 	
 	boost::shared_ptr<DjangoBlockManager> _blockManager;
+
+	// directory to store the pixel lists of slices
+	const std::string _componentDirectory;
+
 	boost::unordered_map<std::string, boost::shared_ptr<Slice> > _hashSliceMap;
 	boost::unordered_map<Slice, std::string> _sliceHashMap;
 	std::map<unsigned int, boost::shared_ptr<Slice> > _idSliceMap;

@@ -86,7 +86,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 		if (!_djangoBlockManager)
 			createBlockManager(configuration);
 
-		_djangoSliceStore = boost::make_shared<DjangoSliceStore>(_djangoBlockManager);
+		_djangoSliceStore = boost::make_shared<DjangoSliceStore>(_djangoBlockManager, configuration.getComponentDirectory());
 
 		return _djangoSliceStore;
 	}

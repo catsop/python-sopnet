@@ -115,6 +115,16 @@ public:
 	 */
 	const util::point3<unsigned int>& getCoreSize() const;
 
+	/**
+	 * Set a local directory to store the connected components of slices.
+	 */
+	void setComponentDirectory(const std::string& componentDirectory);
+
+	/**
+	 * Get the local directory to store the connected components of slices.
+	 */
+	const std::string& getComponentDirectory() const;
+
 private:
 
 	BackendType _backendType;
@@ -129,6 +139,8 @@ private:
 	util::point3<unsigned int> _coreSize;
 	util::point3<unsigned int> _volumeSize;
 	util::point3<unsigned int> _coreSizeInBlocks;
+
+	std::string _componentDirectory;
 };
 
 } // namespace python

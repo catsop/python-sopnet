@@ -98,5 +98,16 @@ ProjectConfiguration::getCoreSize() const
 	return _coreSizeInBlocks;
 }
 
+void
+ProjectConfiguration::setComponentDirectory(const std::string& componentDirectory) {
+
+	_componentDirectory = componentDirectory;
+}
+
+const std::string&
+ProjectConfiguration::getComponentDirectory() const {
+
+	return _componentDirectory;
+}
 
 } // namespace python

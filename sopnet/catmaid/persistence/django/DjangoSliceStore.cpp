@@ -1,3 +1,4 @@
+#include <fstream>
 #include "DjangoSliceStore.h"
 #include "DjangoUtils.h"
 #include <util/httpclient.h>
@@ -17,9 +18,14 @@ util::_description_text = 	"Do not use cache for Django Slice Store",
 util::_default_value =		false);
 
 
-DjangoSliceStore::DjangoSliceStore(const boost::shared_ptr<DjangoBlockManager> blockManager) : 
-	_server(blockManager->getServer()), _stack(blockManager->getStack()),
-	_project(blockManager->getProject()), _blockManager(blockManager)
+DjangoSliceStore::DjangoSliceStore(
+		const boost::shared_ptr<DjangoBlockManager> blockManager,
+		const std::string& componentDirectory) : 
+	_server(blockManager->getServer()),
+	_stack(blockManager->getStack()),
+	_project(blockManager->getProject()),
+	_blockManager(blockManager),
+	_componentDirectory(componentDirectory)
 {
 }
 
@@ -54,7 +60,7 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 			// Make sure that the slice is in the id slice map
 			putSlice(slice, hash);
 			
-			appendGeometry(slice->getComponent(), osX, osY);
+			saveConnectedComponent(hash, *slice->getComponent());
 
 			// Section
 			insertPostData << "&section_" << i << "=" << slice->getSection();
@@ -64,8 +70,8 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 			insertPostData << "&cx_" << i << "=" << ctr.x;
 			insertPostData << "&cy_" << i << "=" << ctr.y;
 			// Geometry
-			insertPostData << "&x_" << i << "=" << osX.str();
-			insertPostData << "&y_" << i << "=" << osY.str();
+			insertPostData << "&x_" << i << "=0";
+			insertPostData << "&y_" << i << "=0";
 			// Value
 			insertPostData << "&value_" << i << "=" << slice->getComponent()->getValue();
 			
@@ -331,29 +337,50 @@ DjangoSliceStore::getHash(const Slice& slice)
 }
 
 void
-DjangoSliceStore::appendGeometry(const boost::shared_ptr<ConnectedComponent> component,
-								 std::ostringstream& osX, std::ostringstream& osY)
+DjangoSliceStore::saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component)
 {
-	//TODO: RLE
-	
-	ConnectedComponent::bitmap_type bitmap = component->getBitmap();
-	util::rect<int> box = component->getBoundingBox();
-	int minX = box.minX;
-	int minY = box.minY;
-	std::string delim = "";
-	
-	for (int y = minY; y < box.maxY; ++y)
-	{
-		for (int x = minX; x < box.maxX; ++x)
-		{
-			if (bitmap(x - minX, y - minY))
-			{
-				osX << delim << x;
-				osY << delim << y;
-				delim = ",";
-			}
-		}
+	std::ofstream componentFile((_componentDirectory + "/" + sliceHash + ".cmp").c_str());
+
+	// store the component's value
+	componentFile << component.getValue() << " ";
+
+	foreach (const util::point<unsigned int>& p, component.getPixels())
+		componentFile << p.x << " " << p.y << " ";
+}
+
+boost::shared_ptr<ConnectedComponent>
+DjangoSliceStore::readConnectedComponent(std::string sliceHash) {
+
+	// create an empty pixel list
+	boost::shared_ptr<ConnectedComponent::pixel_list_type> component = 
+		boost::make_shared<ConnectedComponent::pixel_list_type>();
+
+	// open the file
+	std::ifstream componentFile((_componentDirectory + "/" + sliceHash + ".cmp").c_str());
+
+	// read the component's value
+	double value;
+	componentFile >> value;
+
+	// read the pixel list
+	while (!componentFile.eof()) {
+
+		unsigned int x, y;
+
+		componentFile >> x;
+		componentFile >> y;
+
+		component->push_back(util::point<unsigned int>(x, y));
 	}
+
+	// Create the component
+	return boost::make_shared<ConnectedComponent>(
+			boost::shared_ptr<Image>(), /* no image */
+			value,
+			component,
+			0,
+			component->size());
+		
 }
 
 boost::shared_ptr<Slice>
@@ -369,39 +396,12 @@ DjangoSliceStore::ptreeToSlice(const ptree& pt)
 	else
 	{
 		boost::shared_ptr<Slice> slice;
-		boost::shared_ptr<ConnectedComponent> component;
-		boost::shared_ptr<Image> nullImage = boost::shared_ptr<Image>();
-		boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList = 
-			boost::make_shared<ConnectedComponent::pixel_list_type>();
 		
 		unsigned int section = pt.get_child("section").get_value<unsigned int>();
-		double value = pt.get_child("value").get_value<double>();
 		unsigned int id = ComponentTreeConverter::getNextSliceId();
-		
-		std::vector<unsigned int> pixelListX, pixelListY;
-		
-		// Parse variables from the ptree
-		HttpClient::ptreeVector<unsigned int>(pt.get_child("x"), pixelListX);
-		HttpClient::ptreeVector<unsigned int>(pt.get_child("y"), pixelListY);
 
-		if (pixelListX.size() != pixelListY.size())
-			UTIL_THROW_EXCEPTION(
-					IOError,
-					"pixel lists for x and y in django answer are not of same size: " <<
-					pixelListX.size() << " (x) vs. " << pixelListY.size() << "(y)");
+		boost::shared_ptr<ConnectedComponent> component = readConnectedComponent(hash);
 
-		unsigned int n = pixelListX.size();
-		
-		// Fill the pixel list
-		for (unsigned int i = 0; i < n; ++i)
-		{
-			pixelList->push_back(util::point<unsigned int>(pixelListX[i], pixelListY[i]));
-		}
-		
-		// Create the component
-		component = boost::make_shared<ConnectedComponent>(nullImage, value, pixelList, 0,
-														   pixelList->size());
-		
 		// Create the slice
 		slice = boost::make_shared<Slice>(id, section, component);
 		
