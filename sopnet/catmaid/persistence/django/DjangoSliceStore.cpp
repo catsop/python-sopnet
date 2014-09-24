@@ -69,9 +69,12 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 			// Centroid
 			insertPostData << "&cx_" << i << "=" << ctr.x;
 			insertPostData << "&cy_" << i << "=" << ctr.y;
-			// Geometry
-			insertPostData << "&x_" << i << "=0";
-			insertPostData << "&y_" << i << "=0";
+			// Bounding Box
+			const util::rect<unsigned int>& bb = slice->getComponent()->getBoundingBox();
+			insertPostData << "&minx_" << i << "=" << bb.minX;
+			insertPostData << "&maxx_" << i << "=" << bb.maxX;
+			insertPostData << "&miny_" << i << "=" << bb.minY;
+			insertPostData << "&maxy_" << i << "=" << bb.maxY;
 			// Value
 			insertPostData << "&value_" << i << "=" << slice->getComponent()->getValue();
 			
