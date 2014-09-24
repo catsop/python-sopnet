@@ -5,7 +5,7 @@
 #include <catmaid/persistence/SliceStore.h>
 #include <pipeline/all.h>
 #include <sopnet/slices/Slices.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/blocks/Blocks.h>
 #include <sopnet/slices/ConflictSets.h>
 #include <boost/unordered_map.hpp>
 #include <catmaid/persistence/SlicePointerHash.h>

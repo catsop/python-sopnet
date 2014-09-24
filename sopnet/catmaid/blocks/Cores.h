@@ -1,8 +1,8 @@
 #ifndef CORES_H__
 #define CORES_H__
 
-#include <sopnet/block/Core.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/blocks/Core.h>
+#include <catmaid/blocks/Blocks.h>
 #include <pipeline/Data.h>
 #include <boost/shared_ptr.hpp>
 

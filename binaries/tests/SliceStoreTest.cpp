@@ -1,5 +1,5 @@
 #include "SliceStoreTest.h"
-#include <catmaid/SliceGuarantor.h>
+#include <catmaid/guarantors/SliceGuarantor.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/SlicePointerHash.h>
 

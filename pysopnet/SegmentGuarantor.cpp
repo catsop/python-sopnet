@@ -1,5 +1,5 @@
-#include <catmaid/SegmentGuarantor.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/guarantors/SegmentGuarantor.h>
+#include <catmaid/blocks/Blocks.h>
 #include "SegmentGuarantor.h"
 #include "logging.h"
 

@@ -1,9 +1,9 @@
 #include "BlockManagerTest.h"
 #include <util/Logger.h>
-#include <block/Core.h>
-#include <block/Cores.h>
-#include <block/Block.h>
-#include <block/Blocks.h>
+#include <catmaid/blocks/Core.h>
+#include <catmaid/blocks/Cores.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Blocks.h>
 
 namespace catsoptest
 {

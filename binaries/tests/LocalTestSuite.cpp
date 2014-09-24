@@ -1,5 +1,5 @@
 #include "LocalTestSuite.h"
-#include <sopnet/block/LocalBlockManager.h>
+#include <catmaid/persistence/local/LocalBlockManager.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/local/LocalSegmentStore.h>
 #include <catmaid/persistence/StackStore.h>

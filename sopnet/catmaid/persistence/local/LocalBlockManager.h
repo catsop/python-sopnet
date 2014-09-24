@@ -5,9 +5,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
-#include "BlockManager.h"
-#include <sopnet/block/Block.h>
-#include <sopnet/block/Core.h>
+#include <catmaid/persistence/BlockManager.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Core.h>
 #include <util/point3.hpp>
 
 using util::point3;

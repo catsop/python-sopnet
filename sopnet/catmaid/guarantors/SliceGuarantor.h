@@ -6,8 +6,8 @@
 
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
-#include <sopnet/sopnet/block/Box.h>
-#include <sopnet/sopnet/block/Blocks.h>
+#include <util/Box.h>
+#include <sopnet/catmaid/blocks/Blocks.h>
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
 #include <sopnet/slices/ConflictSets.h>

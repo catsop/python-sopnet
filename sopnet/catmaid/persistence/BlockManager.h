@@ -4,8 +4,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
-#include <sopnet/block/Block.h>
-#include <sopnet/block/Box.h>
+#include <catmaid/blocks/Block.h>
+#include <util/Box.h>
 #include <util/point3.hpp>
 #include <pipeline/Data.h>
 

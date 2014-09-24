@@ -5,9 +5,9 @@
 
 #include <sopnet/segments/Segment.h>
 #include <sopnet/segments/Segments.h>
-#include <sopnet/block/Block.h>
-#include <sopnet/block/Core.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Core.h>
+#include <catmaid/blocks/Blocks.h>
 #include <pipeline/Data.h>
 #include <pipeline/Value.h>
 #include <sopnet/features/Features.h>

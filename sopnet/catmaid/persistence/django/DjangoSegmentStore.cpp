@@ -1,7 +1,7 @@
 #include "DjangoSegmentStore.h"
 #include <util/httpclient.h>
 #include <util/Logger.h>
-#include "DjangoUtils.h"
+#include <catmaid/persistence/django/DjangoUtils.h>
 #include <boost/algorithm/string/replace.hpp>
 
 logger::LogChannel djangosegmentstorelog("djangosegmentstorelog", "[DjangoSegmentStore] ");

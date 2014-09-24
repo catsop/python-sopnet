@@ -1,9 +1,9 @@
 #ifndef SEGMENT_GUARANTOR_H__
 #define SEGMENT_GUARANTOR_H__
 
-#include <catmaid/SliceGuarantor.h>
+#include <catmaid/guarantors/SliceGuarantor.h>
 #include <catmaid/persistence/SegmentStore.h>
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <catmaid/persistence/StackStore.h>
 #include <sopnet/features/Features.h>
 

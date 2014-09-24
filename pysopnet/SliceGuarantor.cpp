@@ -1,7 +1,7 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
-#include <catmaid/SliceGuarantor.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/guarantors/SliceGuarantor.h>
+#include <catmaid/blocks/Blocks.h>
 #include "SliceGuarantor.h"
 #include "logging.h"
 

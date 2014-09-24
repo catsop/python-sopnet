@@ -1,9 +1,9 @@
 #include "BlockManager.h"
 #include <util/Logger.h>
 #include <boost/make_shared.hpp>
-#include <sopnet/block/Box.h>
-#include <sopnet/block/Blocks.h>
-#include <sopnet/block/Cores.h>
+#include <util/Box.h>
+#include <catmaid/blocks/Blocks.h>
+#include <catmaid/blocks/Cores.h>
 
 logger::LogChannel blockmanagerlog("blockmanagerlog", "[BlockManager] ");
 

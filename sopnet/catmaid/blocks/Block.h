@@ -6,10 +6,10 @@
 
 #include <pipeline/Data.h>
 #include <util/point3.hpp>
-#include <sopnet/sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <imageprocessing/ConnectedComponent.h>
 #include <vector>
-#include "Box.h"
+#include <util/Box.h>
 
 using util::point3;
 

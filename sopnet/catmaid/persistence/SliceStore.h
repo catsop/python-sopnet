@@ -7,7 +7,7 @@
 #include <sopnet/slices/ConflictSets.h>
 
 #include <sopnet/slices/Slices.h>
-#include <sopnet/block/Blocks.h>
+#include <catmaid/blocks/Blocks.h>
 
 #include <pipeline/Value.h>
 #include <pipeline/Data.h>

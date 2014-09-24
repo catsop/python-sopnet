@@ -1,6 +1,6 @@
 #ifndef CORE_H__
 #define CORE_H__
-#include <sopnet/block/Blocks.h>
+#include <catmaid/blocks/Blocks.h>
 #include <boost/enable_shared_from_this.hpp>
 
 class Core : public BlocksImpl<Block>, public boost::enable_shared_from_this<Core>

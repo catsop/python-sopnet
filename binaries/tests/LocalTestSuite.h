@@ -3,7 +3,7 @@
 #include "BlockManagerTest.h"
 #include "SliceStoreTest.h"
 #include "SegmentStoreTest.h"
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <util/point3.hpp>

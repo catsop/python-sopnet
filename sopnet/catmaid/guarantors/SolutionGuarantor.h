@@ -11,7 +11,7 @@
 #include <inference/PriorCostFunctionParameters.h>
 #include <inference/ProblemAssembler.h>
 #include <inference/SegmentationCostFunctionParameters.h>
-#include <sopnet/block/Cores.h>
+#include <catmaid/blocks/Cores.h>
 #include <sopnet/segments/SegmentTrees.h>
 
 class SolutionGuarantor : public pipeline::SimpleProcessNode<>

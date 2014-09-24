@@ -5,7 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
-#include <block/Box.h>
+#include <util/Box.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"

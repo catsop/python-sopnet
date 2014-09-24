@@ -1,7 +1,7 @@
 #ifndef TEST_BLOCK_MANAGER_H__
 #define TEST_BLOCK_MANAGER_H__
 #include "CatsopTest.h"
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <boost/shared_ptr.hpp>
 #include <util/point3.hpp>
 #include <iostream>

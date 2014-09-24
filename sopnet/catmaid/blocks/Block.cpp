@@ -1,7 +1,7 @@
 #include "Block.h"
 #include <boost/concept_check.hpp>
 #include <util/Logger.h>
-#include "BlockManager.h"
+#include <catmaid/persistence/BlockManager.h>
 
 logger::LogChannel blocklog("blocklog", "[Block] ");
 

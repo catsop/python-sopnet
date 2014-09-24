@@ -4,7 +4,7 @@
 #include <pipeline/Data.h>
 #include <pipeline/Value.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/block/Box.h>
+#include <util/Box.h>
 
 /**
  * Database abstraction for image stacks.

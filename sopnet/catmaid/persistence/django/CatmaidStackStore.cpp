@@ -1,7 +1,7 @@
 #include "CatmaidStackStore.h"
 #include <imageprocessing/io/ImageHttpReader.h>
 #include <util/httpclient.h>
-#include "DjangoUtils.h"
+#include <catmaid/persistence/django/DjangoUtils.h>
 #include <util/Logger.h>
 
 logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackStore] ");

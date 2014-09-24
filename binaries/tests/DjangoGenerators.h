@@ -2,7 +2,7 @@
 #define TEST_DJANGO_GENERATORS_H__
 
 #include <string>
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <catmaid/persistence/django/DjangoBlockManager.h>
 
 namespace catsoptest

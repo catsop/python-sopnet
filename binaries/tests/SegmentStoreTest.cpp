@@ -1,8 +1,8 @@
 #include "SegmentStoreTest.h"
 #include <sopnet/catmaid/persistence/local/LocalSliceStore.h>
 #include <sopnet/catmaid/persistence/local/LocalSegmentStore.h>
-#include <sopnet/catmaid/SegmentGuarantor.h>
-#include <sopnet/catmaid/SolutionGuarantor.h>
+#include <sopnet/catmaid/guarantors/SegmentGuarantor.h>
+#include <sopnet/catmaid/guarantors/SolutionGuarantor.h>
 #include <sopnet/catmaid/persistence/CostReader.h>
 #include <sopnet/catmaid/persistence/CostWriter.h>
 #include <sopnet/catmaid/persistence/SegmentSolutionReader.h>

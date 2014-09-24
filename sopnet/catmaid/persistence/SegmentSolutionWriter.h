@@ -5,7 +5,7 @@
 #include <catmaid/persistence/SegmentStore.h>
 #include <sopnet/segments/Segments.h>
 #include <inference/Solution.h>
-#include <sopnet/block/Cores.h>
+#include <catmaid/blocks/Cores.h>
 
 class SegmentSolutionWriter : public pipeline::SimpleProcessNode<>
 {

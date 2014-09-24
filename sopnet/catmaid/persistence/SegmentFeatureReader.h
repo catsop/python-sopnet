@@ -5,7 +5,7 @@
 #include <catmaid/persistence/SegmentStore.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <catmaid/persistence/StackStore.h>
 
 class SegmentFeatureReader : public pipeline::SimpleProcessNode<>

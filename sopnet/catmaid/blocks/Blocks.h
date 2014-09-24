@@ -6,7 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Block.h"
-#include "Box.h"
+#include <util/Box.h>
 
 class Core;
 

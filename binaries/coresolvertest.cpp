@@ -19,18 +19,18 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/slices/ComponentTreeConverter.h>
 #include <sopnet/segments/Segments.h>
-#include <sopnet/block/Block.h>
-#include <sopnet/block/Blocks.h>
-#include <sopnet/block/BlockManager.h>
-#include <sopnet/block/Box.h>
-#include <sopnet/block/LocalBlockManager.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Blocks.h>
+#include <catmaid/persistence/BlockManager.h>
+#include <util/Box.h>
+#include <catmaid/persistence/local/LocalBlockManager.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
 #include <catmaid/CoreSolver.h>
-#include <catmaid/SegmentGuarantor.h>
-#include <catmaid/SliceGuarantor.h>
-#include <catmaid/SolutionGuarantor.h>
+#include <catmaid/guarantors/SegmentGuarantor.h>
+#include <catmaid/guarantors/SliceGuarantor.h>
+#include <catmaid/guarantors/SolutionGuarantor.h>
 #include <catmaid/persistence/CostReader.h>
 #include <catmaid/persistence/CostWriter.h>
 #include <catmaid/persistence/local/LocalSegmentStore.h>
@@ -46,7 +46,7 @@
 #include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/django/DjangoSegmentStore.h>
 
-#include <sopnet/block/Box.h>
+#include <util/Box.h>
 #include <vigra/impex.hxx>
 #include <sopnet/slices/SliceExtractor.h>
 #include <gui/Window.h>

@@ -2,7 +2,7 @@
 
 
 #include <util/Logger.h>
-#include "DjangoUtils.h"
+#include <catmaid/persistence/django/DjangoUtils.h>
 
 logger::LogChannel djangoblockmanagerlog("djangoblockmanagerlog", "[DjangoBlockManager] ");
 

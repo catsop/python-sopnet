@@ -1,7 +1,7 @@
 #ifndef SOPNET_PYTHON_BACKEND_CLIENT_H__
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
-#include <sopnet/block/BlockManager.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <catmaid/persistence/django/DjangoBlockManager.h>
 #include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>

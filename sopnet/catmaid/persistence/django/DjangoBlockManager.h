@@ -1,12 +1,12 @@
 #ifndef DJANGO_BLOCK_MANAGER_H__
 #define DJANGO_BLOCK_MANAGER_H__
 
-#include <block/BlockManager.h>
-#include <block/Box.h>
-#include <block/Block.h>
-#include <block/Blocks.h>
-#include <block/Core.h>
-#include <block/Cores.h>
+#include <catmaid/persistence/BlockManager.h>
+#include <util/Box.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Blocks.h>
+#include <catmaid/blocks/Core.h>
+#include <catmaid/blocks/Cores.h>
 #include <util/point3.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/enable_shared_from_this.hpp>
