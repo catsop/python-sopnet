@@ -31,6 +31,11 @@ public:
 	};
 
 	/**
+	 * Default constructor. Initializes all fields to sensible defaults.
+	 */
+	ProjectConfiguration();
+
+	/**
 	 * Set the backend type (Local or Django).
 	 */
 	void setBackendType(BackendType type);
@@ -136,7 +141,6 @@ private:
 	unsigned int _projectId;
 
 	util::point3<unsigned int> _blockSize;
-	util::point3<unsigned int> _coreSize;
 	util::point3<unsigned int> _volumeSize;
 	util::point3<unsigned int> _coreSizeInBlocks;
 

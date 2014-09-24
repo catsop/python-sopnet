@@ -2,6 +2,18 @@
 
 namespace python {
 
+ProjectConfiguration::ProjectConfiguration() :
+
+	_backendType(Django),
+	_catmaidHost("localhost:8000"),
+	_rawStackId(3),
+	_membraneStackId(4),
+	_projectId(2),
+	_blockSize(256, 256, 10),
+	_volumeSize(1024, 1024, 20),
+	_coreSizeInBlocks(1, 1, 1),
+	_componentDirectory("/tmp") {}
+
 void
 ProjectConfiguration::setBackendType(BackendType type) {
 
