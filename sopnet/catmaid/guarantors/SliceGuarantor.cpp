@@ -8,6 +8,7 @@
 #include <util/rect.hpp>
 #include <util/Logger.h>
 #include <util/foreach.h>
+#include <pipeline/Process.h>
 #include <pipeline/Value.h>
 
 logger::LogChannel sliceguarantorlog("sliceguarantorlog", "[SliceGuarantor] ");
@@ -155,15 +156,14 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	util::rect<unsigned int> blocksRect = requestBlocks;
 	
 	bool okSlices = false;
-	boost::shared_ptr<SliceExtractor<unsigned char> > sliceExtractor =
-		make_shared<SliceExtractor<unsigned char> >(z, true);
+	pipeline::Process<SliceExtractor<unsigned char> > sliceExtractor(z, true);
 
 	pipeline::Value<Slices> slicesValue;
 	pipeline::Value<ConflictSets> conflictValue;
 	
 	extractBlocks.addAll(requestBlocks);
 	// Dilate once beforehand.
-	extractBlocks->dilate(1, 1, 0);
+	extractBlocks.dilate(1, 1, 0);
 
 	while (!okSlices && sizeOk(extractBlocks.size()))
 	{
