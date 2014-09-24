@@ -15,4 +15,4 @@
 	url = https://github.com/larrylindsey/imageprocessing.git
 [submodule "cmake"]
 	path = cmake
-	url = https://github.com/larrylindsey/cmake
+	url = https://github.com/funkey/cmake
