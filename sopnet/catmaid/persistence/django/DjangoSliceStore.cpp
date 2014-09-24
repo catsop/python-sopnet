@@ -75,6 +75,8 @@ DjangoSliceStore::associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<
 			insertPostData << "&maxx_" << i << "=" << bb.maxX;
 			insertPostData << "&miny_" << i << "=" << bb.minY;
 			insertPostData << "&maxy_" << i << "=" << bb.maxY;
+			// Size
+			insertPostData << "&size_" << i << "=" << slice->getComponent()->getSize();
 			// Value
 			insertPostData << "&value_" << i << "=" << slice->getComponent()->getValue();
 			
