@@ -368,12 +368,12 @@ DjangoSliceStore::readConnectedComponent(std::string sliceHash) {
 	componentFile >> value;
 
 	// read the pixel list
-	while (!componentFile.eof()) {
+	while (!componentFile.eof() && componentFile.good()) {
 
 		unsigned int x, y;
 
-		componentFile >> x;
-		componentFile >> y;
+		if (!(componentFile >> x)) break;
+		if (!(componentFile >> y)) break;
 
 		component->push_back(util::point<unsigned int>(x, y));
 	}
