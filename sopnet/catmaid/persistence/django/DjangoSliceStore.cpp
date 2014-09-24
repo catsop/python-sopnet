@@ -119,7 +119,7 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 	std::ostringstream post;
 	std::string delim = "";
 	boost::shared_ptr<ptree> pt;
-	boost::shared_ptr<Slices> slices = boost::shared_ptr<Slices>();
+	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
 	ptree slicesTree;
 	
 	appendProjectAndStack(url);
