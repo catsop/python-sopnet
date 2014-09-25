@@ -121,6 +121,10 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 	boost::shared_ptr<ptree> pt;
 	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
 	ptree slicesTree;
+
+	LOG_DEBUG(djangoslicestorelog) << "retrieving slices for blocks:" << std::endl;
+	foreach (boost::shared_ptr<Block> block, blocks)
+		LOG_DEBUG(djangoslicestorelog) << "\t" << block->getId() << std::endl;
 	
 	appendProjectAndStack(url);
 	url << "/slices_by_blocks_and_conflict";
@@ -152,6 +156,8 @@ DjangoSliceStore::retrieveSlices(const Blocks& blocks)
 			_idSliceMap[slice->getId()] = slice;
 		}
 	}
+
+	LOG_DEBUG(djangoslicestorelog) << "retrieved " << slices->size() << " slices" << std::endl;
 
 	return slices;
 }
