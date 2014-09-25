@@ -429,10 +429,41 @@ DjangoSliceStore::sliceByHash(const std::string& hash)
 	}
 	else
 	{
-		LOG_ERROR(djangoslicestorelog) << "slice " << hash << " does not exist in the cache -- return null-pointer" << std::endl;
+		LOG_DEBUG(djangoslicestorelog) << "slice " << hash << " does not exist in the cache -- fetch it" << std::endl;
 
-		boost::shared_ptr<Slice> dummySlice = boost::shared_ptr<Slice>();
-		return dummySlice;
+		std::ostringstream url;
+		std::ostringstream post;
+		boost::shared_ptr<ptree> pt;
+
+		appendProjectAndStack(url);
+		url << "/slices_by_hash";
+		post << "hash=" << hash;
+
+		pt = HttpClient::postPropertyTree(url.str(), post.str());
+	
+		DjangoUtils::checkDjangoError(pt, url.str());
+		if (pt->get_child("ok").get_value<std::string>().compare("true") != 0) {
+
+			UTIL_THROW_EXCEPTION(
+				DjangoException,
+				"Error finding slice with given hash. URL: " << url.str());
+		}
+
+		if (pt->get_child("slices").size() == 0)
+			UTIL_THROW_EXCEPTION(
+					DjangoException,
+					"No slice with hash " << hash << " found");
+
+		ptree::value_type sliceValue = pt->get_child("slices").front();
+
+		// create a slice from the response
+		boost::shared_ptr<Slice> slice = ptreeToSlice(sliceValue.second);
+
+		// put it in the cache
+		_idSliceMap[slice->getId()] = slice;
+		_hashSliceMap[hash] = slice;
+
+		return slice;
 	}
 }
 
