@@ -250,7 +250,7 @@ boost::shared_ptr<ConflictSets>
 DjangoSliceStore::retrieveConflictSets(const Slices& slices)
 {
 	boost::unordered_set<ConflictSet> conflictSetSet;
-	boost::shared_ptr<ConflictSets> conflictSets = boost::shared_ptr<ConflictSets>();
+	boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
 
 	if (slices.size() == 0)
 		return conflictSets;
