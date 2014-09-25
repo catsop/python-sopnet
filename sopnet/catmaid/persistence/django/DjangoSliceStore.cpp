@@ -429,7 +429,7 @@ DjangoSliceStore::sliceByHash(const std::string& hash)
 	}
 	else
 	{
-		LOG_ALL(djangoslicestorelog) << "this slice does not exist -- return null-pointer" << std::endl;
+		LOG_ERROR(djangoslicestorelog) << "slice " << hash << " does not exist in the cache -- return null-pointer" << std::endl;
 
 		boost::shared_ptr<Slice> dummySlice = boost::shared_ptr<Slice>();
 		return dummySlice;
