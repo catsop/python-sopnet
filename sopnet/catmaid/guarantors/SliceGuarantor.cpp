@@ -74,9 +74,9 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	
 	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices.size() << " slices to " <<
 		extractBlocks.length() << " blocks" << std::endl;
-	
-	_sliceStore->writeSlices(slices, conflictSets, blocks);
-	
+
+	writeSlicesAndConflicts(slices, conflictSets, blocks);
+
 	foreach (boost::shared_ptr<Block> block, blocks)
 	{
 		block->setSlicesFlag(true);
@@ -88,27 +88,64 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 }
 
 void
+SliceGuarantor::writeSlicesAndConflicts(
+		const Slices&       slices,
+		const ConflictSets& conflictSets,
+		const Blocks&       blocks) {
+
+	foreach (boost::shared_ptr<Block> block, blocks) {
+
+		boost::shared_ptr<Slices>       blockSlices       = collectSlicesByBlock(slices, *block);
+		boost::shared_ptr<ConflictSets> blockConflictSets = collectConflictBySlices(conflictSets, *blockSlices);
+
+		_sliceStore->associateSlicesToBlock(*blockSlices, *block);
+		_sliceStore->associateConflictSetsToBlock(*blockConflictSets, *block);
+	}
+}
+
+boost::shared_ptr<Slices>
+SliceGuarantor::collectSlicesByBlock(const Slices& slices, const Block& block) {
+
+	boost::shared_ptr<Slices> blockSlices = boost::make_shared<Slices>();
+	util::rect<unsigned int> blockRect = block;
+
+	foreach (boost::shared_ptr<Slice> slice, slices) {
+
+		util::rect<unsigned int> sliceBoundingBox = slice->getComponent()->getBoundingBox();
+
+		if (blockRect.intersects(sliceBoundingBox))
+			blockSlices->add(slice);
+	}
+
+	return blockSlices;
+}
+
+boost::shared_ptr<ConflictSets>
+SliceGuarantor::collectConflictBySlices(const ConflictSets& conflictSets, const Slices& slices) {
+
+	boost::shared_ptr<ConflictSets> sliceConflictSets = boost::make_shared<ConflictSets>();
+
+	foreach (ConflictSet conflictSet, conflictSets)
+		if (containsAny(conflictSet, slices))
+			sliceConflictSets->add(conflictSet);
+
+	return sliceConflictSets;
+}
+
+bool
+SliceGuarantor::containsAny(const ConflictSet& conflictSet, const Slices& slices) {
+
+	foreach (const boost::shared_ptr<Slice> slice, slices)
+		if (conflictSet.getSlices().count(slice->getId()))
+			return true;
+
+	return false;
+}
+
+void
 SliceGuarantor::setMserParameters(const boost::shared_ptr<MserParameters> mserParameters)
 {
 	_mserParameters = mserParameters;
-}
-
-void
-SliceGuarantor::setSliceStore(const boost::shared_ptr<SliceStore> sliceStore)
-{
-	_sliceStore = sliceStore;
-}
-
-void
-SliceGuarantor::setMaximumArea(const unsigned int area)
-{
-	_maximumArea = boost::make_shared<unsigned int>(area);
-}
-
-void
-SliceGuarantor::setStackStore(const boost::shared_ptr<StackStore> stackStore)
-{
-	_stackStore = stackStore;
 }
 
 /**
@@ -132,19 +169,6 @@ SliceGuarantor::checkSlices(const Blocks& blocks)
 }
 
 bool
-SliceGuarantor::sizeOk(util::point3<unsigned int> size)
-{
-	if (_maximumArea)
-	{
-		return size.x * size.y < *_maximumArea;
-	}
-	else
-	{
-		return true;
-	}
-}
-
-bool
 SliceGuarantor::extractSlices(const unsigned int z,
 							  Slices& slices,
 							  ConflictSets& conflictSets,
@@ -165,7 +189,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	// Dilate once beforehand.
 	extractBlocks.dilate(1, 1, 0);
 
-	while (!okSlices && sizeOk(extractBlocks.size()))
+	while (!okSlices)
 	{
 		util::rect<unsigned int> bound = extractBlocks;
 		util::point<int> translate(extractBlocks.location().x, extractBlocks.location().y);
