@@ -75,7 +75,7 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices.size() << " slices to " <<
 		extractBlocks.length() << " blocks" << std::endl;
 	
-	_sliceStore->writeSlices(slices, conflictSets, extractBlocks);
+	_sliceStore->writeSlices(slices, conflictSets, blocks);
 	
 	foreach (boost::shared_ptr<Block> block, blocks)
 	{
