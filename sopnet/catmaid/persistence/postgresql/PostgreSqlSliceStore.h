@@ -53,7 +53,7 @@ public:
 	 */
 	void associateSlicesToBlock(
 			const Slices& slices,
-			const Block&  block);
+			const Block&  block) {}
 
 	/**
 	 * Associate a set of conflict sets to a block. The conflict sets are 
@@ -61,20 +61,20 @@ public:
 	 */
 	void associateConflictSetsToBlock(
 			const ConflictSets& conflictSets,
-			const Block&        block);
+			const Block&        block) {}
 
 	/**
 	 * Get all slices that are associated to the given blocks. This creates 
 	 * "real" slices in the sense that the geometry of the slices will be 
 	 * restored.
 	 */
-	boost::shared_ptr<Slices> getSlicesByBlock(const Blocks& blocks);
+	boost::shared_ptr<Slices> getSlicesByBlock(const Blocks& blocks) {}
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.
 	 */
-	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block);
+	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block) {}
 
 
 	/******************************************
