@@ -1,8 +1,6 @@
 #include "Segment.h"
-#include <boost/functional/hash.hpp>
 
 #include <util/Logger.h>
-#include <algorithm>
 
 logger::LogChannel segmentlog("segmentlog", "[Segment] ");
 
@@ -133,43 +131,6 @@ std::string Segment::typeString(const SegmentType type)
 			return "unknown";
 	}
 }
-
-
-std::size_t
-Segment::hashValue() const
-{
-	std::size_t hash = 0;
-	
-	std::vector<std::size_t> sliceHashes;
-	foreach (boost::shared_ptr<Slice> slice, getSlices())
-	{
-		sliceHashes.push_back(slice->hashValue());
-	}
-	
-	std::sort(sliceHashes.begin(), sliceHashes.end());
-	
-	if (getDirection() == Left)
-	{
-		boost::hash_combine(hash, boost::hash_value(37));
-	}
-	else if(getDirection() == Right)
-	{
-		boost::hash_combine(hash, boost::hash_value(61));
-	}
-	
-	foreach(std::size_t sliceHash, sliceHashes)
-	{
-		boost::hash_combine(hash, sliceHash);
-	}
-	
-	return hash;
-}
-
-std::size_t hash_value(const Segment& segment)
-{
-	return segment.hashValue();
-}
-
 
 unsigned int Segment::NextSegmentId = 0;
 boost::mutex Segment::SegmentIdMutex;

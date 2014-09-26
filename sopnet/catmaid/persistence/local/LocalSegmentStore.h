@@ -25,7 +25,51 @@ class LocalSegmentStore : public SegmentStore
 	typedef boost::unordered_map<Core, SegmentCostMap> SegmentSolutionMap;
 	
 public:
+
 	LocalSegmentStore();
+
+	/**
+	 * Associate a set of segment descritptions to a block. A "descritption" is 
+	 * a SegmentDescritption that represents a segment only by its hash, 
+	 * features, and slice hashes.
+	 *
+	 * @param segments
+	 *              A description of the segments that are supposed to be stored 
+	 *              in the database.
+	 * @param block
+	 *              The block to which to associate the segments.
+	 */
+	void associateSegmentsToBlock(
+			const SegmentDescriptions& segments,
+			const Block&               block) {}
+
+	/**
+	 * Get a description of all the segments in the given blocks. A 
+	 * "descritption" is a SegmentDescritption that represents a segment only by 
+	 * its hash, features, and slice hashes.
+	 *
+	 * @param blocks
+	 *              The blocks from which to retrieve the segments.
+	 */
+	boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(const Blocks& blocks) {}
+
+	/**
+	 * Store the solution of processing a core.
+	 *
+	 * @param segmentHashes
+	 *              A list of segment hashes that are part of the solution. A 
+	 *              concrete implementation has to make sure that all other 
+	 *              segments associated to this core are marked as not belonging 
+	 *              to the solution.
+	 * @param core
+	 *              The core for which the solution was generated.
+	 */
+	void storeSolution(const std::vector<std::size_t>& segmentHashes, const Core& core) {}
+
+
+	/******************************************
+	 * OLD INTERFACE DEFINITION -- DEPRECATED *
+	 ******************************************/
 	
     /**
      * Associates a segment with a block

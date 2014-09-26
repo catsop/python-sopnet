@@ -3,25 +3,70 @@
 
 #include <boost/unordered_map.hpp>
 
-#include <sopnet/segments/Segment.h>
-#include <sopnet/segments/Segments.h>
 #include <catmaid/blocks/Block.h>
-#include <catmaid/blocks/Core.h>
 #include <catmaid/blocks/Blocks.h>
-#include <pipeline/Data.h>
-#include <pipeline/Value.h>
+#include <catmaid/blocks/Core.h>
+#include <catmaid/persistence/SegmentDescriptions.h>
+
+// TODO: remove when new API completely implemented
+#include <catmaid/persistence/SegmentPointerHash.h>
+#include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
 #include <sopnet/inference/Solution.h>
 #include <sopnet/inference/LinearObjective.h>
-#include <catmaid/persistence/SegmentPointerHash.h>
+#include <pipeline/Value.h>
 
 
 /**
- * Abstract Data class that handles the practicalities of storing and retrieving Segments from a store.
+ * Segment store interface definition.
  */
-class SegmentStore : public pipeline::Data
-{
+class SegmentStore {
+
 public:
+
+	/**
+	 * Associate a set of segment descritptions to a block. A "descritption" is 
+	 * a SegmentDescription that represents a segment only by its hash, 
+	 * features, and slice hashes.
+	 *
+	 * @param segments
+	 *              A description of the segments that are supposed to be stored 
+	 *              in the database.
+	 * @param block
+	 *              The block to which to associate the segments.
+	 */
+	virtual void associateSegmentsToBlock(
+			const SegmentDescriptions& segments,
+			const Block&               block) = 0;
+
+	/**
+	 * Get a description of all the segments in the given blocks. A 
+	 * "descritption" is a SegmentDescription that represents a segment only by 
+	 * its hash, features, and slice hashes.
+	 *
+	 * @param blocks
+	 *              The blocks from which to retrieve the segments.
+	 */
+	virtual boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(const Blocks& blocks) = 0;
+
+	/**
+	 * Store the solution of processing a core.
+	 *
+	 * @param segmentHashes
+	 *              A list of segment hashes that are part of the solution. A 
+	 *              concrete implementation has to make sure that all other 
+	 *              segments associated to this core are marked as not belonging 
+	 *              to the solution.
+	 * @param core
+	 *              The core for which the solution was generated.
+	 */
+	virtual void storeSolution(const std::vector<std::size_t>& segmentHashes, const Core& core) = 0;
+
+
+	/******************************************
+	 * OLD INTERFACE DEFINITION -- DEPRECATED *
+	 ******************************************/
+
 	typedef boost::unordered_map<boost::shared_ptr<Segment>,
 								 std::vector<double>,
 								 SegmentPointerHash,
@@ -30,27 +75,27 @@ public:
 	/**
 	 * Write Segments over the given Blocks to this SegmentStore.
 	 */
-	void writeSegments(const Segments& segments, const Blocks& blocks);
+	DEPRECATED(void writeSegments(const Segments& segments, const Blocks& blocks)) {}
 
     /**
      * Associates a segment with a block
      * @param segment - the segment to store.
      * @param block - the block containing the segment.
      */
-    virtual void associate(pipeline::Value<Segments> segments,
-						   pipeline::Value<Block> block) = 0;
+    DEPRECATED(virtual void associate(pipeline::Value<Segments> segments,
+						   pipeline::Value<Block> block)) = 0;
 
     /**
      * Retrieve all segments that are at least partially contained in the given block.
      * @param block - the Block for which to retrieve all segments.
      */
-    virtual pipeline::Value<Segments> retrieveSegments(const Blocks& blocks) = 0;
+    DEPRECATED(virtual pipeline::Value<Segments> retrieveSegments(const Blocks& blocks)) = 0;
 
 	/**
 	 * Retrieve a set of Blocks that are associated with the given Segment.
 	 * @param segment - the Segment for which to retrieve associated Blocks
 	 */
-	virtual pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment) = 0;
+	DEPRECATED(virtual pipeline::Value<Blocks> getAssociatedBlocks(pipeline::Value<Segment> segment)) = 0;
 	
 	/**
 	 * Store a set of Features associated to a set of Segments. Segments must be associated before
@@ -60,7 +105,7 @@ public:
 	 * equal to the size of features, then there were Segments for which Features were calculated
 	 * but not stored. This may not necessarily be an error, however.
 	 */
-	virtual int storeFeatures(pipeline::Value<Features> features) = 0;
+	DEPRECATED(virtual int storeFeatures(pipeline::Value<Features> features)) = 0;
 
 	/**
 	 * Retrieve a set of Feautres associated to the set of given Segments.
@@ -70,13 +115,13 @@ public:
 	 * 
 	 * Conversion to a Features object is handled in SegmentFeatureReader.
 	 */
-	virtual pipeline::Value<SegmentFeaturesMap>
-		retrieveFeatures(pipeline::Value<Segments> segments) = 0;
+	DEPRECATED(virtual pipeline::Value<SegmentFeaturesMap>
+		retrieveFeatures(pipeline::Value<Segments> segments)) = 0;
 
 	/**
 	 * Retrieve the names of the Segment Features that have been stored herel.
 	 */
-	virtual std::vector<std::string> getFeatureNames() = 0;
+	DEPRECATED(virtual std::vector<std::string> getFeatureNames()) = 0;
 
 	/**
 	 * Store costs for the given segments.
@@ -92,8 +137,8 @@ public:
 	 * segments->getSegments()[i], so it is important to input the same Segments object that was used
 	 * for the ObjectiveGenerator.
 	 */
-	virtual unsigned int storeCost(pipeline::Value<Segments> segments,
-							   pipeline::Value<LinearObjective> objective) = 0;
+	DEPRECATED(virtual unsigned int storeCost(pipeline::Value<Segments> segments,
+							   pipeline::Value<LinearObjective> objective)) = 0;
 
 	/**
 	 * Retrieve the costs for the given segments.
@@ -108,9 +153,9 @@ public:
 	 * argument. Segments for which there is no cost stored in this SegmentStore will be
 	 * assigned the defaultCost value. 
 	 */
-	virtual pipeline::Value<LinearObjective> retrieveCost(pipeline::Value<Segments> segments,
+	DEPRECATED(virtual pipeline::Value<LinearObjective> retrieveCost(pipeline::Value<Segments> segments,
 														  double defaultCost,
-														  pipeline::Value<Segments> segmentsNF)= 0;
+														  pipeline::Value<Segments> segmentsNF)) = 0;
 
 	/**
 	 * Store the solution for a given set of Segments and a give Core.
@@ -127,10 +172,10 @@ public:
 	 * indices in segments to indices in solution, in other words:
 	 * let j = indices[i], then the ith segment maps to the jth value in solution
 	 */
-	virtual unsigned int storeSolution(pipeline::Value<Segments> segments,
+	DEPRECATED(virtual unsigned int storeSolution(pipeline::Value<Segments> segments,
 									   pipeline::Value<Core> core,
 									   pipeline::Value<Solution> solution,
-									   std::vector<unsigned int> indices) = 0;
+									   std::vector<unsigned int> indices)) = 0;
 
 	/**
 	 * Retrieve the solutions for the given segments, associated with the given Core.
@@ -142,21 +187,8 @@ public:
 	 * argument. Any Segments not associated to a Block in core, or without an associated solution
 	 * value in the store will be assigned a solution value of 0.
 	 */
-	virtual pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments,
-													   pipeline::Value<Core> core) = 0;
-	
-	/**
-	 * Print the contents of this store to the DEBUG logging channel.
-	 */
-	virtual void dumpStore() = 0;
-	
-private:
-	/**
-	 * Determine whether the given Segment should be associated to the given Block.
-	 */
-	bool overlaps(const Segment& segment, const Block& block);
-
-	
+	DEPRECATED(virtual pipeline::Value<Solution> retrieveSolution(pipeline::Value<Segments> segments,
+													   pipeline::Value<Core> core)) = 0;
 };
 
 

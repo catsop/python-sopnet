@@ -1,8 +1,9 @@
 #include "DjangoSegmentStore.h"
-#include <util/httpclient.h>
-#include <util/Logger.h>
-#include <catmaid/persistence/django/DjangoUtils.h>
 #include <boost/algorithm/string/replace.hpp>
+#include <catmaid/persistence/django/DjangoUtils.h>
+#include <segments/SegmentHash.h>
+#include <util/Logger.h>
+#include <util/httpclient.h>
 
 logger::LogChannel djangosegmentstorelog("djangosegmentstorelog", "[DjangoSegmentStore] ");
 
@@ -542,7 +543,7 @@ DjangoSegmentStore::generateHash(const boost::shared_ptr<Segment> segment)
 {
 	//TODO: generate a provably unique hash
 	std::stringstream ss;
-	ss << segment->hashValue();
+	ss << SegmentHash::generate(*segment);
 	return ss.str();
 }
 
