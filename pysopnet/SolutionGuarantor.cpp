@@ -37,7 +37,9 @@ SolutionGuarantor::fill(
 	pipeline::Value<unsigned int> corePadding(parameters.getCorePadding());
 
 	solutionGuarantor->setInput("cores", cores);
-	solutionGuarantor->setInput("segment store", segmentStore);
+	// slice store is not a pipeline::Data any more, solutionGuarantor will not 
+	// be a process node soon
+	//solutionGuarantor->setInput("segment store", segmentStore);
 	// slice store is not a pipeline::Data any more, solutionGuarantor will not 
 	// be a process node soon
 	//solutionGuarantor->setInput("slice store", sliceStore);
