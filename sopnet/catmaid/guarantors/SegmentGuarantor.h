@@ -53,17 +53,6 @@ private:
 	boost::shared_ptr<Features> guaranteeFeatures(
 			const boost::shared_ptr<Segments> segments);
 
-	// write the segments using the provided segment store
-	void writeSegments(const Segments& segments, const Blocks& blocks);
-
-	// test, whether a segment should be associated to a block
-	bool associated(
-		const Segment& segment,
-		const Block& block);
-
-	// write the features of the segments using the provided segment store
-	void writeFeatures(const Features& features);
-
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
 	boost::shared_ptr<StackStore>   _rawStackStore;

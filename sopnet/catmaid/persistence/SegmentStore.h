@@ -150,11 +150,11 @@ public:
 	 */
 	virtual void dumpStore() = 0;
 	
-protected:
+private:
 	/**
 	 * Determine whether the given Segment should be associated to the given Block.
 	 */
-	bool associated(const Segment& segment, const Block& block);
+	bool overlaps(const Segment& segment, const Block& block);
 
 	
 };
