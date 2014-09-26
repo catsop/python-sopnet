@@ -7,40 +7,15 @@
 
 logger::LogChannel segmentguarantorlog("segmentguarantorlog", "[SegmentGuarantor] ");
 
-void
-SegmentGuarantor::setSegmentStore(boost::shared_ptr<SegmentStore> segmentStore) {
-
-	_segmentStore = segmentStore;
-}
-
-void
-SegmentGuarantor::setSliceStore(boost::shared_ptr<SliceStore> sliceStore) {
-
-	_sliceStore = sliceStore;
-}
-
-void
-SegmentGuarantor::setRawStackStore(boost::shared_ptr<StackStore> rawStackStore) {
-
-	_rawStackStore = rawStackStore;
-}
+SegmentGuarantor::SegmentGuarantor(
+		boost::shared_ptr<SegmentStore> segmentStore,
+		boost::shared_ptr<SliceStore>   sliceStore,
+		boost::shared_ptr<StackStore>   rawStackStore) :
+	_segmentStore(segmentStore),
+	_sliceStore(sliceStore),
+	_rawStackStore(rawStackStore) {}
 
 Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
-
-	if (!_segmentStore)
-		UTIL_THROW_EXCEPTION(
-				UsageError,
-				"no segment store set");
-
-	if (!_sliceStore)
-		UTIL_THROW_EXCEPTION(
-				UsageError,
-				"no slice store set");
-
-	if (!_rawStackStore)
-		UTIL_THROW_EXCEPTION(
-				UsageError,
-				"no raw stack store set");
 
 	// remember the block manager to use
 	_blockManager = requestedBlocks.getManager();
@@ -100,7 +75,7 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	// another across sections that does not belong to a conflict-clique that exists within the
 	// requested geometry.
 
-	slices = _sliceStore->retrieveSlices(sliceBlocks);
+	slices = _sliceStore->getSlicesByBlocks(sliceBlocks);
 
 	LOG_DEBUG(segmentguarantorlog)
 			<< "Read " << slices->size()
@@ -122,7 +97,7 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	}
 
 	// TODO: get slices only for new blocks
-	slices = _sliceStore->retrieveSlices(sliceBlocks);
+	slices = _sliceStore->getSlicesByBlocks(sliceBlocks);
 
 	LOG_DEBUG(segmentguarantorlog) << "Altogether, I have " << slices->size() << " slices" << std::endl;
 
@@ -161,9 +136,7 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	// compute the features for all extracted segments
 	boost::shared_ptr<Features> features = guaranteeFeatures(segments);
 
-	// store the segments and features
-	_segmentStore->writeSegments(*segments, requestedBlocks);
-	_segmentStore->storeFeatures(*features);
+	writeSegmentsAndFeatures(*segments, *features, requestedBlocks);
 
 	// mark the requested blocks as done
 	foreach (boost::shared_ptr<Block> block, requestedBlocks)
@@ -173,6 +146,86 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 
 	// needBlocks is empty
 	return needBlocks;
+}
+
+void
+SegmentGuarantor::writeSegmentsAndFeatures(
+		const Segments& segments,
+		const Features& features,
+		const Blocks&   requestedBlocks) {
+
+	foreach (boost::shared_ptr<Block> block, requestedBlocks) {
+
+		SegmentDescriptions blockSegments = getSegmentDescriptions(segments, features, *block);
+		_segmentStore->associateSegmentsToBlock(blockSegments, *block);
+	}
+}
+
+SegmentDescriptions
+SegmentGuarantor::getSegmentDescriptions(
+		const Segments& segments,
+		const Features& features,
+		const Block&    block) {
+
+	SegmentDescriptions segmentDescriptions;
+
+	foreach (boost::shared_ptr<Segment> segment, segments.getSegments()) {
+
+		// only if the segment overlaps with the current block
+		if (!overlaps(*segment, block))
+			continue;
+
+		// create a new segment description
+		SegmentDescription segmentDescription(segment->getInterSectionInterval());
+
+		// add slice hashes
+		if (segment->getDirection() == Left) {
+
+			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+				segmentDescription.addLeftSlice(slice->hashValue());
+			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+				segmentDescription.addRightSlice(slice->hashValue());
+
+		} else {
+
+			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+				segmentDescription.addRightSlice(slice->hashValue());
+			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+				segmentDescription.addLeftSlice(slice->hashValue());
+		}
+
+		// add features
+		segmentDescription.setFeatures(features.get(segment->getId()));
+
+		// add to collection of segment descriptions for current block
+		segmentDescriptions.add(segmentDescription);
+	}
+
+	return segmentDescriptions;
+}
+
+bool
+SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
+
+	unsigned int minSection = segment.getInterSectionInterval();
+	unsigned int maxSection = segment.getInterSectionInterval() + 1;
+
+	// test in z
+	if (maxSection <  block.location().z ||
+	    minSection >= block.location().z + block.size().z)
+		return false;
+
+	// test in x-y
+	util::rect<unsigned int> blockRect = block;
+	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
+
+		util::rect<unsigned int> sliceBoundingBox = slice->getComponent()->getBoundingBox();
+
+		if (blockRect.intersects(sliceBoundingBox))
+			return true;
+	}
+
+	return false;
 }
 
 boost::shared_ptr<Slices>

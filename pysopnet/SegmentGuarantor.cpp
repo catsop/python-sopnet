@@ -26,11 +26,7 @@ SegmentGuarantor::fill(
 	blocks->add(requestBlock);
 
 	// create a SegmentGuarantor
-	::SegmentGuarantor segmentGuarantor;
-
-	segmentGuarantor.setSegmentStore(segmentStore);
-	segmentGuarantor.setSliceStore(sliceStore);
-	segmentGuarantor.setRawStackStore(rawStackStore);
+	::SegmentGuarantor segmentGuarantor(segmentStore, sliceStore, rawStackStore);
 
 	// let it do what it was build for
 	Blocks missingBlocks = segmentGuarantor.guaranteeSegments(*blocks);

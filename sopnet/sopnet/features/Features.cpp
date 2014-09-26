@@ -54,6 +54,12 @@ Features::get(unsigned int segmentId) {
 	return _features[_segmentIdsMap[segmentId]];
 }
 
+const std::vector<double>&
+Features::get(unsigned int segmentId) const {
+
+	return _features.at(_segmentIdsMap.at(segmentId));
+}
+
 unsigned int
 Features::count(unsigned int segmentId)
 {

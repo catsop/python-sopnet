@@ -1,32 +1,20 @@
 #ifndef SEGMENT_GUARANTOR_H__
 #define SEGMENT_GUARANTOR_H__
 
-#include <catmaid/guarantors/SliceGuarantor.h>
 #include <catmaid/persistence/SegmentStore.h>
-#include <catmaid/persistence/BlockManager.h>
+#include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
+#include <catmaid/persistence/BlockManager.h>
 #include <sopnet/features/Features.h>
 
-class SegmentGuarantor
-{
+class SegmentGuarantor {
 
 public:
 
-	/**
-	 * Set the segment store to be used to write the found segments.
-	 */
-	void setSegmentStore(boost::shared_ptr<SegmentStore> segmentStore);
-
-	/**
-	 * Set the slice store to be used to read slices from which to extract 
-	 * segments.
-	 */
-	void setSliceStore(boost::shared_ptr<SliceStore> sliceStore);
-
-	/**
-	 * Set the image stack store to be used to extract segment features.
-	 */
-	void setRawStackStore(boost::shared_ptr<StackStore> rawStackStore);
+	SegmentGuarantor(
+			boost::shared_ptr<SegmentStore> segmentStore,
+			boost::shared_ptr<SliceStore>   sliceStore,
+			boost::shared_ptr<StackStore>   rawStackStore);
 
 	/**
 	 * Guarantee segments in the given blocks. If the request can not be 
@@ -36,6 +24,23 @@ public:
 	Blocks guaranteeSegments(const Blocks& requestedBlocks);
 
 private:
+
+	// get all segment descriptions for segments that overlap with the given 
+	// block
+	SegmentDescriptions getSegmentDescriptions(
+			const Segments& segments,
+			const Features& features,
+			const Block&    block);
+
+	// use the provided segment store to save the extracted segments and 
+	// features for the requested blocks
+	void writeSegmentsAndFeatures(
+			const Segments& segments,
+			const Features& features,
+			const Blocks&   requestedBlocks);
+
+	// check if a segment overlaps with a block
+	bool overlaps(const Segment& segment, const Block& block);
 
 	// get a subset of slices for a given section
 	boost::shared_ptr<Slices> collectSlicesByZ(
