@@ -5,6 +5,9 @@
 #include <pipeline/Value.h>
 #include <imageprocessing/ImageStack.h>
 #include <util/Box.h>
+#include <util/exceptions.h>
+
+struct NoImageException : virtual Exception {};
 
 /**
  * Database abstraction for image stacks.

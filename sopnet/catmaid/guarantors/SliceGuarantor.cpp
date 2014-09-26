@@ -39,9 +39,6 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	std::vector<Slices> slicesVector(blocks.size().z);
 	// extracted conflict sets
 	std::vector<ConflictSets> conflictSetsVector(blocks.size().z); 
-	
-	// This isn't *really* true.
-	bool allBad = true;
 
 	// Extract slices independently by z.
 	for (unsigned int i = 0; i < blocks.size().z; ++i)
@@ -50,22 +47,15 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 		Slices zSlices;
 		ConflictSets zConflict;
 		Blocks zBlocks;
-		
-		allBad = !extractSlices(z, zSlices, zConflict, zBlocks, blocks) && allBad;
-		
+
+		extractSlices(z, zSlices, zConflict, zBlocks, blocks);
+
 		slicesVector[i] = zSlices;
 		conflictSetsVector[i] = zConflict;
-		
+
 		extractBlocks.addAll(zBlocks);
 	}
 
-	// If all sections yielded empty images, then we need to regenerate the image stack.
-	if (allBad)
-	{
-		LOG_DEBUG(sliceguarantorlog) << "No images found from which to extract slices" << std::endl;
-		return extractBlocks;
-	}
-	
 	for (unsigned int i = 0; i < blocks.size().z; ++i)
 	{
 		slices.addAll(slicesVector[i]);
@@ -168,7 +158,7 @@ SliceGuarantor::checkSlices(const Blocks& blocks)
 	
 }
 
-bool
+void
 SliceGuarantor::extractSlices(const unsigned int z,
 							  Slices& slices,
 							  ConflictSets& conflictSets,
@@ -178,13 +168,13 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline for section " << z << std::endl;
 	Blocks nbdBlocks;
 	util::rect<unsigned int> blocksRect = requestBlocks;
-	
+
 	bool okSlices = false;
 	pipeline::Process<SliceExtractor<unsigned char> > sliceExtractor(z, true);
 
 	pipeline::Value<Slices> slicesValue;
 	pipeline::Value<ConflictSets> conflictValue;
-	
+
 	extractBlocks.addAll(requestBlocks);
 	// Dilate once beforehand.
 	extractBlocks.dilate(1, 1, 0);
@@ -195,14 +185,9 @@ SliceGuarantor::extractSlices(const unsigned int z,
 		util::point<int> translate(extractBlocks.location().x, extractBlocks.location().y);
 		Box<> box(bound, z, 1);
 		boost::shared_ptr<Image> image = (*_stackStore->getImageStack(box))[0];
-		
+
 		LOG_ALL(sliceguarantorlog) << "Processing over " << bound << std::endl;
-		
-		if (image->width() * image->height() == 0)
-		{
-			return false;
-		}
-		
+
 		nbdBlocks = Blocks(extractBlocks);
 
 		sliceExtractor->setInput("membrane", image);
@@ -245,8 +230,6 @@ SliceGuarantor::extractSlices(const unsigned int z,
 	
 	conflictSets.addAll(*conflictValue);
 	collectOutputSlices(*slicesValue, *conflictValue, slices, requestBlocks);
-	
-	return true;
 }
 
 /**

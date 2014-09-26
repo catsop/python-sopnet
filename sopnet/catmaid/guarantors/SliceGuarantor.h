@@ -57,23 +57,26 @@ private:
 
 	bool checkSlices(const Blocks& blocks);
 	
-	void collectOutputSlices(const Slices& extractedSlices,
-							const ConflictSets& extractedConflict,
-							Slices& slices,
-							const Blocks& blocks);
+	void collectOutputSlices(
+			const Slices& extractedSlices,
+			const ConflictSets& extractedConflict,
+			Slices& slices,
+			const Blocks& blocks);
 	
-	bool extractSlices(const unsigned int z,
-						Slices& slices,
-						ConflictSets& conflictSets,
-						Blocks& extractBlocks,
-						const Blocks& requestBlocks);
+	// extract whole slices in a section for the given requestBlocks
+	void extractSlices(
+			const unsigned int z,
+			Slices& slices,
+			ConflictSets& conflictSets,
+			Blocks& extractBlocks,
+			const Blocks& requestBlocks);
 
 	// associate the extracted slices and conflict sets to the given blocks 
 	// using slice store
 	void writeSlicesAndConflicts(
-		const Slices&       slices,
-		const ConflictSets& conflictSets,
-		const Blocks&       blocks);
+			const Slices&       slices,
+			const ConflictSets& conflictSets,
+			const Blocks&       blocks);
 
 	// find a subset of slices that overlap with the given block
 	boost::shared_ptr<Slices> collectSlicesByBlock(const Slices& slices, const Block& block);
