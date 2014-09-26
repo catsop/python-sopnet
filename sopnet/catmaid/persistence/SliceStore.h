@@ -13,8 +13,8 @@
 /**
  * Slice store interface definition.
  */
-class SliceStore
-{
+class SliceStore {
+
 public:
 
 	/**
@@ -37,7 +37,7 @@ public:
 	 * "real" slices in the sense that the geometry of the slices will be 
 	 * restored.
 	 */
-	virtual boost::shared_ptr<Slices> getSlicesByBlock(const Blocks& blocks) = 0;
+	virtual boost::shared_ptr<Slices> getSlicesByBlocks(const Blocks& blocks) = 0;
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
