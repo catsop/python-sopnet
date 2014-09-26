@@ -38,7 +38,9 @@ SolutionGuarantor::fill(
 
 	solutionGuarantor->setInput("cores", cores);
 	solutionGuarantor->setInput("segment store", segmentStore);
-	solutionGuarantor->setInput("slice store", sliceStore);
+	// slice store is not a pipeline::Data any more, solutionGuarantor will not 
+	// be a process node soon
+	//solutionGuarantor->setInput("slice store", sliceStore);
 	solutionGuarantor->setInput("raw stack store", rawStackStore);
 	solutionGuarantor->setInput("force explanation", forceExplanation);
 	solutionGuarantor->setInput("buffer", corePadding);

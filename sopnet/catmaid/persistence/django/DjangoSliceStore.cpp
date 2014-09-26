@@ -231,7 +231,7 @@ DjangoSliceStore::storeConflict(boost::shared_ptr<ConflictSets> conflictSets)
 			else
 			{
 				UTIL_THROW_EXCEPTION(
-					SliceCacheError,
+					UsageError,
 					"Slice " << id << " not found in cache");
 			}
 		}

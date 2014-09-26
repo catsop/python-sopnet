@@ -12,15 +12,49 @@
  * A SliceStore implemented locally in RAM for testing purposes.
  */
 
-class LocalSliceStore : public SliceStore
-{
+class LocalSliceStore : public SliceStore {
+
 	typedef std::map<Slice, boost::shared_ptr<Blocks> > SliceBlockMap;
 	typedef std::map<Block, boost::shared_ptr<Slices> > BlockSliceMap;
 	typedef std::map<unsigned int, boost::shared_ptr<Slice> > IdSliceMap;
 	typedef std::map<unsigned int, boost::shared_ptr<ConflictSets> > IdConflictsMap;
 
 public:
+
 	LocalSliceStore();
+
+	/**
+	 * Associate a set of slices to a block.
+	 */
+	void associateSlicesToBlock(
+			const Slices& slices,
+			const Block&  block);
+
+	/**
+	 * Associate a set of conflict sets to a block. The conflict sets are 
+	 * assumed to hold the hashes of the slices.
+	 */
+	void associateConflictSetsToBlock(
+			const ConflictSets& conflictSets,
+			const Block&        block);
+
+	/**
+	 * Get all slices that are associated to the given blocks. This creates 
+	 * "real" slices in the sense that the geometry of the slices will be 
+	 * restored.
+	 */
+	boost::shared_ptr<Slices> getSlicesByBlock(const Blocks& blocks);
+
+	/**
+	 * Get all the conflict sets that are associated to the given blocks. The 
+	 * conflict sets will contain the hashes of slices.
+	 */
+	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block);
+
+
+	/******************************************
+	 * OLD INTERFACE DEFINITION -- DEPRECATED *
+	 ******************************************/
 
     void associate(boost::shared_ptr<Slices> slices, boost::shared_ptr<Block> block);
 
