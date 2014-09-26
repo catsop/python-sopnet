@@ -27,7 +27,13 @@ public:
 		 * hostname of the CATMAID instance, and the CATMAID project and stack 
 		 * id have to be set.
 		 */
-		Django
+		Django,
+
+		/**
+		 * Use PosgreSql stores. For this, the PostgreSql host name, user, 
+		 * password, and database habe to be set.
+		 */
+		PostgreSql
 	};
 
 	/**
@@ -130,6 +136,47 @@ public:
 	 */
 	const std::string& getComponentDirectory() const;
 
+	/**
+	 * Set the PosgreSql host name. This can either be a domain name of a 
+	 * directory for Unix socket communication.
+	 */
+	void setPostgreSqlHost(const std::string& pgHost);
+
+	/**
+	 * Get the PosgreSql host name.
+	 */
+	const std::string& getPostgreSqlHost() const;
+
+	/**
+	 * Set the PosgreSql user name.
+	 */
+	void setPostgreSqlUser(const std::string& pgUser);
+
+	/**
+	 * Get the PosgreSql user name.
+	 */
+	const std::string& getPostgreSqlUser() const;
+
+	/**
+	 * Set the PosgreSql password.
+	 */
+	void setPostgreSqlPassword(const std::string& pgPassword);
+
+	/**
+	 * Get the PosgreSql password.
+	 */
+	const std::string& getPostgreSqlPassword() const;
+
+	/**
+	 * Set the PosgreSql database name.
+	 */
+	void setPostgreSqlDatabase(const std::string& pgDatabase);
+
+	/**
+	 * Get the PosgreSql database name.
+	 */
+	const std::string& getPostgreSqlDatabase() const;
+
 private:
 
 	BackendType _backendType;
@@ -145,6 +192,11 @@ private:
 	util::point3<unsigned int> _coreSizeInBlocks;
 
 	std::string _componentDirectory;
+
+	std::string _postgreSqlHost;
+	std::string _postgreSqlUser;
+	std::string _postgreSqlPassword;
+	std::string _postgreSqlDatabase;
 };
 
 } // namespace python

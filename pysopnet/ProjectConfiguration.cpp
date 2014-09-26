@@ -12,7 +12,12 @@ ProjectConfiguration::ProjectConfiguration() :
 	_blockSize(256, 256, 10),
 	_volumeSize(1024, 1024, 20),
 	_coreSizeInBlocks(1, 1, 1),
-	_componentDirectory("/tmp") {}
+	_componentDirectory("/tmp"),
+	_postgreSqlHost(""),
+	_postgreSqlUser("catsop_user"),
+	_postgreSqlPassword("catsop_janelia_test"),
+	_postgreSqlDatabase("catsop")
+	{}
 
 void
 ProjectConfiguration::setBackendType(BackendType type) {
@@ -121,5 +126,54 @@ ProjectConfiguration::getComponentDirectory() const {
 
 	return _componentDirectory;
 }
+
+void
+ProjectConfiguration::setPostgreSqlHost(const std::string& postgreSqlHost) {
+
+	_postgreSqlHost = postgreSqlHost;
+}
+
+const std::string&
+ProjectConfiguration::getPostgreSqlHost() const {
+
+	return _postgreSqlHost;
+}
+
+void
+ProjectConfiguration::setPostgreSqlUser(const std::string& postgreSqlUser) {
+
+	_postgreSqlUser = postgreSqlUser;
+}
+
+const std::string&
+ProjectConfiguration::getPostgreSqlUser() const {
+
+	return _postgreSqlUser;
+}
+
+void
+ProjectConfiguration::setPostgreSqlPassword(const std::string& postgreSqlPassword) {
+
+	_postgreSqlPassword = postgreSqlPassword;
+}
+
+const std::string&
+ProjectConfiguration::getPostgreSqlPassword() const {
+
+	return _postgreSqlPassword;
+}
+
+void
+ProjectConfiguration::setPostgreSqlDatabase(const std::string& postgreSqlDatabase) {
+
+	_postgreSqlDatabase = postgreSqlDatabase;
+}
+
+const std::string&
+ProjectConfiguration::getPostgreSqlDatabase() const {
+
+	return _postgreSqlDatabase;
+}
+
 
 } // namespace python

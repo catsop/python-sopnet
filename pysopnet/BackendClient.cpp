@@ -1,5 +1,9 @@
+#include "config.h"
 #include <catmaid/persistence/django/DjangoSegmentStore.h>
 #include <catmaid/persistence/django/CatmaidStackStore.h>
+#ifdef HAVE_PostgreSQL
+#include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
+#endif
 #include <catmaid/persistence/local/LocalBlockManager.h>
 #include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
@@ -25,7 +29,8 @@ BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
 		return localBlockManager;
 	}
 
-	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+	if (configuration.getBackendType() == ProjectConfiguration::Django ||
+	    configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
 		LOG_USER(pylog) << "[BackendClient] create django block manager" << std::endl;
 
@@ -50,7 +55,8 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
 	}
 
-	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+	if (configuration.getBackendType() == ProjectConfiguration::Django ||
+	    configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
 		LOG_USER(pylog) << "[BackendClient] create django stack store for membranes" << std::endl;
 
@@ -79,7 +85,12 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 		return boost::make_shared<LocalSliceStore>();
 	}
 
-	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+	/* Until we have all stores as postgresql implemented, we need to create a 
+	 * django slice store here (but not return it), because it is needed by the 
+	 * django segment store later.
+	 */
+	if (configuration.getBackendType() == ProjectConfiguration::Django ||
+	    configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
 		LOG_USER(pylog) << "[BackendClient] create django slice store" << std::endl;
 
@@ -88,8 +99,27 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 
 		_djangoSliceStore = boost::make_shared<DjangoSliceStore>(_djangoBlockManager, configuration.getComponentDirectory());
 
-		return _djangoSliceStore;
+		if (configuration.getBackendType() == ProjectConfiguration::Django)
+			return _djangoSliceStore;
 	}
+
+#ifdef HAVE_PostgreSQL
+	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
+
+		LOG_USER(pylog) << "[BackendClient] create postgresql slice store" << std::endl;
+
+		if (!_djangoBlockManager)
+			createBlockManager(configuration);
+
+		return boost::make_shared<PostgreSqlSliceStore>(
+				_djangoBlockManager,
+				configuration.getComponentDirectory(),
+				configuration.getPostgreSqlHost(),
+				configuration.getPostgreSqlUser(),
+				configuration.getPostgreSqlPassword(),
+				configuration.getPostgreSqlDatabase());
+	}
+#endif // HAVE_PostgreSQL
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
@@ -104,7 +134,8 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 		return boost::make_shared<LocalSegmentStore>();
 	}
 
-	if (configuration.getBackendType() == ProjectConfiguration::Django) {
+	if (configuration.getBackendType() == ProjectConfiguration::Django ||
+	    configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
 		LOG_USER(pylog) << "[BackendClient] create django segment store" << std::endl;
 
