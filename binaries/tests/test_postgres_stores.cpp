@@ -5,6 +5,24 @@
 #include <util/ProgramOptions.h>
 #include <util/point.hpp>
 
+util::ProgramOption optionProjectId(
+		util::_long_name        = "project",
+		util::_short_name       = "p",
+		util::_description_text = "The Sopnet project ID.",
+		util::_default_value	  = 3);
+
+util::ProgramOption optionStackId(
+		util::_long_name        = "stack",
+		util::_short_name       = "s",
+		util::_description_text = "The Sopnet raw stack ID.",
+		util::_default_value	  = 2);
+
+util::ProgramOption optionHost(
+		util::_long_name        = "host",
+		util::_short_name       = "m",
+		util::_description_text = "The CATMAID host",
+		util::_default_value	  = "neurocity.janelia.org/catsop");
+
 boost::shared_ptr<Slice>
 createSlice() {
 
@@ -26,20 +44,20 @@ createSlice() {
 	return boost::make_shared<Slice>(0, 0, cc);
 }
 
-int main(int argc, char** argv) {
-
-	std::string host = argc > 1 ? argv[1] : "neurocity.janelia.org/catsop";
-	int project_id = argc > 2 ? atoi(argv[2]) : 3;
-	int stack_id = argc > 3 ? atoi(argv[3]) : 2;
-
-	std::cout << "Testing PostgreSQL stores with host \"" << host <<
-			"\", project ID " << project_id << " and stack ID " <<
-			stack_id << std::endl;
-
+int main(int argc, char** argv)
+{
 	try {
-
 		// init command line parser
 		util::ProgramOptions::init(argc, argv);
+
+		std::string host = optionHost.as<std::string>();
+		int project_id = optionProjectId.as<int>();
+		int stack_id = optionStackId.as<int>();
+
+
+		std::cout << "Testing PostgreSQL stores with host \"" << host <<
+				"\", project ID " << project_id << " and stack ID " <<
+				stack_id << std::endl;
 
 		// init logger
 		logger::LogManager::init();
