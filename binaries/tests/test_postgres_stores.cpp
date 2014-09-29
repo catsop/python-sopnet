@@ -28,7 +28,13 @@ createSlice() {
 
 int main(int argc, char** argv) {
 
-	std::cout << "Testing PostgreSQL stores" << std::endl;
+	std::string host = argc > 1 ? argv[1] : "neurocity.janelia.org/catsop";
+	int project_id = argc > 2 ? atoi(argv[2]) : 3;
+	int stack_id = argc > 3 ? atoi(argv[3]) : 2;
+
+	std::cout << "Testing PostgreSQL stores with host \"" << host <<
+			"\", project ID " << project_id << " and stack ID " <<
+			stack_id << std::endl;
 
 	try {
 
@@ -39,7 +45,7 @@ int main(int argc, char** argv) {
 		logger::LogManager::init();
 
 		boost::shared_ptr<DjangoBlockManager> blockManager =
-				DjangoBlockManager::getBlockManager("neurocity.janelia.org/catsop", 3, 2);
+				DjangoBlockManager::getBlockManager(host, project_id, stack_id);
 
 		PostgreSqlSliceStore store(blockManager);
 
