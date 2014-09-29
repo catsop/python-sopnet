@@ -7,9 +7,6 @@
 [submodule "modules/pipeline"]
 	path = modules/pipeline
 	url = https://github.com/funkey/pipeline.git
-[submodule "modules/gui"]
-	path = modules/gui
-	url = https://github.com/funkey/gui.git
 [submodule "modules/imageprocessing"]
 	path = modules/imageprocessing
 	url = https://github.com/larrylindsey/imageprocessing.git

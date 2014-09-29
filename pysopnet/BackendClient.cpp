@@ -1,6 +1,6 @@
 #include "config.h"
 #include <catmaid/persistence/django/DjangoSegmentStore.h>
-#include <catmaid/persistence/django/CatmaidStackStore.h>
+#include <catmaid/persistence/catmaid/CatmaidStackStore.h>
 #ifdef HAVE_PostgreSQL
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
 #endif
