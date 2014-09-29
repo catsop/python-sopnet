@@ -3,6 +3,7 @@
 #include <util/exceptions.h>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
+#include <util/point.hpp>
 
 boost::shared_ptr<Slice>
 createSlice() {
@@ -10,12 +11,17 @@ createSlice() {
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
 			boost::make_shared<ConnectedComponent::pixel_list_type>();
 
+	pixelList->push_back(util::point<unsigned int>(0,0));
+	pixelList->push_back(util::point<unsigned int>(1,1));
+
+	boost::shared_ptr<Image> source = boost::make_shared<Image>(10,10);
+
 	boost::shared_ptr<ConnectedComponent> cc = boost::make_shared<ConnectedComponent>(
-			boost::shared_ptr<Image>(),
+			source,
 			0,
 			pixelList,
 			0,
-			0);
+			1);
 
 	return boost::make_shared<Slice>(0, 0, cc);
 }
@@ -40,10 +46,10 @@ int main(int argc, char** argv) {
 		boost::shared_ptr<Block> block = blockManager->blockAtLocation(util::point3<unsigned int>(0, 0, 0));
 		boost::shared_ptr<Slice> slice = createSlice();
 
-		boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
-		slices->add(slice);
+		Slices slices = Slices();
+		slices.add(slice);
 
-		store.associate(slices, block);
+		store.associateSlicesToBlock(slices, *block);
 
 	} catch (boost::exception& e) {
 
