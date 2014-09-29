@@ -3,7 +3,6 @@
 #include <sopnet/segments/SegmentExtractor.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <pipeline/Value.h>
-#include <catmaid/EndExtractor.h>
 
 logger::LogChannel segmentguarantorlog("segmentguarantorlog", "[SegmentGuarantor] ");
 

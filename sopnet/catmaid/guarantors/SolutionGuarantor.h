@@ -7,6 +7,7 @@
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/blocks/Core.h>
 
+#include <sopnet/segments/SegmentHash.h>
 #include <sopnet/inference/LinearConstraints.h>
 #include <sopnet/inference/LinearObjective.h>
 

@@ -5,6 +5,7 @@
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/BlockManager.h>
+#include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
 
 class SegmentGuarantor {

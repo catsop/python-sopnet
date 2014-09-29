@@ -1,3 +1,5 @@
+#include <pipeline/Process.h>
+#include <pipeline/Value.h>
 #include <catmaid/persistence/SegmentDescriptions.h>
 #include <catmaid/persistence/exceptions.h>
 #include <catmaid/blocks/Cores.h>

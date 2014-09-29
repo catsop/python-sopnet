@@ -97,7 +97,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 		if (!_djangoBlockManager)
 			createBlockManager(configuration);
 
-		_djangoSliceStore = boost::make_shared<DjangoSliceStore>(_djangoBlockManager, configuration.getComponentDirectory());
+		_djangoSliceStore = boost::make_shared<DjangoSliceStore>();
 
 		if (configuration.getBackendType() == ProjectConfiguration::Django)
 			return _djangoSliceStore;
@@ -142,7 +142,7 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 		if (!_djangoSliceStore)
 			createSliceStore(configuration);
 
-		return boost::make_shared<DjangoSegmentStore>(_djangoSliceStore);
+		return boost::make_shared<DjangoSegmentStore>();
 	}
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
