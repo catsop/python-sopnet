@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 		logger::LogManager::init();
 
 		boost::shared_ptr<DjangoBlockManager> blockManager =
-				DjangoBlockManager::getBlockManager(host, project_id, stack_id);
+				DjangoBlockManager::getBlockManager(host, stack_id, project_id);
 
 		PostgreSqlSliceStore store(blockManager);
 
