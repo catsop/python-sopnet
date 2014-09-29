@@ -175,8 +175,20 @@ SegmentGuarantor::getSegmentDescriptions(
 		if (!overlaps(*segment, block))
 			continue;
 
+		// get the 2D bounding box of the segment
+		util::rect<unsigned int> boundingBox(0, 0, 0, 0);
+		foreach (boost::shared_ptr<Slice> slice, segment->getSlices()) {
+
+			if (boundingBox.area() == 0)
+				boundingBox = slice->getComponent()->getBoundingBox();
+			else
+				boundingBox.fit(slice->getComponent()->getBoundingBox());
+		}
+
 		// create a new segment description
-		SegmentDescription segmentDescription(segment->getInterSectionInterval());
+		SegmentDescription segmentDescription(
+				segment->getInterSectionInterval(),
+				boundingBox);
 
 		// add slice hashes
 		if (segment->getDirection() == Left) {
