@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <vector>
 #include <util/rect.hpp>
+#include <segments/SegmentHash.h>
+#include <slices/SliceHash.h>
 
 /**
  * A lightweight representation of a segment, as represented in the database 
@@ -21,7 +23,7 @@ public:
 		_section(section),
 		_boundingBox(boundingBox) {}
 
-	std::size_t getHash() const;
+	SegmentHash getHash() const;
 
 	unsigned int getSection() const { return _section; }
 
@@ -31,23 +33,23 @@ public:
 
 	const std::vector<double>& getFeatures() const { return _features; }
 
-	void addLeftSlice(std::size_t sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
+	void addLeftSlice(SliceHash sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
 
-	void addRightSlice(std::size_t sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
+	void addRightSlice(SliceHash sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
 
-	const std::vector<std::size_t>& getLeftSlices() const { return _leftSliceHashes; }
+	const std::vector<SliceHash>& getLeftSlices() const { return _leftSliceHashes; }
 
-	const std::vector<std::size_t>& getRightSlices() const { return _rightSliceHashes; }
+	const std::vector<SliceHash>& getRightSlices() const { return _rightSliceHashes; }
 
 private:
 
 	// the hash of this segment
-	mutable std::size_t _hash;
+	mutable SegmentHash _hash;
 	mutable bool _hashDirty;
 
 	// hashes of the slices to the left and right
-	std::vector<std::size_t> _leftSliceHashes;
-	std::vector<std::size_t> _rightSliceHashes;
+	std::vector<SliceHash> _leftSliceHashes;
+	std::vector<SliceHash> _rightSliceHashes;
 
 	// the features of this segment
 	std::vector<double> _features;

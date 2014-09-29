@@ -58,7 +58,7 @@ public:
 	 * @param core
 	 *              The core for which the solution was generated.
 	 */
-	virtual void storeSolution(const std::vector<std::size_t>& segmentHashes, const Core& core) = 0;
+	virtual void storeSolution(const std::vector<SegmentHash>& segmentHashes, const Core& core) = 0;
 };
 
 
