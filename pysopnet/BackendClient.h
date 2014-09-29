@@ -7,7 +7,6 @@
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
-#include <catmaid/persistence/SolutionStore.h>
 #include "ProjectConfiguration.h"
 
 namespace python {
@@ -36,8 +35,6 @@ protected:
 	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
 	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
-
-// 	boost::shared_ptr<SolutionStore> createSolutionStore(const ProjectConfiguration& configuration);
 
 private:
 
