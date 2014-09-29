@@ -2,6 +2,7 @@
 #define SLICE_POINTER_HASH_H__
 #include <boost/unordered_set.hpp>
 #include <sopnet/segments/Segment.h>
+#include <sopnet/segments/SegmentHash.h>
 
 class SlicePointerHash
 {

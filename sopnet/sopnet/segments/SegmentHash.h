@@ -1,14 +1,15 @@
 #ifndef SOPNET_SEGMENTS_SEGMENT_HASH_H__
 #define SOPNET_SEGMENTS_SEGMENT_HASH_H__
 
+#include <cstddef>
+#include <slices/SliceHash.h>
 #include "Segment.h"
 
-struct SegmentHash {
+typedef std::size_t SegmentHash;
 
-	static std::size_t generate(const Segment& segment);
+SegmentHash hash_value(const Segment& segment);
 
-	static std::size_t generate(std::vector<std::size_t> sliceHashes);
-};
+SegmentHash hash_value(std::vector<SliceHash> sliceHashes);
 
 #endif // SOPNET_SEGMENTS_SEGMENT_HASH_H__
 

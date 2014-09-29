@@ -7,6 +7,7 @@
 
 #include <sopnet/inference/LinearConstraint.h>
 #include <sopnet/slices/Slice.h>
+#include <sopnet/slices/SliceHash.h>
 #include <sopnet/slices/ComponentTreeConverter.h>
 #include <sopnet/segments/Segment.h>
 #include <pipeline/Value.h>

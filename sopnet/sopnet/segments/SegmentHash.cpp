@@ -2,25 +2,25 @@
 #include <boost/functional/hash.hpp>
 #include <algorithm>
 
-size_t
-SegmentHash::generate(const Segment& segment) {
+SegmentHash
+hash_value(const Segment& segment) {
 
-	std::vector<size_t> sliceHashes;
+	std::vector<SliceHash> sliceHashes;
 
 	foreach (boost::shared_ptr<Slice> slice, segment.getSlices())
 		sliceHashes.push_back(slice->hashValue());
 
-	return SegmentHash::generate(sliceHashes);
+	return hash_value(sliceHashes);
 }
 
-size_t
-SegmentHash::generate(std::vector<std::size_t> sliceHashes) {
+SegmentHash
+hash_value(std::vector<SliceHash> sliceHashes) {
 
-	std::size_t hash = 0;
+	SliceHash hash = 0;
 
 	std::sort(sliceHashes.begin(), sliceHashes.end());
 
-	foreach(std::size_t sliceHash, sliceHashes)
+	foreach(SliceHash sliceHash, sliceHashes)
 		boost::hash_combine(hash, sliceHash);
 
 	return hash;

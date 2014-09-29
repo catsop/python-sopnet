@@ -91,10 +91,5 @@ private:
 	boost::shared_ptr<ConnectedComponent> _component;
 };
 
-/**
- * Returns slice.hashValue()
- */
-std::size_t hash_value(const Slice& slice);
-
 #endif // CELLTRACKER_CELL_H__
 

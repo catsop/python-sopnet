@@ -4,6 +4,7 @@
 #include <imageprocessing/ConnectedComponent.h>
 #include <iostream>
 #include "Slice.h"
+#include "SliceHash.h"
 
 Slice::Slice(
 		unsigned int id,
@@ -11,8 +12,8 @@ Slice::Slice(
 		boost::shared_ptr<ConnectedComponent> component) :
 	_id(id),
 	_section(section),
-	_component(component),
-	_isWhole(true) {}
+	_isWhole(true),
+	_component(component) {}
 
 unsigned int
 Slice::getId() const {
@@ -66,13 +67,5 @@ Slice::isWhole() const
 std::size_t
 Slice::hashValue() const
 {
-	std::size_t seed = getComponent()->hashValue();
-	boost::hash_combine(seed, boost::hash_value(getSection()));
-	return seed;
+	return hash_value(*this);
 }
-
-std::size_t hash_value(const Slice& slice)
-{
-	return slice.hashValue();
-}
-

@@ -3,7 +3,7 @@
 #include <segments/SegmentHash.h>
 
 std::size_t
-SegmentDescription::getHash() {
+SegmentDescription::getHash() const {
 
 	if (_hashDirty) {
 
@@ -14,7 +14,7 @@ SegmentDescription::getHash() {
 		foreach (std::size_t hash, _rightSliceHashes)
 			sliceHashes.push_back(hash);
 
-		_hash = SegmentHash::generate(sliceHashes);
+		_hash = hash_value(sliceHashes);
 		_hashDirty = false;
 	}
 

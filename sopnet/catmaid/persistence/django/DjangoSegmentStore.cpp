@@ -543,7 +543,7 @@ DjangoSegmentStore::generateHash(const boost::shared_ptr<Segment> segment)
 {
 	//TODO: generate a provably unique hash
 	std::stringstream ss;
-	ss << SegmentHash::generate(*segment);
+	ss << hash_value(*segment);
 	return ss.str();
 }
 

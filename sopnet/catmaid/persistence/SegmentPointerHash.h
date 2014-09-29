@@ -9,7 +9,7 @@ class SegmentPointerHash
 public:
 	size_t operator()(const boost::shared_ptr<Segment>& segment) const
 	{
-		return SegmentHash::generate(*segment);
+		return hash_value(*segment);
 	}
 };
 
