@@ -6,7 +6,7 @@ Core::Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks) 
 {}
 
 unsigned int
-Core::getId()
+Core::getId() const
 {
 	return _id;
 }

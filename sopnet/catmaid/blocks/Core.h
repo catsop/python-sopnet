@@ -8,7 +8,7 @@ class Core : public BlocksImpl<Block>, public boost::enable_shared_from_this<Cor
 public:
 	Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks);
 
-	unsigned int getId();
+	unsigned int getId() const;
 	
 	bool getSolutionSetFlag();
 	
