@@ -1,4 +1,5 @@
 build
+build-pysopnet
 *.sw[pmno]
 .cproject
 .project
