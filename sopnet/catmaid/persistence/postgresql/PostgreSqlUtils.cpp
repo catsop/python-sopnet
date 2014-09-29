@@ -1,3 +1,6 @@
+#include "config.h"
+#ifdef HAVE_PostgreSQL
+
 #include "PostgreSqlUtils.h"
 #include <util/Logger.h>
 
@@ -19,3 +22,5 @@ PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string 
 					PQresStatus(status) << ").");
 	}
 }
+
+#endif //HAVE_PostgreSQL
