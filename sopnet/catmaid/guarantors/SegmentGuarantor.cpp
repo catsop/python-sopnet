@@ -58,13 +58,6 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 		return needBlocks;
 	}
 
-	// Now, check to see that we have all of the Slices we need.
-	// If not, return a list of blocks that should have slices extracted before proceeding.
-	if (!checkBlockSlices(sliceBlocks, needBlocks))
-	{
-		return needBlocks;
-	}
-
 	// OK, here we go.
 
 	// Step one: retrieve all of the slices associated with the slice-request blocks.
@@ -75,7 +68,11 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	// another across sections that does not belong to a conflict-clique that exists within the
 	// requested geometry.
 
-	slices = _sliceStore->getSlicesByBlocks(sliceBlocks);
+	Blocks missingBlocks;
+	slices = _sliceStore->getSlicesByBlocks(sliceBlocks, missingBlocks);
+
+	if (!missingBlocks.empty())
+		return missingBlocks;
 
 	LOG_DEBUG(segmentguarantorlog)
 			<< "Read " << slices->size()
@@ -90,14 +87,11 @@ Blocks SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 
 	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << sliceBlocks << "." << std::endl;
 
-	// Check again
-	if (!checkBlockSlices(sliceBlocks, needBlocks))
-	{
-		return needBlocks;
-	}
-
 	// TODO: get slices only for new blocks
-	slices = _sliceStore->getSlicesByBlocks(sliceBlocks);
+	slices = _sliceStore->getSlicesByBlocks(sliceBlocks, missingBlocks);
+
+	if (!missingBlocks.empty())
+		return missingBlocks;
 
 	LOG_DEBUG(segmentguarantorlog) << "Altogether, I have " << slices->size() << " slices" << std::endl;
 
@@ -287,24 +281,6 @@ SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 	}
 
 	return Box<>(bound, zMin, zMax - zMin);
-}
-
-bool
-SegmentGuarantor::checkBlockSlices(
-		const Blocks& sliceBlocks,
-		Blocks&       needBlocks)
-{
-	bool ok = true;
-	foreach (boost::shared_ptr<Block> block, sliceBlocks)
-	{
-		if (!block->getSlicesFlag())
-		{
-			ok = false;
-			needBlocks.add(block);
-		}
-	}
-
-	return ok;
 }
 
 boost::shared_ptr<Features>

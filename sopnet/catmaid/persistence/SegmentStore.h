@@ -46,8 +46,15 @@ public:
 	 *
 	 * @param blocks
 	 *              The blocks from which to retrieve the segments.
+	 *
+	 * @param missingBlocks
+	 *              A reference to a block collection. This collection will be 
+	 *              filled with the blocks for which no segments are available, 
+	 *              yet. This collection will be empty on success.
 	 */
-	virtual boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(const Blocks& blocks) = 0;
+	virtual boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(
+			const Blocks& blocks,
+			Blocks&       missingBlocks) = 0;
 
 	/**
 	 * Store the solution of processing a core.

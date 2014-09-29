@@ -1,7 +1,7 @@
 #include <catmaid/persistence/SegmentDescriptions.h>
+#include <catmaid/persistence/exceptions.h>
 #include <catmaid/blocks/Cores.h>
 #include <inference/LinearSolver.h>
-#include <util/exceptions.h>
 #include "SolutionGuarantor.h"
 
 SolutionGuarantor::SolutionGuarantor(
@@ -28,16 +28,29 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	Blocks blocks = getPaddedCoreBlocks(core);
 
 	// get all segments for these blocks
-	boost::shared_ptr<SegmentDescriptions> segments = _segmentStore->getSegmentsByBlocks(blocks);
+	Blocks missingBlocks;
+	boost::shared_ptr<SegmentDescriptions> segments = _segmentStore->getSegmentsByBlocks(blocks, missingBlocks);
+
+	if (!missingBlocks.empty())
+		return missingBlocks;
 
 	// get all conflict sets for these blocks
-	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsByBlocks(blocks);
+	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsByBlocks(blocks, missingBlocks);
+
+	if (!missingBlocks.empty())
+		UTIL_THROW_EXCEPTION(
+				CorruptedDatabaseException,
+				"the segment store does contain segments for the requested blocks, "
+				"but the slice store reports that no conflict sets have been extracted");
 
 	// compute solution
 	std::vector<SegmentHash> solution = computeSolution(*segments, *conflictSets);
 
 	// store solution
 	_segmentStore->storeSolution(solution, core);
+
+	// there are no missing blocks
+	return Blocks();
 }
 
 Blocks

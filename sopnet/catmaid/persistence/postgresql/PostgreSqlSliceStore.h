@@ -68,13 +68,17 @@ public:
 	 * "real" slices in the sense that the geometry of the slices will be 
 	 * restored.
 	 */
-	boost::shared_ptr<Slices> getSlicesByBlocks(const Blocks& blocks) {}
+	boost::shared_ptr<Slices> getSlicesByBlocks(
+			const Blocks& blocks,
+			Blocks&       missingBlocks) {}
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.
 	 */
-	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block) {}
+	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(
+			const Blocks& block,
+			Blocks&       missingBlocks) {}
 
 
 	/******************************************

@@ -36,14 +36,32 @@ public:
 	 * Get all slices that are associated to the given blocks. This creates 
 	 * "real" slices in the sense that the geometry of the slices will be 
 	 * restored.
+	 *
+	 * @param blocks
+	 *              The requested blocks to get the slices for.
+	 *
+	 * @param missingBlocks
+	 *              A reference to a block collection. This collection will be 
+	 *              filled with the blocks for which no slices are available, 
+	 *              yet. This collection will be empty on success.
 	 */
-	virtual boost::shared_ptr<Slices> getSlicesByBlocks(const Blocks& blocks) = 0;
+	virtual boost::shared_ptr<Slices> getSlicesByBlocks(
+			const Blocks& blocks,
+			Blocks&       missingBlocks) = 0;
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.
+	 *
+	 * @param blocks
+	 *              The requested blocks to get the conflict sets for.
+	 *
+	 * @param missingBlocks
+	 *              A reference to a block collection. This collection will be 
+	 *              filled with the blocks for which no conflict sets are 
+	 *              available, yet. This collection will be empty on success.
 	 */
-	virtual boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block) = 0;
+	virtual boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block, Blocks& missingBlocks) = 0;
 
 
 	/******************************************

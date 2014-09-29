@@ -50,10 +50,6 @@ private:
 	// compute the bounding box of a set of slices
 	Box<> slicesBoundingBox(const Slices& slices);
 
-	bool checkBlockSlices(
-			const Blocks& sliceBlocks,
-			Blocks&       needBlocks);
-
 	// extract the features for the given segments
 	boost::shared_ptr<Features> guaranteeFeatures(
 			const boost::shared_ptr<Segments> segments);
