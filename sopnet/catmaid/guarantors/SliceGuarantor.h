@@ -14,7 +14,6 @@
 #include <imageprocessing/io/ImageBlockStackReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/MserParameters.h>
-#include "SliceGuarantorParameters.h"
 
 /**
  * SliceGuarantor is a class that, given a sub-stack (measured in Blocks), guarantees that all
