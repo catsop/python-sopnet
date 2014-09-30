@@ -8,11 +8,17 @@ class SegmentDescriptions {
 
 public:
 
-	typedef std::vector<SegmentDescription> segments_type;
-	typedef segments_type::iterator         iterator;
-	typedef segments_type::const_iterator   const_iterator;
+	struct SegmentDescriptionComparator {
+		bool operator()(const SegmentDescription& a, const SegmentDescription& b) {
+			return a.getHash() < b.getHash();
+		}
+	};
 
-	void add(const SegmentDescription& segment) { _segments.push_back(segment); }
+	typedef std::set<SegmentDescription, SegmentDescriptionComparator> segments_type;
+	typedef segments_type::iterator                                    iterator;
+	typedef segments_type::const_iterator                              const_iterator;
+
+	void add(const SegmentDescription& segment) { _segments.insert(segment); }
 
 	iterator begin() { return _segments.begin(); }
 	iterator end() { return _segments.end(); }
