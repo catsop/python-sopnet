@@ -4,8 +4,6 @@
 #include <string>
 #include <util/point3.hpp>
 
-namespace python {
-
 /**
  * Project specific configuration to be passed to all the stateless python 
  * wrappers.
@@ -198,8 +196,6 @@ private:
 	std::string _postgreSqlPassword;
 	std::string _postgreSqlDatabase;
 };
-
-} // namespace python
 
 #endif // SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 
