@@ -23,6 +23,30 @@ util::ProgramOption optionHost(
 		util::_description_text = "The CATMAID host",
 		util::_default_value	  = "neurocity.janelia.org/catsop");
 
+util::ProgramOption optionPGHost(
+		util::_long_name        = "pghost",
+		util::_short_name       = "H",
+		util::_description_text = "The PostgreSQL host",
+		util::_default_value	  = "");
+
+util::ProgramOption optionPGUser(
+		util::_long_name        = "pguser",
+		util::_short_name       = "U",
+		util::_description_text = "The PostgreSQL user",
+		util::_default_value	  = "catsop_user");
+
+util::ProgramOption optionPGPassword(
+		util::_long_name        = "pgpassword",
+		util::_short_name       = "P",
+		util::_description_text = "The PostgreSQL password",
+		util::_default_value	  = "catsop_janelia_test");
+
+util::ProgramOption optionPGDatabase(
+		util::_long_name        = "pgdatabase",
+		util::_short_name       = "D",
+		util::_description_text = "The PostgreSQL database",
+		util::_default_value	  = "catsop");
+
 boost::shared_ptr<Slice>
 createSlice() {
 
@@ -53,6 +77,10 @@ int main(int argc, char** argv)
 		std::string host = optionHost.as<std::string>();
 		int project_id = optionProjectId.as<int>();
 		int stack_id = optionStackId.as<int>();
+		std::string pg_host = optionPGHost.as<std::string>();
+		std::string pg_user = optionPGUser.as<std::string>();
+		std::string pg_pass = optionPGPassword.as<std::string>();
+		std::string pg_dbase = optionPGDatabase.as<std::string>();
 
 
 		std::cout << "Testing PostgreSQL stores with host \"" << host <<
@@ -65,7 +93,7 @@ int main(int argc, char** argv)
 		boost::shared_ptr<DjangoBlockManager> blockManager =
 				DjangoBlockManager::getBlockManager(host, stack_id, project_id);
 
-		PostgreSqlSliceStore store(blockManager);
+		PostgreSqlSliceStore sliceStore(blockManager, "/tmp", pg_host, pg_user, pg_pass, pg_dbase);
 
 		boost::shared_ptr<Block> block = blockManager->blockAtLocation(util::point3<unsigned int>(0, 0, 0));
 		boost::shared_ptr<Slice> slice = createSlice();
@@ -73,7 +101,7 @@ int main(int argc, char** argv)
 		Slices slices = Slices();
 		slices.add(slice);
 
-		store.associateSlicesToBlock(slices, *block);
+		sliceStore.associateSlicesToBlock(slices, *block);
 
 	} catch (boost::exception& e) {
 
