@@ -82,6 +82,7 @@ int main(int argc, char** argv)
 		std::string pg_pass = optionPGPassword.as<std::string>();
 		std::string pg_dbase = optionPGDatabase.as<std::string>();
 
+
 		std::cout << "Testing PostgreSQL stores with host \"" << host <<
 				"\", project ID " << project_id << " and stack ID " <<
 				stack_id << std::endl;
