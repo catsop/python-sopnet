@@ -36,4 +36,27 @@ PostgreSqlHash PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
 	throw hash;
 }
 
+PGconn*
+getConnection(const std::string& host, const std::string& database,
+			const std::string& user, const std::string& pass)
+{
+	std::string connectionInfo =
+			(host.empty()     ? "" : "host="     + host     + " ") +
+			(database.empty() ? "" : "dbname="   + database + " ") +
+			(user.empty()     ? "" : "user="     + user     + " ") +
+			(pass.empty()     ? "" : "password=" + pass     + " ");
+
+	PGconn * connection = PQconnectdb(connectionInfo.c_str());
+
+	/* Check to see that the backend connection was successfully made */
+	if (PQstatus(connection) != CONNECTION_OK) {
+
+		UTIL_THROW_EXCEPTION(
+				PostgreSqlException,
+				"Connection to database failed: " << PQerrorMessage(connection));
+	}
+
+    return connection;
+}
+
 #endif //HAVE_PostgreSQL

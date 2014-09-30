@@ -33,6 +33,15 @@ public:
 	 * @return      the hash's representation in PostgreSQL
 	 */
 	static PostgreSqlHash hashToPostgreSqlId(const std::size_t hash);
+
+	/**
+	 * Connect to a PostgreSql server, given a host, a database name, a user
+	 * name and a password. Throws a PostgreSqlException if no connection could
+	 * be acquired.
+	 */
+	static PGconn* getConnection(const std::string& host, const std::string& database,
+			const std::string& user, const std::string& pass);
+
 };
 
 #endif // HAVE_PostgreSQL
