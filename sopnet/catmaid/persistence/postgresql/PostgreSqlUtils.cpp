@@ -24,7 +24,8 @@ PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string 
 	}
 }
 
-PostgreSqlHash PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
+PostgreSqlHash
+PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
 	// Compiler-independent conversion from unsigned to signed, see:
 	// http://stackoverflow.com/questions/13150449
 
@@ -34,6 +35,14 @@ PostgreSqlHash PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
 		return static_cast<PostgreSqlHash>(hash - LLONG_MIN) + LLONG_MIN;
 
 	throw hash;
+}
+
+std::size_t
+PostgreSqlUtils::postgreSqlIdToHash(const PostgreSqlHash pgId) {
+	if (pgId >= 0) return static_cast<std::size_t>(pgId);
+
+	if (pgId <= ULLONG_MAX)
+		return static_cast<PostgreSqlHash>(pgId + ULLONG_MAX) - ULLONG_MAX;
 }
 
 PGconn*

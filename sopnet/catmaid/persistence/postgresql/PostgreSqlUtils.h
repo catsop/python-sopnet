@@ -35,6 +35,15 @@ public:
 	static PostgreSqlHash hashToPostgreSqlId(const std::size_t hash);
 
 	/**
+	 * Convert from a PostgreSQL bigint ID to a representation compatabile with
+	 * Sopnet SegmentHash or SliceHash. In practice this is a conversion from a
+	 * signed 64-bit value to the bit-identical unsigned 64-bit value.
+	 * @param  hash the hash's representation in PostgreSQL
+	 * @return      a SegmentHash or SliceHash
+	 */
+	static std::size_t postgreSqlIdToHash(const PostgreSqlHash hash);
+
+	/**
 	 * Connect to a PostgreSql server, given a host, a database name, a user
 	 * name and a password. Throws a PostgreSqlException if no connection could
 	 * be acquired.
