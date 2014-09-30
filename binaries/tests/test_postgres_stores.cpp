@@ -5,6 +5,7 @@
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/point.hpp>
+#include <sopnet/slices/ConflictSets.h>
 
 util::ProgramOption optionProjectId(
 		util::_long_name        = "project",
@@ -49,15 +50,15 @@ util::ProgramOption optionPGDatabase(
 		util::_default_value	  = "catsop");
 
 boost::shared_ptr<Slice>
-createSlice() {
+createSlice(unsigned int sourceSize, unsigned int pixelEntry) {
 
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
 			boost::make_shared<ConnectedComponent::pixel_list_type>();
 
-	pixelList->push_back(util::point<unsigned int>(0,0));
-	pixelList->push_back(util::point<unsigned int>(1,1));
+	pixelList->push_back(util::point<unsigned int>(pixelEntry, pixelEntry));
+	pixelList->push_back(util::point<unsigned int>(pixelEntry + 1, pixelEntry + 1));
 
-	boost::shared_ptr<Image> source = boost::make_shared<Image>(10,10);
+	boost::shared_ptr<Image> source = boost::make_shared<Image>(sourceSize, sourceSize);
 
 	boost::shared_ptr<ConnectedComponent> cc = boost::make_shared<ConnectedComponent>(
 			source,
@@ -109,12 +110,29 @@ int main(int argc, char** argv)
 		PostgreSqlSliceStore sliceStore(pc);
 
 		boost::shared_ptr<Block> block = blockManager->blockAtLocation(util::point3<unsigned int>(0, 0, 0));
-		boost::shared_ptr<Slice> slice = createSlice();
+
+		// Add first set of slices
+		boost::shared_ptr<Slice> slice1 = createSlice(10, 0);
+		boost::shared_ptr<Slice> slice2 = createSlice(10, 1);
+		boost::shared_ptr<Slice> slice3 = createSlice(10, 2);
 
 		Slices slices = Slices();
-		slices.add(slice);
+		slices.add(slice1);
+		slices.add(slice2);
+		slices.add(slice3);
 
 		sliceStore.associateSlicesToBlock(slices, *block);
+
+		// Create conflict set where each slice
+		ConflictSet conflictSet1;
+		conflictSet1.addSlice(slice1->hashValue());
+		conflictSet1.addSlice(slice2->hashValue());
+		conflictSet1.addSlice(slice3->hashValue());
+
+		ConflictSets conflictSets;
+		conflictSets.add(conflictSet1);
+
+		sliceStore.associateConflictSetsToBlock(conflictSets, *block);
 
 	} catch (boost::exception& e) {
 
