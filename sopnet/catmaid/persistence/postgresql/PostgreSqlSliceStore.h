@@ -45,7 +45,7 @@ public:
 	 */
 	void associateConflictSetsToBlock(
 			const ConflictSets& conflictSets,
-			const Block&        block) {}
+			const Block&        block);
 
 	/**
 	 * Get all slices that are associated to the given blocks. This creates 

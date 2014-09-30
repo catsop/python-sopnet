@@ -10,6 +10,7 @@
 #include <util/httpclient.h>
 #include <util/point.hpp>
 #include "PostgreSqlSliceStore.h"
+#include <sopnet/slices/SliceHash.h>
 
 logger::LogChannel postgresqlslicestorelog("postgresqlslicestorelog", "[PostgreSqlSliceStore] ");
 
@@ -74,6 +75,49 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		std::string query2 = q2.str();
 		result = PQexec(_pgConnection, query2.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query2);
+	}
+}
+
+void
+PostgreSqlSliceStore::associateConflictSetsToBlock(
+		const ConflictSets& conflictSets, const Block& block)
+{
+	if (conflictSets.size() == 0)
+		return;
+
+	// Find all conflicting slice pairs
+	foreach (const ConflictSet& conflictSet, conflictSets)
+	{
+		foreach (SliceHash id1, conflictSet.getSlices())
+		{
+			foreach (SliceHash id2, conflictSet.getSlices())
+			{
+				if (id1 < id2)
+				{
+					// Create proper string representation of hashes
+					std::string hash1 = boost::lexical_cast<std::string>(
+							PostgreSqlUtils::hashToPostgreSqlId(id1));
+					std::string hash2 = boost::lexical_cast<std::string>(
+							PostgreSqlUtils::hashToPostgreSqlId(id2));
+
+					// Insert all conflicting pairs
+					std::ostringstream q;
+					q << "INSERT INTO djsopnet_sliceconflictset ";
+					q << "(slice_a_id, slice_b_id) VALUES ";
+					q << "(" << hash1 << "," << hash2 << "); ";
+
+					// Associate conflict set to block
+					q << "INSERT INTO djsopnet_blockconflictrelation ";
+					q << "(block_id, conflict_id) VALUES ";
+					q << "(" << block.getId() << ",";
+					q << "currval('djsopnet_blockconflictrelation_id_seq'))";
+
+					std::string query = q.str();
+					PGresult *result = PQexec(_pgConnection, query.c_str());
+					PostgreSqlUtils::checkPostgreSqlError(result, query);
+				}
+			}
+		}
 	}
 }
 
