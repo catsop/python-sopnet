@@ -11,7 +11,7 @@
 #include <sopnet/slices/Slices.h>
 #include <libpq-fe.h>
 
-struct PostgreSqlException : virtual Exception {};
+#include "PostgreSqlUtils.h"
 
 /**
  * Implementation of a slice store that directly communicates with the 
