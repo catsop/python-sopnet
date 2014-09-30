@@ -4,6 +4,7 @@
 #include "config.h"
 #ifdef HAVE_PostgreSQL
 
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Blocks.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/django/DjangoBlockManager.h>
@@ -24,18 +25,10 @@ public:
 	 * Create a PostgreSqlSliceStore over the same parameters given to the 
 	 * DjangoBlockManager here.
 	 *
-	 * @param blockManager
-	 *             The block manager to use.
-	 * @param componentDirectory
-	 *             A directory to use for storing the pixel lists of slices.
+	 * @param config
+	 *             The project configuration with all required information.
 	 */
-	PostgreSqlSliceStore(
-			const boost::shared_ptr<DjangoBlockManager> blockManager,
-			const std::string& componentDirectory = "/tmp",
-			const std::string& pgHost = "",
-			const std::string& pgUser = "catsop_user",
-			const std::string& pgPassword = "catsop_janelia_test",
-			const std::string& pgDatabaseName = "catsop");
+	PostgreSqlSliceStore(const ProjectConfiguration& config);
 
 	~PostgreSqlSliceStore();
 
@@ -70,6 +63,10 @@ public:
 	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(
 			const Blocks& block,
 			Blocks&       missingBlocks) {}
+
+private:
+	// general configuration
+	const ProjectConfiguration& _config;
 
 	// directory to store the pixel lists of slices
 	const std::string _componentDirectory;

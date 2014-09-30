@@ -111,13 +111,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 		if (!_djangoBlockManager)
 			createBlockManager(configuration);
 
-		return boost::make_shared<PostgreSqlSliceStore>(
-				_djangoBlockManager,
-				configuration.getComponentDirectory(),
-				configuration.getPostgreSqlHost(),
-				configuration.getPostgreSqlUser(),
-				configuration.getPostgreSqlPassword(),
-				configuration.getPostgreSqlDatabase());
+		return boost::make_shared<PostgreSqlSliceStore>(configuration);
 	}
 #endif // HAVE_PostgreSQL
 
