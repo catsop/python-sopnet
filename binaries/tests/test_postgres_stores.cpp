@@ -1,7 +1,9 @@
 #include <iostream>
 #include <catmaid/ProjectConfiguration.h>
+#include <catmaid/persistence/postgresql/PostgreSqlSegmentStore.h>
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
 #include <util/exceptions.h>
+#include <util/rect.hpp>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/point.hpp>
@@ -133,6 +135,22 @@ int main(int argc, char** argv)
 		conflictSets.add(conflictSet1);
 
 		sliceStore.associateConflictSetsToBlock(conflictSets, *block);
+
+		PostgreSqlSegmentStore segmentStore(pc);
+		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
+		SegmentDescription segment(0, segmentBounds);
+		segment.addLeftSlice(slice1->hashValue());
+
+		boost::shared_ptr<SegmentDescriptions> segments = boost::make_shared<SegmentDescriptions>();
+		segments->add(segment);
+
+		segmentStore.associateSegmentsToBlock(*segments, *block);
+
+		Blocks blocks(block);
+		Blocks missingBlocks;
+
+		boost::shared_ptr<SegmentDescriptions> retrievedSegments =
+				segmentStore.getSegmentsByBlocks(blocks, missingBlocks);
 
 	} catch (boost::exception& e) {
 
