@@ -3,6 +3,7 @@
 
 #include <util/foreach.h>
 #include <boost/functional/hash.hpp>
+#include <sopnet/slices/SliceHash.h>
 
 #include <set>
 
@@ -14,14 +15,14 @@ class ConflictSet {
 
 public:
 
-	void addSlice(unsigned int sliceId) {
+	void addSlice(SliceHash sliceId) {
 
 		_sliceIds.insert(sliceId);
 	}
 
-	void removeSlice(unsigned int sliceId) {
+	void removeSlice(SliceHash sliceId) {
 
-		std::set<unsigned int>::iterator i = _sliceIds.find(sliceId);
+		std::set<SliceHash>::iterator i = _sliceIds.find(sliceId);
 
 		if (i != _sliceIds.end())
 			_sliceIds.erase(i);
@@ -32,7 +33,7 @@ public:
 		_sliceIds.clear();
 	}
 
-	const std::set<unsigned int>& getSlices() const {
+	const std::set<SliceHash>& getSlices() const {
 
 		return _sliceIds;
 	}
@@ -45,7 +46,7 @@ public:
 		}
 		
 		// Two ConflictSet's are equal if they contain each other.
-		foreach (const unsigned int id, _sliceIds)
+		foreach (const SliceHash id, _sliceIds)
 		{
 			if (!other._sliceIds.count(id))
 			{
@@ -53,7 +54,7 @@ public:
 			}
 		}
 		
-		foreach (const unsigned int id, other._sliceIds)
+		foreach (const SliceHash id, other._sliceIds)
 		{
 			if (!_sliceIds.count(id))
 			{
@@ -66,7 +67,7 @@ public:
 
 private:
 
-	std::set<unsigned int> _sliceIds;
+	std::set<SliceHash> _sliceIds;
 };
 
 std::size_t hash_value(const ConflictSet& conflictSet);
