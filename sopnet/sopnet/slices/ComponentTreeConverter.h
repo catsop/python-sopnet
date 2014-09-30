@@ -72,7 +72,7 @@ private:
 	pipeline::Output<ConflictSets> _conflictSets;
 
 	// the path to the currently visited component
-	std::deque<unsigned int> _path;
+	std::deque<SliceHash> _path;
 
 	unsigned int _section;
 };

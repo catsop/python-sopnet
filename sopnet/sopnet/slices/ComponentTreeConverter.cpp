@@ -55,11 +55,11 @@ ComponentTreeConverter::visitNode(boost::shared_ptr<ComponentTree::Node> node) {
 
 	unsigned int sliceId = getNextSliceId();
 
-	_path.push_back(sliceId);
-
 	boost::shared_ptr<ConnectedComponent> component = node->getComponent();
+	boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(sliceId, _section, component);
 
-	_slices->add(boost::make_shared<Slice>(sliceId, _section, component));
+	_slices->add(slice);
+	_path.push_back(slice->hashValue());
 
 	LOG_ALL(componenttreeconverterlog) << "extracted a slice at " << component->getCenter() << std::endl;
 
@@ -81,8 +81,8 @@ ComponentTreeConverter::addConflictSet() {
 
 	ConflictSet conflictSet;
 
-	foreach (unsigned int sliceId, _path)
-		conflictSet.addSlice(sliceId);
+	foreach (SliceHash sliceHash, _path)
+		conflictSet.addSlice(sliceHash);
 
 	_conflictSets->add(conflictSet);
 
