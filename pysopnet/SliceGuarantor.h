@@ -1,8 +1,8 @@
 #ifndef SOPNET_PYTHON_SLICE_GUARANTOR_H__
 #define SOPNET_PYTHON_SLICE_GUARANTOR_H__
 
+#include <catmaid/ProjectConfiguration.h>
 #include "SliceGuarantorParameters.h"
-#include "ProjectConfiguration.h"
 #include "BackendClient.h"
 
 namespace python {

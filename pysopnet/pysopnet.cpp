@@ -4,8 +4,8 @@
 
 #include <util/exceptions.h>
 #include <util/point3.hpp>
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Block.h>
-#include "ProjectConfiguration.h"
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"
 #include "SolutionGuarantor.h"

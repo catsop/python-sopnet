@@ -1,13 +1,13 @@
 #ifndef SOPNET_PYTHON_BACKEND_CLIENT_H__
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/BlockManager.h>
 #include <catmaid/persistence/django/DjangoBlockManager.h>
 #include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
-#include "ProjectConfiguration.h"
 
 namespace python {
 

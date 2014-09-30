@@ -1,8 +1,8 @@
 #ifndef SOPNET_PYTHON_SOLUTION_GUARANTOR_H__
 #define SOPNET_PYTHON_SOLUTION_GUARANTOR_H__
 
+#include <catmaid/ProjectConfiguration.h>
 #include "SolutionGuarantorParameters.h"
-#include "ProjectConfiguration.h"
 #include "BackendClient.h"
 #include "Locations.h"
 
