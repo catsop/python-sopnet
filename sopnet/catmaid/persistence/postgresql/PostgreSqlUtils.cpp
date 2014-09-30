@@ -11,7 +11,7 @@ void
 PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string query)
 {
 	ExecStatusType status = PQresultStatus(result);
-	if (PGRES_COMMAND_OK != status || PGRES_TUPLES_OK != status) {
+	if (PGRES_COMMAND_OK != status && PGRES_TUPLES_OK != status) {
 		LOG_ERROR(postgresqlutilslog) << "Unexpected result: " <<
 				PQresStatus(status) << std::endl <<
 				PQresultErrorMessage(result) << std::endl;
