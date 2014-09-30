@@ -140,7 +140,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	PGresult* queryResult;
 
 	// Check if any requested block do not have segments stored and flagged.
-	foreach (const boost::shared_ptr<Block> block, blocks) {
+	foreach (const Block& block, blocks) {
 		std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
 				"WHERE id = " + boost::lexical_cast<std::string>(block->getId());
 		blockFlagQuery += " LIMIT 1";

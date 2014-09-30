@@ -1,7 +1,6 @@
 #ifndef DJANGO_SLICE_STORE_H__
 #define DJANGO_SLICE_STORE_H__
 
-#include "DjangoBlockManager.h"
 #include <catmaid/persistence/SliceStore.h>
 #include <sopnet/slices/Slices.h>
 #include <catmaid/blocks/Blocks.h>
