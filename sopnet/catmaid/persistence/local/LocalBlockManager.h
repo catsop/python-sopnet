@@ -1,3 +1,4 @@
+#if 0
 #ifndef LOCAL_BLOCK_MANAGER_H__
 #define LOCAL_BLOCK_MANAGER_H__
 
@@ -49,3 +50,4 @@ private:
 };
 
 #endif //LOCAL_BLOCK_MANAGER_H__
+#endif

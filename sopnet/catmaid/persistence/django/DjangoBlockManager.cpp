@@ -1,3 +1,4 @@
+#if 0
 #include "DjangoBlockManager.h"
 
 
@@ -518,4 +519,4 @@ DjangoBlockManager::insertCore(const boost::shared_ptr<Core> core)
 	_idCoreMap[core->getId()] = core;
 	_locationCoreMap[core->location()] = core;
 }
-
+#endif

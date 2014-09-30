@@ -373,11 +373,13 @@ Segments::operator==(const Segments& other) const
 	return true;
 }
 
-Box<>
+util::box<unsigned int>
 Segments::boundingBox()
 {
 	if (size() == 0)
-		return Box<>();
+		return util::box<unsigned int>(
+				0, 0, 0,
+				0, 0, 0);
 
 	util::rect<int>rectBound =
 		getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
@@ -404,5 +406,5 @@ Segments::boundingBox()
 		}
 	}
 	
-	return  Box<>(rectBound, minZ, maxZ - minZ + 1);
+	return  util::box<unsigned int>(rectBound.minX, rectBound.minY, minZ, rectBound.maxX, rectBound.maxY, maxZ + 1);
 }

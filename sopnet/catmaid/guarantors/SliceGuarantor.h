@@ -6,14 +6,13 @@
 
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
-#include <util/Box.h>
-#include <sopnet/catmaid/blocks/Blocks.h>
-#include <pipeline/all.h>
-#include <pipeline/Value.h>
+#include <catmaid/blocks/Blocks.h>
+#include <catmaid/blocks/BlockUtils.h>
 #include <sopnet/slices/ConflictSets.h>
 #include <imageprocessing/io/ImageBlockStackReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/MserParameters.h>
+#include <util/Box.h>
 
 /**
  * SliceGuarantor is a class that, given a sub-stack (measured in Blocks), guarantees that all
@@ -99,6 +98,8 @@ private:
 	boost::shared_ptr<MserParameters> _mserParameters;
 	boost::shared_ptr<SliceStore>     _sliceStore;
 	boost::shared_ptr<StackStore>     _stackStore;
+
+	BlockUtils _blockUtils;
 };
 
 #endif //SLICE_GUARANTOR_H__

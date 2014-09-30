@@ -106,12 +106,7 @@ int main(int argc, char** argv)
 		pc.setPostgreSqlPassword(pg_pass);
 		pc.setPostgreSqlDatabase(pg_dbase);
 
-		boost::shared_ptr<DjangoBlockManager> blockManager =
-				DjangoBlockManager::getBlockManager(host, stack_id, project_id);
-
 		PostgreSqlSliceStore sliceStore(pc);
-
-		boost::shared_ptr<Block> block = blockManager->blockAtLocation(util::point3<unsigned int>(0, 0, 0));
 
 		// Add first set of slices
 		boost::shared_ptr<Slice> slice1 = createSlice(10, 0);
@@ -123,7 +118,8 @@ int main(int argc, char** argv)
 		slices.add(slice2);
 		slices.add(slice3);
 
-		sliceStore.associateSlicesToBlock(slices, *block);
+		Block block(0, 0, 0);
+		sliceStore.associateSlicesToBlock(slices, block);
 
 		// Create conflict set where each slice
 		ConflictSet conflictSet1;
@@ -134,7 +130,7 @@ int main(int argc, char** argv)
 		ConflictSets conflictSets;
 		conflictSets.add(conflictSet1);
 
-		sliceStore.associateConflictSetsToBlock(conflictSets, *block);
+		sliceStore.associateConflictSetsToBlock(conflictSets, block);
 
 		PostgreSqlSegmentStore segmentStore(pc);
 		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
@@ -144,9 +140,10 @@ int main(int argc, char** argv)
 		boost::shared_ptr<SegmentDescriptions> segments = boost::make_shared<SegmentDescriptions>();
 		segments->add(segment);
 
-		segmentStore.associateSegmentsToBlock(*segments, *block);
+		segmentStore.associateSegmentsToBlock(*segments, block);
 
-		Blocks blocks(block);
+		Blocks blocks;
+		blocks.add(block);
 		Blocks missingBlocks;
 
 		boost::shared_ptr<SegmentDescriptions> retrievedSegments =

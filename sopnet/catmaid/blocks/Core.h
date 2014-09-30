@@ -1,31 +1,44 @@
-#ifndef CORE_H__
-#define CORE_H__
-#include <catmaid/blocks/Blocks.h>
-#include <boost/enable_shared_from_this.hpp>
+#ifndef SOPNET_CATMAID_BLOCKS_CORE_H__
+#define SOPNET_CATMAID_BLOCKS_CORE_H__
 
-class Core : public BlocksImpl<Block>, public boost::enable_shared_from_this<Core>
-{
-public:
-	Core(unsigned int id, const boost::shared_ptr<BlocksImpl<Block> > blocks);
-
-	unsigned int getId() const;
-	
-	bool getSolutionSetFlag();
-	
-	void setSolutionSetFlag(const bool& flag);
-	
-	bool operator==(const Core& other) const;
-	
-	util::point3<unsigned int> getCoordinates();
-	
-private:
-	const unsigned int _id;
-};
+#include <util/point3.hpp>
 
 /**
- * Core hash value determined by mixing hash values returned by
- * util::hash_value for location and size.
+ * A lightweight data structure representing a core in a stack by its 
+ * coordinates.
  */
-std::size_t hash_value(Core const& core);
+class Core {
 
-#endif //CORE_H__
+public:
+
+	Core(const util::point3<unsigned int>& coordinates) :
+		_coordinates(coordinates) {}
+
+	Core(unsigned int x, unsigned int y, unsigned int z) :
+		_coordinates(x, y, z) {}
+
+	unsigned int x() const { return _coordinates.x; }
+	unsigned int y() const { return _coordinates.y; }
+	unsigned int z() const { return _coordinates.z; }
+
+	/**
+	 * Get a point3 that represents the coordinates of this core.
+	 */
+	const util::point3<unsigned int>& getCoordinates() const { return _coordinates; }
+
+	/**
+	 * Provides a total ordering on cores based on their cooridinates.
+	 */
+	bool operator<(const Core& other) const {
+
+		return _coordinates < other._coordinates;
+	}
+
+private:
+
+	util::point3<unsigned int> _coordinates;
+};
+
+#endif // SOPNET_CATMAID_BLOCKS_CORE_H__
+
+

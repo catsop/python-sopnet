@@ -2,6 +2,7 @@
 #include <pipeline/Process.h>
 #include <catmaid/guarantors/SolutionGuarantor.h>
 #include <catmaid/blocks/Cores.h>
+#include <util/point3.hpp>
 #include "SolutionGuarantor.h"
 #include "logging.h"
 
@@ -9,18 +10,19 @@ namespace python {
 
 Locations
 SolutionGuarantor::fill(
-		const point3<unsigned int>& request,
+		const util::point3<unsigned int>& request,
 		const SolutionGuarantorParameters& parameters,
 		const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[SolutionGuarantor] fill called for core at " << request << std::endl;
 
-	boost::shared_ptr<BlockManager> blockManager  = createBlockManager(configuration);
+	//boost::shared_ptr<BlockManager> blockManager  = createBlockManager(configuration);
 	boost::shared_ptr<SliceStore>   sliceStore    = createSliceStore(configuration);
 	boost::shared_ptr<SegmentStore> segmentStore  = createSegmentStore(configuration);
 
 	// create the SolutionGuarantor process node
 	::SolutionGuarantor solutionGuarantor(
+			configuration,
 			segmentStore,
 			sliceStore,
 			parameters.getCorePadding(),
@@ -29,7 +31,8 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 
 	// find the core that corresponds to the request
-	boost::shared_ptr<Core> core = blockManager->coreAtCoordinates(request);
+	// TODO: get from BlockUtils
+	boost::shared_ptr<Core> core;// = blockManager->coreAtCoordinates(request);
 
 	// let it do what it was build for
 	Blocks missingBlocks = solutionGuarantor.guaranteeSolution(*core);
@@ -38,8 +41,8 @@ SolutionGuarantor::fill(
 
 	// collect missing block locations
 	Locations missing;
-	foreach (boost::shared_ptr<Block> block, missingBlocks)
-		missing.push_back(block->getCoordinates());
+	foreach (const Block& block, missingBlocks)
+		missing.push_back(util::point3<unsigned int>(block.x(), block.y(), block.z()));
 
 	return missing;
 }

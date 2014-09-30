@@ -62,6 +62,11 @@ public:
 	 *              available, yet. This collection will be empty on success.
 	 */
 	virtual boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block, Blocks& missingBlocks) = 0;
+
+	/**
+	 * Check whether the slices for the given block have already been extracted.
+	 */
+	virtual bool getSlicesFlag(const Block& block) = 0;
 };
 
 #endif //SLICE_STORE_H__

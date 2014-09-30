@@ -172,3 +172,4 @@ ProjectConfiguration::getPostgreSqlDatabase() const {
 
 	return _postgreSqlDatabase;
 }
+

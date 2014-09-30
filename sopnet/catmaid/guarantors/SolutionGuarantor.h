@@ -3,8 +3,10 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/SegmentStore.h>
 #include <catmaid/persistence/SliceStore.h>
+#include <catmaid/blocks/BlockUtils.h>
 #include <catmaid/blocks/Core.h>
 
 #include <sopnet/segments/SegmentHash.h>
@@ -36,6 +38,7 @@ public:
 	 *              features.
 	 */
 	SolutionGuarantor(
+			const ProjectConfiguration&     projectConfiguration,
 			boost::shared_ptr<SegmentStore> segmentStore,
 			boost::shared_ptr<SliceStore>   sliceStore,
 			unsigned int                    corePadding,
@@ -91,6 +94,8 @@ private:
 
 	// the feature weights
 	std::vector<double> _weights;
+
+	BlockUtils _blockUtils;
 };
 
 #endif //SOLUTION_GUARANTOR_H__

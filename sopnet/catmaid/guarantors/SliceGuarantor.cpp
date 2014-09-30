@@ -20,7 +20,7 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	Slices slices;
 	ConflictSets conflictSets;
 	
-	LOG_DEBUG(sliceguarantorlog) << "Guaranteeing slices for region " << blocks << std::endl;
+	LOG_DEBUG(sliceguarantorlog) << "Guaranteeing slices for blocks " << blocks << std::endl;
 	
 	if (checkSlices(blocks))
 	{
@@ -34,16 +34,20 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	// Slices and ConflictSets extracted from the image underlying the requested area.
 	// This is done section-by-section, so a vector is used in order to make it easier
 	// to multi-thread this later.
-	
+
+	const util::box<unsigned int>& blockBoundingBox = _blockUtils.getBoundingBox(blocks);
+	unsigned int firstSection = blockBoundingBox.min.z;
+	unsigned int numSections  = blockBoundingBox.depth();
+
 	// extracted Slices.
-	std::vector<Slices> slicesVector(blocks.size().z);
+	std::vector<Slices> slicesVector(numSections);
 	// extracted conflict sets
-	std::vector<ConflictSets> conflictSetsVector(blocks.size().z); 
+	std::vector<ConflictSets> conflictSetsVector(numSections); 
 
 	// Extract slices independently by z.
-	for (unsigned int i = 0; i < blocks.size().z; ++i)
+	for (unsigned int i = 0; i < numSections; ++i)
 	{
-		unsigned int z = i + blocks.location().z;
+		unsigned int z = firstSection + i;
 		Slices zSlices;
 		ConflictSets zConflict;
 		Blocks zBlocks;
@@ -56,24 +60,19 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 		extractBlocks.addAll(zBlocks);
 	}
 
-	for (unsigned int i = 0; i < blocks.size().z; ++i)
+	for (unsigned int i = 0; i < numSections; ++i)
 	{
 		slices.addAll(slicesVector[i]);
 		conflictSets.addAll(conflictSetsVector[i]);
 	}
 	
 	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices.size() << " slices to " <<
-		extractBlocks.length() << " blocks" << std::endl;
+		extractBlocks.size() << " blocks" << std::endl;
 
 	writeSlicesAndConflicts(slices, conflictSets, blocks);
 
-	foreach (boost::shared_ptr<Block> block, blocks)
-	{
-		block->setSlicesFlag(true);
-	}
-	
 	LOG_DEBUG(sliceguarantorlog) << "Done." << std::endl;
-	
+
 	return Blocks();
 }
 
@@ -83,21 +82,22 @@ SliceGuarantor::writeSlicesAndConflicts(
 		const ConflictSets& conflictSets,
 		const Blocks&       blocks) {
 
-	foreach (boost::shared_ptr<Block> block, blocks) {
+	foreach (const Block& block, blocks) {
 
-		boost::shared_ptr<Slices>       blockSlices       = collectSlicesByBlock(slices, *block);
+		boost::shared_ptr<Slices>       blockSlices       = collectSlicesByBlock(slices, block);
 		boost::shared_ptr<ConflictSets> blockConflictSets = collectConflictBySlices(conflictSets, *blockSlices);
 
-		_sliceStore->associateSlicesToBlock(*blockSlices, *block);
-		_sliceStore->associateConflictSetsToBlock(*blockConflictSets, *block);
+		_sliceStore->associateSlicesToBlock(*blockSlices, block);
+		_sliceStore->associateConflictSetsToBlock(*blockConflictSets, block);
 	}
 }
 
 boost::shared_ptr<Slices>
 SliceGuarantor::collectSlicesByBlock(const Slices& slices, const Block& block) {
 
+	util::rect<unsigned int> blockRect = _blockUtils.getBoundingBox(block).project_xy();
+
 	boost::shared_ptr<Slices> blockSlices = boost::make_shared<Slices>();
-	util::rect<unsigned int> blockRect = block;
 
 	foreach (boost::shared_ptr<Slice> slice, slices) {
 
@@ -144,18 +144,14 @@ SliceGuarantor::setMserParameters(const boost::shared_ptr<MserParameters> mserPa
 bool
 SliceGuarantor::checkSlices(const Blocks& blocks)
 {
-	// Check to see whether each block in guaranteeBlocks has already had its slices extracted.
+	// Check to see whether each block has already had its slices extracted.
 	// If this is the case, we have no work to do
-	foreach (boost::shared_ptr<Block> block, blocks)
-	{
-		if (!block->getSlicesFlag())
-		{
+	foreach (const Block& block, blocks) {
+		if (!_sliceStore->getSlicesFlag(block))
 			return false;
-		}
 	}
-	
+
 	return true;
-	
 }
 
 void
@@ -167,7 +163,7 @@ SliceGuarantor::extractSlices(const unsigned int z,
 {
 	LOG_ALL(sliceguarantorlog) << "Setting up mini pipeline for section " << z << std::endl;
 	Blocks nbdBlocks;
-	util::rect<unsigned int> blocksRect = requestBlocks;
+	util::rect<unsigned int> blocksRect = _blockUtils.getBoundingBox(requestBlocks).project_xy();
 
 	bool okSlices = false;
 	pipeline::Process<SliceExtractor<unsigned char> > sliceExtractor(z, true);
@@ -177,13 +173,18 @@ SliceGuarantor::extractSlices(const unsigned int z,
 
 	extractBlocks.addAll(requestBlocks);
 	// Dilate once beforehand.
-	extractBlocks.dilate(1, 1, 0);
+	_blockUtils.expand(
+			extractBlocks,
+			-1, -1, 0,
+			 1,  1, 0);
 
 	while (!okSlices)
 	{
-		util::rect<unsigned int> bound = extractBlocks;
-		util::point<int> translate(extractBlocks.location().x, extractBlocks.location().y);
-		Box<> box(bound, z, 1);
+		util::box<unsigned int> boundingBox = _blockUtils.getBoundingBox(extractBlocks);
+
+		util::rect<unsigned int> bound = boundingBox.project_xy();
+		util::point<int> translate(boundingBox.min.x, boundingBox.min.y);
+		util::box<unsigned int> box(bound.minX, bound.minY, z, bound.maxX, bound.maxY, z + 1);
 		boost::shared_ptr<Image> image = (*_stackStore->getImageStack(box))[0];
 
 		LOG_ALL(sliceguarantorlog) << "Processing over " << bound << std::endl;
@@ -216,8 +217,16 @@ SliceGuarantor::extractSlices(const unsigned int z,
 		
 		LOG_ALL(sliceguarantorlog) << "Extract: " << extractBlocks << ", Neighbor: " <<
 			nbdBlocks << std::endl; 
-		
-		if (!(okSlices = extractBlocks.size() == nbdBlocks.size()))
+
+		util::rect<unsigned int> extractBlocksSize = _blockUtils.getBoundingBox(extractBlocks).project_xy();
+		util::rect<unsigned int> nbdBlocksSize     = _blockUtils.getBoundingBox(nbdBlocks).project_xy();
+
+		// if the bounding rectangle of the blocks we extracted slices for has 
+		// the same size as the one for the blocks we should extract, we are 
+		// done
+		okSlices = (extractBlocksSize == nbdBlocksSize);
+
+		if (!okSlices)
 		{
 			LOG_ALL(sliceguarantorlog) << "Need to expand" << std::endl;
 			extractBlocks.addAll(nbdBlocks);
@@ -247,7 +256,7 @@ SliceGuarantor::collectOutputSlices(const Slices& extractedSlices,
 	// Must be separate from idSet to avoid problems with the possibility of multiply-overlapping
 	// conflict sets.
 	std::set<unsigned int> conflictCliqueIdSet;
-	util::rect<unsigned int> blocksRect = blocks;
+	util::rect<unsigned int> blocksRect = _blockUtils.getBoundingBox(blocks).project_xy();
 	
 	// Collection in two steps:
 	// 1) Find all Slice's that overlap the guarantee blocks
@@ -305,7 +314,7 @@ SliceGuarantor::checkWhole(const Slice& slice,
 						   Blocks& nbdBlocks) const
 {
 	util::rect<unsigned int> sliceBound = slice.getComponent()->getBoundingBox();
-	util::rect<unsigned int> blockBound = extractBlocks;
+	util::rect<unsigned int> blockBound = _blockUtils.getBoundingBox(extractBlocks).project_xy();
 	
 	LOG_ALL(sliceguarantorlog) << "block bound: " << blockBound << ", slice bound: " <<
 		sliceBound << " for slice " << slice.getId() << std::endl;
@@ -313,7 +322,10 @@ SliceGuarantor::checkWhole(const Slice& slice,
 	if (sliceBound.minX <= blockBound.minX)
 	{
 		Blocks expandBlocks = Blocks(extractBlocks);
-		expandBlocks.expand(util::point3<int>(-1, 0, 0));
+		_blockUtils.expand(
+				expandBlocks,
+				0, 0, 0,
+				1, 0, 0);
 		nbdBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -x boundary" << std::endl;
 	}
@@ -321,7 +333,10 @@ SliceGuarantor::checkWhole(const Slice& slice,
 	if (sliceBound.maxX >= blockBound.maxX)
 	{
 		Blocks expandBlocks = Blocks(extractBlocks);
-		expandBlocks.expand(util::point3<int>(1, 0, 0));
+		_blockUtils.expand(
+				expandBlocks,
+				1, 0, 0,
+				0, 0, 0);
 		nbdBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +x boundary" << std::endl;
 	}
@@ -329,7 +344,10 @@ SliceGuarantor::checkWhole(const Slice& slice,
 	if (sliceBound.minY <= blockBound.minY)
 	{
 		Blocks expandBlocks = Blocks(extractBlocks);
-		expandBlocks.expand(util::point3<int>(0, -1, 0));
+		_blockUtils.expand(
+				expandBlocks,
+				0, 0, 0,
+				0, 1, 0);
 		nbdBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -y boundary" << std::endl;
 	}
@@ -337,7 +355,10 @@ SliceGuarantor::checkWhole(const Slice& slice,
 	if (sliceBound.maxY >= blockBound.maxY)
 	{
 		Blocks expandBlocks = Blocks(extractBlocks);
-		expandBlocks.expand(util::point3<int>(0, 1, 0));
+		_blockUtils.expand(
+				expandBlocks,
+				0, 1, 0,
+				0, 0, 0);
 		nbdBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +y boundary" << std::endl;
 	}

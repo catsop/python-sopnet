@@ -1,3 +1,4 @@
+#if 0
 #include <boost/make_shared.hpp>
 
 #include "LocalBlockManager.h"
@@ -135,4 +136,4 @@ LocalBlockManager::getFlag(const Block& block, boost::unordered::unordered_map<B
 		return false;
 	}
 }
-
+#endif

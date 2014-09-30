@@ -1,3 +1,4 @@
+#if 0
 #include "BlockManager.h"
 #include <util/Logger.h>
 #include <boost/make_shared.hpp>
@@ -205,3 +206,4 @@ BlockManager::isUpperBound(unsigned int z)
 {
 	return z == _stackSize.z - 1;
 }
+#endif

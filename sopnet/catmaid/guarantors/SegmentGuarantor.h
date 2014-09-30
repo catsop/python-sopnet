@@ -1,6 +1,8 @@
 #ifndef SEGMENT_GUARANTOR_H__
 #define SEGMENT_GUARANTOR_H__
 
+#include <catmaid/ProjectConfiguration.h>
+#include <catmaid/blocks/BlockUtils.h>
 #include <catmaid/persistence/SegmentStore.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/StackStore.h>
@@ -13,6 +15,7 @@ class SegmentGuarantor {
 public:
 
 	SegmentGuarantor(
+			const ProjectConfiguration&     projectConfiguration,
 			boost::shared_ptr<SegmentStore> segmentStore,
 			boost::shared_ptr<SliceStore>   sliceStore,
 			boost::shared_ptr<StackStore>   rawStackStore);
@@ -56,7 +59,7 @@ private:
 			unsigned int z) const;
 
 	// compute the bounding box of a set of slices
-	Box<> slicesBoundingBox(const Slices& slices);
+	util::box<unsigned int> slicesBoundingBox(const Slices& slices);
 
 	// extract the features for the given segments
 	boost::shared_ptr<Features> computeFeatures(const boost::shared_ptr<Segments> segments);
@@ -64,7 +67,8 @@ private:
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
 	boost::shared_ptr<StackStore>   _rawStackStore;
-	boost::shared_ptr<BlockManager> _blockManager;
+
+	BlockUtils _blockUtils;
 };
 
 #endif //SEGMENT_GUARANTOR_H__

@@ -1,3 +1,4 @@
+#if 0
 #ifndef BLOCK_MANAGER_H__
 #define BLOCK_MANAGER_H__
 
@@ -143,4 +144,4 @@ protected:
 };
 
 #endif //BLOCK_MANAGER_H__
-
+#endif

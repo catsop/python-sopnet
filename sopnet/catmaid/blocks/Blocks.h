@@ -1,194 +1,63 @@
-#ifndef BLOCKS_H__
-#define BLOCKS_H__
+#ifndef SOPNET_CATMAID_BLOCKS_BLOCKS_H__
+#define SOPNET_CATMAID_BLOCKS_BLOCKS_H__
 
-#include <pipeline/Data.h>
-#include <vector>
-#include <boost/shared_ptr.hpp>
-
+#include <set>
+#include <util/foreach.h>
 #include "Block.h"
-#include <util/Box.h>
 
-class Core;
+class Blocks {
 
-template <class T>
-class BlocksImpl : public Box<>
-{
-	
+	typedef std::set<Block> blocks_type;
+
 public:
-	typedef typename std::vector<boost::shared_ptr<T> >::iterator       iterator;
-	typedef typename std::vector<boost::shared_ptr<T> >::const_iterator const_iterator;
 
-	BlocksImpl() : _blockManager(boost::shared_ptr<BlockManager>()) {}
-	
-	BlocksImpl(const boost::shared_ptr<T> block) : _blockManager(block->getManager())
-	{
-		add(block);
-	}
-	
-	BlocksImpl(const boost::shared_ptr<BlocksImpl<T> > blocksImpl) :
-		_blockManager(blocksImpl->getManager())
-	{
-		addAll(blocksImpl->_blocks);
-	}
-	
-	BlocksImpl(const BlocksImpl<T>& blocksImpl) : Box<>(),
-		_blockManager(blocksImpl.getManager())
-	{
-		addAll(blocksImpl._blocks);
-	}
-	
-	virtual const const_iterator begin() const { return _blocks.begin(); }
+	typedef blocks_type::iterator       iterator;
+	typedef blocks_type::const_iterator const_iterator;
 
-	virtual iterator begin() { return _blocks.begin(); }
-
-	virtual const const_iterator end() const { return _blocks.end(); }
-
-	virtual iterator end() { return _blocks.end(); }
-
-	virtual unsigned int length() const { return _blocks.size(); }
-
-	virtual bool contains(const boost::shared_ptr<T> otherBlock)
-	{
-		foreach(boost::shared_ptr<T> block, _blocks)
-		{
-			if (*block == *otherBlock)
-			{
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	template<typename S>
-	bool contains(const util::rect<S>& rect)
-	{
-		return Box<>::contains<S>(rect);
-	}
-	
-	virtual void add(const boost::shared_ptr<T> block)
-	{
-		if (internalAdd(block))
-		{
-			updateBox();
-		}
-	}
-	
-	virtual void addAll(const std::vector<boost::shared_ptr<T> >& blocks)
-	{
-		bool needUpdate = false;
-		foreach (boost::shared_ptr<T> block, blocks)
-		{
-			needUpdate = internalAdd(block) || needUpdate;
-		}
-		
-		if (needUpdate)
-		{
-			updateBox();
-		}
-	}
-	
-	virtual void addAll(const boost::shared_ptr<BlocksImpl<T> > blocks)
-	{
-		addAll(blocks->_blocks);
-	}
-	
-	virtual void addAll(const BlocksImpl& blocks)
-	{
-		addAll(blocks._blocks);
-	}
-	
-	virtual void remove(const boost::shared_ptr<T> otherBlock)
-	{
-		boost::shared_ptr<T> eraseBlock;
-		foreach (boost::shared_ptr<T> block, _blocks)
-		{
-			if (*block == *otherBlock)
-			{
-				_blocks.erase(std::remove(_blocks.begin(), _blocks.end(), block), _blocks.end());
-				updateBox();
-				if (_blocks.empty())
-				{
-					_blockManager = boost::shared_ptr<BlockManager>();
-				}
-				return;
-			}
-		}
-	}
-
-	virtual boost::shared_ptr<BlockManager> getManager() const
-	{
-		return _blockManager;
-	}
-	
-	virtual bool empty(){return _blocks.empty();}
-
-	
-protected:
-	std::vector<boost::shared_ptr<T> > _blocks;
-	boost::shared_ptr<BlockManager> _blockManager;
-	
-private:
-	bool internalAdd(const boost::shared_ptr<T>& block)
-	{
-		if(block && !contains(block))
-		{
-			if (!_blockManager)
-			{
-				_blockManager = block->getManager();
-			}
-			_blocks.push_back(block);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-	
-	void updateBox()
-	{
-		if (_blocks.empty())
-		{
-			_location = util::point3<unsigned int>(0,0,0);
-			_size = util::point3<unsigned int>(0,0,0);
-		}
-		else
-		{
-			util::point3<unsigned int> minPoint(_blocks[0]->location()),
-				maxPoint(_blocks[0]->location());
-			
-			foreach (boost::shared_ptr<T> block, _blocks)
-			{
-				minPoint = minPoint.min(block->location());
-				maxPoint = maxPoint.max(block->location() + block->size());
-			}
-			
-			_location = minPoint;
-			_size = maxPoint - minPoint;
-		}
-	}
-
-};
-
-class Blocks : public BlocksImpl<Block>
-{
-public:
-	Blocks();
-	
-	Blocks(const boost::shared_ptr<Block> block);
-	
-	Blocks(const boost::shared_ptr<BlocksImpl> blocks);
-	
 	/**
-	 * Dilate the blocks by the given amount in each direction.
-	 *
-	 * @param x, y, z The number of blocks to add in each direction.
+	 * Add a single block to this collection.
 	 */
-	void dilate(int x, int y, int z);
-	
-	void expand(const point3<int>& direction);
+	void add(const Block& block) { _blocks.insert(block); }
 
+	/**
+	 * Add a set of blocks to this collection.
+	 */
+	void addAll(const Blocks& blocks) { foreach (const Block& block, blocks) add(block); }
+
+	/**
+	 * Check whether this collection is empty.
+	 */
+	bool empty() { return _blocks.empty(); }
+
+	/**
+	 * Get the number of blocks in this collection.
+	 */
+	unsigned int size() { return _blocks.size(); }
+
+	/**
+	 * Check whether this collection contains the given block.
+	 */
+	bool contains(const Block& block) const { return _blocks.count(block); }
+
+	/**
+	 * Iterator access to the blocks.
+	 */
+	iterator begin() { return _blocks.begin(); }
+	iterator end() { return _blocks.end(); }
+
+	/**
+	 * Const iterator access to the blocks.
+	 */
+	const_iterator begin() const { return _blocks.begin(); }
+	const_iterator end() const { return _blocks.end(); }
+
+private:
+
+	blocks_type _blocks;
 };
 
-#endif //BLOCKS_H__
+std::ostream&
+operator<<(std::ostream& out, const Blocks& blocks);
+
+#endif // SOPNET_CATMAID_BLOCKS_BLOCKS_H__
+

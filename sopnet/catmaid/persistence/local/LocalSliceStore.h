@@ -43,6 +43,11 @@ public:
 	 * conflict sets will contain the hashes of slices.
 	 */
 	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block, Blocks& missingBlocks) {}
+
+	/**
+	 * Check whether the slices for the given block have already been extracted.
+	 */
+	bool getSlicesFlag(const Block& block) {}
 };
 
 #endif //LOCAL_SLICE_STORE_H__

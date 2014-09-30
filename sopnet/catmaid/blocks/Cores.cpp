@@ -1,3 +1,4 @@
+#if 0
 #include "Cores.h"
 #include <boost/make_shared.hpp>
 #include <util/foreach.h>
@@ -24,4 +25,4 @@ Cores::asBlocks()
 	
 	return blocks;
 }
-
+#endif

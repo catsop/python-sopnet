@@ -59,6 +59,12 @@ public:
 	 *              The core for which the solution was generated.
 	 */
 	virtual void storeSolution(const std::vector<SegmentHash>& segmentHashes, const Core& core) = 0;
+
+	/**
+	 * Check whether the segments for the given block have already been 
+	 * extracted.
+	 */
+	virtual bool getSegmentsFlag(const Block& block) = 0;
 };
 
 

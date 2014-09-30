@@ -7,7 +7,6 @@
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Blocks.h>
 #include <catmaid/persistence/SliceStore.h>
-#include <catmaid/persistence/django/DjangoBlockManager.h>
 #include <sopnet/slices/ConflictSets.h>
 #include <sopnet/slices/Slices.h>
 #include <libpq-fe.h>
@@ -64,12 +63,15 @@ public:
 			const Blocks& block,
 			Blocks&       missingBlocks) {}
 
+	/**
+	 * Check whether the slices for the given block have already been extracted.
+	 */
+	bool getSlicesFlag(const Block& block) {}
+
 private:
+
 	// general configuration
 	const ProjectConfiguration& _config;
-
-	// directory to store the pixel lists of slices
-	const std::string _componentDirectory;
 
 	// database connection
 	PGconn* _pgConnection;

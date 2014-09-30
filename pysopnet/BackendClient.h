@@ -28,19 +28,15 @@ protected:
 		Membrane
 	};
 
+	#if 0
 	boost::shared_ptr<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
+	#endif
 
 	boost::shared_ptr<StackStore>   createStackStore(const ProjectConfiguration& configuration, StackType type);
 
 	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
 	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
-
-private:
-
-	boost::shared_ptr<DjangoBlockManager> _djangoBlockManager;
-
-	boost::shared_ptr<DjangoSliceStore>   _djangoSliceStore;
 };
 
 } // namespace python

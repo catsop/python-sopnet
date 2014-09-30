@@ -8,18 +8,17 @@
 logger::LogChannel segmentguarantorlog("segmentguarantorlog", "[SegmentGuarantor] ");
 
 SegmentGuarantor::SegmentGuarantor(
+		const ProjectConfiguration&     projectConfiguration,
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
 		boost::shared_ptr<StackStore>   rawStackStore) :
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
-	_rawStackStore(rawStackStore) {}
+	_rawStackStore(rawStackStore),
+	_blockUtils(projectConfiguration) {}
 
 Blocks
 SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
-
-	// remember the block manager to use
-	_blockManager = requestedBlocks.getManager();
 
 	// do nothing, if the requested blocks have been extracted already
 	if (alreadyPresent(requestedBlocks))
@@ -42,34 +41,32 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	// the requested segments
 	boost::shared_ptr<Segments> segments = boost::make_shared<Segments>();
 
+	util::box<unsigned int> requestBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
+
 	// begin and end section of the request
-	unsigned int zBegin = requestedBlocks.location().z;
-	unsigned int zEnd = zBegin + requestedBlocks.size().z;
+	unsigned int zBegin = requestBoundingBox.min.z;
+	unsigned int zEnd   = requestBoundingBox.max.z;
 
 	for (unsigned int z = zBegin; z < zEnd; ++z) {
 
-		// If sections z and z + 1 exist in our whitelist
-		if (_blockManager->isValidZ(z) && _blockManager->isValidZ(z + 1)) {
+		pipeline::Process<SegmentExtractor> extractor;
 
-			pipeline::Process<SegmentExtractor> extractor;
+		// Collect slices for sections z and z + 1
+		boost::shared_ptr<Slices> prevSlices = collectSlicesByZ(*slices, z);
+		boost::shared_ptr<Slices> nextSlices = collectSlicesByZ(*slices, z + 1);
 
-			// Collect slices for sections z and z + 1
-			boost::shared_ptr<Slices> prevSlices = collectSlicesByZ(*slices, z);
-			boost::shared_ptr<Slices> nextSlices = collectSlicesByZ(*slices, z + 1);
+		// Set up the extractor
+		extractor->setInput("previous slices", prevSlices);
+		extractor->setInput("next slices", nextSlices);
 
-			// Set up the extractor
-			extractor->setInput("previous slices", prevSlices);
-			extractor->setInput("next slices", nextSlices);
+		// and grab the segments.
+		pipeline::Value<Segments> extractedSegments = extractor->getOutput("segments");
 
-			// and grab the segments.
-			pipeline::Value<Segments> extractedSegments = extractor->getOutput("segments");
+		LOG_DEBUG(segmentguarantorlog)
+				<< "Got " << extractedSegments->size()
+				<< " segments" << std::endl;
 
-			LOG_DEBUG(segmentguarantorlog)
-					<< "Got " << extractedSegments->size()
-					<< " segments" << std::endl;
-
-			segments->addAll(extractedSegments);
-		}
+		segments->addAll(extractedSegments);
 	}
 
 	// compute the features for all extracted segments
@@ -84,8 +81,8 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 bool
 SegmentGuarantor::alreadyPresent(const Blocks& blocks) {
 
-	foreach (boost::shared_ptr<Block> block, blocks)
-		if (!block->getSegmentsFlag())
+	foreach (const Block& block, blocks)
+		if (!_segmentStore->getSegmentsFlag(block))
 			return false;
 
 	return true;
@@ -96,11 +93,12 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 
 	// Blocks for which to extract slices. Expand sliceBlocks by z+1. We need to 
 	// grab Slices from the first section of the next block
-	sliceBlocks.expand(util::point3<int>(0, 0, 1));
+	_blockUtils.expand(
+			sliceBlocks,
+			0, 0, 1,
+			0, 0, 0);
 
-	LOG_DEBUG(segmentguarantorlog) << "asking for slices in the following blocks:" << std::endl;
-	foreach (boost::shared_ptr<Block> block, sliceBlocks)
-		LOG_DEBUG(segmentguarantorlog) << "\t" << block->getCoordinates() << std::endl;
+	LOG_DEBUG(segmentguarantorlog) << "asking for slices in the following blocks:" << sliceBlocks << std::endl;
 
 	// Step one: retrieve all of the slices associated with the slice-request blocks.
 	// Step two: expand the slice-request blocks to fit the boundaries of all of our new slices,
@@ -123,12 +121,12 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
 
 	// expand the request blocks
-	Blocks expandedSliceBlocks = _blockManager->blocksInBox(slicesBoundingBox(*slices));
+	Blocks expandedSliceBlocks = _blockUtils.getBlocksInBox(slicesBoundingBox(*slices));
 
 	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << sliceBlocks << "." << std::endl;
 
 	Blocks newSliceBlocks;
-	foreach (boost::shared_ptr<Block> block, expandedSliceBlocks)
+	foreach (const Block& block, expandedSliceBlocks)
 		if (!sliceBlocks.contains(block))
 			newSliceBlocks.add(block);
 
@@ -145,10 +143,10 @@ SegmentGuarantor::writeSegmentsAndFeatures(
 		const Features& features,
 		const Blocks&   requestedBlocks) {
 
-	foreach (boost::shared_ptr<Block> block, requestedBlocks) {
+	foreach (const Block& block, requestedBlocks) {
 
-		SegmentDescriptions blockSegments = getSegmentDescriptions(segments, features, *block);
-		_segmentStore->associateSegmentsToBlock(blockSegments, *block);
+		SegmentDescriptions blockSegments = getSegmentDescriptions(segments, features, block);
+		_segmentStore->associateSegmentsToBlock(blockSegments, block);
 	}
 }
 
@@ -213,13 +211,15 @@ SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 	unsigned int minSection = segment.getInterSectionInterval();
 	unsigned int maxSection = segment.getInterSectionInterval() + 1;
 
+	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(block);
+
 	// test in z
-	if (maxSection <  block.location().z ||
-	    minSection >= block.location().z + block.size().z)
+	if (maxSection <  blockBoundingBox.min.z ||
+	    minSection >= blockBoundingBox.max.z)
 		return false;
 
 	// test in x-y
-	util::rect<unsigned int> blockRect = block;
+	util::rect<unsigned int> blockRect = blockBoundingBox.project_xy();
 	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
 
 		util::rect<unsigned int> sliceBoundingBox = slice->getComponent()->getBoundingBox();
@@ -252,11 +252,11 @@ SegmentGuarantor::collectSlicesByZ(
 	return zSlices;
 }
 
-Box<>
+util::box<unsigned int>
 SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 {
 	if (slices.size() == 0)
-		return Box<>();
+		return util::box<unsigned int>(0, 0, 0, 0, 0, 0);
 
 	util::rect<unsigned int> bound(0, 0, 0, 0);
 	unsigned int zMax = 0;
@@ -278,17 +278,18 @@ SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 		}
 	}
 
-	return Box<>(bound, zMin, zMax - zMin);
+	return util::box<unsigned int>(bound.minX, bound.minY, zMin, bound.maxX, bound.maxY, zMax);
 }
 
 boost::shared_ptr<Features>
 SegmentGuarantor::computeFeatures(boost::shared_ptr<Segments> segments)
 {
-	Box<> box = segments->boundingBox();
-	Blocks blocks = _blockManager->blocksInBox(box);
+	util::box<unsigned int> box = segments->boundingBox();
+	Blocks blocks = _blockUtils.getBlocksInBox(box);
+	util::box<unsigned int> blocksBoundingBox = _blockUtils.getBoundingBox(blocks);
 
 	pipeline::Process<SegmentFeaturesExtractor> featuresExtractor;
-	pipeline::Value<util::point3<unsigned int> > offset(blocks.location());
+	pipeline::Value<util::point3<unsigned int> > offset(blocksBoundingBox.min);
 	pipeline::Value<Features> features;
 
 	LOG_DEBUG(segmentguarantorlog)
@@ -296,7 +297,7 @@ SegmentGuarantor::computeFeatures(boost::shared_ptr<Segments> segments)
 			<< " segments" << std::endl;
 
 	featuresExtractor->setInput("segments", segments);
-	featuresExtractor->setInput("raw sections", _rawStackStore->getImageStack(blocks));
+	featuresExtractor->setInput("raw sections", _rawStackStore->getImageStack(blocksBoundingBox));
 	featuresExtractor->setInput("crop offset", offset);
 
 	features = featuresExtractor->getOutput("all features");

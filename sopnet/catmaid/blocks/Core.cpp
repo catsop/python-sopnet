@@ -1,3 +1,4 @@
+#if 0
 #include "Core.h"
 
 
@@ -34,11 +35,12 @@ Core::getCoordinates()
 }
 
 
-std::size_t hash_value(const Core& core)
-{
-	std::size_t seed = 0;
-	boost::hash_combine(seed, util::hash_value(core.location()));
-	boost::hash_combine(seed, util::hash_value(core.size()));
+//std::size_t hash_value(const Core& core)
+//{
+	//std::size_t seed = 0;
+	//boost::hash_combine(seed, util::hash_value(core.location()));
+	//boost::hash_combine(seed, util::hash_value(core.size()));
 
-	return seed;
-}
+	//return seed;
+//}
+#endif

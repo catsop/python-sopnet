@@ -1,3 +1,4 @@
+#if 0
 #include "Block.h"
 #include <boost/concept_check.hpp>
 #include <util/Logger.h>
@@ -103,12 +104,12 @@ util::rect<int> Block::getBoundingBox()
 
 
 
-std::size_t hash_value(const Block& block)
-{
-	std::size_t seed = 0;
-	boost::hash_combine(seed, util::hash_value(block.location()));
-	boost::hash_combine(seed, util::hash_value(block.size()));
+//std::size_t hash_value(const Block& block)
+//{
+	//std::size_t seed = 0;
+	//boost::hash_combine(seed, util::hash_value(block.location()));
+	//boost::hash_combine(seed, util::hash_value(block.size()));
 
-	return seed;
-}
-
+	//return seed;
+//}
+#endif

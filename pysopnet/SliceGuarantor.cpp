@@ -2,6 +2,7 @@
 #include <pipeline/Process.h>
 #include <catmaid/guarantors/SliceGuarantor.h>
 #include <catmaid/blocks/Blocks.h>
+#include <util/point3.hpp>
 #include "SliceGuarantor.h"
 #include "logging.h"
 
@@ -11,18 +12,18 @@ struct MissingSliceData : virtual Exception {};
 
 void
 SliceGuarantor::fill(
-		const point3<unsigned int>& request,
+		const util::point3<unsigned int>& request,
 		const SliceGuarantorParameters& parameters,
 		const ProjectConfiguration& configuration) {
 
 	LOG_USER(pylog) << "[SliceGuarantor] fill called for block at " << request << std::endl;
 
-	boost::shared_ptr<BlockManager> blockManager       = createBlockManager(configuration);
+	//boost::shared_ptr<BlockManager> blockManager       = createBlockManager(configuration);
 	boost::shared_ptr<StackStore>   membraneStackStore = createStackStore(configuration, Membrane);
 	boost::shared_ptr<SliceStore>   sliceStore         = createSliceStore(configuration);
 
 	// create a valid request block
-	boost::shared_ptr<Block> requestBlock = blockManager->blockAtCoordinates(request);
+	Block requestBlock(request.x, request.y, request.z);
 
 	// wrap requested block into Blocks
 	Blocks blocks;
@@ -47,9 +48,9 @@ SliceGuarantor::fill(
 	// let it do what it was build for
 	Blocks missing = sliceGuarantor.guaranteeSlices(blocks);
 
-	LOG_DEBUG(pylog) << "[SliceGuarantor] " << missing.length() << " blocks missing" << std::endl;
+	LOG_DEBUG(pylog) << "[SliceGuarantor] " << missing.size() << " blocks missing" << std::endl;
 
-	if (missing.length() > 0)
+	if (missing.size() > 0)
 		UTIL_THROW_EXCEPTION(
 				MissingSliceData,
 				"not all images are available to extract slices in " << request);

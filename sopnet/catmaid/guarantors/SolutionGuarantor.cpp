@@ -7,6 +7,7 @@
 #include "SolutionGuarantor.h"
 
 SolutionGuarantor::SolutionGuarantor(
+		const ProjectConfiguration&     projectConfiguration,
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
 		unsigned int                    corePadding,
@@ -14,7 +15,8 @@ SolutionGuarantor::SolutionGuarantor(
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
 	_corePadding(corePadding),
-	_weights(featureWeights) {
+	_weights(featureWeights),
+	_blockUtils(projectConfiguration) {
 
 	if (_corePadding == 0)
 		UTIL_THROW_EXCEPTION(
@@ -59,12 +61,13 @@ Blocks
 SolutionGuarantor::getPaddedCoreBlocks(const Core& core) {
 
 	// get the core blocks
-	Cores cores;
-	cores.add(boost::make_shared<Core>(core));
-	Blocks blocks = *cores.asBlocks();
+	Blocks blocks = _blockUtils.getCoreBlocks(core);
 
-	// grow by the padding thickness
-	blocks.dilate(_corePadding, _corePadding, _corePadding);
+	// grow by _corePadding in each direction
+	_blockUtils.expand(
+			blocks,
+			_corePadding, _corePadding, _corePadding,
+			_corePadding, _corePadding, _corePadding);
 
 	return blocks;
 }

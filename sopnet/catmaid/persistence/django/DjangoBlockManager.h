@@ -1,3 +1,4 @@
+#if 0
 #ifndef DJANGO_BLOCK_MANAGER_H__
 #define DJANGO_BLOCK_MANAGER_H__
 
@@ -114,3 +115,4 @@ private:
 };
 
 #endif //DJANGO_BLOCK_MANAGER_H__
+#endif
