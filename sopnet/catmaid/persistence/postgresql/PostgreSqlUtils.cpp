@@ -37,7 +37,7 @@ PostgreSqlHash PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
 }
 
 PGconn*
-getConnection(const std::string& host, const std::string& database,
+PostgreSqlUtils::getConnection(const std::string& host, const std::string& database,
 			const std::string& user, const std::string& pass)
 {
 	std::string connectionInfo =
