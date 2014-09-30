@@ -29,4 +29,19 @@ PostgreSqlSliceStore::~PostgreSqlSliceStore() {
 		PQfinish(_pgConnection);
 }
 
+bool
+PostgreSqlSliceStore::saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component)
+{
+	std::ofstream componentFile((_config.getComponentDirectory() + "/" +
+			sliceHash + ".cmp").c_str());
+
+	// store the component's value
+	componentFile << component.getValue() << " ";
+
+	foreach (const util::point<unsigned int>& p, component.getPixels()) {
+		componentFile << p.x << " " << p.y << " ";
+	}
+}
+
+
 #endif // HAVE_PostgreSQL
