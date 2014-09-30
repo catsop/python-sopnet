@@ -4,7 +4,6 @@
 #ifdef HAVE_PostgreSQL
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
 #endif
-#include <catmaid/persistence/local/LocalBlockManager.h>
 #include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
 #include <catmaid/persistence/local/LocalSegmentStore.h>
