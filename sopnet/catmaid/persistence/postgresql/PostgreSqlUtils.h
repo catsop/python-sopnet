@@ -10,6 +10,8 @@
 #include <libpq-fe.h>
 #include <util/exceptions.h>
 
+typedef signed long long PostgreSqlHash;
+
 struct PostgreSqlException : virtual Exception {};
 
 class PostgreSqlUtils
@@ -22,6 +24,15 @@ public:
 	 * @param the query used to obtain the result (optional)
 	 */
 	static void checkPostgreSqlError(const PGresult *result, const std::string query = "");
+
+	/**
+	 * Convert from a Sopnet SegmentHash or SliceHash to the representation used
+	 * by PostgreSQL. In practice this is a conversion from an unsigned 64-bit
+	 * value to the bit-identical 2s-complement signed 64-bit value.
+	 * @param  hash a SegmentHash or SliceHash
+	 * @return      the hash's representation in PostgreSQL
+	 */
+	static PostgreSqlHash hashToPostgreSqlId(const std::size_t hash);
 };
 
 #endif // HAVE_PostgreSQL

@@ -2,6 +2,7 @@
 #ifdef HAVE_PostgreSQL
 
 #include "PostgreSqlUtils.h"
+#include <climits>
 #include <util/Logger.h>
 
 logger::LogChannel postgresqlutilslog("postgresqlutilslog", "[PostgreSqlUtils] ");
@@ -21,6 +22,18 @@ PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string 
 			"A PostgreSQL query returned an unexpected result (" <<
 					PQresStatus(status) << ").");
 	}
+}
+
+PostgreSqlHash PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
+	// Compiler-independent conversion from unsigned to signed, see:
+	// http://stackoverflow.com/questions/13150449
+
+	if (hash <= LLONG_MAX) return static_cast<PostgreSqlHash>(hash);
+
+	if (hash >= LLONG_MIN)
+		return static_cast<PostgreSqlHash>(hash - LLONG_MIN) + LLONG_MIN;
+
+	throw hash;
 }
 
 #endif //HAVE_PostgreSQL
