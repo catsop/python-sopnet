@@ -1,7 +1,5 @@
 #include "ProjectConfiguration.h"
 
-namespace python {
-
 ProjectConfiguration::ProjectConfiguration() :
 
 	_backendType(Django),
@@ -174,6 +172,3 @@ ProjectConfiguration::getPostgreSqlDatabase() const {
 
 	return _postgreSqlDatabase;
 }
-
-
-} // namespace python
