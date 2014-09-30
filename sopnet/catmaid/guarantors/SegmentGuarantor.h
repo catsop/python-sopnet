@@ -26,6 +26,13 @@ public:
 
 private:
 
+	// check whether segments are already present for the given blocks
+	bool alreadyPresent(const Blocks& blocks);
+
+	// get all slices for sliceBlocks -- blocks with missing slices will be 
+	// reported in missingBlocks
+	boost::shared_ptr<Slices> getSlices(Blocks sliceBlocks, Blocks& missingBlocks);
+
 	// get all segment descriptions for segments that overlap with the given 
 	// block
 	SegmentDescriptions getSegmentDescriptions(
@@ -52,8 +59,7 @@ private:
 	Box<> slicesBoundingBox(const Slices& slices);
 
 	// extract the features for the given segments
-	boost::shared_ptr<Features> guaranteeFeatures(
-			const boost::shared_ptr<Segments> segments);
+	boost::shared_ptr<Features> computeFeatures(const boost::shared_ptr<Segments> segments);
 
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;

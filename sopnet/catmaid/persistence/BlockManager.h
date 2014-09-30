@@ -98,7 +98,7 @@ public:
 	 * Returns a Blocks containing all Block's overlapped by the given Box.
 	 * @param box the box for which Blocks have been requested.
 	 */
-	virtual boost::shared_ptr<Blocks> blocksInBox(const Box<unsigned int>& box);
+	virtual Blocks blocksInBox(const Box<unsigned int>& box);
 
 	/**
 	 * Returns a Cores containing all Cores's overlapped by the given Box.

@@ -143,10 +143,10 @@ DjangoBlockManager::blockAtCoordinates(const util::point3<unsigned int>& coordin
 	}
 }
 
-boost::shared_ptr<Blocks>
+Blocks
 DjangoBlockManager::blocksInBox(const Box<>& box)
 {
-    boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
+    Blocks blocks;
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
 	
@@ -169,7 +169,7 @@ DjangoBlockManager::blocksInBox(const Box<>& box)
 			insertBlock(block);
 		}
 		
-		blocks->add(block);
+		blocks.add(block);
 	}
 
 	return blocks;
@@ -203,7 +203,7 @@ DjangoBlockManager::parseCore(const ptree& pt)
 			util::point3<unsigned int> size = util::point3<unsigned int>(
 				vGeometry[3], vGeometry[4], vGeometry[5]) - loc;
 			Box<> box(loc, size);
-			boost::shared_ptr<Blocks> blocks = blocksInBox(box);
+			boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(blocksInBox(box));
 			core = boost::make_shared<Core>(id, blocks);
 		}
 	}

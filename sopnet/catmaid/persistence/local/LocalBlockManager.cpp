@@ -57,7 +57,7 @@ LocalBlockManager::coreAtCoordinates(const util::point3<unsigned int> coordinate
 		boost::shared_ptr<Core> core;
 		util::point3<unsigned int> coreLocation = coordinates * _coreSize;
 		Box<> coreBox(coreLocation, _coreSize);
-		boost::shared_ptr<Blocks> blocks = blocksInBox(coreBox);
+		boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>(blocksInBox(coreBox));
 		
 		core = boost::make_shared<Core>(_lastCoreId++, blocks);
 		_coreSolutionSetFlagMap[*core] = false;

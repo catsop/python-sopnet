@@ -106,12 +106,12 @@ BlockManager::coresInBox(const Box<>& box)
 	return cores;
 }
 
-boost::shared_ptr<Blocks>
+Blocks
 BlockManager::blocksInBox(const Box<unsigned int>& box)
 {
 	util::point3<unsigned int> corner = box.location();
 	util::point3<unsigned int> size = box.size();
-	boost::shared_ptr<Blocks> blocks = boost::make_shared<Blocks>();
+	Blocks blocks;
 	for (unsigned int z = corner.z; z - corner.z < size.z; z += blockSize().z)
 	{
 		for (unsigned int y = corner.y; y - corner.y < size.y; y += blockSize().y)
@@ -122,7 +122,7 @@ BlockManager::blocksInBox(const Box<unsigned int>& box)
 				boost::shared_ptr<Block> block = blockAtCoordinates(coords);
 				if (block)
 				{
-					blocks->add(block);
+					blocks.add(block);
 				}
 			}
 		}
