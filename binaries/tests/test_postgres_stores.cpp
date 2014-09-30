@@ -1,4 +1,5 @@
 #include <iostream>
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
 #include <util/exceptions.h>
 #include <util/Logger.h>
@@ -90,10 +91,22 @@ int main(int argc, char** argv)
 		// init logger
 		logger::LogManager::init();
 
+		// create new project configuration
+		ProjectConfiguration pc;
+		pc.setBackendType(ProjectConfiguration::PostgreSql);
+		pc.setCatmaidHost(host);
+		pc.setCatmaidProjectId(project_id);
+		pc.setCatmaidRawStackId(stack_id);
+		pc.setComponentDirectory("/tmp/catsop");
+		pc.setPostgreSqlHost(pg_host);
+		pc.setPostgreSqlUser(pg_user);
+		pc.setPostgreSqlPassword(pg_pass);
+		pc.setPostgreSqlDatabase(pg_dbase);
+
 		boost::shared_ptr<DjangoBlockManager> blockManager =
 				DjangoBlockManager::getBlockManager(host, stack_id, project_id);
 
-		PostgreSqlSliceStore sliceStore(blockManager, "/tmp", pg_host, pg_user, pg_pass, pg_dbase);
+		PostgreSqlSliceStore sliceStore(pc);
 
 		boost::shared_ptr<Block> block = blockManager->blockAtLocation(util::point3<unsigned int>(0, 0, 0));
 		boost::shared_ptr<Slice> slice = createSlice();
