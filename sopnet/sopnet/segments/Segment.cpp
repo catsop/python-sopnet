@@ -12,7 +12,8 @@ Segment::Segment(
 	_id(id),
 	_direction(direction),
 	_center(center),
-	_interSectionInterval(interSectionInterval) {}
+	_interSectionInterval(interSectionInterval),
+	_hashDirty(true) {}
 
 unsigned int
 Segment::getNextSegmentId() {
@@ -130,6 +131,18 @@ std::string Segment::typeString(const SegmentType type)
 		default:
 			return "unknown";
 	}
+}
+
+SegmentHash
+Segment::hashValue() const {
+
+	if (_hashDirty) {
+
+		_hash = hash(*this);
+		_hashDirty = false;
+	}
+
+	return _hash;
 }
 
 unsigned int Segment::NextSegmentId = 0;

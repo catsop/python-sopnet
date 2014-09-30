@@ -1,6 +1,8 @@
-#include "SegmentHash.h"
-#include <boost/functional/hash.hpp>
 #include <algorithm>
+#include <boost/shared_ptr.hpp>
+#include <boost/functional/hash.hpp>
+#include <segments/Segment.h>
+#include "SegmentHash.h"
 
 SegmentHash
 hash_value(const Segment& segment) {

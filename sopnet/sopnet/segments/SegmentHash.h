@@ -2,10 +2,13 @@
 #define SOPNET_SEGMENTS_SEGMENT_HASH_H__
 
 #include <cstddef>
+#include <vector>
 #include <slices/SliceHash.h>
-#include "Segment.h"
 
 typedef std::size_t SegmentHash;
+
+// forward declaration
+class Segment;
 
 SegmentHash hash_value(const Segment& segment);
 

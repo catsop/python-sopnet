@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <sopnet/slices/Slice.h>
 #include <util/point.hpp>
+#include "SegmentHash.h"
 
 /**
  * The direction of the segment.
@@ -77,6 +78,8 @@ public:
 	
 	virtual SegmentType getType() const = 0;
 
+	SegmentHash hashValue() const;
+
 private:
 
 	static unsigned int NextSegmentId;
@@ -95,6 +98,10 @@ private:
 
 	// the number of the inter-section interval this segment lives in
 	unsigned int _interSectionInterval;
+
+	// the hash value of this segment
+	mutable SegmentHash _hash;
+	mutable bool _hashDirty;
 };
 
 #endif // CELLTRACKER_TRACKLET_H__
