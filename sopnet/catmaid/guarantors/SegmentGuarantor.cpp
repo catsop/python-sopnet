@@ -177,7 +177,8 @@ SegmentGuarantor::getSegmentDescriptions(
 		// create a new segment description
 		SegmentDescription segmentDescription(
 				segment->getInterSectionInterval(),
-				boundingBox);
+				boundingBox,
+				segment->getCenter());
 
 		// add slice hashes
 		if (segment->getDirection() == Left) {

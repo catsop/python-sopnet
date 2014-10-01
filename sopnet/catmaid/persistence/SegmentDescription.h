@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include <util/rect.hpp>
+#include <segments/Segment.h>
 #include <segments/SegmentHash.h>
 #include <slices/SliceHash.h>
 
@@ -18,16 +19,20 @@ public:
 
 	SegmentDescription(
 			unsigned int section,
-			const util::rect<unsigned int>& boundingBox) :
+			const util::rect<unsigned int>& boundingBox,
+			const util::point<double> center) :
 		_hashDirty(true),
 		_section(section),
-		_boundingBox(boundingBox) {}
+		_boundingBox(boundingBox),
+		_center(center) {}
 
 	SegmentHash getHash() const;
 
 	unsigned int getSection() const { return _section; }
 
 	const util::rect<unsigned int>& get2DBoundingBox() const { return _boundingBox; }
+
+	const util::point<double>& getCenter() const { return _center; }
 
 	void setFeatures(const std::vector<double>& features) { _features = features; }
 
@@ -40,6 +45,8 @@ public:
 	const std::vector<SliceHash>& getLeftSlices() const { return _leftSliceHashes; }
 
 	const std::vector<SliceHash>& getRightSlices() const { return _rightSliceHashes; }
+
+	SegmentType getType() const;
 
 private:
 
@@ -59,6 +66,9 @@ private:
 
 	// the bounding box of the segment in 2D
 	util::rect<unsigned int> _boundingBox;
+
+	// the 2D center of this segment in the inter-section interval
+	util::point<double> _center;
 };
 
 #endif // SOPNET_CATMAID_PERSISTENCE_SEGMENT_DESCRIPTION_H__

@@ -48,6 +48,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		std::string segmentId = boost::lexical_cast<std::string>(
 			PostgreSqlUtils::hashToPostgreSqlId(segment.getHash()));
 		const util::rect<unsigned int>& segmentBounds = segment.get2DBoundingBox();
+		const util::point<double>& segmentCenter = segment.getCenter();
 
 		// Create segment.
 		std::string segmentQuery =
@@ -60,9 +61,9 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 				boost::lexical_cast<std::string>(segmentBounds.minY) + ", " +
 				boost::lexical_cast<std::string>(segmentBounds.maxX) + ", " +
 				boost::lexical_cast<std::string>(segmentBounds.maxY) + ", " +
-				"0, "  // ctr_x
-				"0, "  // ctr_y
-				"0);"; // type
+				boost::lexical_cast<std::string>(segmentCenter.x) + ", " +
+				boost::lexical_cast<std::string>(segmentCenter.y) + ", " +
+				boost::lexical_cast<std::string>(segment.getType()) + ");";
 		queryResult = PQexec(_pgConnection, segmentQuery.c_str());
 
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, segmentQuery);
@@ -163,7 +164,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
-			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, "
+			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y "
 			"array_agg(ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_block b "
 			"JOIN djsopnet_segmentblockrelation sbr ON sbr.block_id = b.id "
@@ -172,7 +173,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"WHERE s.id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
-			FIELD_MAX_X, FIELD_MAX_Y, FIELD_SLICE_ARRAY };
+			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y, FIELD_SLICE_ARRAY };
 	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
@@ -194,9 +195,14 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		unsigned int maxX = boost::lexical_cast<unsigned int>(cellStr);
 		cellStr = PQgetvalue(queryResult, i, FIELD_MAX_Y);
 		unsigned int maxY = boost::lexical_cast<unsigned int>(cellStr);
+		cellStr = PQgetvalue(queryResult, i, FIELD_CTR_X);
+		double ctrX = boost::lexical_cast<double>(cellStr);
+		cellStr = PQgetvalue(queryResult, i, FIELD_CTR_Y);
+		double ctrY = boost::lexical_cast<double>(cellStr);
 		SegmentDescription segmentDescription(
 				section,
-				util::rect<unsigned int>(minX, minY, maxX, maxY));
+				util::rect<unsigned int>(minX, minY, maxX, maxY),
+				util::point<double>(ctrX, ctrY));
 
 		// Parse (slice_id, direction) tuples for segment
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
