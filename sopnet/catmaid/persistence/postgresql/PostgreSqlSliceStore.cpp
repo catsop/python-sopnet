@@ -37,7 +37,10 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	if (slices.size() == 0)
 		return;
 
-    unsigned int stack_id = _config.getCatmaidRawStackId();
+	PGresult *result;
+	unsigned int stack_id = _config.getCatmaidRawStackId();
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, stack_id);
 
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
@@ -66,12 +69,9 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		q << hash << ")";
 
 		std::string query = q.str();
-		PGresult *result = PQexec(_pgConnection, query.c_str());
+		result = PQexec(_pgConnection, query.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query);
 		PQclear(result);
-
-		std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
 
 		std::ostringstream q2;
 		q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
@@ -82,6 +82,13 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		PostgreSqlUtils::checkPostgreSqlError(result, query2);
 		PQclear(result);
 	}
+
+	std::string blockFlagQuery =
+			"UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" + blockQuery + ")";
+	result = PQexec(_pgConnection, blockFlagQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
+	PQclear(result);
 }
 
 void
