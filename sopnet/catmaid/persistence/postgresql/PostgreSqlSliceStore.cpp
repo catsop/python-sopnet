@@ -39,8 +39,6 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
     unsigned int stack_id = _config.getCatmaidRawStackId();
 
-	BlockUtils blockUtils(_config);
-
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
 		std::string hash = boost::lexical_cast<std::string>(
