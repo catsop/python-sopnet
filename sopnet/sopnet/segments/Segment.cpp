@@ -138,7 +138,7 @@ Segment::hashValue() const {
 
 	if (_hashDirty) {
 
-		_hash = hash(*this);
+		_hash = hash_value(*this);
 		_hashDirty = false;
 	}
 
