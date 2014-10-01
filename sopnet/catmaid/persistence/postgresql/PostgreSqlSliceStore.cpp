@@ -149,35 +149,64 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 		return slices;
 	}
 
-	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-		_blockUtils, blocks, _config.getCatmaidRawStackId());
+	std::ostringstream blockIds;
+	PGresult* result;
 
-	std::ostringstream q;
-	q << "SELECT * FROM djsopnet_sliceblockrelation sb INNER JOIN djsopnet_stack s ";
-	q << "ON sb.stack_id=s.id";
-	q << "WHERE block_id IN (" << blockQuery << ")";
+	// Check if any requested block do not have slices flagged.
+	foreach (const Block& block, blocks) {
+		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
+		std::string blockFlagQuery = "SELECT id, slices_flag FROM djsopnet_block "
+				"WHERE id = (" + blockQuery + ")";
+		result = PQexec(_pgConnection, blockFlagQuery.c_str());
 
-	std::string query = q.str();
-	std::cout << query << std::endl;
-	PGresult *result = PQexec(_pgConnection, query.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, query);
+		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
+
+		if (0 != strcmp(PQgetvalue(result, 0, 1), "t")) {
+			missingBlocks.add(block);
+		}
+
+		blockIds << PQgetvalue(result, 0, 0) << ",";
+
+		PQclear(result);
+	}
+
+	if (!missingBlocks.empty()) return slices;
+
+	std::string blockIdsStr = blockIds.str();
+	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
+
+	// Query slices for this set of blocks
+	std::string blockSlicesQuery =
+			"SELECT s.id, s.section "
+			"FROM djsopnet_sliceblockrelation sbr "
+			"JOIN djsopnet_slice s on sbr.slice_id = s.id "
+			"WHERE sbr.block_id IN (" + blockIdsStr + ")";
+	enum { FIELD_ID, FIELD_SECTION };
+	result = PQexec(_pgConnection, blockSlicesQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
+	int nSlices = PQntuples(result);
+
+	// Build SegmentDescription for each row
+	for (int i = 0; i < nSlices; ++i) {
+		char* cellStr;
+		cellStr = PQgetvalue(result, i, FIELD_ID);
+		std::string slicePostgreId(cellStr);
+		cellStr = PQgetvalue(result, i, FIELD_SECTION);
+		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
+
+		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
+				0 /* TODO: how to get slice id? */,
+				section,
+				loadConnectedComponent(slicePostgreId));
+
+		slices->add(slice);
+	}
+
 	PQclear(result);
 
 	return slices;
-}
-
-void
-PostgreSqlSliceStore::saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component)
-{
-	std::ofstream componentFile((_config.getComponentDirectory() + "/" +
-			sliceHash + ".cmp").c_str());
-
-	// store the component's value
-	componentFile << component.getValue() << " ";
-
-	foreach (const util::point<unsigned int>& p, component.getPixels()) {
-		componentFile << p.x << " " << p.y << " ";
-	}
 }
 
 boost::shared_ptr<ConflictSets>
@@ -220,24 +249,24 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
 
 	// Query conflict sets for this set of blocks
-	std::string blockSegmentsQuery =
+	std::string blockConflictsQuery =
 			"SELECT cs.slice_a_id, cs.slice_b_id "
 			"FROM djsopnet_blockconflictrelation bcr "
 			"JOIN djsopnet_sliceconflictset cs on bcr.conflict_id = cs.id "
 			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
-	result = PQexec(_pgConnection, blockSegmentsQuery.c_str());
+	result = PQexec(_pgConnection, blockConflictsQuery.c_str());
 
-	PostgreSqlUtils::checkPostgreSqlError(result, blockSegmentsQuery);
+	PostgreSqlUtils::checkPostgreSqlError(result, blockConflictsQuery);
 	int nConflicts = PQntuples(result);
 
 	// Build SegmentDescription for each row
 	for (int i = 0; i < nConflicts; ++i) {
 		char* cellStr;
-		cellStr = PQgetvalue(result, i, FIELD_SLICE_A_ID); // Segment ID
+		cellStr = PQgetvalue(result, i, FIELD_SLICE_A_ID);
 		SliceHash sliceAHash = PostgreSqlUtils::postgreSqlIdToHash(
 				boost::lexical_cast<PostgreSqlHash>(cellStr));
-		cellStr = PQgetvalue(result, i, FIELD_SLICE_B_ID); // Segment ID
+		cellStr = PQgetvalue(result, i, FIELD_SLICE_B_ID);
 		SliceHash sliceBHash = PostgreSqlUtils::postgreSqlIdToHash(
 				boost::lexical_cast<PostgreSqlHash>(cellStr));
 
@@ -271,5 +300,50 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 	return result;
 }
 
+void
+PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const ConnectedComponent& component)
+{
+	std::ofstream componentFile((_config.getComponentDirectory() + "/" +
+			slicePostgreId + ".cmp").c_str());
+
+	// store the component's value
+	componentFile << component.getValue() << " ";
+
+	foreach (const util::point<unsigned int>& p, component.getPixels()) {
+		componentFile << p.x << " " << p.y << " ";
+	}
+}
+
+boost::shared_ptr<ConnectedComponent>
+PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
+{
+
+	boost::shared_ptr<Image> source;
+	double value;
+	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
+			boost::make_shared<ConnectedComponent::pixel_list_type>();
+	unsigned int x, y;
+
+	std::ifstream componentFile((_config.getComponentDirectory() + "/" +
+			slicePostgreId + ".cmp").c_str());
+
+	// load the component's value
+	componentFile >> value;
+
+	while (componentFile.good()) { // TODO: loading in reverse order of original
+		componentFile >> x;
+		componentFile >> y;
+		pixelList->push_back(util::point<unsigned int >(x, y));
+	}
+
+	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
+			source,
+			value,
+			pixelList,
+			0,
+			pixelList->size());
+
+	return component;
+}
 
 #endif // HAVE_PostgreSQL

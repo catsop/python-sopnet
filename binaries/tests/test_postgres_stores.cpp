@@ -121,6 +121,21 @@ int main(int argc, char** argv)
 		Block block(0, 0, 0);
 		sliceStore.associateSlicesToBlock(slices, block);
 
+		Blocks blocks;
+		blocks.add(block);
+		Blocks missingBlocks;
+
+		boost::shared_ptr<Slices> retrievedSlices =
+				sliceStore.getSlicesByBlocks(blocks, missingBlocks);
+
+		foreach (boost::shared_ptr<Slice> slice, slices) {
+			std::cout << "Stored Slice hash: " << slice->hashValue() << std::endl;
+		}
+
+		foreach (boost::shared_ptr<Slice> slice, *retrievedSlices) {
+			std::cout << "Retrieved Slice hash: " << slice->hashValue() << std::endl;
+		}
+
 		// Create conflict set where each slice
 		ConflictSet conflictSet1;
 		conflictSet1.addSlice(slice1->hashValue());
@@ -131,11 +146,6 @@ int main(int argc, char** argv)
 		conflictSets.add(conflictSet1);
 
 		sliceStore.associateConflictSetsToBlock(conflictSets, block);
-
-		Blocks blocks;
-		blocks.add(block);
-		Blocks missingBlocks;
-
 		boost::shared_ptr<ConflictSets> retrievedConflictSets =
 				sliceStore.getConflictSetsByBlocks(blocks, missingBlocks);
 		foreach (const ConflictSet& cs, *retrievedConflictSets) {
