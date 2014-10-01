@@ -1,6 +1,7 @@
 #ifndef SEGMENT_STORE_H__
 #define SEGMENT_STORE_H__
 
+#include <boost/shared_ptr.hpp>
 #include <boost/unordered_map.hpp>
 
 #include <catmaid/blocks/Block.h>
