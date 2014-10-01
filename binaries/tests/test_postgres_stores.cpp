@@ -134,7 +134,8 @@ int main(int argc, char** argv)
 
 		PostgreSqlSegmentStore segmentStore(pc);
 		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
-		SegmentDescription segment(0, segmentBounds);
+		util::point<double> segmentCenter(0.0, 0.0);
+		SegmentDescription segment(0, segmentBounds, segmentCenter);
 		segment.addLeftSlice(slice1->hashValue());
 
 		boost::shared_ptr<SegmentDescriptions> segments = boost::make_shared<SegmentDescriptions>();
