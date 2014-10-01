@@ -138,6 +138,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	boost::shared_ptr<SegmentDescriptions> segmentDescriptions =
 			boost::make_shared<SegmentDescriptions>();
+
+	if (blocks.empty()) return segmentDescriptions;
+
 	std::ostringstream blockIds;
 	PGresult* queryResult;
 
@@ -169,11 +172,10 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y, "
 			"array_agg(ROW(ss.slice_id, ss.direction)) "
-			"FROM djsopnet_block b "
-			"JOIN djsopnet_segmentblockrelation sbr ON sbr.block_id = b.id "
+			"FROM djsopnet_segmentblockrelation sbr "
 			"JOIN djsopnet_segment s on sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id "
-			"WHERE s.id IN (" + blockIdsStr + ")"
+			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y, FIELD_SLICE_ARRAY };
@@ -210,14 +212,23 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		// Parse (slice_id, direction) tuples for segment
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
 		std::string tuplesString(cellStr);
+		tuplesString = tuplesString.substr(1, tuplesString.length() - 2);
 		boost::tokenizer<boost::char_delimiters_separator<char> > tuples(tuplesString);
-		foreach (const std::string& tuple, tuples) {
-			boost::tokenizer<boost::char_delimiters_separator<char> > tupleVals(tuple.substr(0, tuple.length() - 2));
-			boost::tokenizer<boost::char_delimiters_separator<char> >::iterator tupleIter = tupleVals.begin();
+
+		for (boost::tokenizer<boost::char_delimiters_separator<char> >::iterator tuple = tuples.begin();
+				tuple != tuples.end();
+				++tuple) {
+
+			std::string sliceId = *tuple;
+			sliceId = sliceId.substr(
+					sliceId.find_first_of("0123456789-"),
+					sliceId.find_last_of("0123456789"));
 
 			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
-					boost::lexical_cast<PostgreSqlHash>(*tupleIter));
-			bool isLeft = boost::lexical_cast<bool>(*++tupleIter);
+					boost::lexical_cast<PostgreSqlHash>(sliceId));
+
+			std::string direction = *(++tuple);
+			bool isLeft = direction.at(direction.find_first_of("tf")) == 't';
 
 			if (isLeft) segmentDescription.addLeftSlice(sliceHash);
 			else segmentDescription.addRightSlice(sliceHash);

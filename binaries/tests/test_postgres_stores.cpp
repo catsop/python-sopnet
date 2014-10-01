@@ -163,6 +163,7 @@ int main(int argc, char** argv)
 		util::point<double> segmentCenter(0.0, 0.0);
 		SegmentDescription segment(0, segmentBounds, segmentCenter);
 		segment.addLeftSlice(slice1->hashValue());
+		segment.addRightSlice(slice2->hashValue());
 
 		boost::shared_ptr<SegmentDescriptions> segments = boost::make_shared<SegmentDescriptions>();
 		segments->add(segment);
