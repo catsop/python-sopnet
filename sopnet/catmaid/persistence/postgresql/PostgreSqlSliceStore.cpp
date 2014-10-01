@@ -180,6 +180,79 @@ PostgreSqlSliceStore::saveConnectedComponent(std::string sliceHash, const Connec
 	}
 }
 
+boost::shared_ptr<ConflictSets>
+PostgreSqlSliceStore::getConflictSetsByBlocks(
+			const Blocks& blocks,
+			Blocks&       missingBlocks) {
+
+	boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
+
+	if (blocks.empty()) {
+		return conflictSets;
+	}
+
+	std::ostringstream blockIds;
+	PGresult* result;
+
+	// Check if any requested block do not have slices flagged.
+	// TODO: should conflict sets have own flag?
+	foreach (const Block& block, blocks) {
+		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
+		std::string blockFlagQuery = "SELECT id, slices_flag FROM djsopnet_block "
+				"WHERE id = (" + blockQuery + ")";
+		result = PQexec(_pgConnection, blockFlagQuery.c_str());
+
+		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
+
+		if (0 != strcmp(PQgetvalue(result, 0, 1), "t")) {
+			missingBlocks.add(block);
+		}
+
+		blockIds << PQgetvalue(result, 0, 0) << ",";
+
+		PQclear(result);
+	}
+
+	if (!missingBlocks.empty()) return conflictSets;
+
+	std::string blockIdsStr = blockIds.str();
+	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
+
+	// Query conflict sets for this set of blocks
+	std::string blockSegmentsQuery =
+			"SELECT cs.slice_a_id, cs.slice_b_id "
+			"FROM djsopnet_blockconflictrelation bcr "
+			"JOIN djsopnet_sliceconflictset cs on bcr.conflict_id = cs.id "
+			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
+	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
+	result = PQexec(_pgConnection, blockSegmentsQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(result, blockSegmentsQuery);
+	int nConflicts = PQntuples(result);
+
+	// Build SegmentDescription for each row
+	for (int i = 0; i < nConflicts; ++i) {
+		char* cellStr;
+		cellStr = PQgetvalue(result, i, FIELD_SLICE_A_ID); // Segment ID
+		SliceHash sliceAHash = PostgreSqlUtils::postgreSqlIdToHash(
+				boost::lexical_cast<PostgreSqlHash>(cellStr));
+		cellStr = PQgetvalue(result, i, FIELD_SLICE_B_ID); // Segment ID
+		SliceHash sliceBHash = PostgreSqlUtils::postgreSqlIdToHash(
+				boost::lexical_cast<PostgreSqlHash>(cellStr));
+
+		ConflictSet conflictSet;
+		conflictSet.addSlice(sliceAHash);
+		conflictSet.addSlice(sliceBHash);
+
+		conflictSets->add(conflictSet);
+	}
+
+	PQclear(result);
+
+	return conflictSets;
+}
+
 bool
 PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 

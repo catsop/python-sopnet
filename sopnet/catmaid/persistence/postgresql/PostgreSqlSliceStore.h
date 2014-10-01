@@ -61,8 +61,8 @@ public:
 	 * conflict sets will contain the hashes of slices.
 	 */
 	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(
-			const Blocks& block,
-			Blocks&       missingBlocks) {}
+			const Blocks& blocks,
+			Blocks&       missingBlocks);
 
 	/**
 	 * Check whether the slices for the given block have already been extracted.

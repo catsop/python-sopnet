@@ -132,6 +132,22 @@ int main(int argc, char** argv)
 
 		sliceStore.associateConflictSetsToBlock(conflictSets, block);
 
+		Blocks blocks;
+		blocks.add(block);
+		Blocks missingBlocks;
+
+		boost::shared_ptr<ConflictSets> retrievedConflictSets =
+				sliceStore.getConflictSetsByBlocks(blocks, missingBlocks);
+		foreach (const ConflictSet& cs, *retrievedConflictSets) {
+			std::cout << "ConflictSet hash: " << hash_value(cs);
+
+			foreach (const SliceHash& sh, cs.getSlices()) {
+				std::cout << " Slice hash: " << sh;
+			}
+
+			std::cout << std::endl;
+		}
+
 		PostgreSqlSegmentStore segmentStore(pc);
 		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
 		util::point<double> segmentCenter(0.0, 0.0);
@@ -142,10 +158,6 @@ int main(int argc, char** argv)
 		segments->add(segment);
 
 		segmentStore.associateSegmentsToBlock(*segments, block);
-
-		Blocks blocks;
-		blocks.add(block);
-		Blocks missingBlocks;
 
 		boost::shared_ptr<SegmentDescriptions> retrievedSegments =
 				segmentStore.getSegmentsByBlocks(blocks, missingBlocks);
