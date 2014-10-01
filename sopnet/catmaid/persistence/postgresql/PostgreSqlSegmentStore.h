@@ -70,7 +70,7 @@ public:
 	 * Check whether the segments for the given block have already been 
 	 * extracted.
 	 */
-	bool getSegmentsFlag(const Block& block) {}
+	bool getSegmentsFlag(const Block& block);
 
 private:
 	// general configuration

@@ -143,16 +143,18 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	// Check if any requested block do not have segments stored and flagged.
 	foreach (const Block& block, blocks) {
 		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
-		std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
+		std::string blockFlagQuery = "SELECT id, segments_flag FROM djsopnet_block "
 				"WHERE id = (" + blockQuery + ")";
-		blockFlagQuery += " LIMIT 1";
 		queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
 
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
 
-		if (!strcmp(PQgetvalue(queryResult, 0, 0), "t")) {
+		if (!strcmp(PQgetvalue(queryResult, 0, 1), "t")) {
 			missingBlocks.add(block);
 		}
+
+		blockIds << PQgetvalue(queryResult, 0, 0) << ",";
+
 		PQclear(queryResult);
 	}
 
@@ -250,6 +252,23 @@ PostgreSqlSegmentStore::storeSolution(
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, markSolutionQuery);
 		PQclear(queryResult);
 	}
+}
+
+bool
+PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
+
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+	std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
+			"WHERE id = (" + blockQuery + ")";
+	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
+
+	bool result = strcmp(PQgetvalue(queryResult, 0, 0), "t");
+
+	PQclear(queryResult);
+
+	return result;
 }
 
 #endif //HAVE_PostgreSQL
