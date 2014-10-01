@@ -27,12 +27,12 @@ public:
 	/**
 	 * Check whether this collection is empty.
 	 */
-	bool empty() { return _blocks.empty(); }
+	bool empty() const { return _blocks.empty(); }
 
 	/**
 	 * Get the number of blocks in this collection.
 	 */
-	unsigned int size() { return _blocks.size(); }
+	unsigned int size() const { return _blocks.size(); }
 
 	/**
 	 * Check whether this collection contains the given block.
