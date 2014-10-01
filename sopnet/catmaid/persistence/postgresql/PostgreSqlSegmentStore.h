@@ -65,6 +65,12 @@ public:
 	 */
 	void storeSolution(const std::vector<SegmentHash>& segmentHashes, const Core& core);
 
+	/**
+	 * Check whether the segments for the given block have already been 
+	 * extracted.
+	 */
+	bool getSegmentsFlag(const Block& block) {}
+
 private:
 	// general configuration
 	const ProjectConfiguration& _config;
