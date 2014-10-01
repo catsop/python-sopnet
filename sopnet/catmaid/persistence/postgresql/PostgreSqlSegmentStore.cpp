@@ -236,7 +236,8 @@ PostgreSqlSegmentStore::storeSolution(
 		const std::vector<SegmentHash>& segmentHashes,
 		const Core& core) {
 
-	const std::string coreQuery = "TODO!";
+	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
+				_blockUtils, core, _config.getCatmaidRawStackId());
 
 	std::string clearQuery =
 			"DELETE FROM djsopnet_segmentsolution WHERE core_id = (" + coreQuery + ")";

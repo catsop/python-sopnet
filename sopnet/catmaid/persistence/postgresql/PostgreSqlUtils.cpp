@@ -108,4 +108,24 @@ PostgreSqlUtils::createBlockIdQuery(
     return blockQuery.str();
 }
 
+std::string
+PostgreSqlUtils::createCoreIdQuery(
+	const BlockUtils& blockUtils,
+	const Core& core,
+	unsigned int stackId)
+{
+	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(blockUtils.getCoreBlocks(core));
+	std::ostringstream blockQuery;
+	blockQuery << "SELECT id FROM djsopnet_core WHERE ";
+	blockQuery << "stack_id=" << stackId << "AND ";
+	blockQuery << "min_x=" << boxBb.min.x << "AND ";
+	blockQuery << "min_y=" << boxBb.min.y << "AND ";
+	blockQuery << "min_z=" << boxBb.min.z << "AND ";
+	blockQuery << "max_x=" << boxBb.max.x << "AND ";
+	blockQuery << "max_y=" << boxBb.max.y << "AND ";
+	blockQuery << "max_z=" << boxBb.max.z << "LIMIT 1";
+
+    return blockQuery.str();
+}
+
 #endif //HAVE_PostgreSQL

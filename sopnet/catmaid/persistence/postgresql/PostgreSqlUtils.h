@@ -68,6 +68,14 @@ public:
 			const BlockUtils& blockUtils,
 			const Blocks& blocks,
 			unsigned int stackId);
+
+	/**
+	 * Create a SQL query that selects the core ID for the given core.
+	 */
+	static std::string createCoreIdQuery(
+			const BlockUtils& blockUtils,
+			const Core& core,
+			unsigned int stackId);
 };
 
 #endif // HAVE_PostgreSQL
