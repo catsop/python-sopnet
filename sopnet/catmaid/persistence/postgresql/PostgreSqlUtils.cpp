@@ -69,11 +69,15 @@ PostgreSqlUtils::getConnection(const std::string& host, const std::string& datab
 }
 
 std::string
-PostgreSqlUtils::createBlockIdQuery(const BlockUtils& blockUtils, const Block& block)
+PostgreSqlUtils::createBlockIdQuery(
+	const BlockUtils& blockUtils,
+	const Block& block,
+	unsigned int stackId)
 {
 	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(block);
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
+	blockQuery << "stack_id=" << stackId << "AND ";
 	blockQuery << "min_x=" << boxBb.min.x << "AND ";
 	blockQuery << "min_y=" << boxBb.min.y << "AND ";
 	blockQuery << "min_z=" << boxBb.min.z << "LIMIT 1";
@@ -82,11 +86,15 @@ PostgreSqlUtils::createBlockIdQuery(const BlockUtils& blockUtils, const Block& b
 }
 
 std::string
-PostgreSqlUtils::createBlockIdQuery(const BlockUtils& blockUtils, const Blocks& blocks)
+PostgreSqlUtils::createBlockIdQuery(
+	const BlockUtils& blockUtils,
+	const Blocks& blocks,
+	unsigned int stackId)
 {
 	std::string delim = "";
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
+	blockQuery << "stack_id=" << stackId << "AND ";
 	foreach (const Block &block, blocks)
 	{
 		util::box<unsigned int> bb = blockUtils.getBoundingBox(block);

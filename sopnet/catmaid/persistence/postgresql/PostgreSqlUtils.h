@@ -57,12 +57,17 @@ public:
 	/**
 	 * Create a SQL query that selects the block ID for the given block.
 	 */
-	static std::string createBlockIdQuery(const BlockUtils& blockUtils, const Block& block);
-
+	static std::string createBlockIdQuery(
+			const BlockUtils& blockUtils,
+			const Block& block,
+			unsigned int stackId);
 	/**
 	 * Create a SQL query that selects the block ID for the given blocks.
 	 */
-	static std::string createBlockIdQuery(const BlockUtils& blockUtils, const Blocks& blocks);
+	static std::string createBlockIdQuery(
+			const BlockUtils& blockUtils,
+			const Blocks& blocks,
+			unsigned int stackId);
 };
 
 #endif // HAVE_PostgreSQL

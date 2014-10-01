@@ -71,7 +71,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		PGresult *result = PQexec(_pgConnection, query.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query);
 
-		std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+		std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
 
 		std::ostringstream q2;
 		q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
@@ -90,7 +91,8 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	if (conflictSets.size() == 0)
 		return;
 
-	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+			_blockUtils, block, _config.getCatmaidRawStackId());
 
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
@@ -137,7 +139,8 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 		return slices;
 	}
 
-	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, blocks);
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+		_blockUtils, blocks, _config.getCatmaidRawStackId());
 
 	std::ostringstream q;
 	q << "SELECT * FROM djsopnet_sliceblockrelation sb INNER JOIN djsopnet_stack s ";

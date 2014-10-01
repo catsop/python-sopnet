@@ -30,7 +30,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			const Block&               block) {
 
 	PGresult* queryResult;
-	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
 
 	// Remove any existing segment associations for this block.
 	std::string clearBlockQuery =
@@ -142,7 +143,8 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Check if any requested block do not have segments stored and flagged.
 	foreach (const Block& block, blocks) {
-		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
 		std::string blockFlagQuery = "SELECT id, segments_flag FROM djsopnet_block "
 				"WHERE id = (" + blockQuery + ")";
 		queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
@@ -160,7 +162,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
 
-	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, blocks);
+	std::string blockIdsStr = blockIds.str();
+	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
+
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y "
@@ -169,7 +173,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"JOIN djsopnet_segmentblockrelation sbr ON sbr.block_id = b.id "
 			"JOIN djsopnet_segment s on sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id"
-			"WHERE s.id IN (" + blocksQuery + ")"
+			"WHERE s.id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y, FIELD_SLICE_ARRAY };
@@ -257,7 +261,8 @@ PostgreSqlSegmentStore::storeSolution(
 bool
 PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
 
-	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
 	std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
 			"WHERE id = (" + blockQuery + ")";
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
