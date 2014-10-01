@@ -9,6 +9,9 @@
 #include <string>
 #include <libpq-fe.h>
 #include <util/exceptions.h>
+#include <catmaid/blocks/BlockUtils.h>
+#include <catmaid/blocks/Block.h>
+#include <catmaid/blocks/Blocks.h>
 
 typedef signed long long PostgreSqlHash;
 
@@ -51,6 +54,15 @@ public:
 	static PGconn* getConnection(const std::string& host, const std::string& database,
 			const std::string& user, const std::string& pass);
 
+	/**
+	 * Create a SQL query that selects the block ID for the given block.
+	 */
+	static std::string createBlockIdQuery(const BlockUtils& blockUtils, const Block& block);
+
+	/**
+	 * Create a SQL query that selects the block ID for the given blocks.
+	 */
+	static std::string createBlockIdQuery(const BlockUtils& blockUtils, const Blocks& blocks);
 };
 
 #endif // HAVE_PostgreSQL

@@ -9,7 +9,7 @@
 logger::LogChannel postgresqlsegmentstorelog("postgresqlsegmentstorelog", "[PostgreSqlSegmentStore] ");
 
 PostgreSqlSegmentStore::PostgreSqlSegmentStore(
-		const ProjectConfiguration& config) : _config(config)
+		const ProjectConfiguration& config) : _config(config), _blockUtils(_config)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -30,11 +30,11 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			const Block&               block) {
 
 	PGresult* queryResult;
-	std::string blockId = boost::lexical_cast<std::string>(block.getId());
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
 
 	// Remove any existing segment associations for this block.
 	std::string clearBlockQuery =
-			"DELETE FROM djsopnet_segmentblockrelation WHERE id = " + blockId;
+			"DELETE FROM djsopnet_segmentblockrelation WHERE id = (" + blockQuery + ")";
 	queryResult = PQexec(_pgConnection, clearBlockQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, clearBlockQuery);
@@ -110,8 +110,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 
 		// Associate segment to block.
 		std::string blockSegmentQuery =
-				"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) VALUES (" +
-				blockId + ", " + segmentId + ");";
+				"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) VALUES ((" +
+				blockQuery + "), " + segmentId + ");";
 		queryResult = PQexec(_pgConnection, blockSegmentQuery.c_str());
 
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentQuery);
@@ -123,7 +123,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 
 	// Set block flag to show segments have been stored.
 	std::string blockFlagQuery =
-			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = " + blockId;
+			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" + blockQuery + ")";
 	queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
@@ -142,8 +142,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Check if any requested block do not have segments stored and flagged.
 	foreach (const Block& block, blocks) {
+		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
 		std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
-				"WHERE id = " + boost::lexical_cast<std::string>(block->getId());
+				"WHERE id = (" + blockQuery + ")";
 		blockFlagQuery += " LIMIT 1";
 		queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
 
@@ -153,15 +154,11 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			missingBlocks.add(block);
 		}
 		PQclear(queryResult);
-
-		blockIds << boost::lexical_cast<std::string>(block->getId()) << ",";
 	}
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
 
-	std::string blockIdsStr = blockIds.str();
-	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
-
+	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, blocks);
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y "
@@ -170,7 +167,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"JOIN djsopnet_segmentblockrelation sbr ON sbr.block_id = b.id "
 			"JOIN djsopnet_segment s on sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id"
-			"WHERE s.id IN (" + blockIdsStr + ")"
+			"WHERE s.id IN (" + blocksQuery + ")"
 			"GROUP BY s.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y, FIELD_SLICE_ARRAY };
@@ -233,9 +230,10 @@ PostgreSqlSegmentStore::storeSolution(
 		const std::vector<SegmentHash>& segmentHashes,
 		const Core& core) {
 
-	std::string coreId = boost::lexical_cast<std::string>(core.getId());
+	const std::string coreQuery = "TODO!";
+
 	std::string clearQuery =
-			"DELETE FROM djsopnet_segmentsolution WHERE core_id = " + coreId;
+			"DELETE FROM djsopnet_segmentsolution WHERE core_id = (" + coreQuery + ")";
 	PGresult* queryResult = PQexec(_pgConnection, clearQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, clearQuery);
@@ -244,7 +242,7 @@ PostgreSqlSegmentStore::storeSolution(
 	foreach (const SegmentHash& segmentHash, segmentHashes) {
 		std::string markSolutionQuery=
 				"INSERT INTO djsopnet_segmentsolution"
-				"(core_id, segment_id) VALUES (" + coreId + ", " +
+				"(core_id, segment_id) VALUES ((" + coreQuery + "), " +
 				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash)) + ")";
 
 		queryResult = PQexec(_pgConnection, markSolutionQuery.c_str());

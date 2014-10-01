@@ -68,4 +68,36 @@ PostgreSqlUtils::getConnection(const std::string& host, const std::string& datab
     return connection;
 }
 
+std::string
+PostgreSqlUtils::createBlockIdQuery(const BlockUtils& blockUtils, const Block& block)
+{
+	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(block);
+	std::ostringstream blockQuery;
+	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
+	blockQuery << "min_x=" << boxBb.min.x << "AND ";
+	blockQuery << "min_y=" << boxBb.min.y << "AND ";
+	blockQuery << "min_z=" << boxBb.min.z << "LIMIT 1";
+
+    return blockQuery.str();
+}
+
+std::string
+PostgreSqlUtils::createBlockIdQuery(const BlockUtils& blockUtils, const Blocks& blocks)
+{
+	std::string delim = "";
+	std::ostringstream blockQuery;
+	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
+	foreach (const Block &block, blocks)
+	{
+		util::box<unsigned int> bb = blockUtils.getBoundingBox(block);
+		blockQuery << delim;
+		blockQuery << "(min_x=" << bb.min.x << "AND ";
+		blockQuery << "min_y=" << bb.min.y << "AND ";
+		blockQuery << "min_z=" << bb.min.z << ")";
+		delim = " OR ";
+	}
+
+    return blockQuery.str();
+}
+
 #endif //HAVE_PostgreSQL

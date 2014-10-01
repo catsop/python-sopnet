@@ -8,6 +8,7 @@
 
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Blocks.h>
+#include <catmaid/blocks/BlockUtils.h>
 #include <catmaid/persistence/SegmentDescription.h>
 #include <catmaid/persistence/SegmentStore.h>
 
@@ -75,9 +76,11 @@ private:
 	// general configuration
 	const ProjectConfiguration& _config;
 
+	// a block utils instance is needed to get bounding boxes of blocks
+	const BlockUtils _blockUtils;
+
 	// database connection
 	PGconn* _pgConnection;
-
 };
 
 #endif //HAVE_PostgreSQL

@@ -8,6 +8,7 @@
 #include <sopnet/slices/ComponentTreeConverter.h>
 #include <util/ProgramOptions.h>
 #include <util/httpclient.h>
+#include <util/box.hpp>
 #include <util/point.hpp>
 #include "PostgreSqlSliceStore.h"
 #include <sopnet/slices/SliceHash.h>
@@ -15,7 +16,7 @@
 logger::LogChannel postgresqlslicestorelog("postgresqlslicestorelog", "[PostgreSqlSliceStore] ");
 
 PostgreSqlSliceStore::PostgreSqlSliceStore(
-        const ProjectConfiguration& config) : _config(config)
+        const ProjectConfiguration& config) : _config(config), _blockUtils(config)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -37,6 +38,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		return;
 
     unsigned int stack_id = _config.getCatmaidRawStackId();
+
+	BlockUtils blockUtils(_config);
 
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
@@ -68,9 +71,11 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		PGresult *result = PQexec(_pgConnection, query.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query);
 
+		std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
+
 		std::ostringstream q2;
 		q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
-		q2 << "VALUES (" << block.getId() << "," << hash << ")";
+		q2 << "VALUES ((" << blockQuery << ")," << hash << ")";
 
 		std::string query2 = q2.str();
 		result = PQexec(_pgConnection, query2.c_str());
@@ -84,6 +89,8 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 {
 	if (conflictSets.size() == 0)
 		return;
+
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, block);
 
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
@@ -109,7 +116,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 					// Associate conflict set to block
 					q << "INSERT INTO djsopnet_blockconflictrelation ";
 					q << "(block_id, conflict_id) VALUES ";
-					q << "(" << block.getId() << ",";
+					q << "((" << blockQuery << "),";
 					q << "currval('djsopnet_blockconflictrelation_id_seq'))";
 
 					std::string query = q.str();
