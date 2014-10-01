@@ -96,13 +96,13 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		// Store segment features.
 		std::ostringstream segmentFeatureQuery;
 		segmentFeatureQuery << "INSERT INTO djsopnet_segmentfeatures (segment_id, features) "
-				"VALUES (" << segmentId << ", ";
+				"VALUES (" << segmentId << ", '{";
 		char separator = '(';
-		foreach (const double& featVal, segment.getFeatures()) {
+		foreach (const double featVal, segment.getFeatures()) {
 			segmentFeatureQuery << separator << boost::lexical_cast<std::string>(featVal);
 			separator = ',';
 		}
-		segmentFeatureQuery << ')';
+		segmentFeatureQuery << "}')";
 
 		queryResult = PQexec(_pgConnection, segmentFeatureQuery.str().c_str());
 
@@ -151,7 +151,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
 
-		if (!strcmp(PQgetvalue(queryResult, 0, 1), "t")) {
+		if (0 != strcmp(PQgetvalue(queryResult, 0, 1), "t")) {
 			missingBlocks.add(block);
 		}
 
@@ -167,12 +167,12 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
-			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y "
+			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y, "
 			"array_agg(ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_block b "
 			"JOIN djsopnet_segmentblockrelation sbr ON sbr.block_id = b.id "
 			"JOIN djsopnet_segment s on sbr.segment_id = s.id "
-			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id"
+			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id "
 			"WHERE s.id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
@@ -270,7 +270,7 @@ PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
 
-	bool result = strcmp(PQgetvalue(queryResult, 0, 0), "t");
+	bool result = 0 == strcmp(PQgetvalue(queryResult, 0, 0), "t");
 
 	PQclear(queryResult);
 
