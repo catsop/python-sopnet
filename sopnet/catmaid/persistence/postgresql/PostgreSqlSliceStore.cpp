@@ -111,15 +111,17 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 
 					// Insert all conflicting pairs
 					std::ostringstream q;
+					q << "WITH rows AS (";
 					q << "INSERT INTO djsopnet_sliceconflictset ";
 					q << "(slice_a_id, slice_b_id) VALUES ";
-					q << "(" << hash1 << "," << hash2 << "); ";
+					q << "(" << hash1 << "," << hash2 << ")";
+					q << "RETURNING id)";
 
 					// Associate conflict set to block
 					q << "INSERT INTO djsopnet_blockconflictrelation ";
 					q << "(block_id, conflict_id) VALUES ";
 					q << "((" << blockQuery << "),";
-					q << "currval('djsopnet_blockconflictrelation_id_seq'))";
+					q << "(SELECT id FROM rows))";
 
 					std::string query = q.str();
 					PGresult *result = PQexec(_pgConnection, query.c_str());
