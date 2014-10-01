@@ -83,7 +83,7 @@ private:
 	/**
 	 * Store a connected component as a file in the component directory.
 	 */
-	bool saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component);
+	void saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component);
 };
 
 #endif // HAVE_PostgreSQL
