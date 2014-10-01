@@ -128,7 +128,31 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	}
 }
 
-bool
+boost::shared_ptr<Slices>
+PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlocks)
+{
+	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
+
+	if (blocks.empty()) {
+		return slices;
+	}
+
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(_blockUtils, blocks);
+
+	std::ostringstream q;
+	q << "SELECT * FROM djsopnet_sliceblockrelation sb INNER JOIN djsopnet_stack s ";
+	q << "ON sb.stack_id=s.id";
+	q << "WHERE block_id IN (" << blockQuery << ")";
+
+	std::string query = q.str();
+	std::cout << query << std::endl;
+	PGresult *result = PQexec(_pgConnection, query.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, query);
+
+	return slices;
+}
+
+void
 PostgreSqlSliceStore::saveConnectedComponent(std::string sliceHash, const ConnectedComponent& component)
 {
 	std::ofstream componentFile((_config.getComponentDirectory() + "/" +

@@ -54,7 +54,7 @@ public:
 	 */
 	boost::shared_ptr<Slices> getSlicesByBlocks(
 			const Blocks& blocks,
-			Blocks&       missingBlocks) {}
+			Blocks&       missingBlocks);
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
