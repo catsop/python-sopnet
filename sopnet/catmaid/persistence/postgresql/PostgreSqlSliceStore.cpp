@@ -70,6 +70,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		std::string query = q.str();
 		PGresult *result = PQexec(_pgConnection, query.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query);
+		PQclear(result);
 
 		std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, _config.getCatmaidRawStackId());
@@ -81,6 +82,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		std::string query2 = q2.str();
 		result = PQexec(_pgConnection, query2.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(result, query2);
+		PQclear(result);
 	}
 }
 
@@ -126,6 +128,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 					std::string query = q.str();
 					PGresult *result = PQexec(_pgConnection, query.c_str());
 					PostgreSqlUtils::checkPostgreSqlError(result, query);
+					PQclear(result);
 				}
 			}
 		}
@@ -153,6 +156,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 	std::cout << query << std::endl;
 	PGresult *result = PQexec(_pgConnection, query.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result, query);
+	PQclear(result);
 
 	return slices;
 }
