@@ -67,7 +67,7 @@ public:
 	/**
 	 * Check whether the slices for the given block have already been extracted.
 	 */
-	bool getSlicesFlag(const Block& block) {}
+	bool getSlicesFlag(const Block& block);
 
 private:
 

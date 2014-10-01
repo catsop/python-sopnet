@@ -169,5 +169,23 @@ PostgreSqlSliceStore::saveConnectedComponent(std::string sliceHash, const Connec
 	}
 }
 
+bool
+PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
+
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
+				_blockUtils, block, _config.getCatmaidRawStackId());
+	std::string blockFlagQuery = "SELECT slices_flag FROM djsopnet_block "
+			"WHERE id = (" + blockQuery + ")";
+	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
+
+	bool result = 0 == strcmp(PQgetvalue(queryResult, 0, 0), "t");
+
+	PQclear(queryResult);
+
+	return result;
+}
+
 
 #endif // HAVE_PostgreSQL
