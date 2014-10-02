@@ -26,7 +26,7 @@ SolutionGuarantor::fill(
 			segmentStore,
 			sliceStore,
 			parameters.getCorePadding(),
-			std::vector<double>() /* TODO: read from configuration store */);
+			std::vector<double>(52, -1) /* TODO: read from configuration store */);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 
