@@ -95,7 +95,15 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setVolumeSize", &ProjectConfiguration::setVolumeSize)
 			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>())
 			.def("setComponentDirectory", &ProjectConfiguration::setComponentDirectory)
-			.def("getComponentDirectory", &ProjectConfiguration::getComponentDirectory, boost::python::return_value_policy<boost::python::copy_const_reference>());
+			.def("getComponentDirectory", &ProjectConfiguration::getComponentDirectory, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setPostgreSqlHost", &ProjectConfiguration::setPostgreSqlHost)
+			.def("getPostgreSqlHost", &ProjectConfiguration::getPostgreSqlHost, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setPostgreSqlUser", &ProjectConfiguration::setPostgreSqlUser)
+			.def("getPostgreSqlUser", &ProjectConfiguration::getPostgreSqlUser, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setPostgreSqlPassword", &ProjectConfiguration::setPostgreSqlPassword)
+			.def("getPostgreSqlPassword", &ProjectConfiguration::getPostgreSqlPassword, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setPostgreSqlDatabase", &ProjectConfiguration::setPostgreSqlDatabase)
+			.def("getPostgreSqlDatabase", &ProjectConfiguration::getPostgreSqlDatabase, boost::python::return_value_policy<boost::python::copy_const_reference>());
 
 	// BackendType
 	boost::python::enum_<ProjectConfiguration::BackendType>("BackendType")
