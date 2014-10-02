@@ -13,6 +13,10 @@ SegmentDescription::getHash() const {
 		foreach (SliceHash hash, _rightSliceHashes)
 			sliceHashes.push_back(hash);
 
+		// avoid different hashes for branches that only differ in the order in 
+		// which slices have been added
+		std::sort(sliceHashes.begin(), sliceHashes.end());
+
 		_hash = hash_value(sliceHashes);
 		_hashDirty = false;
 	}
