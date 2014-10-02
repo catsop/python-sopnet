@@ -197,7 +197,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
 
 		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
-				0 /* TODO: how to get slice id? */,
+				ComponentTreeConverter::getNextSliceId(),
 				section,
 				loadConnectedComponent(slicePostgreId));
 
