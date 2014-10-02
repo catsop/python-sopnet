@@ -25,6 +25,8 @@ SolutionGuarantor::SolutionGuarantor(
 		UTIL_THROW_EXCEPTION(
 				UsageError,
 				"the core padding must be at least 1");
+
+	LOG_DEBUG(solutionguarantorlog) << "core size is " << projectConfiguration.getCoreSize() << std::endl;
 }
 
 
@@ -57,11 +59,17 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 				"the segment store does contain segments for the requested blocks, "
 				"but the slice store reports that no conflict sets have been extracted");
 
+	LOG_DEBUG(solutionguarantorlog) << "computing solution..." << std::endl;
+
 	// compute solution
 	std::vector<SegmentHash> solution = computeSolution(*segments, *conflictSets);
 
+	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
+
 	// store solution
 	_segmentStore->storeSolution(solution, core);
+
+	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
 
 	// there are no missing blocks
 	return Blocks();
@@ -97,6 +105,7 @@ SolutionGuarantor::computeSolution(
 
 		_hashToVariable[segmentHash] = nextVar;
 		_variableToHash[nextVar] = segmentHash;
+		nextVar++;
 
 		foreach (SliceHash leftSliceHash, segment.getLeftSlices())
 			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
