@@ -136,6 +136,8 @@ BlockUtils::expandOneDimension(
 		unsigned int pos,
 		unsigned int neg) const {
 
+	Blocks newBlocks;
+
 	foreach (const Block& block, blocks) {
 
 		for (int i = -neg; i <= static_cast<int>(pos); i++) {
@@ -157,9 +159,11 @@ BlockUtils::expandOneDimension(
 			}
 
 			if (isValidBlockCoordinate(x, y, z))
-				blocks.add(Block(x, y, z));
+				newBlocks.add(Block(x, y, z));
 		}
 	}
+
+	blocks.addAll(newBlocks);
 }
 
 bool
