@@ -77,10 +77,10 @@ PostgreSqlUtils::createBlockIdQuery(
 	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(block);
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
-	blockQuery << "stack_id=" << stackId << "AND ";
-	blockQuery << "min_x=" << boxBb.min.x << "AND ";
-	blockQuery << "min_y=" << boxBb.min.y << "AND ";
-	blockQuery << "min_z=" << boxBb.min.z << "LIMIT 1";
+	blockQuery << "stack_id=" << stackId << " AND ";
+	blockQuery << "min_x=" << boxBb.min.x << " AND ";
+	blockQuery << "min_y=" << boxBb.min.y << " AND ";
+	blockQuery << "min_z=" << boxBb.min.z << " LIMIT 1";
 
     return blockQuery.str();
 }
