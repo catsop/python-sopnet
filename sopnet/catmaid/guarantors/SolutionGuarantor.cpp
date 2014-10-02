@@ -4,7 +4,10 @@
 #include <catmaid/persistence/exceptions.h>
 #include <catmaid/blocks/Cores.h>
 #include <inference/LinearSolver.h>
+#include <util/Logger.h>
 #include "SolutionGuarantor.h"
+
+logger::LogChannel solutionguarantorlog("solutionguarantorlog", "[SolutionGuarantor] ");
 
 SolutionGuarantor::SolutionGuarantor(
 		const ProjectConfiguration&     projectConfiguration,
@@ -28,8 +31,15 @@ SolutionGuarantor::SolutionGuarantor(
 Blocks
 SolutionGuarantor::guaranteeSolution(const Core& core) {
 
+	LOG_DEBUG(solutionguarantorlog)
+			<< "requesting solution for core ("
+			<< core.x() << ", " << core.y() << ", " << core.z()
+			<< ")" << std::endl;
+
 	// get all the blocks in the padded core
 	Blocks blocks = getPaddedCoreBlocks(core);
+
+	LOG_DEBUG(solutionguarantorlog) << "with padding this corresponds to blocks " << blocks << std::endl;
 
 	// get all segments for these blocks
 	Blocks missingBlocks;
@@ -143,7 +153,9 @@ SolutionGuarantor::createConstraints(
 boost::shared_ptr<LinearObjective>
 SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 
-	boost::shared_ptr<LinearObjective> objective = boost::make_shared<LinearObjective>();
+	LOG_DEBUG(solutionguarantorlog) << "creating objective for " << segments.size() << " segments" << std::endl;
+
+	boost::shared_ptr<LinearObjective> objective = boost::make_shared<LinearObjective>(segments.size());
 
 	foreach (const SegmentDescription& segment, segments) {
 

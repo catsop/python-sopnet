@@ -20,6 +20,8 @@ public:
 
 	void add(const SegmentDescription& segment) { _segments.insert(segment); }
 
+	unsigned int size() const { return _segments.size(); }
+
 	iterator begin() { return _segments.begin(); }
 	iterator end() { return _segments.end(); }
 	const_iterator begin() const { return _segments.begin(); }
