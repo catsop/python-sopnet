@@ -60,16 +60,7 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 
 		LOG_USER(pylog) << "[BackendClient] create catmaid stack store for membranes" << std::endl;
 
-		if (type == Raw)
-			return boost::make_shared<CatmaidStackStore>(
-					configuration.getCatmaidHost(),
-					configuration.getCatmaidProjectId(),
-					configuration.getCatmaidRawStackId());
-		else
-			return boost::make_shared<CatmaidStackStore>(
-					configuration.getCatmaidHost(),
-					configuration.getCatmaidProjectId(),
-					configuration.getCatmaidMembraneStackId());
+		return boost::make_shared<CatmaidStackStore>(configuration, type);
 	}
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());

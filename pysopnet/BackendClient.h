@@ -4,6 +4,7 @@
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>
+#include <catmaid/persistence/StackType.h>
 #include <catmaid/persistence/SliceStore.h>
 #include <catmaid/persistence/SegmentStore.h>
 
@@ -16,15 +17,6 @@ namespace python {
 class BackendClient {
 
 protected:
-
-	/**
-	 * The type of image stack to request.
-	 */
-	enum StackType {
-
-		Raw,
-		Membrane
-	};
 
 	#if 0
 	boost::shared_ptr<BlockManager> createBlockManager(const ProjectConfiguration& configuration);

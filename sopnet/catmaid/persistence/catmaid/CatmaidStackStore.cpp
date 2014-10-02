@@ -1,16 +1,19 @@
 #include "CatmaidStackStore.h"
 #include <imageprocessing/io/ImageHttpReader.h>
-#include <util/httpclient.h>
 #include <catmaid/persistence/django/DjangoUtils.h>
+#include <util/exceptions.h>
+#include <util/httpclient.h>
 #include <util/Logger.h>
 
 logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackStore] ");
 
 
-CatmaidStackStore::CatmaidStackStore(const std::string& url,
-									 unsigned int project,
-									 unsigned int stack) :
-									 _serverUrl(url), _project(project), _stack(stack)
+CatmaidStackStore::CatmaidStackStore(
+		const ProjectConfiguration& configuration,
+		StackType stackType) :
+	_serverUrl(configuration.getCatmaidHost()),
+	_project(configuration.getCatmaidProjectId()),
+	_stack(stackType == Raw ? configuration.getCatmaidRawStackId() : configuration.getCatmaidMembraneStackId())
 {
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
@@ -35,7 +38,16 @@ CatmaidStackStore::CatmaidStackStore(const std::string& url,
 	_stackWidth = stackSizeVector[0];
 	_stackHeight = stackSizeVector[1];
 	_stackDepth = stackSizeVector[2];
-	
+
+	// check if the reported stack size matches the expected one:
+	if (!_stackWidth  == configuration.getVolumeSize().x ||
+	    !_stackHeight == configuration.getVolumeSize().y ||
+		!_stackDepth  == configuration.getVolumeSize().z)
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"catmaid stack size (" << _stackWidth << "," << _stackHeight << "," << _stackDepth <<
+				" does not match expected size " << configuration.getVolumeSize());
+
 	_ok = true;
 }
 

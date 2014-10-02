@@ -15,6 +15,7 @@ struct NoImageException : virtual Exception {};
 class StackStore : public pipeline::Data
 {
 public:
+
 	/**
 	 * Return an ImageStack Value for the given Box by calling getImage for each 
 	 * section (z-coordinate) contained in the Box.

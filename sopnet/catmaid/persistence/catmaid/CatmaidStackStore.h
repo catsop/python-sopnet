@@ -1,6 +1,8 @@
 #ifndef CATMAID_STACK_STORE_H__
 #define CATMAID_STACK_STORE_H__
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/StackStore.h>
+#include <catmaid/persistence/StackType.h>
 
 /*
  * Catmaid-backed stack store
@@ -8,31 +10,17 @@
 class CatmaidStackStore : public StackStore
 {
 public:
+
 	/**
-	 * Construct a CatmaidStackStore
-	 * @param server - the server that hosts the CATMAID project in question. Note that this is
-	 * not the image host. Stack information is retrieved directly from the CATMAID server.
-	 * @param project - the project id for the stack in question.
-	 * @param stack - the stack id for the stack in question.
-	 * 
-	 * For example, to read the stack for project 1 and stack 1 on the CATMAID server catmaid,
-	 * hosting through port 8000:
-	 * server  - catmaid:8000
-	 * project - 1u
-	 * stack   - 1u
-	 * 
-	 * For the example catmaid projects, this will retrieve images from
-	 * http://incf.ini.uzh.ch/image-stack-fib/
-	 * 
-	 * Note that for port 80, the :port may be left out of the server string.
+	 * Construct a CatmaidStackStore. Uses the catmaid server that was set in 
+	 * the given project configuration.
 	 */
-	CatmaidStackStore(const std::string& server, 
-					  unsigned int project,
-					  unsigned int stack);
-protected:
+	CatmaidStackStore(const ProjectConfiguration& configuration, StackType stackType);
+
+private:
 	boost::shared_ptr<Image> getImage(const util::rect<unsigned int> bound,
 									  const unsigned int section);
-private:
+
 	/**
 	 * Helper function to grab the URL for the tile at the given column, row, and section. Assumes
 	 * that we are interested in scale 0, and that the url is of the form
