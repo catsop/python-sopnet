@@ -166,6 +166,16 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 
 	boost::shared_ptr<LinearObjective> objective = boost::make_shared<LinearObjective>(segments.size());
 
+	if (segments.size() == 0)
+		return objective;
+
+	unsigned int numFeatures = segments.begin()->getFeatures().size();
+
+	if (numFeatures != _weights.size())
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"number of features " << numFeatures << " does not match number of weights " << _weights.size());
+
 	foreach (const SegmentDescription& segment, segments) {
 
 		unsigned int var  = _hashToVariable[segment.getHash()];
