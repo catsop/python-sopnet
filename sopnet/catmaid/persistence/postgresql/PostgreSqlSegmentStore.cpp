@@ -217,7 +217,8 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
 		std::string featuresString(cellStr);
 		featuresString = featuresString.substr(1, featuresString.length() - 2); // Remove { and }
-		boost::tokenizer<boost::char_delimiters_separator<char> > features(featuresString);
+		boost::char_separator<char> separator("{}()\", \t");
+		boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
 		std::vector<double> segmentFeatures;
 		foreach (const std::string& feature, features) {
 			segmentFeatures.push_back(boost::lexical_cast<double>(feature));
@@ -230,9 +231,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		std::string tuplesString(cellStr);
 
 		tuplesString = tuplesString.substr(1, tuplesString.length() - 2); // Remove { and }
-		boost::tokenizer<boost::char_delimiters_separator<char> > tuples(tuplesString);
+		boost::tokenizer<boost::char_separator<char> > tuples(tuplesString, separator);
 
-		for (boost::tokenizer<boost::char_delimiters_separator<char> >::iterator tuple = tuples.begin();
+		for (boost::tokenizer<boost::char_separator<char> >::iterator tuple = tuples.begin();
 				tuple != tuples.end();
 				++tuple) {
 
