@@ -375,7 +375,7 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 
 	// fill it with white pixels from the bitmap
 	for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
-		for (unsigned int y = 0; y < static_cast<unsigned int>(info.width()); y++)
+		for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
 			if (bitmap(x, y) == 1.0)
 				pixelList->push_back(util::point<unsigned int>(offsetX + x, offsetY + y));
 
