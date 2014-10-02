@@ -13,6 +13,14 @@
 
 logger::LogChannel sliceguarantorlog("sliceguarantorlog", "[SliceGuarantor] ");
 
+SliceGuarantor::SliceGuarantor(
+			const ProjectConfiguration&   projectConfiguration,
+			boost::shared_ptr<SliceStore> sliceStore,
+			boost::shared_ptr<StackStore> stackStore) :
+	_sliceStore(sliceStore),
+	_stackStore(stackStore),
+	_blockUtils(projectConfiguration) {}
+
 Blocks
 SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 {

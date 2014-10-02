@@ -32,7 +32,7 @@ SliceGuarantor::fill(
 	LOG_DEBUG(pylog) << "[SliceGuarantor] creating slice guarantor" << std::endl;
 
 	// create the SliceGuarantor
-	::SliceGuarantor sliceGuarantor(sliceStore, membraneStackStore);
+	::SliceGuarantor sliceGuarantor(configuration, sliceStore, membraneStackStore);
 
 	// slice extraction parameters
 	pipeline::Value<MserParameters> mserParameters;

@@ -34,6 +34,7 @@ public:
 	 * backends.
 	 */
 	SliceGuarantor(
+			const ProjectConfiguration&   projectConfiguration,
 			boost::shared_ptr<SliceStore> sliceStore,
 			boost::shared_ptr<StackStore> stackStore);
 
