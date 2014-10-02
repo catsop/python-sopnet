@@ -128,14 +128,6 @@ int main(int argc, char** argv)
 		boost::shared_ptr<Slices> retrievedSlices =
 				sliceStore.getSlicesByBlocks(blocks, missingBlocks);
 
-		foreach (boost::shared_ptr<Slice> slice, slices) {
-			std::cout << "Stored Slice hash: " << slice->hashValue() << std::endl;
-		}
-
-		foreach (boost::shared_ptr<Slice> slice, *retrievedSlices) {
-			std::cout << "Retrieved Slice hash: " << slice->hashValue() << std::endl;
-		}
-
 		// Create conflict set where each slice
 		ConflictSet conflictSet1;
 		conflictSet1.addSlice(slice1->hashValue());

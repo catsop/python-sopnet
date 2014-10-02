@@ -192,7 +192,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		char* cellStr;
 		cellStr = PQgetvalue(queryResult, i, FIELD_ID); // Segment ID
 		SegmentHash segmentHash = PostgreSqlUtils::postgreSqlIdToHash(
-				boost::lexical_cast<PostgreSqlHash>(cellStr)); // TODO: unused
+				boost::lexical_cast<PostgreSqlHash>(cellStr));
 		cellStr = PQgetvalue(queryResult, i, FIELD_SECTION); // Z-section infimum
 		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
 		cellStr = PQgetvalue(queryResult, i, FIELD_MIN_X);
@@ -247,6 +247,20 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 			if (isLeft) segmentDescription.addLeftSlice(sliceHash);
 			else segmentDescription.addRightSlice(sliceHash);
+		}
+
+		// Check that the loaded segment has the correct hash.
+		if (segmentDescription.getHash() != segmentHash) {
+			std::ostringstream errorMsg;
+			errorMsg << "Retrieved segment has wrong hash. Original: " << segmentHash <<
+					" Retrieved: " << segmentDescription.getHash() << std::endl;
+			errorMsg << "Retrieved segment left slice hashes: ";
+			foreach (SliceHash hash, segmentDescription.getLeftSlices()) errorMsg << hash << " ";
+			errorMsg << std::endl << "Retrieved segment right slice hashes: ";
+			foreach (SliceHash hash, segmentDescription.getRightSlices()) errorMsg << hash << " ";
+
+			LOG_ERROR(postgresqlsegmentstorelog) << errorMsg.str() << std::endl;
+			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
 		}
 
 		segmentDescriptions->add(segmentDescription);

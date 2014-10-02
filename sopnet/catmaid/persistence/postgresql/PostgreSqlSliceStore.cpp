@@ -193,6 +193,8 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 		char* cellStr;
 		cellStr = PQgetvalue(result, i, FIELD_ID);
 		std::string slicePostgreId(cellStr);
+		SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
+				boost::lexical_cast<PostgreSqlHash>(slicePostgreId));
 		cellStr = PQgetvalue(result, i, FIELD_SECTION);
 		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
 
@@ -200,6 +202,16 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 				ComponentTreeConverter::getNextSliceId(),
 				section,
 				loadConnectedComponent(slicePostgreId));
+
+		// Check that the loaded slice has the correct hash.
+		if (slice->hashValue() != sliceHash) {
+			std::ostringstream errorMsg;
+			errorMsg << "Retrieved slice has wrong hash. Original: " << sliceHash <<
+					" Retrieved: " << slice->hashValue();
+
+			LOG_ERROR(postgresqlslicestorelog) << errorMsg.str() << std::endl;
+			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
+		}
 
 		slices->add(slice);
 	}
@@ -330,7 +342,7 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 	// load the component's value
 	componentFile >> value;
 
-	while (componentFile.good()) { // TODO: loading in reverse order of original
+	while (componentFile.good()) {
 		componentFile >> x;
 		componentFile >> y;
 		pixelList->push_back(util::point<unsigned int >(x, y));
