@@ -27,6 +27,12 @@ util::ProgramOption optionHost(
 		util::_description_text = "The CATMAID host",
 		util::_default_value	  = "neurocity.janelia.org/catsop");
 
+util::ProgramOption optionComponentDir(
+		util::_long_name        = "compdir",
+		util::_short_name       = "c",
+		util::_description_text = "Component storage directory",
+		util::_default_value	  = "/tmp/catsop");
+
 util::ProgramOption optionPGHost(
 		util::_long_name        = "pghost",
 		util::_short_name       = "H",
@@ -81,6 +87,7 @@ int main(int argc, char** argv)
 		std::string host = optionHost.as<std::string>();
 		int project_id = optionProjectId.as<int>();
 		int stack_id = optionStackId.as<int>();
+		std::string comp_dir = optionComponentDir.as<std::string>();
 		std::string pg_host = optionPGHost.as<std::string>();
 		std::string pg_user = optionPGUser.as<std::string>();
 		std::string pg_pass = optionPGPassword.as<std::string>();
@@ -100,7 +107,7 @@ int main(int argc, char** argv)
 		pc.setCatmaidHost(host);
 		pc.setCatmaidProjectId(project_id);
 		pc.setCatmaidRawStackId(stack_id);
-		pc.setComponentDirectory("/tmp/catsop");
+		pc.setComponentDirectory(comp_dir);
 		pc.setPostgreSqlHost(pg_host);
 		pc.setPostgreSqlUser(pg_user);
 		pc.setPostgreSqlPassword(pg_pass);
