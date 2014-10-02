@@ -97,7 +97,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		std::ostringstream segmentFeatureQuery;
 		segmentFeatureQuery << "INSERT INTO djsopnet_segmentfeatures (segment_id, features) "
 				"VALUES (" << segmentId << ", '{";
-		char separator = '(';
+		char separator = ' ';
 		foreach (const double featVal, segment.getFeatures()) {
 			segmentFeatureQuery << separator << boost::lexical_cast<std::string>(featVal);
 			separator = ',';
@@ -170,15 +170,18 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
-			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, s.ctr_x, s.ctr_y, "
+			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, "
+			"s.ctr_x, s.ctr_y, sf.id, sf.features, " // sf.id is needed for GROUP
 			"array_agg(ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_segmentblockrelation sbr "
-			"JOIN djsopnet_segment s on sbr.segment_id = s.id "
-			"JOIN djsopnet_segmentslice ss on s.id = ss.segment_id "
+			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
+			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
+			"JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
-			"GROUP BY s.id";
+			"GROUP BY s.id, sf.id";
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
-			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y, FIELD_SLICE_ARRAY };
+			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
+			FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
 	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
@@ -208,6 +211,18 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 				section,
 				util::rect<unsigned int>(minX, minY, maxX, maxY),
 				util::point<double>(ctrX, ctrY));
+
+		// Parse features
+		cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
+		std::string featuresString(cellStr);
+		featuresString = featuresString.substr(1, featuresString.length() - 2); // Remove { and }
+		boost::tokenizer<boost::char_delimiters_separator<char> > features(featuresString);
+		std::vector<double> segmentFeatures;
+		foreach (const std::string& feature, features) {
+			segmentFeatures.push_back(boost::lexical_cast<double>(feature));
+		}
+
+		segmentDescription.setFeatures(segmentFeatures);
 
 		// Parse (slice_id, direction) tuples for segment
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
