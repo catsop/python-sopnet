@@ -3,6 +3,7 @@
 #include <catmaid/persistence/catmaid/CatmaidStackStore.h>
 #ifdef HAVE_PostgreSQL
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
+#include <catmaid/persistence/postgresql/PostgreSqlSegmentStore.h>
 #endif
 #include <catmaid/persistence/local/LocalStackStore.h>
 #include <catmaid/persistence/local/LocalSliceStore.h>
@@ -64,12 +65,14 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 		return boost::make_shared<LocalSegmentStore>();
 	}
 
+#ifdef HAVE_PostgreSQL
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
 		LOG_USER(pylog) << "[BackendClient] create postgresql segment store" << std::endl;
 
-		UTIL_THROW_EXCEPTION(NotYetImplemented, "the postgresql segment store does not exist, yet");
+		return boost::make_shared<PostgreSqlSegmentStore>(configuration);
 	}
+#endif // HAVE_PostgreSQL
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
