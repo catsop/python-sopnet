@@ -212,7 +212,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 				util::rect<unsigned int>(minX, minY, maxX, maxY),
 				util::point<double>(ctrX, ctrY));
 
-		// Parse features
+		// Parse features of form: {featVal1, featVal2, ...}
 		cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
 		std::string featuresString(cellStr);
 		featuresString = featuresString.substr(1, featuresString.length() - 2); // Remove { and }
@@ -224,10 +224,10 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 		segmentDescription.setFeatures(segmentFeatures);
 
-		// Parse (slice_id, direction) tuples for segment
+		// Parse segment->slice tuples for segment of form: {"(slice_id, direction)",...}
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
 		std::string tuplesString(cellStr);
-		tuplesString = tuplesString.substr(1, tuplesString.length() - 2);
+		tuplesString = tuplesString.substr(1, tuplesString.length() - 2); // Remove { and }
 		boost::tokenizer<boost::char_delimiters_separator<char> > tuples(tuplesString);
 
 		for (boost::tokenizer<boost::char_delimiters_separator<char> >::iterator tuple = tuples.begin();
@@ -235,9 +235,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 				++tuple) {
 
 			std::string sliceId = *tuple;
-			sliceId = sliceId.substr(
-					sliceId.find_first_of("0123456789-"),
-					sliceId.find_last_of("0123456789") + 1);
+			sliceId = sliceId.substr(sliceId.find_first_of("0123456789-"));
 
 			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
 					boost::lexical_cast<PostgreSqlHash>(sliceId));
