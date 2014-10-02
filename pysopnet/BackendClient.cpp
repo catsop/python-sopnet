@@ -12,40 +12,6 @@
 
 namespace python {
 
-#if 0
-boost::shared_ptr<BlockManager>
-BackendClient::createBlockManager(const ProjectConfiguration& configuration) {
-
-	if (configuration.getBackendType() == ProjectConfiguration::Local) {
-
-		LOG_USER(pylog) << "[BackendClient] create local block manager" << std::endl;
-
-		boost::shared_ptr<LocalBlockManager> localBlockManager = boost::make_shared<LocalBlockManager>(
-				LocalBlockManager(
-						configuration.getVolumeSize(),
-						configuration.getBlockSize(),
-						configuration.getCoreSize()));
-
-		return localBlockManager;
-	}
-
-	if (configuration.getBackendType() == ProjectConfiguration::Django ||
-	    configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
-
-		LOG_USER(pylog) << "[BackendClient] create django block manager" << std::endl;
-
-		_djangoBlockManager = DjangoBlockManager::getBlockManager(
-				configuration.getCatmaidHost(),
-				configuration.getCatmaidRawStackId(),
-				configuration.getCatmaidProjectId());
-
-		return _djangoBlockManager;
-	}
-
-	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
-}
-#endif
-
 boost::shared_ptr<StackStore>
 BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
 

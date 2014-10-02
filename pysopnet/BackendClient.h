@@ -18,10 +18,6 @@ class BackendClient {
 
 protected:
 
-	#if 0
-	boost::shared_ptr<BlockManager> createBlockManager(const ProjectConfiguration& configuration);
-	#endif
-
 	boost::shared_ptr<StackStore>   createStackStore(const ProjectConfiguration& configuration, StackType type);
 
 	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
