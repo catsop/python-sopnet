@@ -69,6 +69,9 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 		segments->addAll(extractedSegments);
 	}
 
+	// sort out segments that do not overlap with the requested block
+	segments = discardNonRequestedSegments(segments, requestedBlocks);
+
 	// compute the features for all extracted segments
 	boost::shared_ptr<Features> features = computeFeatures(segments);
 
@@ -135,6 +138,28 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 	slices->addAll(*newSlices);
 
 	return slices;
+}
+
+boost::shared_ptr<Segments>
+SegmentGuarantor::discardNonRequestedSegments(
+		boost::shared_ptr<Segments> allSegments,
+		const Blocks&               requestedBlocks) {
+
+	boost::shared_ptr<Segments> requestedSegments = boost::make_shared<Segments>();
+
+	foreach (boost::shared_ptr<Segment> segment, allSegments->getSegments()) {
+
+		foreach (const Block& block, requestedBlocks) {
+
+			if (overlaps(*segment, block)) {
+
+				requestedSegments->add(segment);
+				break;
+			}
+		}
+	}
+
+	return requestedSegments;
 }
 
 void

@@ -42,6 +42,12 @@ private:
 			const Features& features,
 			const Block&    block);
 
+	// find all segments that are overlapping with the requested blocks
+	boost::shared_ptr<Segments>
+	discardNonRequestedSegments(
+			boost::shared_ptr<Segments> allSegments,
+			const Blocks&               requestedBlocks);
+
 	// use the provided segment store to save the extracted segments and 
 	// features for the requested blocks
 	void writeSegmentsAndFeatures(
