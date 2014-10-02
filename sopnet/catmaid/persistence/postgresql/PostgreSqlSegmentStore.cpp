@@ -177,8 +177,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
 			"JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
-			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
-			"GROUP BY s.id, sf.id";
+			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
+			"GROUP BY sbr.block_id, s.id, sf.id";
+
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
 			FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
@@ -227,8 +228,6 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		// Parse segment->slice tuples for segment of form: {"(slice_id, direction)",...}
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
 		std::string tuplesString(cellStr);
-
-		LOG_DEBUG(postgresqlsegmentstorelog) << "processing slices tuple: " << tuplesString << std::endl;
 
 		tuplesString = tuplesString.substr(1, tuplesString.length() - 2); // Remove { and }
 		boost::tokenizer<boost::char_delimiters_separator<char> > tuples(tuplesString);
