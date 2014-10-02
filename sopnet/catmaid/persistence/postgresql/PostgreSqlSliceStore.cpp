@@ -3,6 +3,7 @@
 
 #include "PostgreSqlUtils.h"
 #include <fstream>
+#include <vigra/impex.hxx>
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/Image.h>
 #include <sopnet/slices/ComponentTreeConverter.h>
@@ -315,41 +316,72 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 void
 PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const ConnectedComponent& component)
 {
-	std::ofstream componentFile((_config.getComponentDirectory() + "/" +
-			slicePostgreId + ".cmp").c_str());
+	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
+	std::string offsetFilename = _config.getComponentDirectory() + "/" + slicePostgreId + ".off";
+
+	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
+
+	// store the image
+	vigra::exportImage(
+			vigra::srcImageRange(bitmap),
+			vigra::ImageExportInfo(imageFilename.c_str()));
+
+	std::ofstream componentFile(offsetFilename.c_str());
 
 	// store the component's value
 	componentFile << component.getValue() << " ";
 
-	foreach (const util::point<unsigned int>& p, component.getPixels()) {
-		componentFile << p.x << " " << p.y << " ";
-	}
+	// store the component's offset
+	componentFile << component.getBoundingBox().minX;
+	componentFile << component.getBoundingBox().minY;
 }
 
 boost::shared_ptr<ConnectedComponent>
 PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 {
+	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
+	std::string offsetFilename = _config.getComponentDirectory() + "/" + slicePostgreId + ".off";
 
-	boost::shared_ptr<Image> source;
-	double value;
-	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
-			boost::make_shared<ConnectedComponent::pixel_list_type>();
-	unsigned int x, y;
+	// get information about the image to read
+	vigra::ImageImportInfo info(imageFilename.c_str());
 
-	std::ifstream componentFile((_config.getComponentDirectory() + "/" +
-			slicePostgreId + ".cmp").c_str());
+	// abort if image is not grayscale
+	if (!info.isGrayscale()) {
 
-	// load the component's value
-	componentFile >> value;
-
-	while (componentFile.good()) {
-		componentFile >> x;
-		componentFile >> y;
-		pixelList->push_back(util::point<unsigned int >(x, y));
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				imageFilename << " is not a gray-scale image!");
 	}
 
+	// read the image
+	ConnectedComponent::bitmap_type bitmap(ConnectedComponent::bitmap_type::difference_type(info.width(), info.height()));
+	importImage(info, vigra::destImage(bitmap));
+
+	// open the offset file
+	std::ifstream componentFile(offsetFilename.c_str());
+
+	// load the component's value
+	double value;
+	componentFile >> value;
+
+	// load the componont's offset
+	unsigned int offsetX, offsetY;
+	componentFile >> offsetX;
+	componentFile >> offsetY;
+
+	// create a pixel list
+	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
+			boost::make_shared<ConnectedComponent::pixel_list_type>();
+
+	// fill it with white pixels from the bitmap
+	for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
+		for (unsigned int y = 0; y < static_cast<unsigned int>(info.width()); y++)
+			if (bitmap(x, y) == 1.0)
+				pixelList->push_back(util::point<unsigned int>(offsetX + x, offsetY + y));
+
+	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
-			source,
+			boost::shared_ptr<Image>(),
 			value,
 			pixelList,
 			0,
