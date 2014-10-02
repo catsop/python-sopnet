@@ -237,7 +237,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			std::string sliceId = *tuple;
 			sliceId = sliceId.substr(
 					sliceId.find_first_of("0123456789-"),
-					sliceId.find_last_of("0123456789"));
+					sliceId.find_last_of("0123456789") + 1);
 
 			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
 					boost::lexical_cast<PostgreSqlHash>(sliceId));

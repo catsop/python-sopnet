@@ -40,7 +40,7 @@ public:
 
 	void addLeftSlice(SliceHash sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
 
-	void addRightSlice(SliceHash sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
+	void addRightSlice(SliceHash sliceHash) { _hashDirty = true; _rightSliceHashes.push_back(sliceHash); }
 
 	const std::vector<SliceHash>& getLeftSlices() const { return _leftSliceHashes; }
 
