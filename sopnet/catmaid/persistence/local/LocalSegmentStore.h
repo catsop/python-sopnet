@@ -11,7 +11,7 @@ class LocalSegmentStore : public SegmentStore {
 
 public:
 
-	LocalSegmentStore();
+	LocalSegmentStore() {}
 
 	/**
 	 * Associate a set of segment descritptions to a block. A "descritption" is 

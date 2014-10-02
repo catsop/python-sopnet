@@ -12,7 +12,7 @@ class LocalSliceStore : public SliceStore {
 
 public:
 
-	LocalSliceStore();
+	LocalSliceStore() {}
 
 	/**
 	 * Associate a set of slices to a block.
