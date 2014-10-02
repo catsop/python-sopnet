@@ -332,7 +332,7 @@ PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const C
 	componentFile << component.getValue() << " ";
 
 	// store the component's offset
-	componentFile << component.getBoundingBox().minX;
+	componentFile << component.getBoundingBox().minX << " ";
 	componentFile << component.getBoundingBox().minY;
 }
 
@@ -364,7 +364,7 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 	double value;
 	componentFile >> value;
 
-	// load the componont's offset
+	// load the component's offset
 	unsigned int offsetX, offsetY;
 	componentFile >> offsetX;
 	componentFile >> offsetY;
