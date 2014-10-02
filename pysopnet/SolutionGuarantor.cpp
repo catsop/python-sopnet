@@ -31,11 +31,10 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 
 	// find the core that corresponds to the request
-	// TODO: get from BlockUtils
-	boost::shared_ptr<Core> core;// = blockManager->coreAtCoordinates(request);
+	Core core(request.x, request.y, request.z);
 
 	// let it do what it was build for
-	Blocks missingBlocks = solutionGuarantor.guaranteeSolution(*core);
+	Blocks missingBlocks = solutionGuarantor.guaranteeSolution(core);
 
 	LOG_USER(pylog) << "[SolutionGuarantor] collecting missing segment blocks" << std::endl;
 
