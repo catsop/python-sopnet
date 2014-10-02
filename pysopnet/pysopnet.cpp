@@ -100,7 +100,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	// BackendType
 	boost::python::enum_<ProjectConfiguration::BackendType>("BackendType")
 			.value("Local", ProjectConfiguration::Local)
-			.value("Django", ProjectConfiguration::Django);
+			.value("Django", ProjectConfiguration::Django)
+			.value("PostgreSql", ProjectConfiguration::PostgreSql);
 
 	// Locations
 	boost::python::class_<Locations>("Locations")
