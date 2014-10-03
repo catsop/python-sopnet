@@ -77,7 +77,7 @@ SliceGuarantor::guaranteeSlices(const Blocks& blocks)
 	LOG_DEBUG(sliceguarantorlog) << "Writing " << slices.size() << " slices to " <<
 		extractBlocks.size() << " blocks" << std::endl;
 
-	writeSlicesAndConflicts(slices, conflictSets, blocks);
+	writeSlicesAndConflicts(slices, conflictSets, blocks, extractBlocks);
 
 	LOG_DEBUG(sliceguarantorlog) << "Done." << std::endl;
 
@@ -88,14 +88,30 @@ void
 SliceGuarantor::writeSlicesAndConflicts(
 		const Slices&       slices,
 		const ConflictSets& conflictSets,
-		const Blocks&       blocks) {
+		const Blocks&       requestedBlocks,
+		const Blocks&       allBlocks) {
 
-	foreach (const Block& block, blocks) {
+	// store all slices (of all blocks)
+	foreach (const Block& block, allBlocks) {
+
+		// we are only guaranteed to be done with the blocks that have been 
+		// requested
+		bool doneWithBlock = requestedBlocks.contains(block);
+
+		// get all the slices for this block
+		boost::shared_ptr<Slices> blockSlices = collectSlicesByBlock(slices, block);
+
+		// associate them, and set the "I am done with this block" flag 
+		// accordingly
+		_sliceStore->associateSlicesToBlock(*blockSlices, block, doneWithBlock);
+	}
+
+	// store all conflict sets (of only the requested blocks)
+	foreach (const Block& block, requestedBlocks) {
 
 		boost::shared_ptr<Slices>       blockSlices       = collectSlicesByBlock(slices, block);
 		boost::shared_ptr<ConflictSets> blockConflictSets = collectConflictBySlices(conflictSets, *blockSlices);
 
-		_sliceStore->associateSlicesToBlock(*blockSlices, block);
 		_sliceStore->associateConflictSetsToBlock(*blockConflictSets, block);
 	}
 }
@@ -134,7 +150,7 @@ bool
 SliceGuarantor::containsAny(const ConflictSet& conflictSet, const Slices& slices) {
 
 	foreach (const boost::shared_ptr<Slice> slice, slices)
-		if (conflictSet.getSlices().count(slice->getId()))
+		if (conflictSet.getSlices().count(slice->hashValue()))
 			return true;
 
 	return false;

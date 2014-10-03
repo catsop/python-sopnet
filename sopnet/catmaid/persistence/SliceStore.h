@@ -22,7 +22,8 @@ public:
 	 */
 	virtual void associateSlicesToBlock(
 			const Slices& slices,
-			const Block&  block) = 0;
+			const Block&  block,
+			bool  doneWithBlock = true) = 0;
 
 	/**
 	 * Associate a set of conflict sets to a block. The conflict sets are 

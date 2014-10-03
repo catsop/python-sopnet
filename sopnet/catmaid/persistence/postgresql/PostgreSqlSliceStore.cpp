@@ -33,7 +33,7 @@ PostgreSqlSliceStore::~PostgreSqlSliceStore() {
 }
 
 void
-PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& block) {
+PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& block, bool doneWithBlock) {
 
 	if (slices.size() == 0)
 		return;
@@ -84,12 +84,15 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		PQclear(result);
 	}
 
-	std::string blockFlagQuery =
-			"UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" + blockQuery + ")";
-	result = PQexec(_pgConnection, blockFlagQuery.c_str());
+	if (doneWithBlock) {
 
-	PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
-	PQclear(result);
+		std::string blockFlagQuery =
+				"UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" + blockQuery + ")";
+		result = PQexec(_pgConnection, blockFlagQuery.c_str());
+
+		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
+		PQclear(result);
+	}
 }
 
 void

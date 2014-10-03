@@ -37,7 +37,8 @@ public:
 	 */
 	void associateSlicesToBlock(
 			const Slices& slices,
-			const Block&  block);
+			const Block&  block,
+			bool  doneWithBlock = true);
 
 	/**
 	 * Associate a set of conflict sets to a block. The conflict sets are 

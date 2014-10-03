@@ -74,7 +74,8 @@ private:
 	void writeSlicesAndConflicts(
 			const Slices&       slices,
 			const ConflictSets& conflictSets,
-			const Blocks&       blocks);
+			const Blocks&       requestedBlocks,
+			const Blocks&       allBlocks);
 
 	// find a subset of slices that overlap with the given block
 	boost::shared_ptr<Slices> collectSlicesByBlock(const Slices& slices, const Block& block);
