@@ -53,21 +53,15 @@ public:
 
 private:
 
+	// Checks whether slices have already been extracted for our Block request.
 	bool checkSlices(const Blocks& blocks);
-	
-	void collectOutputSlices(
-			const Slices& extractedSlices,
-			const ConflictSets& extractedConflict,
-			Slices& slices,
-			const Blocks& blocks);
-	
+
 	// extract whole slices in a section for the given requestBlocks
-	void extractSlices(
-			const unsigned int z,
-			Slices& slices,
-			ConflictSets& conflictSets,
-			Blocks& extractBlocks,
-			const Blocks& requestBlocks);
+	Blocks extractSlicesAndConflicts(
+			Slices&            slices,
+			ConflictSets&      conflictSets,
+			const Blocks&      requestedBlocks,
+			const unsigned int z);
 
 	// associate the extracted slices and conflict sets to the given blocks 
 	// using slice store
@@ -77,16 +71,22 @@ private:
 			const Blocks&       requestedBlocks,
 			const Blocks&       allBlocks);
 
+	// find all slices that have to be extracted completely
+	void getRequiredSlicesAndConflicts(
+		const Slices&       slices,
+		const ConflictSets& conflictSets,
+		const Blocks&       requestedBlocks,
+		Slices&             requiredSlices,
+		ConflictSets&       requiredConflictSets);
+
 	// find a subset of slices that overlap with the given block
 	boost::shared_ptr<Slices> collectSlicesByBlock(const Slices& slices, const Block& block);
 
 	// find a subset of conflict sets that involve the given slices
-	boost::shared_ptr<ConflictSets> collectConflictBySlices(const ConflictSets& conflictSets, const Slices& slices);
+	boost::shared_ptr<ConflictSets> collectConflictsBySlices(const ConflictSets& conflictSets, const Slices& slices);
 
 	// true, if conflictSet contains any slice of slices
 	bool containsAny(const ConflictSet& conflictSet, const Slices& slices);
-
-	bool containsAny(const ConflictSet& conflictSet, const std::set<unsigned int>& idSet);
 	
 	/**
 	 * Helper function that checks whether a Slice can be considered whole or
