@@ -98,6 +98,10 @@ SolutionGuarantor::computeSolution(
 	// create the hash <-> variable mappings and the slice -> [segments] 
 	// mappings
 
+	unsigned int numEnds          = 0;
+	unsigned int numContinuations = 0;
+	unsigned int numBranches      = 0;
+
 	unsigned int nextVar = 0;
 	foreach (const SegmentDescription& segment, segments) {
 
@@ -112,7 +116,19 @@ SolutionGuarantor::computeSolution(
 
 		foreach (SliceHash rightSliceHash, segment.getRightSlices())
 			_rightSliceToSegments[rightSliceHash].push_back(segmentHash);
+
+		if (segment.getType() == EndSegmentType)
+			numEnds++;
+		if (segment.getType() == ContinuationSegmentType)
+			numContinuations++;
+		if (segment.getType() == BranchSegmentType)
+			numBranches++;
 	}
+
+	LOG_DEBUG(solutionguarantorlog)
+			<< "got " << numEnds << " end segments, "
+			<< numContinuations << " continuation segments, and "
+			<< numBranches << " branches" << std::endl;
 
 	// create linear constraints on the variables
 
@@ -150,6 +166,8 @@ boost::shared_ptr<LinearConstraints>
 SolutionGuarantor::createConstraints(
 		const SegmentDescriptions& segments,
 		const ConflictSets&        conflictSets) {
+
+	LOG_DEBUG(solutionguarantorlog) << "creating constraints" << std::endl;
 
 	boost::shared_ptr<LinearConstraints> constraints = boost::make_shared<LinearConstraints>();
 
@@ -192,6 +210,10 @@ SolutionGuarantor::addOverlapConstraints(
 		const SegmentDescriptions& segments,
 		const ConflictSets&        conflictSets,
 		LinearConstraints&         constraints) {
+
+	LOG_DEBUG(solutionguarantorlog)
+			<< "creating overlap constraints for " << conflictSets.size()
+			<< " conflict sets" << std::endl;
 
 	// for each conflict set:
 	foreach (const ConflictSet& conflictSet, conflictSets) {
