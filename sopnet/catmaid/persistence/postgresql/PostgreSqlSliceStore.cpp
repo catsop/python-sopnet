@@ -39,12 +39,17 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	if (slices.size() == 0)
 		return;
 
+	boost::timer::cpu_timer queryTimer;
+
 	PGresult *result;
 	unsigned int stack_id = _config.getCatmaidRawStackId();
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, stack_id);
 
-	boost::timer::cpu_timer queryTimer;
+	result = PQexec(_pgConnection, blockQuery.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, blockQuery);
+	std::string blockId(PQgetvalue(result, 0, 0));
+	PQclear(result);
 
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
@@ -79,7 +84,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 		std::ostringstream q2;
 		q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
-		q2 << "VALUES ((" << blockQuery << ")," << hash << ")";
+		q2 << "VALUES (" << blockId << "," << hash << ")";
 
 		std::string query2 = q2.str();
 		result = PQexec(_pgConnection, query2.c_str());
