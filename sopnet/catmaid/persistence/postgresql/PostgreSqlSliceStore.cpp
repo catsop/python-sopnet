@@ -120,22 +120,28 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 					std::string hash2 = boost::lexical_cast<std::string>(
 							PostgreSqlUtils::hashToPostgreSqlId(id2));
 
-					// Insert all conflicting pairs
-					std::ostringstream q;
-					q << "WITH rows AS (";
-					q << "INSERT INTO djsopnet_sliceconflictset ";
-					q << "(slice_a_id, slice_b_id) VALUES ";
-					q << "(" << hash1 << "," << hash2 << ")";
-					q << "RETURNING id)";
+					// Insert conflicting pair
+					std::ostringstream pairQuery;
+					pairQuery << "INSERT INTO djsopnet_sliceconflictset ";
+					pairQuery << "(slice_a_id, slice_b_id) VALUES ";
+					pairQuery << "(" << hash1 << "," << hash2 << ")";
+
+					std::string query = pairQuery.str();
+					PGresult *result = PQexec(_pgConnection, query.c_str());
+					PostgreSqlUtils::checkPostgreSqlError(result, query);
+					PQclear(result);
 
 					// Associate conflict set to block
-					q << "INSERT INTO djsopnet_blockconflictrelation ";
-					q << "(block_id, conflict_id) VALUES ";
-					q << "((" << blockQuery << "),";
-					q << "(SELECT id FROM rows))";
+					std::ostringstream conflictQuery;
+					conflictQuery << "INSERT INTO djsopnet_blockconflictrelation ";
+					conflictQuery << "(block_id, conflict_id) VALUES ";
+					conflictQuery << "((" << blockQuery << "),";
+					conflictQuery << "(SELECT id FROM djsopnet_sliceconflictset ";
+					conflictQuery << "WHERE slice_a_id=" << hash1 << " AND ";
+					conflictQuery << "slice_b_id=" << hash2 << "))";
 
-					std::string query = q.str();
-					PGresult *result = PQexec(_pgConnection, query.c_str());
+					query = conflictQuery.str();
+					result = PQexec(_pgConnection, query.c_str());
 					PostgreSqlUtils::checkPostgreSqlError(result, query);
 					PQclear(result);
 				}
