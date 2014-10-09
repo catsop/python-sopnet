@@ -73,7 +73,7 @@ createSlice(unsigned int sourceSize, unsigned int pixelEntry) {
 			0,
 			pixelList,
 			0,
-			1);
+			2);
 
 	return boost::make_shared<Slice>(0, 0, cc);
 }
