@@ -2,6 +2,7 @@
 #ifdef HAVE_PostgreSQL
 
 #include "PostgreSqlUtils.h"
+#include <boost/timer/timer.hpp>
 #include <fstream>
 #include <vigra/impex.hxx>
 #include <imageprocessing/ConnectedComponent.h>
@@ -43,6 +44,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, stack_id);
 
+	boost::timer::cpu_timer queryTimer;
+
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
 		std::string hash = boost::lexical_cast<std::string>(
@@ -83,6 +86,10 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		PostgreSqlUtils::checkPostgreSqlError(result, query2);
 		PQclear(result);
 	}
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
+			<< queryElapsed.count() << " ns (wall) (" << (queryElapsed.count()/slices.size()) << " ns/slice)" << std::endl;
 
 	if (doneWithBlock) {
 

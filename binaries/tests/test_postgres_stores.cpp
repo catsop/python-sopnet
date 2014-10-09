@@ -100,6 +100,7 @@ int main(int argc, char** argv)
 
 		// init logger
 		logger::LogManager::init();
+		logger::LogManager::setGlobalLogLevel(logger::Debug);
 
 		// create new project configuration
 		ProjectConfiguration pc;
