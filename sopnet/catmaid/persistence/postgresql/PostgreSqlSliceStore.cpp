@@ -51,6 +51,16 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	std::string blockId(PQgetvalue(result, 0, 0));
 	PQclear(result);
 
+	std::ostringstream q;
+	q << "INSERT INTO djsopnet_slice ";
+	q << "(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
+	<< "ctr_y, value, size, id) VALUES";
+
+	std::ostringstream q2;
+	q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
+	q2 << "VALUES";
+
+	char separator = ' ';
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
 		std::string hash = boost::lexical_cast<std::string>(
@@ -65,11 +75,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 		// Create slices in slice table
 		// TODO: Use upsert statement, based on CTEs
-		std::ostringstream q;
-		q << "INSERT INTO djsopnet_slice ";
-		q << "(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
-		<< "ctr_y, value, size, id) VALUES (";
-		q << stack_id << "," << slice->getSection() << ",";
+		q << separator << "(" << stack_id << "," << slice->getSection() << ",";
 		q << bb.minX << "," << bb.minY << ",";
 		q << bb.maxX << "," << bb.maxY << ",";
 		q << ctr.x << "," << ctr.y << ",";
@@ -77,20 +83,20 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		q << slice->getComponent()->getSize() << ",";
 		q << hash << ")";
 
-		std::string query = q.str();
-		result = PQexec(_pgConnection, query.c_str());
-		PostgreSqlUtils::checkPostgreSqlError(result, query);
-		PQclear(result);
+		q2 << separator << "(" << blockId << "," << hash << ")";
 
-		std::ostringstream q2;
-		q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
-		q2 << "VALUES (" << blockId << "," << hash << ")";
-
-		std::string query2 = q2.str();
-		result = PQexec(_pgConnection, query2.c_str());
-		PostgreSqlUtils::checkPostgreSqlError(result, query2);
-		PQclear(result);
+		separator = ',';
 	}
+
+	std::string query = q.str();
+	result = PQexec(_pgConnection, query.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, query);
+	PQclear(result);
+
+	std::string query2 = q2.str();
+	result = PQexec(_pgConnection, query2.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, query2);
+	PQclear(result);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
