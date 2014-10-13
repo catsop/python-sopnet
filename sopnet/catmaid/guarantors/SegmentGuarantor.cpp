@@ -201,7 +201,7 @@ SegmentGuarantor::getSegmentDescriptions(
 
 		// create a new segment description
 		SegmentDescription segmentDescription(
-				segment->getInterSectionInterval(),
+				segment->getInterSectionInterval() - 1, // lower slice number is ISI minus one
 				boundingBox,
 				segment->getCenter());
 
@@ -234,8 +234,12 @@ SegmentGuarantor::getSegmentDescriptions(
 bool
 SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 
-	unsigned int minSection = segment.getInterSectionInterval();
-	unsigned int maxSection = segment.getInterSectionInterval() + 1;
+	unsigned int maxSection = segment.getInterSectionInterval();
+
+	if (maxSection == 0)
+		return false;
+
+	unsigned int minSection = maxSection - 1;
 
 	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(block);
 
