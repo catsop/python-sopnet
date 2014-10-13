@@ -133,14 +133,6 @@ SolutionGuarantor::computeSolution(
 		_variableToHash[nextVar] = segmentHash;
 		nextVar++;
 
-		if (segment.getSection() == 0) {
-
-			LOG_ALL(solutionguarantorlog)
-					<< "segment " << segmentHash << " (variable " << _hashToVariable[segmentHash]
-					<< ") in section 0 has " << segment.getLeftSlices().size() << " left slices and "
-					<< segment.getRightSlices().size() << " right slices" << std::endl;
-		}
-
 		foreach (SliceHash leftSliceHash, segment.getLeftSlices()) {
 
 			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
@@ -278,15 +270,15 @@ SolutionGuarantor::addOverlapConstraints(
 		// the sum of their variables to be at most one
 		foreach (const SliceHash& sliceHash, conflictSet.getSlices()) {
 
-			std::map<SliceHash, std::vector<SegmentHash> >& sliceToSegments = _leftSliceToSegments;
+			std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
 
 			// find segments that use the slice on their left side, except if 
 			// this is a slice in the last section -- in this case, find 
 			// segments that use it on their right side
 			if (_lastSlices.count(sliceHash))
-				sliceToSegments = _rightSliceToSegments;
+				sliceToSegments = &_rightSliceToSegments;
 
-			foreach (const SegmentHash& segmentHash, sliceToSegments[sliceHash]) {
+			foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
 
 				unsigned int var = _hashToVariable[segmentHash];
 
@@ -323,10 +315,16 @@ SolutionGuarantor::addContinuationConstraints(
 
 		LinearConstraint constraint;
 
-		foreach (SegmentHash segmentHash, leftSegments)
+		LOG_ALL(solutionguarantorlog) << "create new continuation constraint for slice " << sliceHash << std::endl;
+
+		foreach (SegmentHash segmentHash, leftSegments) {
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
-		foreach (SegmentHash segmentHash, rightSegments)
+			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is left segment" << std::endl;
+		}
+		foreach (SegmentHash segmentHash, rightSegments) {
 			constraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
+			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is right segment" << std::endl;
+		}
 
 		constraint.setRelation(Equal);
 		constraint.setValue(0.0);
