@@ -195,35 +195,23 @@ SegmentExtractor::extractSegments() {
 		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	}
 
-	LOG_DEBUG(segmentextractorlog) << "extracting ends to and from previous section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "extracting ends from previous section..." << std::endl;
 
 	// end segments for every previous slice
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
-
-		extractSegment(prevSlice, Left);
+	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices)
 		extractSegment(prevSlice, Right);
-	}
+
+	LOG_DEBUG(segmentextractorlog) << "extracting ends to next section..." << std::endl;
+
+	// end segments for every next slice
+	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
+		extractSegment(nextSlice, Left);
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
-	// end segments for every next slice, if we are the last segment extractor
-	if (_nextConflictSets.isSet()) {
-
-		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
-
-		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
-
-			extractSegment(nextSlice, Left);
-			extractSegment(nextSlice, Right);
-		}
-
-		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-		oldSize = _segments->size();
-	}
-
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
- 	LOG_DEBUG(segmentextractorlog) << "by type: " << _segments->getEnds().size() << " ends, " << 
+	LOG_DEBUG(segmentextractorlog) << "by type: " << _segments->getEnds().size() << " ends, " << 
 		_segments->getContinuations().size() << " continuations, and " << 
 		_segments->getBranches().size() << " branches." << std::endl;
 }
