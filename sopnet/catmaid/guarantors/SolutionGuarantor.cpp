@@ -95,12 +95,34 @@ SolutionGuarantor::computeSolution(
 		const SegmentDescriptions& segments,
 		const ConflictSets& conflictSets) {
 
+	unsigned int firstSection = std::numeric_limits<unsigned int>::max();
+	unsigned int lastSection  = 0;
+
+	// get the first and last section
+	foreach (const SegmentDescription& segment, segments) {
+
+		firstSection = std::min(firstSection, segment.getSection());
+		lastSection  = std::max(lastSection,  segment.getSection() + 1);
+	}
+
+	LOG_DEBUG(solutionguarantorlog)
+			<< "first section is " << firstSection
+			<< ", last section (inclusive) is "
+			<< lastSection << std::endl;
+
 	// create the hash <-> variable mappings and the slice -> [segments] 
 	// mappings
 
 	unsigned int numEnds          = 0;
 	unsigned int numContinuations = 0;
 	unsigned int numBranches      = 0;
+
+	_rightSliceToSegments.clear();
+	_leftSliceToSegments.clear();
+	_slices.clear();
+	_firstSlices.clear();
+	_lastSlices.clear();
+	_variableToHash.clear();
 
 	unsigned int nextVar = 0;
 	foreach (const SegmentDescription& segment, segments) {
@@ -111,11 +133,31 @@ SolutionGuarantor::computeSolution(
 		_variableToHash[nextVar] = segmentHash;
 		nextVar++;
 
-		foreach (SliceHash leftSliceHash, segment.getLeftSlices())
-			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
+		if (segment.getSection() == 0) {
 
-		foreach (SliceHash rightSliceHash, segment.getRightSlices())
+			LOG_ALL(solutionguarantorlog)
+					<< "segment " << segmentHash << " (variable " << _hashToVariable[segmentHash]
+					<< ") in section 0 has " << segment.getLeftSlices().size() << " left slices and "
+					<< segment.getRightSlices().size() << " right slices" << std::endl;
+		}
+
+		foreach (SliceHash leftSliceHash, segment.getLeftSlices()) {
+
+			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
+			_slices.insert(leftSliceHash);
+
+			if (segment.getSection() == firstSection)
+				_firstSlices.insert(leftSliceHash);
+		}
+
+		foreach (SliceHash rightSliceHash, segment.getRightSlices()) {
+
 			_rightSliceToSegments[rightSliceHash].push_back(segmentHash);
+			_slices.insert(rightSliceHash);
+
+			if (segment.getSection() + 1 == lastSection)
+				_lastSlices.insert(rightSliceHash);
+		}
 
 		if (segment.getType() == EndSegmentType)
 			numEnds++;
@@ -129,6 +171,18 @@ SolutionGuarantor::computeSolution(
 			<< "got " << numEnds << " end segments, "
 			<< numContinuations << " continuation segments, and "
 			<< numBranches << " branches" << std::endl;
+
+	LOG_ALL(solutionguarantorlog)
+			<< "first slices are:" << std::endl;
+	foreach (const SliceHash& sliceHash, _firstSlices)
+		LOG_ALL(solutionguarantorlog) << sliceHash << " ";
+	LOG_ALL(solutionguarantorlog) << std::endl;
+
+	LOG_ALL(solutionguarantorlog)
+			<< "last slices are:" << std::endl;
+	foreach (const SliceHash& sliceHash, _lastSlices)
+		LOG_ALL(solutionguarantorlog) << sliceHash << " ";
+	LOG_ALL(solutionguarantorlog) << std::endl;
 
 	// create linear constraints on the variables
 
@@ -207,7 +261,7 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 
 void
 SolutionGuarantor::addOverlapConstraints(
-		const SegmentDescriptions& segments,
+		const SegmentDescriptions& /*segments*/,
 		const ConflictSets&        conflictSets,
 		LinearConstraints&         constraints) {
 
@@ -220,12 +274,19 @@ SolutionGuarantor::addOverlapConstraints(
 
 		LinearConstraint constraint;
 
-		// get all segments that use the conflict slices on the left and require 
+		// get all segments that use the conflict slices on one side and require 
 		// the sum of their variables to be at most one
-
 		foreach (const SliceHash& sliceHash, conflictSet.getSlices()) {
 
-			foreach (const SegmentHash& segmentHash, _leftSliceToSegments[sliceHash]) {
+			std::map<SliceHash, std::vector<SegmentHash> >& sliceToSegments = _leftSliceToSegments;
+
+			// find segments that use the slice on their left side, except if 
+			// this is a slice in the last section -- in this case, find 
+			// segments that use it on their right side
+			if (_lastSlices.count(sliceHash))
+				sliceToSegments = _rightSliceToSegments;
+
+			foreach (const SegmentHash& segmentHash, sliceToSegments[sliceHash]) {
 
 				unsigned int var = _hashToVariable[segmentHash];
 
@@ -242,18 +303,18 @@ SolutionGuarantor::addOverlapConstraints(
 
 void
 SolutionGuarantor::addContinuationConstraints(
-		const SegmentDescriptions& segments,
+		const SegmentDescriptions& /*segments*/,
 		LinearConstraints&         constraints) {
 
-	typedef std::map<SliceHash, std::vector<SegmentHash> >::value_type SliceToSegments;
-
 	// for each slice
-	foreach (const SliceToSegments& sliceToSegments, _rightSliceToSegments) {
+	foreach (const SliceHash& sliceHash, _slices) {
 
-		SliceHash sliceHash = sliceToSegments.first;
+		// if not a first or last slice
+		if (_firstSlices.count(sliceHash) || _lastSlices.count(sliceHash))
+			continue;
 
 		// get all segments that use this slice from the left
-		const std::vector<SegmentHash>& leftSegments = sliceToSegments.second;
+		const std::vector<SegmentHash>& leftSegments = _rightSliceToSegments[sliceHash];
 
 		// get all segments that use this slice from the right
 		const std::vector<SegmentHash>& rightSegments = _leftSliceToSegments[sliceHash];

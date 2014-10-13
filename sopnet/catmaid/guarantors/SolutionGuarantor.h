@@ -92,6 +92,12 @@ private:
 	std::map<SliceHash, std::vector<SegmentHash> > _leftSliceToSegments;
 	std::map<SliceHash, std::vector<SegmentHash> > _rightSliceToSegments;
 
+	// set of all slices
+	std::set<SliceHash> _slices;
+
+	// set of all slices in the first and last section
+	std::set<SliceHash> _firstSlices, _lastSlices;
+
 	// the feature weights
 	std::vector<double> _weights;
 
