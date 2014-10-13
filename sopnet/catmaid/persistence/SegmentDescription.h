@@ -28,6 +28,9 @@ public:
 
 	SegmentHash getHash() const;
 
+	/**
+	 * Get the lower number of the two sections that this segment is connecting.
+	 */
 	unsigned int getSection() const { return _section; }
 
 	const util::rect<unsigned int>& get2DBoundingBox() const { return _boundingBox; }
@@ -38,12 +41,24 @@ public:
 
 	const std::vector<double>& getFeatures() const { return _features; }
 
+	/**
+	 * Add a slice to the left (i.e., lower) side of this segment.
+	 */
 	void addLeftSlice(SliceHash sliceHash) { _hashDirty = true; _leftSliceHashes.push_back(sliceHash); }
 
+	/**
+	 * Add a slice to the right (i.e., higher) side of this segment.
+	 */
 	void addRightSlice(SliceHash sliceHash) { _hashDirty = true; _rightSliceHashes.push_back(sliceHash); }
 
+	/**
+	 * Get the slices of the left (i.e., lower) side of this segment.
+	 */
 	const std::vector<SliceHash>& getLeftSlices() const { return _leftSliceHashes; }
 
+	/**
+	 * Get the slices of the right (i.e., higher) side of this segment.
+	 */
 	const std::vector<SliceHash>& getRightSlices() const { return _rightSliceHashes; }
 
 	SegmentType getType() const;
