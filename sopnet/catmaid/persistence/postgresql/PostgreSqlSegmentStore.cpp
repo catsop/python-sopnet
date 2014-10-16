@@ -34,109 +34,106 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, _config.getCatmaidRawStackId());
 
+	std::cerr << "In seg store" << std::endl; // TODO: DEBUG
+	queryResult = PQexec(_pgConnection, blockQuery.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockQuery);
+	std::string blockId(PQgetvalue(queryResult, 0, 0));
+	PQclear(queryResult);
+
 	boost::timer::cpu_timer queryTimer;
 
 	// Remove any existing segment associations for this block.
-	std::string clearBlockQuery =
-			"DELETE FROM djsopnet_segmentblockrelation WHERE id = (" + blockQuery + ")";
-	queryResult = PQexec(_pgConnection, clearBlockQuery.c_str());
+	std::ostringstream clearBlockQuery;
+	clearBlockQuery <<
+			"DELETE FROM djsopnet_segmentblockrelation WHERE id = " + blockId;
 
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, clearBlockQuery);
-	PQclear(queryResult);
+	std::ostringstream segmentQuery;
+	segmentQuery <<
+			"INSERT INTO djsopnet_segment (id, stack_id, section_inf, "
+			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES";
+
+	std::ostringstream sliceQuery;
+	sliceQuery <<
+			"INSERT INTO djsopnet_segmentslice (segment_id, slice_id, direction) VALUES";
+
+	std::ostringstream segmentFeatureQuery;
+	segmentFeatureQuery <<
+			"INSERT INTO djsopnet_segmentfeatures (segment_id, features) VALUES";
+
+	std::ostringstream blockSegmentQuery;
+	blockSegmentQuery <<
+			"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) VALUES";
+
+	char separator = ' ';
+	char sliceSeparator = ' ';
 
 	foreach (const SegmentDescription& segment, segments) {
-		// TODO: this transaction is too granular for performance but useful for debug
-		queryResult = PQexec(_pgConnection, "BEGIN"); // Begin transaction
-		PQclear(queryResult);
-
 		std::string segmentId = boost::lexical_cast<std::string>(
 			PostgreSqlUtils::hashToPostgreSqlId(segment.getHash()));
 		const util::rect<unsigned int>& segmentBounds = segment.get2DBoundingBox();
 		const util::point<double>& segmentCenter = segment.getCenter();
 
 		// Create segment.
-		std::string segmentQuery =
-				"INSERT INTO djsopnet_segment (id, stack_id, section_inf, "
-				"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES (" +
-				boost::lexical_cast<std::string>(segmentId) + ", " +
-				boost::lexical_cast<std::string>(_config.getCatmaidRawStackId()) + ", " +
-				boost::lexical_cast<std::string>(segment.getSection()) + ", " +
-				boost::lexical_cast<std::string>(segmentBounds.minX) + ", " +
-				boost::lexical_cast<std::string>(segmentBounds.minY) + ", " +
-				boost::lexical_cast<std::string>(segmentBounds.maxX) + ", " +
-				boost::lexical_cast<std::string>(segmentBounds.maxY) + ", " +
-				boost::lexical_cast<std::string>(segmentCenter.x) + ", " +
-				boost::lexical_cast<std::string>(segmentCenter.y) + ", " +
-				boost::lexical_cast<std::string>(segment.getType()) + ");";
-		queryResult = PQexec(_pgConnection, segmentQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(queryResult, segmentQuery);
-		PQclear(queryResult);
+		segmentQuery << separator << '(' <<
+				boost::lexical_cast<std::string>(segmentId) << ", " <<
+				boost::lexical_cast<std::string>(_config.getCatmaidRawStackId()) << ", " <<
+				boost::lexical_cast<std::string>(segment.getSection()) << ", " <<
+				boost::lexical_cast<std::string>(segmentBounds.minX) << ", " <<
+				boost::lexical_cast<std::string>(segmentBounds.minY) << ", " <<
+				boost::lexical_cast<std::string>(segmentBounds.maxX) << ", " <<
+				boost::lexical_cast<std::string>(segmentBounds.maxY) << ", " <<
+				boost::lexical_cast<std::string>(segmentCenter.x) << ", " <<
+				boost::lexical_cast<std::string>(segmentCenter.y) << ", " <<
+				boost::lexical_cast<std::string>(segment.getType()) << ')';
 
 		// Associate slices to segment.
 		foreach (const SliceHash& hash, segment.getLeftSlices()) {
-			std::string sliceQuery = "INSERT INTO djsopnet_segmentslice "
-				"(segment_id, slice_id, direction) VALUES (" +
-				segmentId + "," +
-				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) + ",TRUE);";
-			queryResult = PQexec(_pgConnection, sliceQuery.c_str());
-
-			PostgreSqlUtils::checkPostgreSqlError(queryResult, sliceQuery);
-			PQclear(queryResult);
+			sliceQuery << sliceSeparator << '(' <<
+				segmentId << ',' <<
+				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) <<
+				",TRUE)";
+			sliceSeparator = ',';
 		}
 
 		foreach (const SliceHash& hash, segment.getRightSlices()) {
-			std::string sliceQuery = "INSERT INTO djsopnet_segmentslice "
-				"(segment_id, slice_id, direction) VALUES (" +
-				segmentId + "," +
-				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) + ",FALSE);";
-			queryResult = PQexec(_pgConnection, sliceQuery.c_str());
-
-			PostgreSqlUtils::checkPostgreSqlError(queryResult, sliceQuery);
-			PQclear(queryResult);
+			sliceQuery << sliceSeparator << '(' <<
+				segmentId << ',' <<
+				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) <<
+				",FALSE)";
+			sliceSeparator = ',';
 		}
 
 		// Store segment features.
-		std::ostringstream segmentFeatureQuery;
-		segmentFeatureQuery << "INSERT INTO djsopnet_segmentfeatures (segment_id, features) "
-				"VALUES (" << segmentId << ", '{";
-		char separator = ' ';
+		segmentFeatureQuery << separator << '(' << segmentId << ", '{";
+		char featureSeparator = ' ';
 		foreach (const double featVal, segment.getFeatures()) {
-			segmentFeatureQuery << separator << boost::lexical_cast<std::string>(featVal);
-			separator = ',';
+			segmentFeatureQuery << featureSeparator << boost::lexical_cast<std::string>(featVal);
+			featureSeparator = ',';
 		}
 		segmentFeatureQuery << "}')";
 
-		queryResult = PQexec(_pgConnection, segmentFeatureQuery.str().c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(queryResult, segmentFeatureQuery.str());
-		PQclear(queryResult);
-
 		// Associate segment to block.
-		std::string blockSegmentQuery =
-				"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) VALUES ((" +
-				blockQuery + "), " + segmentId + ");";
-		queryResult = PQexec(_pgConnection, blockSegmentQuery.c_str());
+		blockSegmentQuery << separator << '(' << blockId << ',' << segmentId << ')';
 
-		PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentQuery);
-		PQclear(queryResult);
-
-		queryResult = PQexec(_pgConnection, "END"); // End transaction
-		PQclear(queryResult);
+		separator = ',';
 	}
+
+	segmentQuery << ';' << sliceQuery.str() << ';' << segmentFeatureQuery.str()
+			<< ';' << clearBlockQuery.str() << ';' << blockSegmentQuery.str() << ';';
+
+	// Set block flag to show segments have been stored.
+	segmentQuery <<
+			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = " << blockId;
+	std::string query = segmentQuery.str();
+	queryResult = PQexec(_pgConnection, query.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
+	PQclear(queryResult);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << segments.size() << " segments in "
 			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
 			<< (1e9 * segments.size()/queryElapsed.count()) << " segments/s)" << std::endl;
-
-	// Set block flag to show segments have been stored.
-	std::string blockFlagQuery =
-			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" + blockQuery + ")";
-	queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
-
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
-	PQclear(queryResult);
 }
 
 boost::shared_ptr<SegmentDescriptions>
