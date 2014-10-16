@@ -172,13 +172,13 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, "
 			"s.ctr_x, s.ctr_y, sf.id, sf.features, " // sf.id is needed for GROUP
-			"array_agg(ROW(ss.slice_id, ss.direction)) "
+			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_segmentblockrelation sbr "
 			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
 			"JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
-			"GROUP BY sbr.block_id, s.id, sf.id";
+			"GROUP BY s.id, sf.id";
 
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
