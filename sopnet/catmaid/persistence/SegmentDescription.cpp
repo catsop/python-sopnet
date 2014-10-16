@@ -5,19 +5,8 @@ SegmentHash
 SegmentDescription::getHash() const {
 
 	if (_hashDirty) {
+		_hash = hash_value(_leftSliceHashes, _rightSliceHashes);
 
-		std::vector<SliceHash> sliceHashes;
-
-		foreach (SliceHash hash, _leftSliceHashes)
-			sliceHashes.push_back(hash);
-		foreach (SliceHash hash, _rightSliceHashes)
-			sliceHashes.push_back(hash);
-
-		// avoid different hashes for branches that only differ in the order in 
-		// which slices have been added
-		std::sort(sliceHashes.begin(), sliceHashes.end());
-
-		_hash = hash_value(sliceHashes);
 		_hashDirty = false;
 	}
 
