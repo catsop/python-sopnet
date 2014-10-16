@@ -2,6 +2,7 @@
 #ifdef HAVE_PostgreSQL
 
 #include <boost/tokenizer.hpp>
+#include <boost/timer/timer.hpp>
 #include <util/Logger.h>
 #include "PostgreSqlSegmentStore.h"
 #include "PostgreSqlUtils.h"
@@ -32,6 +33,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	PGresult* queryResult;
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, _config.getCatmaidRawStackId());
+
+	boost::timer::cpu_timer queryTimer;
 
 	// Remove any existing segment associations for this block.
 	std::string clearBlockQuery =
@@ -122,6 +125,11 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		PQclear(queryResult);
 	}
 
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << segments.size() << " segments in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * segments.size()/queryElapsed.count()) << " segments/s)" << std::endl;
+
 	// Set block flag to show segments have been stored.
 	std::string blockFlagQuery =
 			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" + blockQuery + ")";
@@ -143,6 +151,8 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	std::ostringstream blockIds;
 	PGresult* queryResult;
+
+	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have segments stored and flagged.
 	foreach (const Block& block, blocks) {
@@ -268,6 +278,11 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	}
 
 	PQclear(queryResult);
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Retrieved " << segmentDescriptions->size() << " segments in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * segmentDescriptions->size()/queryElapsed.count()) << " segments/s)" << std::endl;
 
 	return segmentDescriptions;
 }

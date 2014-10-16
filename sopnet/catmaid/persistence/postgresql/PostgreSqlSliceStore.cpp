@@ -100,7 +100,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
-			<< queryElapsed.count() << " ns (wall) (" << (queryElapsed.count()/slices.size()) << " ns/slice)" << std::endl;
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * slices.size()/queryElapsed.count()) << " slices/s)" << std::endl;
 
 	if (doneWithBlock) {
 
@@ -122,6 +123,8 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 			_blockUtils, block, _config.getCatmaidRawStackId());
+
+	boost::timer::cpu_timer queryTimer;
 
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
@@ -158,6 +161,11 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 			}
 		}
 	}
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << conflictSets.size() << " conflict sets in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * conflictSets.size()/queryElapsed.count()) << " sets/s)" << std::endl;
 }
 
 boost::shared_ptr<Slices>
@@ -171,6 +179,8 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	std::ostringstream blockIds;
 	PGresult* result;
+
+	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
 	foreach (const Block& block, blocks) {
@@ -238,6 +248,11 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	PQclear(result);
 
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlslicestorelog) << "Retrieved " << slices->size() << " slices in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * slices->size()/queryElapsed.count()) << " slices/s)" << std::endl;
+
 	return slices;
 }
 
@@ -254,6 +269,8 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 
 	std::ostringstream blockIds;
 	PGresult* result;
+
+	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
 	// TODO: should conflict sets have own flag?
@@ -310,6 +327,11 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	}
 
 	PQclear(result);
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlslicestorelog) << "Retrieved " << conflictSets->size() << " conflict sets in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * conflictSets->size()/queryElapsed.count()) << " sets/s)" << std::endl;
 
 	return conflictSets;
 }
