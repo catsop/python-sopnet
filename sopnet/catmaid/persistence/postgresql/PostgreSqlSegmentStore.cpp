@@ -34,7 +34,6 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, _config.getCatmaidRawStackId());
 
-	std::cerr << "In seg store" << std::endl; // TODO: DEBUG
 	queryResult = PQexec(_pgConnection, blockQuery.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockQuery);
 	std::string blockId(PQgetvalue(queryResult, 0, 0));
