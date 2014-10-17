@@ -470,7 +470,6 @@ SegmentExtractor::assembleLinearConstraint(const ConflictSet& conflictSet) {
 	LinearConstraint constraint;
 
 	// for each slice in the constraint
-	typedef std::map<unsigned int, double>::value_type pair_t;
 	foreach (unsigned int sliceId, conflictSet.getSlices()) {
 
 		// for all the segments that involve this slice
