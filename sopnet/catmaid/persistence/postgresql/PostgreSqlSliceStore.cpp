@@ -299,9 +299,9 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 
 	// Query conflict sets for this set of blocks
 	std::string blockConflictsQuery =
-			"SELECT cs.slice_a_id, cs.slice_b_id "
-			"FROM djsopnet_blockconflictrelation bcr "
-			"JOIN djsopnet_sliceconflictset cs on bcr.conflict_id = cs.id "
+			"SELECT DISTINCT cs.slice_a_id, cs.slice_b_id "
+			"FROM djsopnet_sliceconflictset cs "
+			"JOIN djsopnet_blockconflictrelation bcr ON bcr.conflict_id = cs.id "
 			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
 	result = PQexec(_pgConnection, blockConflictsQuery.c_str());
