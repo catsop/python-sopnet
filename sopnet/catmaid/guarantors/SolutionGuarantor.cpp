@@ -313,23 +313,28 @@ SolutionGuarantor::addContinuationConstraints(
 
 		// require the sum of their variables to be equal
 
-		LinearConstraint constraint;
+		LinearConstraint pairConstraint, exclusionConstraint;
 
 		LOG_ALL(solutionguarantorlog) << "create new continuation constraint for slice " << sliceHash << std::endl;
 
 		foreach (SegmentHash segmentHash, leftSegments) {
-			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+			pairConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+			exclusionConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is left segment" << std::endl;
 		}
 		foreach (SegmentHash segmentHash, rightSegments) {
-			constraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
+			pairConstraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
+			exclusionConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is right segment" << std::endl;
 		}
 
-		constraint.setRelation(Equal);
-		constraint.setValue(0.0);
+		pairConstraint.setRelation(Equal);
+		pairConstraint.setValue(0.0);
+		exclusionConstraint.setRelation(LessEqual);
+		exclusionConstraint.setValue(2.0);
 
-		constraints.add(constraint);
+		constraints.add(pairConstraint);
+		constraints.add(exclusionConstraint);
 	}
 }
 
