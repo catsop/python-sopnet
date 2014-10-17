@@ -137,6 +137,27 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 
 	slices->addAll(*newSlices);
 
+	// Load conflict sets for slices
+	std::map<SliceHash, unsigned int> internalIdMap;
+
+	foreach (const boost::shared_ptr<Slice> slice, *slices) {
+		internalIdMap[slice->hashValue()] = slice->getId();
+	}
+
+	boost::shared_ptr<ConflictSets> conflictSets =
+			_sliceStore->getConflictSetsByBlocks(expandedSliceBlocks, missingBlocks);
+
+	foreach (const ConflictSet& conflictSet, *conflictSets) {
+		std::vector<unsigned int> setInternalIds;
+		setInternalIds.reserve(conflictSet.getSlices().size());
+
+		foreach (const SliceHash& sliceHash, conflictSet.getSlices())
+			if (internalIdMap.count(sliceHash))
+				setInternalIds.push_back(internalIdMap[sliceHash]);
+
+		slices->addConflicts(setInternalIds);
+	}
+
 	return slices;
 }
 
