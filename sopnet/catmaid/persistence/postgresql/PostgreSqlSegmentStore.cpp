@@ -288,27 +288,38 @@ PostgreSqlSegmentStore::storeSolution(
 		const std::vector<SegmentHash>& segmentHashes,
 		const Core& core) {
 
+	boost::timer::cpu_timer queryTimer;
+
 	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
 				_blockUtils, core, _config.getCatmaidRawStackId());
 
-	std::string clearQuery =
-			"DELETE FROM djsopnet_segmentsolution WHERE core_id = (" + coreQuery + ")";
-	PGresult* queryResult = PQexec(_pgConnection, clearQuery.c_str());
-
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, clearQuery);
+	PGresult* queryResult = PQexec(_pgConnection, coreQuery.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, coreQuery);
+	std::string coreId(PQgetvalue(queryResult, 0, 0));
 	PQclear(queryResult);
 
+	std::ostringstream query;
+	query << "DELETE FROM djsopnet_segmentsolution WHERE core_id = " << coreId << ';';
+	query << "INSERT INTO djsopnet_segmentsolution (core_id, segment_id) VALUES";
+	char separator = ' ';
+
 	foreach (const SegmentHash& segmentHash, segmentHashes) {
-		std::string markSolutionQuery=
-				"INSERT INTO djsopnet_segmentsolution"
-				"(core_id, segment_id) VALUES ((" + coreQuery + "), " +
-				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash)) + ")";
-
-		queryResult = PQexec(_pgConnection, markSolutionQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(queryResult, markSolutionQuery);
-		PQclear(queryResult);
+		query << separator << '(' << coreId << ','
+			  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
+			  << ')';
+		separator = ',';
 	}
+
+	std::string queryString(query.str());
+	queryResult = PQexec(_pgConnection, queryString.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, queryString);
+	PQclear(queryResult);
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << segmentHashes.size() << " solutions in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * segmentHashes.size()/queryElapsed.count()) << " solutions/s)" << std::endl;
 }
 
 bool
