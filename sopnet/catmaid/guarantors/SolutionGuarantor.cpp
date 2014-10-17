@@ -59,10 +59,12 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 				"the segment store does contain segments for the requested blocks, "
 				"but the slice store reports that no conflict sets have been extracted");
 
+	boost::shared_ptr<SegmentConstraints> explicitConstraints = _segmentStore->getConstraintsByBlocks(blocks);
+
 	LOG_DEBUG(solutionguarantorlog) << "computing solution..." << std::endl;
 
 	// compute solution
-	std::vector<SegmentHash> solution = computeSolution(*segments, *conflictSets);
+	std::vector<SegmentHash> solution = computeSolution(*segments, *conflictSets, *explicitConstraints);
 
 	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
 
@@ -93,7 +95,8 @@ SolutionGuarantor::getPaddedCoreBlocks(const Core& core) {
 std::vector<SegmentHash>
 SolutionGuarantor::computeSolution(
 		const SegmentDescriptions& segments,
-		const ConflictSets& conflictSets) {
+		const ConflictSets&        conflictSets,
+		const SegmentConstraints&  explicitConstraints) {
 
 	unsigned int firstSection = std::numeric_limits<unsigned int>::max();
 	unsigned int lastSection  = 0;
@@ -178,7 +181,7 @@ SolutionGuarantor::computeSolution(
 
 	// create linear constraints on the variables
 
-	boost::shared_ptr<LinearConstraints> constraints = createConstraints(segments, conflictSets);
+	boost::shared_ptr<LinearConstraints> constraints = createConstraints(segments, conflictSets, explicitConstraints);
 
 	// create the cost function
 
@@ -211,7 +214,8 @@ SolutionGuarantor::computeSolution(
 boost::shared_ptr<LinearConstraints>
 SolutionGuarantor::createConstraints(
 		const SegmentDescriptions& segments,
-		const ConflictSets&        conflictSets) {
+		const ConflictSets&        conflictSets,
+		const SegmentConstraints&  explicitConstraints) {
 
 	LOG_DEBUG(solutionguarantorlog) << "creating constraints" << std::endl;
 
@@ -219,6 +223,7 @@ SolutionGuarantor::createConstraints(
 
 	addOverlapConstraints(segments, conflictSets, *constraints);
 	addContinuationConstraints(segments, *constraints);
+	addExplicitConstraints(explicitConstraints, *constraints);
 
 	return constraints;
 }
@@ -335,6 +340,23 @@ SolutionGuarantor::addContinuationConstraints(
 
 		constraints.add(pairConstraint);
 		constraints.add(exclusionConstraint);
+	}
+}
+
+void
+SolutionGuarantor::addExplicitConstraints(
+		const SegmentConstraints&  explicitConstraints,
+		LinearConstraints&         constraints) {
+	foreach (const SegmentConstraint& segmentConstraint, explicitConstraints) {
+		LinearConstraint constraint;
+
+		foreach (SegmentHash segmentHash, segmentConstraint)
+			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+
+		constraint.setRelation(GreaterEqual);
+		constraint.setValue(1.0);
+
+		constraints.add(constraint);
 	}
 }
 

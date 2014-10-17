@@ -283,6 +283,62 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	return segmentDescriptions;
 }
 
+boost::shared_ptr<SegmentConstraints>
+PostgreSqlSegmentStore::getConstraintsByBlocks(
+		const Blocks& blocks) {
+
+	boost::shared_ptr<SegmentConstraints> constraints = boost::make_shared<SegmentConstraints>();
+
+	if (blocks.empty()) return constraints;
+
+	boost::timer::cpu_timer queryTimer;
+
+	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(
+			_blockUtils, blocks, _config.getCatmaidRawStackId());
+
+	// Query constraints for this set of blocks
+	std::string blockConstraintsQuery =
+			"SELECT cst.id, array_agg(DISTINCT ROW(csr.segment_id)) "
+			"FROM djsopnet_constraint cst "
+			"JOIN djsopnet_blockconstraintrelation bcr ON bcr.constraint_id = cst.id "
+			"JOIN djsopnet_constraintsegmentrelation csr ON csr.constraint_id = cst.id "
+			"WHERE bcr.block_id IN (" + blocksQuery + ") "
+			"GROUP BY cst.id";
+
+	enum { FIELD_ID_UNUSED, FIELD_SEGMENT_ARRAY };
+	PGresult* queryResult = PQexec(_pgConnection, blockConstraintsQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockConstraintsQuery);
+	int nConstraints = PQntuples(queryResult);
+
+	// Build constraint for each row
+	for (int i = 0; i < nConstraints; ++i) {
+		SegmentConstraint constraint;
+
+		// Parse constraint->segment tuples for segment of form: {"(segment_id)",...}
+		char* cellStr = PQgetvalue(queryResult, i, FIELD_SEGMENT_ARRAY);
+		std::string segmentsString(cellStr);
+
+		boost::char_separator<char> separator("{}()\", \t");
+		boost::tokenizer<boost::char_separator<char> > segmentIds(segmentsString, separator);
+		foreach (const std::string& segmentId, segmentIds) {
+			constraint.insert(PostgreSqlUtils::postgreSqlIdToHash(
+					boost::lexical_cast<PostgreSqlHash>(segmentId)));
+		}
+
+		constraints->push_back(constraint);
+	}
+
+	PQclear(queryResult);
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Retrieved " << constraints->size() << " constraints in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * constraints->size()/queryElapsed.count()) << " constraints/s)" << std::endl;
+
+	return constraints;
+}
+
 void
 PostgreSqlSegmentStore::storeSolution(
 		const std::vector<SegmentHash>& segmentHashes,

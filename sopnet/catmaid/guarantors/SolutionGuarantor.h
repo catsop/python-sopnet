@@ -59,11 +59,13 @@ private:
 
 	std::vector<SegmentHash> computeSolution(
 			const SegmentDescriptions& segments,
-			const ConflictSets& conflictSets);
+			const ConflictSets&        conflictSets,
+			const SegmentConstraints&  explicitConstraints);
 
 	boost::shared_ptr<LinearConstraints> createConstraints(
 			const SegmentDescriptions& segments,
-			const ConflictSets&        conflictSets);
+			const ConflictSets&        conflictSets,
+			const SegmentConstraints&  explicitConstraints);
 
 	boost::shared_ptr<LinearObjective> createObjective(const SegmentDescriptions& segments);
 
@@ -74,6 +76,10 @@ private:
 
 	void addContinuationConstraints(
 			const SegmentDescriptions& segments,
+			LinearConstraints&         constraints);
+
+	void addExplicitConstraints(
+			const SegmentConstraints&  explicitConstraints,
 			LinearConstraints&         constraints);
 
 	double getCost(const std::vector<double>& features);

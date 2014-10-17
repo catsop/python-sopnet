@@ -6,6 +6,7 @@
 #include <catmaid/blocks/Block.h>
 #include <catmaid/blocks/Blocks.h>
 #include <catmaid/blocks/Core.h>
+#include <catmaid/persistence/SegmentConstraints.h>
 #include <catmaid/persistence/SegmentDescriptions.h>
 
 /**
@@ -46,6 +47,17 @@ public:
 	virtual boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(
 			const Blocks& blocks,
 			Blocks&       missingBlocks) = 0;
+
+	/**
+	 * Get additional constraints for segments in the given blocks. Typically
+	 * these would be user corrections to previous solutions or constraints
+	 * inferred from prior tracing.
+	 *
+	 * @param blocks
+	 *              The blocks from which to retrieve the constraints.
+	 */
+	virtual boost::shared_ptr<SegmentConstraints> getConstraintsByBlocks(
+			const Blocks& blocks) = 0;
 
 	/**
 	 * Store the solution of processing a core.

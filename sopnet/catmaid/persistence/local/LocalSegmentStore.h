@@ -46,6 +46,17 @@ public:
 			Blocks&       missingBlocks) {}
 
 	/**
+	 * Get additional constraints for segments in the given blocks. Typically
+	 * these would be user corrections to previous solutions or constraints
+	 * inferred from prior tracing.
+	 *
+	 * @param blocks
+	 *              The blocks from which to retrieve the constraints.
+	 */
+	boost::shared_ptr<SegmentConstraints> getConstraintsByBlocks(
+			const Blocks& blocks) {}
+
+	/**
 	 * Store the solution of processing a core.
 	 *
 	 * @param segmentHashes
