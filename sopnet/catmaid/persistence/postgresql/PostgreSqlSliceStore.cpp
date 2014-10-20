@@ -161,38 +161,16 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 {
 	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
 
-	if (blocks.empty()) {
-		return slices;
-	}
-
-	std::ostringstream blockIds;
-	PGresult* result;
+	if (blocks.empty()) return slices;
 
 	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
-	foreach (const Block& block, blocks) {
-		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
-		std::string blockFlagQuery = "SELECT id, slices_flag FROM djsopnet_block "
-				"WHERE id = (" + blockQuery + ")";
-		result = PQexec(_pgConnection, blockFlagQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
-
-		if (0 != strcmp(PQgetvalue(result, 0, 1), "t")) {
-			missingBlocks.add(block);
-		}
-
-		blockIds << PQgetvalue(result, 0, 0) << ",";
-
-		PQclear(result);
-	}
+	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
+			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			"slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return slices;
-
-	std::string blockIdsStr = blockIds.str();
-	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
 
 	// Query slices for this set of blocks
 	std::string blockSlicesQuery =
@@ -201,7 +179,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 			"JOIN djsopnet_slice s on sbr.slice_id = s.id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_ID, FIELD_SECTION };
-	result = PQexec(_pgConnection, blockSlicesQuery.c_str());
+	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
 	int nSlices = PQntuples(result);
@@ -251,39 +229,16 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 
 	boost::shared_ptr<ConflictSets> conflictSets = boost::make_shared<ConflictSets>();
 
-	if (blocks.empty()) {
-		return conflictSets;
-	}
-
-	std::ostringstream blockIds;
-	PGresult* result;
+	if (blocks.empty()) return conflictSets;
 
 	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
-	// TODO: should conflict sets have own flag?
-	foreach (const Block& block, blocks) {
-		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
-		std::string blockFlagQuery = "SELECT id, slices_flag FROM djsopnet_block "
-				"WHERE id = (" + blockQuery + ")";
-		result = PQexec(_pgConnection, blockFlagQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
-
-		if (0 != strcmp(PQgetvalue(result, 0, 1), "t")) {
-			missingBlocks.add(block);
-		}
-
-		blockIds << PQgetvalue(result, 0, 0) << ",";
-
-		PQclear(result);
-	}
+	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
+			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			"slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return conflictSets;
-
-	std::string blockIdsStr = blockIds.str();
-	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
 
 	// Query conflict sets for this set of blocks
 	std::string blockConflictsQuery =
@@ -292,7 +247,7 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 			"JOIN djsopnet_blockconflictrelation bcr ON bcr.conflict_id = cs.id "
 			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
-	result = PQexec(_pgConnection, blockConflictsQuery.c_str());
+	PGresult* result = PQexec(_pgConnection, blockConflictsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockConflictsQuery);
 	int nConflicts = PQntuples(result);

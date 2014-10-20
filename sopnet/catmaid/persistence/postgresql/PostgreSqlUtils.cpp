@@ -128,4 +128,73 @@ PostgreSqlUtils::createCoreIdQuery(
     return blockQuery.str();
 }
 
+std::string
+PostgreSqlUtils::checkBlocksFlags(
+		const BlockUtils& blockUtils,
+		const Blocks& blocks,
+		unsigned int stackId,
+		std::string flag,
+		Blocks& missingBlocks,
+		PGconn* connection) {
+
+	std::ostringstream blockQuery;
+	blockQuery << "WITH block_mins AS (VALUES";
+	char separator = ' ';
+	unsigned int blockIndex = 0;
+
+	foreach (const Block& block, blocks) {
+		util::box<unsigned int> bb = blockUtils.getBoundingBox(block);
+		blockQuery << separator << '('
+				<< blockIndex++ << ','
+				<< bb.min.x << ','
+				<< bb.min.y << ','
+				<< bb.min.z << ')';
+		separator = ',';
+	}
+
+	blockQuery << ") SELECT bm.id, b.id, b." << flag
+			<< " FROM block_mins AS bm (id,min_x,min_y,min_z) "
+				"LEFT JOIN djsopnet_block b ON (b.stack_id = " << stackId << " AND "
+				"b.min_x = bm.min_x AND "
+				"b.min_y = bm.min_y AND "
+				"b.min_z = bm.min_z) ORDER BY bm.id ASC;";
+	enum { FIELD_INDEX, FIELD_ID, FIELD_FLAG };
+	std::string query = blockQuery.str();
+
+	PGresult* queryResult = PQexec(connection, query.c_str());
+	checkPostgreSqlError(queryResult, query);
+
+	unsigned int nBlocks = boost::numeric_cast<unsigned int>(PQntuples(queryResult));
+
+	if (nBlocks != blocks.size()) {
+		std::ostringstream errorMsg;
+		errorMsg << "Wrong number of block rows returned, expected " << blocks.size()
+				<< ", received " << nBlocks << ". The used query was: " << query << std::endl;
+		LOG_ERROR(postgresqlutilslog) << errorMsg.str();
+		UTIL_THROW_EXCEPTION(
+			PostgreSqlException,
+			"A PostgreSQL query returned an unexpected result (" << errorMsg.str() << ").");
+	}
+
+	std::ostringstream blockIds;
+	int i = 0;
+	separator = ' ';
+
+	// Since Blocks uses a std::set we are guaranteed the same iteration order as above.
+	foreach (const Block& block, blocks) {
+		if (0 != strcmp(PQgetvalue(queryResult, i, FIELD_FLAG), "t")) {
+			missingBlocks.add(block);
+		} else {
+			blockIds << separator << PQgetvalue(queryResult, i, FIELD_ID);
+			separator = ',';
+		}
+
+		i++;
+	}
+
+	PQclear(queryResult);
+
+	return blockIds.str();
+}
+
 #endif //HAVE_PostgreSQL

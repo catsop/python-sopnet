@@ -76,6 +76,20 @@ public:
 			const BlockUtils& blockUtils,
 			const Core& core,
 			unsigned int stackId);
+
+	/**
+	 * Execute a query that checks whether the specified flag is true for each
+	 * block in a set of blocks, collecting blocks for which the flag is false
+	 * in missingBlocks. Returns a comma-separated string of IDs for blocks that
+	 * were not missing.
+	 */
+	static std::string checkBlocksFlags(
+			const BlockUtils& blockUtils,
+			const Blocks& blocks,
+			unsigned int stsackId,
+			std::string flag,
+			Blocks& missingBlocks,
+			PGconn* connection);
 };
 
 #endif // HAVE_PostgreSQL

@@ -145,34 +145,14 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	if (blocks.empty()) return segmentDescriptions;
 
-	std::ostringstream blockIds;
-	PGresult* queryResult;
-
 	boost::timer::cpu_timer queryTimer;
 
-	// Check if any requested block do not have segments stored and flagged.
-	foreach (const Block& block, blocks) {
-		const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
-		std::string blockFlagQuery = "SELECT id, segments_flag FROM djsopnet_block "
-				"WHERE id = (" + blockQuery + ")";
-		queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);
-
-		if (0 != strcmp(PQgetvalue(queryResult, 0, 1), "t")) {
-			missingBlocks.add(block);
-		}
-
-		blockIds << PQgetvalue(queryResult, 0, 0) << ",";
-
-		PQclear(queryResult);
-	}
+	// Check if any requested block do not have slices flagged.
+	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
+			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			"segments_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
-
-	std::string blockIdsStr = blockIds.str();
-	blockIdsStr.erase(blockIdsStr.length() - 1); // Remove trailing comma.
 
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
@@ -189,7 +169,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
 			FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
-	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
+	PGresult* queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
 	int nSegments = PQntuples(queryResult);
