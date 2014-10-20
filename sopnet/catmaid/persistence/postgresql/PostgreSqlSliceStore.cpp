@@ -126,6 +126,10 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 
 	boost::timer::cpu_timer queryTimer;
 
+	std::ostringstream q;
+	q << "WITH hash_sets AS (VALUES";
+	char separator = ' ';
+
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
 	{
@@ -142,25 +146,24 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 							PostgreSqlUtils::hashToPostgreSqlId(id2));
 
 					// Insert conflicting pair
-					std::ostringstream q;
-					q << "INSERT INTO djsopnet_sliceconflictset ";
-					q << "(slice_a_id, slice_b_id) VALUES ";
-					q << "(" << hash1 << "," << hash2 << "); ";
-					q << "INSERT INTO djsopnet_blockconflictrelation ";
-					q << "(block_id, conflict_id) VALUES ";
-					q << "((" << blockQuery << "),";
-					q << "(SELECT id FROM djsopnet_sliceconflictset ";
-					q << "WHERE slice_a_id=" << hash1 << " AND ";
-					q << "slice_b_id=" << hash2 << "))";
-
-					std::string query = q.str();
-					PGresult *result = PQexec(_pgConnection, query.c_str());
-					PostgreSqlUtils::checkPostgreSqlError(result, query);
-					PQclear(result);
+					q << separator << '(' << hash1 << ',' << hash2 << ')';
+					separator = ',';
 				}
 			}
 		}
 	}
+
+	q << "), fake_tab AS (INSERT INTO djsopnet_sliceconflictset (slice_a_id,slice_b_id) "
+				"SELECT DISTINCT * FROM hash_sets) "
+			"INSERT INTO djsopnet_blockconflictrelation (block_id, conflict_id) "
+				"(SELECT DISTINCT (" << blockQuery << "), c.id "
+				"FROM djsopnet_sliceconflictset c, hash_sets AS h (a,b) "
+				"WHERE c.slice_a_id=h.a AND c.slice_b_id=h.b);";
+
+	std::string query = q.str();
+	PGresult *result = PQexec(_pgConnection, query.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, query);
+	PQclear(result);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << conflictSets.size() << " conflict sets in "
