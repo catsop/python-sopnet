@@ -41,24 +41,19 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 	boost::timer::cpu_timer queryTimer;
 
-	PGresult *result;
 	unsigned int stack_id = _config.getCatmaidRawStackId();
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				_blockUtils, block, stack_id);
 
-	result = PQexec(_pgConnection, blockQuery.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, blockQuery);
-	std::string blockId(PQgetvalue(result, 0, 0));
-	PQclear(result);
-
 	std::ostringstream q;
-	q << "INSERT INTO djsopnet_slice ";
-	q << "(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
-	<< "ctr_y, value, size, id) VALUES";
+	q << "INSERT INTO djsopnet_slice "
+			"(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
+			"ctr_y, value, size, id) VALUES";
 
 	std::ostringstream q2;
-	q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) ";
-	q2 << "VALUES";
+	q2 << "WITH b AS (" << blockQuery << ") "
+			"INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
+			"VALUES";
 
 	char separator = ' ';
 	foreach (boost::shared_ptr<Slice> slice, slices)
@@ -83,35 +78,25 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		q << slice->getComponent()->getSize() << ",";
 		q << hash << ")";
 
-		q2 << separator << "(" << blockId << "," << hash << ")";
+		q2 << separator << "((SELECT id FROM b)," << hash << ")";
 
 		separator = ',';
 	}
 
-	std::string query = q.str();
-	result = PQexec(_pgConnection, query.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, query);
-	PQclear(result);
+	q << ';' << q2.str() << ';';
 
-	std::string query2 = q2.str();
-	result = PQexec(_pgConnection, query2.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, query2);
+	if (doneWithBlock)
+		q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ")";
+
+	std::string query = q.str();
+	PGresult *result = PQexec(_pgConnection, query.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result, query);
 	PQclear(result);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
 			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
 			<< (1e9 * slices.size()/queryElapsed.count()) << " slices/s)" << std::endl;
-
-	if (doneWithBlock) {
-
-		std::string blockFlagQuery =
-				"UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" + blockQuery + ")";
-		result = PQexec(_pgConnection, blockFlagQuery.c_str());
-
-		PostgreSqlUtils::checkPostgreSqlError(result, blockFlagQuery);
-		PQclear(result);
-	}
 }
 
 void
