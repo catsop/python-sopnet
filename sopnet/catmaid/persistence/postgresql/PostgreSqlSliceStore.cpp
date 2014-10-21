@@ -111,39 +111,42 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 
 	boost::timer::cpu_timer queryTimer;
 
-	std::ostringstream q;
-	q << "WITH hash_sets AS (VALUES";
+	std::ostringstream idSets;
+	idSets << "(VALUES";
 	char separator = ' ';
 
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
 	{
-		foreach (SliceHash id1, conflictSet.getSlices())
+		foreach (SliceHash hash1, conflictSet.getSlices())
 		{
-			foreach (SliceHash id2, conflictSet.getSlices())
+			foreach (SliceHash hash2, conflictSet.getSlices())
 			{
-				if (id1 < id2)
+				if (hash1 < hash2)
 				{
 					// Create proper string representation of hashes
-					std::string hash1 = boost::lexical_cast<std::string>(
-							PostgreSqlUtils::hashToPostgreSqlId(id1));
-					std::string hash2 = boost::lexical_cast<std::string>(
-							PostgreSqlUtils::hashToPostgreSqlId(id2));
+					std::string id1 = boost::lexical_cast<std::string>(
+							PostgreSqlUtils::hashToPostgreSqlId(hash1));
+					std::string id2 = boost::lexical_cast<std::string>(
+							PostgreSqlUtils::hashToPostgreSqlId(hash2));
 
 					// Insert conflicting pair
-					q << separator << '(' << hash1 << ',' << hash2 << ')';
+					idSets << separator << '(' << id1 << ',' << id2 << ')';
 					separator = ',';
 				}
 			}
 		}
 	}
 
-	q << "), fake_tab AS (INSERT INTO djsopnet_sliceconflictset (slice_a_id,slice_b_id) "
-				"SELECT DISTINCT * FROM hash_sets) "
-			"INSERT INTO djsopnet_blockconflictrelation (block_id, conflict_id) "
-				"(SELECT DISTINCT (" << blockQuery << "), c.id "
-				"FROM djsopnet_sliceconflictset c, hash_sets AS h (a,b) "
-				"WHERE c.slice_a_id=h.a AND c.slice_b_id=h.b);";
+	idSets << ')';
+	std::string idSetsStr = idSets.str();
+	std::ostringstream q;
+	q << "INSERT INTO djsopnet_sliceconflictset (slice_a_id,slice_b_id) "
+			"(SELECT DISTINCT * FROM " << idSetsStr << " AS h (a,b));";
+	q << "INSERT INTO djsopnet_blockconflictrelation (block_id,conflict_id) "
+			"(SELECT DISTINCT (" << blockQuery << "), c.id "
+			"FROM djsopnet_sliceconflictset c, " << idSetsStr << " AS h (a,b) "
+			"WHERE c.slice_a_id=h.a AND c.slice_b_id=h.b);";
 
 	std::string query = q.str();
 	PGresult *result = PQexec(_pgConnection, query.c_str());
