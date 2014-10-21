@@ -128,8 +128,23 @@ SliceGuarantor::extractSlicesAndConflicts(
 
 		// Slices are extracted in [0 0 w h]. Translate them to section 
 		// coordinates.
-		foreach (boost::shared_ptr<Slice> slice, *slicesValue)
+		std::map<SliceHash, SliceHash> sliceTranslationMap;
+		foreach (boost::shared_ptr<Slice> slice, *slicesValue) {
+			SliceHash oldHash = slice->hashValue();
 			slice->translate(bound.upperLeft());
+			sliceTranslationMap[oldHash] = slice->hashValue();
+		}
+
+		// Update conflict sets to reflect hash changes due to translation.
+		foreach (ConflictSet& conflictSet, *conflictsValue) {
+			std::set<SliceHash> newHashes;
+			foreach (SliceHash oldHash, conflictSet.getSlices())
+				newHashes.insert(sliceTranslationMap.at(oldHash));
+
+			conflictSet.clear();
+			foreach (SliceHash newHash, newHashes)
+				conflictSet.addSlice(newHash);
+		}
 
 		// find all slices that should be completely extracted
 		getRequiredSlicesAndConflicts(
