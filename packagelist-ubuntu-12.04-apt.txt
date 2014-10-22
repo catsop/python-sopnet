@@ -1,0 +1,17 @@
+libboost1.48-all-dev
+liblapack-dev
+libx11-dev
+libx11-xcb-dev
+libxcb1-dev
+libxrandr-dev
+libxi-dev
+freeglut3-dev
+libglew1.6-dev
+libcairo2-dev
+libpng12-dev
+libmagick++-dev
+libcurl4-openssl-dev
+libtiff4-dev
+libhdf5-serial-dev
+libboost-python1.48-dev
+python-dev
