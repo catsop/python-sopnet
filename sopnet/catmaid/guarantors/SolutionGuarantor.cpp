@@ -266,6 +266,8 @@ SolutionGuarantor::addOverlapConstraints(
 			<< "creating overlap constraints for " << conflictSets.size()
 			<< " conflict sets" << std::endl;
 
+	std::set<SliceHash> noConflictSlices = _slices;
+
 	// for each conflict set:
 	foreach (const ConflictSet& conflictSet, conflictSets) {
 
@@ -289,7 +291,32 @@ SolutionGuarantor::addOverlapConstraints(
 
 				constraint.setCoefficient(var, 1.0);
 			}
+
+			noConflictSlices.erase(sliceHash);
 		}
+
+		constraint.setRelation(LessEqual);
+		constraint.setValue(1.0);
+
+		constraints.add(constraint);
+	}
+
+	// Create an exclusivity constraint for the segments one one side of each
+	// slice not in any conflict set.
+	foreach (const SliceHash& sliceHash, noConflictSlices) {
+
+		LinearConstraint constraint;
+
+		std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
+
+		// find segments that use the slice on their left side, except if
+		// this is a slice in the last section -- in this case, find
+		// segments that use it on their right side
+		if (_lastSlices.count(sliceHash))
+			sliceToSegments = &_rightSliceToSegments;
+
+		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
+			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
 		constraint.setRelation(LessEqual);
 		constraint.setValue(1.0);
@@ -318,28 +345,23 @@ SolutionGuarantor::addContinuationConstraints(
 
 		// require the sum of their variables to be equal
 
-		LinearConstraint pairConstraint, exclusionConstraint;
+		LinearConstraint constraint;
 
 		LOG_ALL(solutionguarantorlog) << "create new continuation constraint for slice " << sliceHash << std::endl;
 
 		foreach (SegmentHash segmentHash, leftSegments) {
-			pairConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
-			exclusionConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is left segment" << std::endl;
 		}
 		foreach (SegmentHash segmentHash, rightSegments) {
-			pairConstraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
-			exclusionConstraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+			constraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is right segment" << std::endl;
 		}
 
-		pairConstraint.setRelation(Equal);
-		pairConstraint.setValue(0.0);
-		exclusionConstraint.setRelation(LessEqual);
-		exclusionConstraint.setValue(2.0);
+		constraint.setRelation(Equal);
+		constraint.setValue(0.0);
 
-		constraints.add(pairConstraint);
-		constraints.add(exclusionConstraint);
+		constraints.add(constraint);
 	}
 }
 
