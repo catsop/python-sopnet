@@ -2,7 +2,6 @@
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
 #include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/django/DjangoSliceStore.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/StackType.h>
 #include <catmaid/persistence/SliceStore.h>
