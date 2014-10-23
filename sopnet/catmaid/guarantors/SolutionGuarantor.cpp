@@ -13,12 +13,10 @@ SolutionGuarantor::SolutionGuarantor(
 		const ProjectConfiguration&     projectConfiguration,
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
-		unsigned int                    corePadding,
-		const std::vector<double>&      featureWeights) :
+		unsigned int                    corePadding) :
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
 	_corePadding(corePadding),
-	_weights(featureWeights),
 	_blockUtils(projectConfiguration) {
 
 	if (_corePadding == 0)
@@ -62,6 +60,8 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	boost::shared_ptr<SegmentConstraints> explicitConstraints = _segmentStore->getConstraintsByBlocks(blocks);
 
 	LOG_DEBUG(solutionguarantorlog) << "computing solution..." << std::endl;
+
+	_weights = _segmentStore->getFeatureWeights();
 
 	// compute solution
 	std::vector<SegmentHash> solution = computeSolution(*segments, *conflictSets, *explicitConstraints);

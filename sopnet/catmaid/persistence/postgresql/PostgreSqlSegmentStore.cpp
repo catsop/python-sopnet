@@ -319,6 +319,39 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 	return constraints;
 }
 
+std::vector<double>
+PostgreSqlSegmentStore::getFeatureWeights() {
+
+	std::string query =
+			"SELECT weights FROM djsopnet_featureinfo WHERE stack_id="
+			+ boost::lexical_cast<std::string>(_config.getCatmaidRawStackId());
+	PGresult* queryResult = PQexec(_pgConnection, query.c_str());
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
+
+	int nRows = PQntuples(queryResult);
+	if (!nRows) {
+		std::string errorMsg = "No feature weights found for stack.";
+		LOG_ERROR(postgresqlsegmentstorelog) << errorMsg << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg);
+	}
+
+	char* cellStr = PQgetvalue(queryResult, 0, 0);
+	std::string weightsString(cellStr);
+	weightsString = weightsString.substr(1, weightsString.length() - 2); // Remove { and }
+	boost::char_separator<char> separator("{}()\", \t");
+	boost::tokenizer<boost::char_separator<char> > weightsTokens(weightsString, separator);
+
+	std::vector<double> weights;
+
+	foreach (const std::string& weight, weightsTokens) {
+		weights.push_back(boost::lexical_cast<double>(weight));
+	}
+
+	PQclear(queryResult);
+
+	return weights;
+}
+
 void
 PostgreSqlSegmentStore::storeSolution(
 		const std::vector<SegmentHash>& segmentHashes,

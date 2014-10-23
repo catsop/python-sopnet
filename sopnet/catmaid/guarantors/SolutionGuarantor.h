@@ -41,8 +41,7 @@ public:
 			const ProjectConfiguration&     projectConfiguration,
 			boost::shared_ptr<SegmentStore> segmentStore,
 			boost::shared_ptr<SliceStore>   sliceStore,
-			unsigned int                    corePadding,
-			const std::vector<double>&      featureWeights);
+			unsigned int                    corePadding);
 
 	/**
 	 * Get the solution for the given cores.

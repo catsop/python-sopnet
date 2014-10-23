@@ -57,6 +57,11 @@ public:
 			const Blocks& blocks) {}
 
 	/**
+	 * Get weights for Segment features used computing problem cost.
+	 */
+	std::vector<double> getFeatureWeights() {}
+
+	/**
 	 * Store the solution of processing a core.
 	 *
 	 * @param segmentHashes
