@@ -62,6 +62,8 @@ QuadraticSolver::solve() {
 	} else {
 
 		LOG_ERROR(quadraticsolverlog) << "error: " << message << std::endl;
+
+		UTIL_THROW_EXCEPTION(NoSolutionException, message);
 	}
 }
 

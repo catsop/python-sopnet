@@ -3,6 +3,8 @@
 
 #include <pipeline/all.h>
 
+struct NoSolutionException : virtual Exception {};
+
 class Solution : public pipeline::Data {
 
 public:

@@ -109,6 +109,8 @@ LinearSolver::solve() {
 	} else {
 
 		LOG_ERROR(linearsolverlog) << "error: " << message << std::endl;
+
+		UTIL_THROW_EXCEPTION(NoSolutionException, message);
 	}
 
 	LOG_ALL(linearsolverlog) << "solution: " << _solution->getVector() << std::endl;
