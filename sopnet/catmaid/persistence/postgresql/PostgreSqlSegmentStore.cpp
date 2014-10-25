@@ -362,25 +362,25 @@ PostgreSqlSegmentStore::storeSolution(
 	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
 			core, _config.getCatmaidRawStackId());
 
-	PGresult* queryResult = PQexec(_pgConnection, coreQuery.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, coreQuery);
-	std::string coreId(PQgetvalue(queryResult, 0, 0));
-	PQclear(queryResult);
-
 	std::ostringstream query;
-	query << "DELETE FROM djsopnet_segmentsolution WHERE core_id = " << coreId << ';';
-	query << "INSERT INTO djsopnet_segmentsolution (core_id, segment_id) VALUES";
+	query << "DELETE FROM djsopnet_segmentsolution WHERE core_id = (" << coreQuery << ");"
+			"WITH c AS (" << coreQuery << "), segments AS (VALUES ";
 	char separator = ' ';
 
 	foreach (const SegmentHash& segmentHash, segmentHashes) {
-		query << separator << '(' << coreId << ','
+		query << separator << '('
 			  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
 			  << ')';
 		separator = ',';
 	}
 
+	query << ") INSERT INTO djsopnet_segmentsolution (core_id, segment_id) "
+			"SELECT c.id, s.id FROM c, segments AS s (id);"
+			"UPDATE djsopnet_core SET solution_set_flag = TRUE "
+			"WHERE id = (" << coreQuery << ')';
+
 	std::string queryString(query.str());
-	queryResult = PQexec(_pgConnection, queryString.c_str());
+	PGresult* queryResult = PQexec(_pgConnection, queryString.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, queryString);
 	PQclear(queryResult);
