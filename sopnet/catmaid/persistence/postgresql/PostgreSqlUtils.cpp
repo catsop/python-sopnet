@@ -70,24 +70,21 @@ PostgreSqlUtils::getConnection(const std::string& host, const std::string& datab
 
 std::string
 PostgreSqlUtils::createBlockIdQuery(
-	const BlockUtils& blockUtils,
 	const Block& block,
 	unsigned int stackId)
 {
-	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(block);
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
 	blockQuery << "stack_id=" << stackId << " AND ";
-	blockQuery << "min_x=" << boxBb.min.x << " AND ";
-	blockQuery << "min_y=" << boxBb.min.y << " AND ";
-	blockQuery << "min_z=" << boxBb.min.z << " LIMIT 1";
+	blockQuery << "coordinate_x=" << block.x() << " AND ";
+	blockQuery << "coordinate_y=" << block.y() << " AND ";
+	blockQuery << "coordinate_z=" << block.z() << " LIMIT 1";
 
     return blockQuery.str();
 }
 
 std::string
 PostgreSqlUtils::createBlockIdQuery(
-	const BlockUtils& blockUtils,
 	const Blocks& blocks,
 	unsigned int stackId)
 {
@@ -97,11 +94,10 @@ PostgreSqlUtils::createBlockIdQuery(
 	blockQuery << "stack_id=" << stackId << "AND ";
 	foreach (const Block &block, blocks)
 	{
-		util::box<unsigned int> bb = blockUtils.getBoundingBox(block);
 		blockQuery << delim;
-		blockQuery << "(min_x=" << bb.min.x << "AND ";
-		blockQuery << "min_y=" << bb.min.y << "AND ";
-		blockQuery << "min_z=" << bb.min.z << ")";
+		blockQuery << "(coordinate_x=" << block.x() << " AND ";
+		blockQuery << "coordinate_y=" << block.y() << " AND ";
+		blockQuery << "coordinate_z=" << block.z() << ")";
 		delim = " OR ";
 	}
 
@@ -110,27 +106,21 @@ PostgreSqlUtils::createBlockIdQuery(
 
 std::string
 PostgreSqlUtils::createCoreIdQuery(
-	const BlockUtils& blockUtils,
 	const Core& core,
 	unsigned int stackId)
 {
-	util::box<unsigned int> boxBb = blockUtils.getBoundingBox(blockUtils.getCoreBlocks(core));
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM djsopnet_core WHERE ";
 	blockQuery << "stack_id=" << stackId << "AND ";
-	blockQuery << "min_x=" << boxBb.min.x << "AND ";
-	blockQuery << "min_y=" << boxBb.min.y << "AND ";
-	blockQuery << "min_z=" << boxBb.min.z << "AND ";
-	blockQuery << "max_x=" << boxBb.max.x << "AND ";
-	blockQuery << "max_y=" << boxBb.max.y << "AND ";
-	blockQuery << "max_z=" << boxBb.max.z << "LIMIT 1";
+	blockQuery << "coordinate_x=" << core.x() << " AND ";
+	blockQuery << "coordinate_y=" << core.y() << " AND ";
+	blockQuery << "coordinate_z=" << core.z() << " LIMIT 1";
 
     return blockQuery.str();
 }
 
 std::string
 PostgreSqlUtils::checkBlocksFlags(
-		const BlockUtils& blockUtils,
 		const Blocks& blocks,
 		unsigned int stackId,
 		std::string flag,
@@ -138,26 +128,25 @@ PostgreSqlUtils::checkBlocksFlags(
 		PGconn* connection) {
 
 	std::ostringstream blockQuery;
-	blockQuery << "WITH block_mins AS (VALUES";
+	blockQuery << "WITH block_coords AS (VALUES";
 	char separator = ' ';
 	unsigned int blockIndex = 0;
 
 	foreach (const Block& block, blocks) {
-		util::box<unsigned int> bb = blockUtils.getBoundingBox(block);
 		blockQuery << separator << '('
 				<< blockIndex++ << ','
-				<< bb.min.x << ','
-				<< bb.min.y << ','
-				<< bb.min.z << ')';
+				<< block.x() << ','
+				<< block.y() << ','
+				<< block.z() << ')';
 		separator = ',';
 	}
 
 	blockQuery << ") SELECT bm.id, b.id, b." << flag
-			<< " FROM block_mins AS bm (id,min_x,min_y,min_z) "
+			<< " FROM block_coords AS bm (id,coord_x,coord_y,coord_z) "
 				"LEFT JOIN djsopnet_block b ON (b.stack_id = " << stackId << " AND "
-				"b.min_x = bm.min_x AND "
-				"b.min_y = bm.min_y AND "
-				"b.min_z = bm.min_z) ORDER BY bm.id ASC;";
+				"b.coordinate_x = bm.coord_x AND "
+				"b.coordinate_y = bm.coord_y AND "
+				"b.coordinate_z = bm.coord_z) ORDER BY bm.id ASC;";
 	enum { FIELD_INDEX, FIELD_ID, FIELD_FLAG };
 	std::string query = blockQuery.str();
 

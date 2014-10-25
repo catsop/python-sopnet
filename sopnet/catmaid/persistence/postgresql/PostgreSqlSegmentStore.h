@@ -92,9 +92,6 @@ private:
 	// general configuration
 	const ProjectConfiguration& _config;
 
-	// a block utils instance is needed to get bounding boxes of blocks
-	const BlockUtils _blockUtils;
-
 	// database connection
 	PGconn* _pgConnection;
 };

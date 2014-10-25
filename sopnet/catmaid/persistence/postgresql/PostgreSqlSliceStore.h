@@ -78,9 +78,6 @@ private:
 	// database connection
 	PGconn* _pgConnection;
 
-	// a block utils instance is needed to get bounding boxes of blocks
-	const BlockUtils _blockUtils;
-
 	/**
 	 * Store a connected component as a file in the component directory.
 	 */

@@ -18,7 +18,7 @@
 logger::LogChannel postgresqlslicestorelog("postgresqlslicestorelog", "[PostgreSqlSliceStore] ");
 
 PostgreSqlSliceStore::PostgreSqlSliceStore(
-        const ProjectConfiguration& config) : _config(config), _blockUtils(config)
+        const ProjectConfiguration& config) : _config(config)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -43,7 +43,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 	unsigned int stack_id = _config.getCatmaidRawStackId();
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, stack_id);
+				block, stack_id);
 
 	std::ostringstream q;
 	q << "INSERT INTO djsopnet_slice "
@@ -107,7 +107,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 		return;
 
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-			_blockUtils, block, _config.getCatmaidRawStackId());
+			block, _config.getCatmaidRawStackId());
 
 	boost::timer::cpu_timer queryTimer;
 
@@ -170,7 +170,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	// Check if any requested block do not have slices flagged.
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			blocks, _config.getCatmaidRawStackId(),
 			"slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return slices;
@@ -238,7 +238,7 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 
 	// Check if any requested block do not have slices flagged.
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			blocks, _config.getCatmaidRawStackId(),
 			"slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return conflictSets;
@@ -286,7 +286,7 @@ bool
 PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
+				block, _config.getCatmaidRawStackId());
 	std::string blockFlagQuery = "SELECT slices_flag FROM djsopnet_block "
 			"WHERE id = (" + blockQuery + ")";
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());

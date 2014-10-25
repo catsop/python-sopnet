@@ -10,7 +10,7 @@
 logger::LogChannel postgresqlsegmentstorelog("postgresqlsegmentstorelog", "[PostgreSqlSegmentStore] ");
 
 PostgreSqlSegmentStore::PostgreSqlSegmentStore(
-		const ProjectConfiguration& config) : _config(config), _blockUtils(_config)
+		const ProjectConfiguration& config) : _config(config)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -32,7 +32,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 
 	PGresult* queryResult;
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
+				block, _config.getCatmaidRawStackId());
 
 	queryResult = PQexec(_pgConnection, blockQuery.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockQuery);
@@ -149,7 +149,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Check if any requested block do not have slices flagged.
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			_blockUtils, blocks, _config.getCatmaidRawStackId(),
+			blocks, _config.getCatmaidRawStackId(),
 			"segments_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
@@ -274,7 +274,7 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 	boost::timer::cpu_timer queryTimer;
 
 	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(
-			_blockUtils, blocks, _config.getCatmaidRawStackId());
+			blocks, _config.getCatmaidRawStackId());
 
 	// Query constraints for this set of blocks
 	std::string blockConstraintsQuery =
@@ -360,7 +360,7 @@ PostgreSqlSegmentStore::storeSolution(
 	boost::timer::cpu_timer queryTimer;
 
 	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
-				_blockUtils, core, _config.getCatmaidRawStackId());
+			core, _config.getCatmaidRawStackId());
 
 	PGresult* queryResult = PQexec(_pgConnection, coreQuery.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, coreQuery);
@@ -395,7 +395,7 @@ bool
 PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
 
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				_blockUtils, block, _config.getCatmaidRawStackId());
+				block, _config.getCatmaidRawStackId());
 	std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
 			"WHERE id = (" + blockQuery + ")";
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
