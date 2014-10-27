@@ -369,14 +369,16 @@ void
 SolutionGuarantor::addExplicitConstraints(
 		const SegmentConstraints&  explicitConstraints,
 		LinearConstraints&         constraints) {
+
+	typedef std::map<SegmentHash, double>::value_type segmentCoeff;
 	foreach (const SegmentConstraint& segmentConstraint, explicitConstraints) {
 		LinearConstraint constraint;
 
-		foreach (SegmentHash segmentHash, segmentConstraint)
-			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
+		foreach (const segmentCoeff& coeff, segmentConstraint.getCoefficients())
+			constraint.setCoefficient(_hashToVariable[coeff.first], coeff.second);
 
-		constraint.setRelation(GreaterEqual);
-		constraint.setValue(1.0);
+		constraint.setRelation(segmentConstraint.getRelation());
+		constraint.setValue(segmentConstraint.getValue());
 
 		constraints.add(constraint);
 	}

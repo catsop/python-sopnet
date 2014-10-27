@@ -278,14 +278,15 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 
 	// Query constraints for this set of blocks
 	std::string blockConstraintsQuery =
-			"SELECT cst.id, array_agg(DISTINCT ROW(csr.segment_id)) "
+			"SELECT cst.id, cst.relation, cst.value, "
+			"array_agg(DISTINCT ROW(csr.segment_id, csr.coefficient)) "
 			"FROM djsopnet_constraint cst "
 			"JOIN djsopnet_blockconstraintrelation bcr ON bcr.constraint_id = cst.id "
 			"JOIN djsopnet_constraintsegmentrelation csr ON csr.constraint_id = cst.id "
 			"WHERE bcr.block_id IN (" + blocksQuery + ") "
 			"GROUP BY cst.id";
 
-	enum { FIELD_ID_UNUSED, FIELD_SEGMENT_ARRAY };
+	enum { FIELD_ID_UNUSED, FIELD_RELATION, FIELD_VALUE, FIELD_SEGMENT_ARRAY };
 	PGresult* queryResult = PQexec(_pgConnection, blockConstraintsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockConstraintsQuery);
@@ -295,15 +296,27 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 	for (int i = 0; i < nConstraints; ++i) {
 		SegmentConstraint constraint;
 
+		char* cellStr;
+		cellStr = PQgetvalue(queryResult, i, FIELD_RELATION);
+		Relation relation = cellStr[0] == 'L' ? LessEqual : (cellStr[0] == 'E' ? Equal : GreaterEqual);
+		constraint.setRelation(relation);
+		cellStr = PQgetvalue(queryResult, i, FIELD_VALUE);
+		constraint.setValue(boost::lexical_cast<double>(cellStr));
+
 		// Parse constraint->segment tuples for segment of form: {"(segment_id)",...}
-		char* cellStr = PQgetvalue(queryResult, i, FIELD_SEGMENT_ARRAY);
+		cellStr = PQgetvalue(queryResult, i, FIELD_SEGMENT_ARRAY);
 		std::string segmentsString(cellStr);
 
 		boost::char_separator<char> separator("{}()\", \t");
-		boost::tokenizer<boost::char_separator<char> > segmentIds(segmentsString, separator);
-		foreach (const std::string& segmentId, segmentIds) {
-			constraint.insert(PostgreSqlUtils::postgreSqlIdToHash(
-					boost::lexical_cast<PostgreSqlHash>(segmentId)));
+		boost::tokenizer<boost::char_separator<char> > tuples(segmentsString, separator);
+		for (boost::tokenizer<boost::char_separator<char> >::iterator tuple = tuples.begin();
+			tuple != tuples.end();
+			++tuple) {
+			SegmentHash segment = PostgreSqlUtils::postgreSqlIdToHash(
+					boost::lexical_cast<PostgreSqlHash>(*tuple));
+			double coeff = boost::lexical_cast<double>(*(++tuple));
+
+			constraint.setCoefficient(segment, coeff);
 		}
 
 		constraints->push_back(constraint);
