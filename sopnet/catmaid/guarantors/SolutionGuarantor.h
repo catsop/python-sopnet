@@ -20,6 +20,10 @@ public:
 	/**
 	 * Create a new SolutionGuarantor using the given database stores.
 	 *
+	 * @param projectConfiguration
+	 *              The ProjectConfiguration used to configure Block and Core
+	 *              parameters.
+	 *
 	 * @param segmentStore
 	 *              The SegmentStore to use to retrieve segments and store the  
 	 *              solution.
@@ -32,10 +36,6 @@ public:
 	 *              eliminate border effects. The solution will be computed on 
 	 *              the padded core, but only the solution of the core will be 
 	 *              stored.
-	 *
-	 * @param featureWeights
-	 *              Linear coefficients to compute the costs from the segment 
-	 *              features.
 	 */
 	SolutionGuarantor(
 			const ProjectConfiguration&     projectConfiguration,
