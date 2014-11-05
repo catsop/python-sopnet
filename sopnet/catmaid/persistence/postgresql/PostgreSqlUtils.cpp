@@ -46,11 +46,16 @@ PostgreSqlUtils::postgreSqlIdToHash(const PostgreSqlHash pgId) {
 }
 
 PGconn*
-PostgreSqlUtils::getConnection(const std::string& host, const std::string& database,
-			const std::string& user, const std::string& pass)
+PostgreSqlUtils::getConnection(
+		const std::string& host,
+		const std::string& port,
+		const std::string& database,
+		const std::string& user,
+		const std::string& pass)
 {
 	std::string connectionInfo =
 			(host.empty()     ? "" : "host="     + host     + " ") +
+			(port.empty()     ? "" : "port="     + port     + " ") +
 			(database.empty() ? "" : "dbname="   + database + " ") +
 			(user.empty()     ? "" : "user="     + user     + " ") +
 			(pass.empty()     ? "" : "password=" + pass     + " ");

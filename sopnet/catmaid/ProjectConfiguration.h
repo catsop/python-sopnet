@@ -146,6 +146,16 @@ public:
 	const std::string& getPostgreSqlHost() const;
 
 	/**
+	 * Set the PosgreSql port.
+	 */
+	void setPostgreSqlPort(const std::string& pgPort);
+
+	/**
+	 * Get the PosgreSql port.
+	 */
+	const std::string& getPostgreSqlPort() const;
+
+	/**
 	 * Set the PosgreSql user name.
 	 */
 	void setPostgreSqlUser(const std::string& pgUser);
@@ -192,6 +202,7 @@ private:
 	std::string _componentDirectory;
 
 	std::string _postgreSqlHost;
+	std::string _postgreSqlPort;
 	std::string _postgreSqlUser;
 	std::string _postgreSqlPassword;
 	std::string _postgreSqlDatabase;

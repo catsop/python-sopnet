@@ -12,6 +12,7 @@ ProjectConfiguration::ProjectConfiguration() :
 	_coreSizeInBlocks(1, 1, 1),
 	_componentDirectory("/tmp"),
 	_postgreSqlHost(""),
+	_postgreSqlPort("5432"),
 	_postgreSqlUser("catsop_user"),
 	_postgreSqlPassword("catsop_janelia_test"),
 	_postgreSqlDatabase("catsop")
@@ -135,6 +136,18 @@ const std::string&
 ProjectConfiguration::getPostgreSqlHost() const {
 
 	return _postgreSqlHost;
+}
+
+void
+ProjectConfiguration::setPostgreSqlPort(const std::string& postgreSqlPort) {
+
+	_postgreSqlPort = postgreSqlPort;
+}
+
+const std::string&
+ProjectConfiguration::getPostgreSqlPort() const {
+
+	return _postgreSqlPort;
 }
 
 void

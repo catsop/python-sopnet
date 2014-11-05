@@ -22,6 +22,7 @@ PostgreSqlSliceStore::PostgreSqlSliceStore(
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
+			_config.getPostgreSqlPort(),
 			_config.getPostgreSqlDatabase(),
 			_config.getPostgreSqlUser(),
 			_config.getPostgreSqlPassword());

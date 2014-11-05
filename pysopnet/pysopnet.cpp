@@ -98,6 +98,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("getComponentDirectory", &ProjectConfiguration::getComponentDirectory, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlHost", &ProjectConfiguration::setPostgreSqlHost)
 			.def("getPostgreSqlHost", &ProjectConfiguration::getPostgreSqlHost, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setPostgreSqlPort", &ProjectConfiguration::setPostgreSqlPort)
+			.def("getPostgreSqlPort", &ProjectConfiguration::getPostgreSqlPort, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlUser", &ProjectConfiguration::setPostgreSqlUser)
 			.def("getPostgreSqlUser", &ProjectConfiguration::getPostgreSqlUser, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlPassword", &ProjectConfiguration::setPostgreSqlPassword)

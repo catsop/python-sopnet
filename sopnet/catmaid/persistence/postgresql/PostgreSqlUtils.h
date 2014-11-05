@@ -51,8 +51,12 @@ public:
 	 * name and a password. Throws a PostgreSqlException if no connection could
 	 * be acquired.
 	 */
-	static PGconn* getConnection(const std::string& host, const std::string& database,
-			const std::string& user, const std::string& pass);
+	static PGconn* getConnection(
+			const std::string& host,
+			const std::string& port,
+			const std::string& database,
+			const std::string& user,
+			const std::string& pass);
 
 	/**
 	 * Create a SQL query that selects the block ID for the given block.
