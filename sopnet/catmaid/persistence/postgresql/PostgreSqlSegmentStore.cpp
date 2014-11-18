@@ -163,7 +163,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"FROM djsopnet_segmentblockrelation sbr "
 			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
-			"JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
+			"LEFT JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
 			"GROUP BY s.id, sf.id";
 
@@ -203,7 +203,6 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		// Parse features of form: {featVal1, featVal2, ...}
 		cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
 		std::string featuresString(cellStr);
-		featuresString = featuresString.substr(1, featuresString.length() - 2); // Remove { and }
 		boost::char_separator<char> separator("{}()\", \t");
 		boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
 		std::vector<double> segmentFeatures;
