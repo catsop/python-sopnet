@@ -6,6 +6,7 @@
 #include <util/point3.hpp>
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Block.h>
+#include <sopnet/segments/SegmentHash.h>
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"
 #include "SolutionGuarantor.h"
@@ -53,6 +54,13 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 
 	// setLogLevel
 	boost::python::def("setLogLevel", setLogLevel);
+
+	// Segment hash_value (by slice hashes)
+	boost::python::class_<std::vector<SliceHash> >("SliceHashVector")
+			.def(boost::python::vector_indexing_suite<std::vector<SliceHash> >());
+	boost::python::def(
+			"segmentHashValue",
+			static_cast<SegmentHash (*)(const std::vector<SliceHash>&, const std::vector<SliceHash>&)>(hash_value));
 
 	// point3<unsigned int>
 	boost::python::class_<util::point3<unsigned int> >("point3", boost::python::init<unsigned int, unsigned int, unsigned int>())
