@@ -216,21 +216,17 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
 		std::string tuplesString(cellStr);
 
-		tuplesString = tuplesString.substr(1, tuplesString.length() - 2); // Remove { and }
 		boost::tokenizer<boost::char_separator<char> > tuples(tuplesString, separator);
 
 		for (boost::tokenizer<boost::char_separator<char> >::iterator tuple = tuples.begin();
 				tuple != tuples.end();
 				++tuple) {
 
-			std::string sliceId = *tuple;
-			sliceId = sliceId.substr(sliceId.find_first_of("0123456789-"));
-
 			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
-					boost::lexical_cast<PostgreSqlHash>(sliceId));
+					boost::lexical_cast<PostgreSqlHash>(*tuple));
 
 			std::string direction = *(++tuple);
-			bool isLeft = direction.at(direction.find_first_of("tf")) == 't';
+			bool isLeft = direction.at(0) == 't';
 
 			if (isLeft) segmentDescription.addLeftSlice(sliceHash);
 			else segmentDescription.addRightSlice(sliceHash);
