@@ -370,10 +370,18 @@ PostgreSqlSegmentStore::storeSolution(
 
 	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
 			core, _config.getCatmaidRawStackId());
+	const std::string solutionQuery =
+			"INSERT INTO djsopnet_solution (core_id) (" + coreQuery + ") RETURNING id, core_id;";
+	PGresult* queryResult = PQexec(_pgConnection, solutionQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, solutionQuery);
+	int solutionId = boost::lexical_cast<int>(PQgetvalue(queryResult, 0, 0));
+	int coreId = boost::lexical_cast<int>(PQgetvalue(queryResult, 0, 1));
+	PQclear(queryResult);
 
 	std::ostringstream query;
-	query << "DELETE FROM djsopnet_segmentsolution WHERE core_id = (" << coreQuery << ");"
-			"WITH c AS (" << coreQuery << "), segments AS (VALUES ";
+	query << "INSERT INTO djsopnet_segmentsolution (solution_id, segment_id) "
+			"SELECT sol.id, s.id FROM (VALUES (" << solutionId << ")) AS sol (id), (VALUES ";
 	char separator = ' ';
 
 	foreach (const SegmentHash& segmentHash, segmentHashes) {
@@ -383,13 +391,14 @@ PostgreSqlSegmentStore::storeSolution(
 		separator = ',';
 	}
 
-	query << ") INSERT INTO djsopnet_segmentsolution (core_id, segment_id) "
-			"SELECT c.id, s.id FROM c, segments AS s (id);"
+	query << ") AS s (id);"
+			"INSERT INTO djsopnet_solutionprecedence (core_id, solution_id) "
+			"VALUES (" << coreId << ',' << solutionId << ");"
 			"UPDATE djsopnet_core SET solution_set_flag = TRUE "
-			"WHERE id = (" << coreQuery << ')';
+			"WHERE id = " << coreId;
 
 	std::string queryString(query.str());
-	PGresult* queryResult = PQexec(_pgConnection, queryString.c_str());
+	queryResult = PQexec(_pgConnection, queryString.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, queryString);
 	PQclear(queryResult);
