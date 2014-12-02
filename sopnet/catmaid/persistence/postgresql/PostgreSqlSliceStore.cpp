@@ -330,6 +330,10 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 		conflictSet.addSlice(sliceAHash);
 		conflictSet.addSlice(sliceBHash);
 
+		// Unnecessary because ConflictSets are not maximal cliques by default,
+		// but it is still best to be explicit:
+		conflictSet.setMaximalClique(false);
+
 		conflictSets->add(conflictSet);
 	}
 

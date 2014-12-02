@@ -82,7 +82,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 
 	// SolutionGuarantorParameters
 	boost::python::class_<SolutionGuarantorParameters>("SolutionGuarantorParameters")
-			.def("setCorePadding", &SolutionGuarantorParameters::setCorePadding);
+			.def("setCorePadding", &SolutionGuarantorParameters::setCorePadding)
+			.def("setForceExplanation", &SolutionGuarantorParameters::setForceExplanation);
 
 	// ProjectConfiguration
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")

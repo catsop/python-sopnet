@@ -37,6 +37,16 @@ public:
 
 		return _sliceIds;
 	}
+
+	bool isMaximalClique() const {
+
+		return _isMaximalClique;
+	}
+
+	void setMaximalClique(bool clique) {
+
+		_isMaximalClique = clique;
+	}
 	
 	bool operator==(const ConflictSet& other) const{
 		
@@ -68,6 +78,8 @@ public:
 private:
 
 	std::set<SliceHash> _sliceIds;
+
+	bool _isMaximalClique;
 };
 
 std::size_t hash_value(const ConflictSet& conflictSet);

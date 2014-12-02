@@ -84,6 +84,8 @@ ComponentTreeConverter::addConflictSet() {
 	foreach (SliceHash sliceHash, _path)
 		conflictSet.addSlice(sliceHash);
 
+	conflictSet.setMaximalClique(true);
+
 	_conflictSets->add(conflictSet);
 
 	_slices->addConflicts(_path);

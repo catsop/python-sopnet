@@ -13,10 +13,12 @@ SolutionGuarantor::SolutionGuarantor(
 		const ProjectConfiguration&     projectConfiguration,
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
-		unsigned int                    corePadding) :
+		unsigned int                    corePadding,
+		bool                            forceExplanation) :
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
 	_corePadding(corePadding),
+	_forceExplanation(forceExplanation),
 	_blockUtils(projectConfiguration) {
 
 	if (_corePadding == 0)
@@ -295,7 +297,7 @@ SolutionGuarantor::addOverlapConstraints(
 			noConflictSlices.erase(sliceHash);
 		}
 
-		constraint.setRelation(LessEqual);
+		constraint.setRelation(_forceExplanation && conflictSet.isMaximalClique() ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
 		constraints.add(constraint);
@@ -318,7 +320,7 @@ SolutionGuarantor::addOverlapConstraints(
 		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
-		constraint.setRelation(LessEqual);
+		constraint.setRelation(_forceExplanation ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
 		constraints.add(constraint);
