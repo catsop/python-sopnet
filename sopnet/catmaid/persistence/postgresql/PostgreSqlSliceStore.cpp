@@ -52,9 +52,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 			"ctr_y, value, size, id) VALUES";
 
 	std::ostringstream q2;
-	q2 << "WITH b AS (" << blockQuery << ") "
-			"INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
-			"VALUES";
+	q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
+			"SELECT * FROM (" << blockQuery << ") AS b, (VALUES";
 
 	char separator = ' ';
 	foreach (boost::shared_ptr<Slice> slice, slices)
@@ -79,12 +78,12 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		q << slice->getComponent()->getSize() << ",";
 		q << hash << ")";
 
-		q2 << separator << "((SELECT id FROM b)," << hash << ")";
+		q2 << separator << '(' << hash << ')';
 
 		separator = ',';
 	}
 
-	q << ';' << q2.str() << ';';
+	q << ';' << q2.str() << ") AS v;";
 
 	if (doneWithBlock)
 		q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ")";
