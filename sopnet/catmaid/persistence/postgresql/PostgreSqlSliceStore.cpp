@@ -46,14 +46,17 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				block, stack_id);
 
-	std::ostringstream q;
-	q << "INSERT INTO djsopnet_slice "
-			"(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
-			"ctr_y, value, size, id) VALUES";
+	std::ostringstream tmpTableStream;
+	tmpTableStream << "djsopnet_slice_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	const std::string tmpTable = tmpTableStream.str();
 
-	std::ostringstream q2;
-	q2 << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
-			"SELECT * FROM (" << blockQuery << ") AS b, (VALUES";
+	std::ostringstream q;
+	q << "BEGIN;"
+			"CREATE TEMP TABLE " << tmpTable << " "
+				"(LIKE djsopnet_slice) ON COMMIT DROP;"
+			"INSERT INTO " << tmpTable <<
+				"(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
+				"ctr_y, value, size, id) VALUES";
 
 	char separator = ' ';
 	foreach (boost::shared_ptr<Slice> slice, slices)
@@ -68,8 +71,6 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		// Bounding Box
 		const util::rect<unsigned int>& bb = slice->getComponent()->getBoundingBox();
 
-		// Create slices in slice table
-		// TODO: Use upsert statement, based on CTEs
 		q << separator << "(" << stack_id << "," << slice->getSection() << ",";
 		q << bb.minX << "," << bb.minY << ",";
 		q << bb.maxX << "," << bb.maxY << ",";
@@ -78,16 +79,40 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		q << slice->getComponent()->getSize() << ",";
 		q << hash << ")";
 
-		q2 << separator << '(' << hash << ')';
-
 		separator = ',';
 	}
 
-	q << ';' << q2.str() << ") AS v;";
+	// Insert new slices from the temporary table.
+	q << ";LOCK TABLE djsopnet_slice IN EXCLUSIVE MODE;";
+	// Since slices with identical hashes are assumed to be identical, existing
+	// slices are not updated. If needed, that update would be:
+	/* "UPDATE djsopnet_slice "
+		"SET (stack_id, section, min_x, min_y, max_x, max_y, "
+		"ctr_x, ctr_y, value, size)="
+		"(t.stack_id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
+		"t.ctr_x, t.ctr_y, t.value, t.size) "
+		"FROM " << tmpTable << " AS t "
+		"WHERE t.id = djsopnet_slice.id;" */
+	q << "INSERT INTO djsopnet_slice "
+			"(stack_id, section, min_x, min_y, max_x, max_y, "
+			"ctr_x, ctr_y, value, size, id) "
+			"SELECT "
+			"t.stack_id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
+			"t.ctr_x, t.ctr_y, t.value, t.size, t.id "
+			"FROM " << tmpTable << " AS t "
+			"LEFT OUTER JOIN djsopnet_slice s "
+			"ON (s.id = t.id) WHERE s.id IS NULL;";
+	q << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
+			"SELECT b.id, t.id "
+			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
+			"WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_sliceblockrelation s WHERE "
+			"(s.block_id, s.slice_id) = (b.id, t.id));";
 
 	if (doneWithBlock)
-		q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ")";
+		q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
 
+	q << "COMMIT;";
 	std::string query = q.str();
 	PGresult *result = PQexec(_pgConnection, query.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result, query);
@@ -140,13 +165,35 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 
 	idSets << ')';
 	std::string idSetsStr = idSets.str();
+
+	std::ostringstream tmpTableStream;
+	tmpTableStream << "djsopnet_sliceconflictset_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	const std::string tmpTable = tmpTableStream.str();
+
 	std::ostringstream q;
+	q << "BEGIN;"
+			"CREATE TEMP TABLE " << tmpTable << " "
+				"(LIKE djsopnet_sliceconflictset) ON COMMIT DROP;"
+			"ALTER TABLE " << tmpTable << " ALTER id DROP NOT NULL;"
+			"INSERT INTO " << tmpTable << " (slice_a_id,slice_b_id) "
+				"(SELECT DISTINCT * FROM " << idSetsStr << " AS h (a,b));";
+	// Insert new conflict sets from the temporary table.
+	q << "LOCK TABLE djsopnet_sliceconflictset IN EXCLUSIVE MODE;";
 	q << "INSERT INTO djsopnet_sliceconflictset (slice_a_id,slice_b_id) "
-			"(SELECT DISTINCT * FROM " << idSetsStr << " AS h (a,b));";
+			"SELECT t.slice_a_id,t.slice_b_id "
+			"FROM " << tmpTable << " AS t "
+			"LEFT OUTER JOIN djsopnet_sliceconflictset s "
+			"ON (s.slice_a_id,s.slice_b_id) = (t.slice_a_id,t.slice_b_id) "
+			"WHERE s.slice_a_id IS NULL;";
 	q << "INSERT INTO djsopnet_blockconflictrelation (block_id,conflict_id) "
-			"(SELECT DISTINCT (" << blockQuery << "), c.id "
-			"FROM djsopnet_sliceconflictset c, " << idSetsStr << " AS h (a,b) "
-			"WHERE c.slice_a_id=h.a AND c.slice_b_id=h.b);";
+			"SELECT b.id, c.id "
+			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
+			"JOIN djsopnet_sliceconflictset c "
+			"ON (c.slice_a_id=t.slice_a_id AND c.slice_b_id=t.slice_b_id) "
+			"WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_blockconflictrelation bc WHERE "
+			"(bc.block_id, bc.conflict_id) = (b.id, c.id));";
+	q << "COMMIT;";
 
 	std::string query = q.str();
 	PGresult *result = PQexec(_pgConnection, query.c_str());
