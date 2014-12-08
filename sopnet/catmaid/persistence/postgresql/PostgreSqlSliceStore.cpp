@@ -30,8 +30,10 @@ PostgreSqlSliceStore::PostgreSqlSliceStore(
 
 PostgreSqlSliceStore::~PostgreSqlSliceStore() {
 
-	if (_pgConnection != 0)
+	if (_pgConnection != 0) {
+		PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 		PQfinish(_pgConnection);
+	}
 }
 
 void
@@ -114,9 +116,14 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 	q << "COMMIT;";
 	std::string query = q.str();
-	PGresult *result = PQexec(_pgConnection, query.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, query);
-	PQclear(result);
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
@@ -196,9 +203,14 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	q << "COMMIT;";
 
 	std::string query = q.str();
-	PGresult *result = PQexec(_pgConnection, query.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result, query);
-	PQclear(result);
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << conflictSets.size() << " conflict sets in "
@@ -216,6 +228,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
 			blocks, _config.getCatmaidRawStackId(),
 			"slices_flag", missingBlocks, _pgConnection);
@@ -284,6 +297,7 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
 			blocks, _config.getCatmaidRawStackId(),
 			"slices_flag", missingBlocks, _pgConnection);
@@ -336,6 +350,7 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 				block, _config.getCatmaidRawStackId());
 	std::string blockFlagQuery = "SELECT slices_flag FROM djsopnet_block "
 			"WHERE id = (" + blockQuery + ")";
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);

@@ -22,8 +22,10 @@ PostgreSqlSegmentStore::PostgreSqlSegmentStore(
 
 PostgreSqlSegmentStore::~PostgreSqlSegmentStore() {
 
-	if (_pgConnection != 0)
+	if (_pgConnection != 0) {
+		PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 		PQfinish(_pgConnection);
+	}
 }
 
 void
@@ -31,7 +33,6 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			const SegmentDescriptions& segments,
 			const Block&               block) {
 
-	PGresult* queryResult;
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				block, _config.getCatmaidRawStackId());
 
@@ -150,10 +151,14 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" << blockQuery << ");";
 	segmentQuery << "COMMIT;";
 	std::string query = segmentQuery.str();
-	queryResult = PQexec(_pgConnection, query.c_str());
-
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
-	PQclear(queryResult);
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlsegmentstorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlsegmentstorelog) << "The used query was: " << query <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << segments.size() << " segments in "
@@ -174,6 +179,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	boost::timer::cpu_timer queryTimer;
 
 	// Check if any requested block do not have slices flagged.
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
 			blocks, _config.getCatmaidRawStackId(),
 			"segments_flag", missingBlocks, _pgConnection);
@@ -308,6 +314,7 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 			"GROUP BY cst.id";
 
 	enum { FIELD_ID_UNUSED, FIELD_RELATION, FIELD_VALUE, FIELD_SEGMENT_ARRAY };
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, blockConstraintsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockConstraintsQuery);
@@ -359,6 +366,7 @@ PostgreSqlSegmentStore::getFeatureWeights() {
 	std::string query =
 			"SELECT weights FROM djsopnet_featureinfo WHERE stack_id="
 			+ boost::lexical_cast<std::string>(_config.getCatmaidRawStackId());
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, query.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
 
@@ -397,6 +405,7 @@ PostgreSqlSegmentStore::storeSolution(
 			core, _config.getCatmaidRawStackId());
 	const std::string solutionQuery =
 			"INSERT INTO djsopnet_solution (core_id) (" + coreQuery + ") RETURNING id, core_id;";
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, solutionQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, solutionQuery);
@@ -441,6 +450,7 @@ PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
 				block, _config.getCatmaidRawStackId());
 	std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
 			"WHERE id = (" + blockQuery + ")";
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockFlagQuery);

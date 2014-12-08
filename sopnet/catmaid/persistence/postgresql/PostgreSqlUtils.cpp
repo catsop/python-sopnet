@@ -24,6 +24,15 @@ PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string 
 	}
 }
 
+void
+PostgreSqlUtils::waitForAsyncQuery(PGconn* conn) {
+	PGresult* result;
+	while (NULL != (result = PQgetResult(conn))) {
+		checkPostgreSqlError(result, "[ASYNC QUERY]");
+		PQclear(result);
+	}
+}
+
 PostgreSqlHash
 PostgreSqlUtils::hashToPostgreSqlId(const std::size_t hash) {
 	// Compiler-independent conversion from unsigned to signed, see:

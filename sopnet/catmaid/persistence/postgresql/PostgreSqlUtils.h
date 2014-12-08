@@ -29,6 +29,12 @@ public:
 	static void checkPostgreSqlError(const PGresult *result, const std::string query = "");
 
 	/**
+	 * Wait for previous asynchronous queries executed on the connection, if
+	 * any, to finish. Also check the return values of these queries for errors.
+	 */
+	static void waitForAsyncQuery(PGconn* conn);
+
+	/**
 	 * Convert from a Sopnet SegmentHash or SliceHash to the representation used
 	 * by PostgreSQL. In practice this is a conversion from an unsigned 64-bit
 	 * value to the bit-identical 2s-complement signed 64-bit value.
