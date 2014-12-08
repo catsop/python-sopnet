@@ -45,7 +45,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	// Remove any existing segment associations for this block.
 	std::ostringstream clearBlockQuery;
 	clearBlockQuery <<
-			"DELETE FROM djsopnet_segmentblockrelation WHERE id = " + blockId;
+			"DELETE FROM djsopnet_segmentblockrelation WHERE block_id = " + blockId;
 
 	std::ostringstream segmentQuery;
 	segmentQuery <<
