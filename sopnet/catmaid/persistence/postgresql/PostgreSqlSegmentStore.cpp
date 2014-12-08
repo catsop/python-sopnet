@@ -75,15 +75,15 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 
 		// Create segment.
 		segmentQuery << separator << '(' <<
-				boost::lexical_cast<std::string>(segmentId) << ", " <<
-				boost::lexical_cast<std::string>(_config.getCatmaidRawStackId()) << ", " <<
-				boost::lexical_cast<std::string>(segment.getSection()) << ", " <<
-				boost::lexical_cast<std::string>(segmentBounds.minX) << ", " <<
-				boost::lexical_cast<std::string>(segmentBounds.minY) << ", " <<
-				boost::lexical_cast<std::string>(segmentBounds.maxX) << ", " <<
-				boost::lexical_cast<std::string>(segmentBounds.maxY) << ", " <<
-				boost::lexical_cast<std::string>(segmentCenter.x) << ", " <<
-				boost::lexical_cast<std::string>(segmentCenter.y) << ", " <<
+				boost::lexical_cast<std::string>(segmentId) << ',' <<
+				boost::lexical_cast<std::string>(_config.getCatmaidRawStackId()) << ',' <<
+				boost::lexical_cast<std::string>(segment.getSection()) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.minX) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.minY) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.maxX) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.maxY) << ',' <<
+				boost::lexical_cast<std::string>(segmentCenter.x) << ',' <<
+				boost::lexical_cast<std::string>(segmentCenter.y) << ',' <<
 				boost::lexical_cast<std::string>(segment.getType()) << ')';
 
 		// Associate slices to segment.
@@ -104,8 +104,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		}
 
 		// Store segment features.
-		segmentFeatureQuery << separator << '(' << segmentId << ", '{";
-		char featureSeparator = ' ';
+		segmentFeatureQuery << separator << '(' << segmentId << ",'";
+		char featureSeparator = '{';
 		foreach (const double featVal, segment.getFeatures()) {
 			segmentFeatureQuery << featureSeparator << boost::lexical_cast<std::string>(featVal);
 			featureSeparator = ',';
