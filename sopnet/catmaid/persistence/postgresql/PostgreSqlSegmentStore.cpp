@@ -35,34 +35,40 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				block, _config.getCatmaidRawStackId());
 
-	queryResult = PQexec(_pgConnection, blockQuery.c_str());
-	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockQuery);
-	std::string blockId(PQgetvalue(queryResult, 0, 0));
-	PQclear(queryResult);
-
 	boost::timer::cpu_timer queryTimer;
+
+	std::ostringstream tmpTableStream;
+	tmpTableStream << "_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	const std::string tmpTable = tmpTableStream.str();
 
 	// Remove any existing segment associations for this block.
 	std::ostringstream clearBlockQuery;
 	clearBlockQuery <<
-			"DELETE FROM djsopnet_segmentblockrelation WHERE block_id = " + blockId;
+			"DELETE FROM djsopnet_segmentblockrelation WHERE block_id = (" << blockQuery << ");";
 
 	std::ostringstream segmentQuery;
-	segmentQuery <<
-			"INSERT INTO djsopnet_segment (id, stack_id, section_inf, "
+	segmentQuery << "BEGIN;"
+			"CREATE TEMP TABLE djsopnet_segment" << tmpTable <<
+			"(LIKE djsopnet_segment) ON COMMIT DROP;"
+			"INSERT INTO djsopnet_segment" << tmpTable << " (id, stack_id, section_inf, "
 			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES";
 
 	std::ostringstream sliceQuery;
 	sliceQuery <<
-			"INSERT INTO djsopnet_segmentslice (segment_id, slice_id, direction) VALUES";
+			"INSERT INTO djsopnet_segmentslice (segment_id, slice_id, direction) SELECT * FROM (VALUES";
 
 	std::ostringstream segmentFeatureQuery;
 	segmentFeatureQuery <<
-			"INSERT INTO djsopnet_segmentfeatures (segment_id, features) VALUES";
+			"INSERT INTO djsopnet_segmentfeatures (segment_id, features) SELECT * FROM (VALUES";
 
 	std::ostringstream blockSegmentQuery;
 	blockSegmentQuery <<
-			"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) VALUES";
+			"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) "
+			"SELECT b.id, t.id FROM (" << blockQuery << ") AS b, "
+			"djsopnet_segment" << tmpTable << " AS t "
+			"WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_segmentblockrelation s WHERE "
+			"(s.block_id, s.segment_id) = (b.id, t.id));";
 
 	char separator = ' ';
 	char sliceSeparator = ' ';
@@ -110,20 +116,39 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			segmentFeatureQuery << featureSeparator << boost::lexical_cast<std::string>(featVal);
 			featureSeparator = ',';
 		}
-		segmentFeatureQuery << "}')";
-
-		// Associate segment to block.
-		blockSegmentQuery << separator << '(' << blockId << ',' << segmentId << ')';
+		segmentFeatureQuery << "}'";
+		// Coerce the feature type for the first VALUES entry.
+		if (' ' == separator) segmentFeatureQuery << "::double precision[]";
+		segmentFeatureQuery << ')';
 
 		separator = ',';
 	}
 
-	segmentQuery << ';' << sliceQuery.str() << ';' << segmentFeatureQuery.str()
-			<< ';' << clearBlockQuery.str() << ';' << blockSegmentQuery.str() << ';';
+	segmentQuery << ";LOCK TABLE djsopnet_segment IN EXCLUSIVE MODE;";
+	segmentQuery <<
+			"INSERT INTO djsopnet_segment "
+			"(id, stack_id, section_inf, "
+			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) "
+			"SELECT "
+			"t.id, t.stack_id, t.section_inf, "
+			"t.min_x, t.min_y, t.max_x, t.max_y, t.ctr_x, t.ctr_y, t.type "
+			"FROM djsopnet_segment" << tmpTable << " AS t "
+			"LEFT OUTER JOIN djsopnet_segment s "
+			"ON (s.id = t.id) WHERE s.id IS NULL;";
+	sliceQuery << " ) AS t (segment_id, slice_id, direction) WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_segmentslice ss "
+			"WHERE (ss.segment_id, ss.slice_id) = (t.segment_id, t.slice_id));";
+	segmentFeatureQuery << " ) AS t (segment_id, features) WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_segmentfeatures sf "
+			"WHERE sf.segment_id = t.segment_id);";
+
+	segmentQuery << sliceQuery.str() << segmentFeatureQuery.str()
+			<< clearBlockQuery.str() << blockSegmentQuery.str();
 
 	// Set block flag to show segments have been stored.
 	segmentQuery <<
-			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = " << blockId;
+			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" << blockQuery << ");";
+	segmentQuery << "COMMIT;";
 	std::string query = segmentQuery.str();
 	queryResult = PQexec(_pgConnection, query.c_str());
 
