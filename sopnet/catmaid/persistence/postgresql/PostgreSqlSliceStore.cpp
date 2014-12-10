@@ -2,6 +2,7 @@
 #ifdef HAVE_PostgreSQL
 
 #include "PostgreSqlUtils.h"
+#include <boost/tokenizer.hpp>
 #include <boost/timer/timer.hpp>
 #include <fstream>
 #include <vigra/impex.hxx>
@@ -318,34 +319,44 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	if (!missingBlocks.empty()) return conflictSets;
 
 	// Query conflict sets for this set of blocks
+	// Note that this only retrieves conflict edges referenced by conflict
+	// cliques. While currently this includes all relevant conflict edges, that
+	// may change in the future.
 	std::string blockConflictsQuery =
-			"SELECT DISTINCT sc.slice_a_id, sc.slice_b_id "
-			"FROM djsopnet_sliceconflict sc "
+			"SELECT cc.id, cc.maximal_clique, "
+			"ARRAY_AGG(DISTINCT sc.slice_a_id) || ARRAY_AGG(DISTINCT sc.slice_b_id) "
+			"FROM djsopnet_conflictclique cc "
+			"LEFT OUTER JOIN djsopnet_conflictcliqueedge cce "
+			"ON cce.conflictclique_id = cc.id "
+			"JOIN djsopnet_sliceconflict sc "
+			"ON sc.id = cce.sliceconflict_id "
 			"JOIN djsopnet_blockconflictrelation bcr ON bcr.slice_conflict_id = sc.id "
-			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
-	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
+			"WHERE bcr.block_id IN (" + blockIdsStr + ") "
+			"GROUP BY cc.id, cc.maximal_clique;";
+	enum { FIELD_CLIQUE_ID, FIELD_MAXIMAL_CLIQUE, FIELD_SLICE_IDS };
 	PGresult* result = PQexec(_pgConnection, blockConflictsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockConflictsQuery);
 	int nConflicts = PQntuples(result);
 
-	// Build SegmentDescription for each row
+	// Build ConflictSet for each row
 	for (int i = 0; i < nConflicts; ++i) {
-		char* cellStr;
-		cellStr = PQgetvalue(result, i, FIELD_SLICE_A_ID);
-		SliceHash sliceAHash = PostgreSqlUtils::postgreSqlIdToHash(
-				boost::lexical_cast<PostgreSqlHash>(cellStr));
-		cellStr = PQgetvalue(result, i, FIELD_SLICE_B_ID);
-		SliceHash sliceBHash = PostgreSqlUtils::postgreSqlIdToHash(
-				boost::lexical_cast<PostgreSqlHash>(cellStr));
-
 		ConflictSet conflictSet;
-		conflictSet.addSlice(sliceAHash);
-		conflictSet.addSlice(sliceBHash);
 
-		// Unnecessary because ConflictSets are not maximal cliques by default,
-		// but it is still best to be explicit:
-		conflictSet.setMaximalClique(false);
+		char* cellStr;
+		cellStr = PQgetvalue(result, i, FIELD_SLICE_IDS);
+		std::string sliceIds(cellStr);
+		boost::char_separator<char> separator("{}()\", \t");
+		boost::tokenizer<boost::char_separator<char> > sliceTokens(sliceIds, separator);
+
+		foreach (const std::string& sliceId, sliceTokens) {
+			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
+					boost::lexical_cast<PostgreSqlHash>(sliceId));
+			conflictSet.addSlice(sliceHash);
+		}
+
+		cellStr = PQgetvalue(result, i, FIELD_MAXIMAL_CLIQUE);
+		conflictSet.setMaximalClique(cellStr[0] == 't');
 
 		conflictSets->add(conflictSet);
 	}
