@@ -106,8 +106,11 @@ SolutionGuarantor::computeSolution(
 	// get the first and last section
 	foreach (const SegmentDescription& segment, segments) {
 
-		firstSection = std::min(firstSection, segment.getSection());
-		lastSection  = std::max(lastSection,  segment.getSection() + 1);
+		const unsigned int segmentSection = segment.getSection();
+		// Special case for the first section in a stack to prevent underflow
+		firstSection = std::min(firstSection,
+				segmentSection == 0 ? segmentSection : segmentSection - 1);
+		lastSection  = std::max(lastSection,  segmentSection);
 	}
 
 	LOG_DEBUG(solutionguarantorlog)
@@ -133,6 +136,7 @@ SolutionGuarantor::computeSolution(
 	foreach (const SegmentDescription& segment, segments) {
 
 		SegmentHash segmentHash = segment.getHash();
+		const unsigned int segmentSection = segment.getSection();
 
 		_hashToVariable[segmentHash] = nextVar;
 		_variableToHash[nextVar] = segmentHash;
@@ -143,7 +147,9 @@ SolutionGuarantor::computeSolution(
 			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
 			_slices.insert(leftSliceHash);
 
-			if (segment.getSection() == firstSection)
+			// First stack section (z=0) segments can be ignored because in this
+			// special boundary case continuation constraints are applied.
+			if (firstSection != 0 && (segmentSection - 1 == firstSection))
 				_firstSlices.insert(leftSliceHash);
 		}
 
@@ -152,7 +158,7 @@ SolutionGuarantor::computeSolution(
 			_rightSliceToSegments[rightSliceHash].push_back(segmentHash);
 			_slices.insert(rightSliceHash);
 
-			if (segment.getSection() + 1 == lastSection)
+			if (segmentSection == lastSection)
 				_lastSlices.insert(rightSliceHash);
 		}
 

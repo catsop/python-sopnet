@@ -29,7 +29,7 @@ public:
 	SegmentHash getHash() const;
 
 	/**
-	 * Get the lower number of the two sections that this segment is connecting.
+	 * Get the higher number of the two sections that this segment is connecting.
 	 */
 	unsigned int getSection() const { return _section; }
 
@@ -76,7 +76,7 @@ private:
 	// the features of this segment
 	std::vector<double> _features;
 
-	// the lower of the two sections this segment lives in
+	// the higher of the two sections this segment lives in
 	unsigned int _section;
 
 	// the bounding box of the segment in 2D

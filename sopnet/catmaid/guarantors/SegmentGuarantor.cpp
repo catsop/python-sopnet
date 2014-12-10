@@ -47,13 +47,25 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	unsigned int zBegin = requestBoundingBox.min.z;
 	unsigned int zEnd   = requestBoundingBox.max.z;
 
-	for (unsigned int z = zBegin; z < zEnd; ++z) {
+	boost::shared_ptr<Slices> prevSlices;
+	boost::shared_ptr<Slices> nextSlices;
+
+	// Special case: for the leftmost section in the stack (index 0) end
+	// segments on the left side must be extracted.
+	if (0 == zBegin) {
+		nextSlices = boost::make_shared<Slices>();
+	} else {
+		nextSlices = collectSlicesByZ(*slices, zBegin);
+		zBegin++;
+	}
+
+	for (unsigned int z = zBegin; z <= zEnd; ++z) {
 
 		pipeline::Process<SegmentExtractor> extractor;
 
-		// Collect slices for sections z and z + 1
-		boost::shared_ptr<Slices> prevSlices = collectSlicesByZ(*slices, z);
-		boost::shared_ptr<Slices> nextSlices = collectSlicesByZ(*slices, z + 1);
+		// Collect slices for sections z - 1 and z
+		prevSlices = nextSlices;
+		nextSlices = collectSlicesByZ(*slices, z);
 
 		// Set up the extractor
 		extractor->setInput("previous slices", prevSlices);
@@ -64,7 +76,7 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 
 		LOG_DEBUG(segmentguarantorlog)
 				<< "Got " << extractedSegments->size()
-				<< " segments" << std::endl;
+				<< " segments for ISI " << z << std::endl;
 
 		segments->addAll(extractedSegments);
 	}
@@ -180,6 +192,10 @@ SegmentGuarantor::discardNonRequestedSegments(
 		}
 	}
 
+	LOG_DEBUG(segmentguarantorlog)
+			<< "Discarded " << (allSegments->size() - requestedSegments->size())
+			<< "/" << allSegments->size() << " segments." << std::endl;
+
 	return requestedSegments;
 }
 
@@ -222,7 +238,7 @@ SegmentGuarantor::getSegmentDescriptions(
 
 		// create a new segment description
 		SegmentDescription segmentDescription(
-				segment->getInterSectionInterval() - 1, // lower slice number is ISI minus one
+				segment->getInterSectionInterval(),
 				boundingBox,
 				segment->getCenter());
 
@@ -255,18 +271,13 @@ SegmentGuarantor::getSegmentDescriptions(
 bool
 SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 
-	unsigned int maxSection = segment.getInterSectionInterval();
-
-	if (maxSection == 0)
-		return false;
-
-	unsigned int minSection = maxSection - 1;
+	unsigned int section = segment.getInterSectionInterval();
 
 	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(block);
 
 	// test in z
-	if (maxSection <  blockBoundingBox.min.z ||
-	    minSection >= blockBoundingBox.max.z)
+	if (section < blockBoundingBox.min.z ||
+	    section > blockBoundingBox.max.z)
 		return false;
 
 	// test in x-y
