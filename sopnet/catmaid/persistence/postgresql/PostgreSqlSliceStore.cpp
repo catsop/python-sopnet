@@ -144,12 +144,14 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream idSets;
-	idSets << "(VALUES";
+	idSets << "VALUES";
 	char separator = ' ';
 
 	// Find all conflicting slice pairs
 	foreach (const ConflictSet& conflictSet, conflictSets)
 	{
+		std::string conflictSetId = boost::lexical_cast<std::string>(
+				PostgreSqlUtils::hashToPostgreSqlId(hash_value(conflictSet)));
 		foreach (SliceHash hash1, conflictSet.getSlices())
 		{
 			foreach (SliceHash hash2, conflictSet.getSlices())
@@ -163,43 +165,54 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 							PostgreSqlUtils::hashToPostgreSqlId(hash2));
 
 					// Insert conflicting pair
-					idSets << separator << '(' << id1 << ',' << id2 << ')';
+					idSets << separator << '(' << id1 << ',' << id2 << ',' << conflictSetId << ')';
 					separator = ',';
 				}
 			}
 		}
 	}
 
-	idSets << ')';
 	std::string idSetsStr = idSets.str();
 
 	std::ostringstream tmpTableStream;
-	tmpTableStream << "djsopnet_sliceconflictset_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	tmpTableStream << "djsopnet_sliceconflict_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
 	const std::string tmpTable = tmpTableStream.str();
 
 	std::ostringstream q;
 	q << "BEGIN;"
 			"CREATE TEMP TABLE " << tmpTable << " "
-				"(LIKE djsopnet_sliceconflictset) ON COMMIT DROP;"
-			"ALTER TABLE " << tmpTable << " ALTER id DROP NOT NULL;"
-			"INSERT INTO " << tmpTable << " (slice_a_id,slice_b_id) "
-				"(SELECT DISTINCT * FROM " << idSetsStr << " AS h (a,b));";
+				"(slice_a_id bigint, slice_b_id bigint, clique_id bigint) ON COMMIT DROP;"
+			"INSERT INTO " << tmpTable << ' ' << idSetsStr << ';';
 	// Insert new conflict sets from the temporary table.
-	q << "LOCK TABLE djsopnet_sliceconflictset IN EXCLUSIVE MODE;";
-	q << "INSERT INTO djsopnet_sliceconflictset (slice_a_id,slice_b_id) "
-			"SELECT t.slice_a_id,t.slice_b_id "
+	q << "LOCK TABLE djsopnet_sliceconflict IN EXCLUSIVE MODE;";
+	q << "INSERT INTO djsopnet_sliceconflict (slice_a_id, slice_b_id) "
+			"SELECT DISTINCT t.slice_a_id, t.slice_b_id "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN djsopnet_sliceconflictset s "
-			"ON (s.slice_a_id,s.slice_b_id) = (t.slice_a_id,t.slice_b_id) "
+			"LEFT OUTER JOIN djsopnet_sliceconflict s "
+			"ON (s.slice_a_id, s.slice_b_id) = (t.slice_a_id, t.slice_b_id) "
 			"WHERE s.slice_a_id IS NULL;";
-	q << "INSERT INTO djsopnet_blockconflictrelation (block_id,conflict_id) "
-			"SELECT b.id, c.id "
+	q << "INSERT INTO djsopnet_conflictclique (id, maximal_clique) "
+			"SELECT DISTINCT t.clique_id, TRUE "
+			"FROM " << tmpTable << " AS t "
+			"LEFT OUTER JOIN djsopnet_conflictclique c "
+			"ON c.id = t.clique_id "
+			"WHERE c.id IS NULL;";
+	q << "INSERT INTO djsopnet_conflictcliqueedge (conflictclique_id, sliceconflict_id) "
+			"SELECT t.clique_id, sc.id "
+			"FROM " << tmpTable << " AS t "
+			"JOIN djsopnet_sliceconflict sc "
+			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
+			"WHERE NOT EXISTS "
+			"(SELECT 1 FROM djsopnet_conflictcliqueedge cce WHERE "
+			"(cce.conflictclique_id,cce.sliceconflict_id) = (t.clique_id, sc.id));";
+	q << "INSERT INTO djsopnet_blockconflictrelation (block_id,slice_conflict_id) "
+			"SELECT DISTINCT b.id, sc.id "
 			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
-			"JOIN djsopnet_sliceconflictset c "
-			"ON (c.slice_a_id=t.slice_a_id AND c.slice_b_id=t.slice_b_id) "
+			"JOIN djsopnet_sliceconflict sc "
+			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
 			"WHERE NOT EXISTS "
 			"(SELECT 1 FROM djsopnet_blockconflictrelation bc WHERE "
-			"(bc.block_id, bc.conflict_id) = (b.id, c.id));";
+			"(bc.block_id, bc.slice_conflict_id) = (b.id, sc.id));";
 	q << "COMMIT;";
 
 	std::string query = q.str();
@@ -306,9 +319,9 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 
 	// Query conflict sets for this set of blocks
 	std::string blockConflictsQuery =
-			"SELECT DISTINCT cs.slice_a_id, cs.slice_b_id "
-			"FROM djsopnet_sliceconflictset cs "
-			"JOIN djsopnet_blockconflictrelation bcr ON bcr.conflict_id = cs.id "
+			"SELECT DISTINCT sc.slice_a_id, sc.slice_b_id "
+			"FROM djsopnet_sliceconflict sc "
+			"JOIN djsopnet_blockconflictrelation bcr ON bcr.slice_conflict_id = sc.id "
 			"WHERE bcr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_SLICE_A_ID, FIELD_SLICE_B_ID };
 	PGresult* result = PQexec(_pgConnection, blockConflictsQuery.c_str());
