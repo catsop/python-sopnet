@@ -51,7 +51,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	segmentQuery << "BEGIN;"
 			"CREATE TEMP TABLE djsopnet_segment" << tmpTable <<
 			"(LIKE djsopnet_segment) ON COMMIT DROP;"
-			"INSERT INTO djsopnet_segment" << tmpTable << " (id, stack_id, section_inf, "
+			"INSERT INTO djsopnet_segment" << tmpTable << " (id, stack_id, section_sup, "
 			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES";
 
 	std::ostringstream sliceQuery;
@@ -128,10 +128,10 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	segmentQuery << ";LOCK TABLE djsopnet_segment IN EXCLUSIVE MODE;";
 	segmentQuery <<
 			"INSERT INTO djsopnet_segment "
-			"(id, stack_id, section_inf, "
+			"(id, stack_id, section_sup, "
 			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) "
 			"SELECT "
-			"t.id, t.stack_id, t.section_inf, "
+			"t.id, t.stack_id, t.section_sup, "
 			"t.min_x, t.min_y, t.max_x, t.max_y, t.ctr_x, t.ctr_y, t.type "
 			"FROM djsopnet_segment" << tmpTable << " AS t "
 			"LEFT OUTER JOIN djsopnet_segment s "
@@ -188,7 +188,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
-			"SELECT s.id, s.section_inf, s.min_x, s.min_y, s.max_x, s.max_y, "
+			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
 			"s.ctr_x, s.ctr_y, sf.id, sf.features, " // sf.id is needed for GROUP
 			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_segmentblockrelation sbr "
@@ -212,7 +212,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		cellStr = PQgetvalue(queryResult, i, FIELD_ID); // Segment ID
 		SegmentHash segmentHash = PostgreSqlUtils::postgreSqlIdToHash(
 				boost::lexical_cast<PostgreSqlHash>(cellStr));
-		cellStr = PQgetvalue(queryResult, i, FIELD_SECTION); // Z-section infimum
+		cellStr = PQgetvalue(queryResult, i, FIELD_SECTION); // Z-section supremum
 		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
 		cellStr = PQgetvalue(queryResult, i, FIELD_MIN_X);
 		unsigned int minX = boost::lexical_cast<unsigned int>(cellStr);
