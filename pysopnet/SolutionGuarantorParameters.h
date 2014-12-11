@@ -9,6 +9,8 @@ public:
 
 	SolutionGuarantorParameters() :
 		_forceExplanation(false),
+		_readCosts(false),
+		_storeCosts(true),
 		_corePadding(2) {}
 
 	/**
@@ -22,6 +24,28 @@ public:
 	 * to the reconstruction? If false, slice candidates can be ignored.
 	 */
 	void setForceExplanation(bool forceExplanation) { _forceExplanation = forceExplanation; }
+
+	/**
+	 * If true, cached costs available from the SegmentStore are used instead of
+	 * features and weights where available.
+	 */
+	bool readCosts() const { return _readCosts; }
+
+	/**
+	 * If true, cached costs available from the SegmentStore are used instead of
+	 * features and weights where available.
+	 */
+	void setReadCosts(bool readCosts) { _readCosts = readCosts; }
+
+	/**
+	 * If true, computed segment costs are saved to SegmentStore.
+	 */
+	bool storeCosts() const { return _storeCosts; }
+
+	/**
+	 * If true, computed segment costs are saved to SegmentStore.
+	 */
+	void setStoreCosts(bool storeCosts) { _storeCosts = storeCosts; }
 
 	/**
 	 * Get the number of blocks to pad around the core to get near-optimal 
@@ -38,6 +62,8 @@ public:
 private:
 
 	bool _forceExplanation;
+	bool _readCosts;
+	bool _storeCosts;
 
 	unsigned int _corePadding;
 };

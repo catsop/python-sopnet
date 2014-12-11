@@ -36,16 +36,26 @@ public:
 	 *              eliminate border effects. The solution will be computed on 
 	 *              the padded core, but only the solution of the core will be 
 	 *              stored.
+	 *
 	 * @param forceExplanation
 	 *              If true, exactly one member of each conflict set must be in
 	 *              the solution.
+	 *
+	 * @param readCosts
+	 *              If true, cached costs available from the SegmentStore are
+	 *              used instead of features and weights where available.
+	 *
+	 * @param storeCosts
+	 *              If true, computed segment costs are saved to SegmentStore.
 	 */
 	SolutionGuarantor(
 			const ProjectConfiguration&     projectConfiguration,
 			boost::shared_ptr<SegmentStore> segmentStore,
 			boost::shared_ptr<SliceStore>   sliceStore,
 			unsigned int                    corePadding,
-			bool                            forceExplanation);
+			bool                            forceExplanation,
+			bool                            readCosts,
+			bool                            storeCosts);
 
 	/**
 	 * Get the solution for the given cores.
@@ -93,6 +103,8 @@ private:
 	unsigned int _corePadding;
 
 	bool _forceExplanation;
+	bool _readCosts;
+	bool _storeCosts;
 
 	// mappings from segment hashes to their variable number in the ILP
 	std::map<SegmentHash, unsigned int> _hashToVariable;

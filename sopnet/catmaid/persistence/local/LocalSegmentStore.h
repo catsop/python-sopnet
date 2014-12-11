@@ -43,7 +43,8 @@ public:
 	 */
 	boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(
 			const Blocks& blocks,
-			Blocks&       missingBlocks) {}
+			Blocks&       missingBlocks,
+			bool          readCosts) {}
 
 	/**
 	 * Get additional constraints for segments in the given blocks. Typically

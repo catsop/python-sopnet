@@ -169,7 +169,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 boost::shared_ptr<SegmentDescriptions>
 PostgreSqlSegmentStore::getSegmentsByBlocks(
 			const Blocks& blocks,
-			Blocks&       missingBlocks) {
+			Blocks&       missingBlocks,
+			bool          readCosts) {
 
 	boost::shared_ptr<SegmentDescriptions> segmentDescriptions =
 			boost::make_shared<SegmentDescriptions>();
@@ -187,6 +188,10 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	if (!missingBlocks.empty()) return segmentDescriptions;
 
 	// Query segments for this set of blocks
+	std::string featureJoin(readCosts ?
+			"LEFT OUTER JOIN djsopnet_segmentfeatures sf "
+			"ON s.cost IS NULL AND s.id = sf.segment_id " :
+			"LEFT JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id ");
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
 			"s.ctr_x, s.ctr_y, s.cost, sf.id, sf.features, " // sf.id is needed for GROUP
@@ -194,8 +199,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"FROM djsopnet_segmentblockrelation sbr "
 			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
-			"LEFT OUTER JOIN djsopnet_segmentfeatures sf "
-			"ON s.cost IS NULL AND s.id = sf.segment_id "
+			+ featureJoin +
 			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
 			"GROUP BY s.id, sf.id";
 
@@ -234,7 +238,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 		boost::char_separator<char> separator("{}()\", \t");
 
-		if (!PQgetisnull(queryResult, i, FIELD_COST)) {
+		if (readCosts && !PQgetisnull(queryResult, i, FIELD_COST)) {
 			cellStr = PQgetvalue(queryResult, i, FIELD_COST);
 			segmentDescription.setCost(boost::lexical_cast<double>(cellStr));
 		} else {

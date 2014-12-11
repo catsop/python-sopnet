@@ -26,7 +26,9 @@ SolutionGuarantor::fill(
 			segmentStore,
 			sliceStore,
 			parameters.getCorePadding(),
-			parameters.forceExplanation());
+			parameters.forceExplanation(),
+			parameters.readCosts(),
+			parameters.storeCosts());
 
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 

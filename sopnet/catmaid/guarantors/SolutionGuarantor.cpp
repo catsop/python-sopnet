@@ -14,11 +14,15 @@ SolutionGuarantor::SolutionGuarantor(
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
 		unsigned int                    corePadding,
-		bool                            forceExplanation) :
+		bool                            forceExplanation,
+		bool                            readCosts,
+		bool                            storeCosts) :
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
 	_corePadding(corePadding),
 	_forceExplanation(forceExplanation),
+	_readCosts(readCosts),
+	_storeCosts(storeCosts),
 	_blockUtils(projectConfiguration) {
 
 	if (_corePadding == 0)
@@ -45,7 +49,7 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 
 	// get all segments for these blocks
 	Blocks missingBlocks;
-	boost::shared_ptr<SegmentDescriptions> segments = _segmentStore->getSegmentsByBlocks(blocks, missingBlocks);
+	boost::shared_ptr<SegmentDescriptions> segments = _segmentStore->getSegmentsByBlocks(blocks, missingBlocks, _readCosts);
 
 	if (!missingBlocks.empty())
 		return missingBlocks;
@@ -71,7 +75,7 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
 
 	// store solution
-	if (!_newCosts.empty()) _segmentStore->storeSegmentCosts(_newCosts);
+	if (_storeCosts && !_newCosts.empty()) _segmentStore->storeSegmentCosts(_newCosts);
 	_segmentStore->storeSolution(solution, core);
 
 	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
@@ -252,7 +256,7 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 		unsigned int var  = _hashToVariable[segment.getHash()];
 		double       cost = segment.getCost();
 
-		if (std::isnan(cost)) {
+		if (!_readCosts || std::isnan(cost)) {
 
 			cost = getCost(segment.getFeatures());
 			_newCosts[segment.getHash()] = cost;

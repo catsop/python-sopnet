@@ -46,7 +46,8 @@ public:
 	 */
 	virtual boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(
 			const Blocks& blocks,
-			Blocks&       missingBlocks) = 0;
+			Blocks&       missingBlocks,
+			bool          readCosts) = 0;
 
 	/**
 	 * Get additional constraints for segments in the given blocks. Typically
