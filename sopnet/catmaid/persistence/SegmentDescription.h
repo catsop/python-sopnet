@@ -22,6 +22,7 @@ public:
 			const util::rect<unsigned int>& boundingBox,
 			const util::point<double> center) :
 		_hashDirty(true),
+		_cost(std::numeric_limits<double>::signaling_NaN()),
 		_section(section),
 		_boundingBox(boundingBox),
 		_center(center) {}
@@ -40,6 +41,10 @@ public:
 	void setFeatures(const std::vector<double>& features) { _features = features; }
 
 	const std::vector<double>& getFeatures() const { return _features; }
+
+	void setCost(double cost) { _cost = cost; }
+
+	double getCost() const { return _cost; }
 
 	/**
 	 * Add a slice to the left (i.e., lower) side of this segment.
@@ -75,6 +80,9 @@ private:
 
 	// the features of this segment
 	std::vector<double> _features;
+
+	// the cost of this segment
+	double _cost;
 
 	// the higher of the two sections this segment lives in
 	unsigned int _section;

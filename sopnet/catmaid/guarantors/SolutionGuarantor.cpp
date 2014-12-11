@@ -71,6 +71,7 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
 
 	// store solution
+	if (!_newCosts.empty()) _segmentStore->storeSegmentCosts(_newCosts);
 	_segmentStore->storeSolution(solution, core);
 
 	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
@@ -246,17 +247,16 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 	if (segments.size() == 0)
 		return objective;
 
-	unsigned int numFeatures = segments.begin()->getFeatures().size();
-
-	if (numFeatures != _weights.size())
-		UTIL_THROW_EXCEPTION(
-				UsageError,
-				"number of features " << numFeatures << " does not match number of weights " << _weights.size());
-
 	foreach (const SegmentDescription& segment, segments) {
 
 		unsigned int var  = _hashToVariable[segment.getHash()];
-		double       cost = getCost(segment.getFeatures());
+		double       cost = segment.getCost();
+
+		if (std::isnan(cost)) {
+
+			cost = getCost(segment.getFeatures());
+			_newCosts[segment.getHash()] = cost;
+		}
 
 		objective->setCoefficient(var, cost);
 	}
@@ -394,6 +394,11 @@ SolutionGuarantor::addExplicitConstraints(
 
 double
 SolutionGuarantor::getCost(const std::vector<double>& features) {
+
+	if (features.size() != _weights.size())
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"number of features " << features.size() << " does not match number of weights " << _weights.size());
 
 	double cost = 0;
 

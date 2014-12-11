@@ -189,18 +189,19 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	// Query segments for this set of blocks
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
-			"s.ctr_x, s.ctr_y, sf.id, sf.features, " // sf.id is needed for GROUP
+			"s.ctr_x, s.ctr_y, s.cost, sf.id, sf.features, " // sf.id is needed for GROUP
 			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
 			"FROM djsopnet_segmentblockrelation sbr "
 			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
 			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
-			"LEFT JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id "
+			"LEFT OUTER JOIN djsopnet_segmentfeatures sf "
+			"ON s.cost IS NULL AND s.id = sf.segment_id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
 			"GROUP BY s.id, sf.id";
 
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
-			FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
+			FIELD_COST, FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
 	PGresult* queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
@@ -231,17 +232,23 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 				util::rect<unsigned int>(minX, minY, maxX, maxY),
 				util::point<double>(ctrX, ctrY));
 
-		// Parse features of form: {featVal1, featVal2, ...}
-		cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
-		std::string featuresString(cellStr);
 		boost::char_separator<char> separator("{}()\", \t");
-		boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
-		std::vector<double> segmentFeatures;
-		foreach (const std::string& feature, features) {
-			segmentFeatures.push_back(boost::lexical_cast<double>(feature));
-		}
 
-		segmentDescription.setFeatures(segmentFeatures);
+		if (!PQgetisnull(queryResult, i, FIELD_COST)) {
+			cellStr = PQgetvalue(queryResult, i, FIELD_COST);
+			segmentDescription.setCost(boost::lexical_cast<double>(cellStr));
+		} else {
+			// Parse features of form: {featVal1, featVal2, ...}
+			cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
+			std::string featuresString(cellStr);
+			boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
+			std::vector<double> segmentFeatures;
+			foreach (const std::string& feature, features) {
+				segmentFeatures.push_back(boost::lexical_cast<double>(feature));
+			}
+
+			segmentDescription.setFeatures(segmentFeatures);
+		}
 
 		// Parse segment->slice tuples for segment of form: {"(slice_id, direction)",...}
 		cellStr = PQgetvalue(queryResult, i, FIELD_SLICE_ARRAY);
@@ -392,6 +399,41 @@ PostgreSqlSegmentStore::getFeatureWeights() {
 	PQclear(queryResult);
 
 	return weights;
+}
+
+void
+PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& costs) {
+
+	boost::timer::cpu_timer queryTimer;
+
+	std::ostringstream query;
+	query << "UPDATE djsopnet_segment SET cost=t.cost FROM (VALUES";
+
+	char separator = ' ';
+	typedef const std::map<SegmentHash, double> costs_type;
+	foreach (const costs_type::value_type pair, costs) {
+		query << separator
+			  << '(' << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(pair.first))
+			  << ',' << pair.second << ')';
+		separator = ',';
+	}
+
+	query << ") AS t (segment_id, cost) "
+			"WHERE t.segment_id = djsopnet_segment.id;";
+	std::string queryStr = query.str();
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, queryStr.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlsegmentstorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlsegmentstorelog) << "The used query was: " << queryStr <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
+
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << costs.size() << " segment costs in "
+			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (1e9 * costs.size()/queryElapsed.count()) << " segments/s)" << std::endl;
 }
 
 void

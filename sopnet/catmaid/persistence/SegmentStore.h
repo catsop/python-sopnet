@@ -65,6 +65,11 @@ public:
 	virtual std::vector<double> getFeatureWeights() = 0;
 
 	/**
+	 * Store costs for segments.
+	 */
+	virtual void storeSegmentCosts(const std::map<SegmentHash, double>& costs) = 0;
+
+	/**
 	 * Store the solution of processing a core.
 	 *
 	 * @param segmentHashes
