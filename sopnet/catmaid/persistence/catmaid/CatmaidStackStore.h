@@ -22,13 +22,9 @@ private:
 									  const unsigned int section);
 
 	/**
-	 * Helper function to grab the URL for the tile at the given column, row, and section. Assumes
-	 * that we are interested in scale 0, and that the url is of the form
-	 * [imagebase]/[section]/[row]_[column]_[scale].[extension]
-	 * 
-	 * For instance, imagebase might be http://foobar.com/cat_pix/. If we want the image for
-	 * section 100 at the 2nd row and 3rd column, with extension png, we would return the url
-	 * http://foobar.com/cat_pix/100/2_3_0.png
+	 * Helper function to grab the URL for the tile at the given column, row,
+	 * and section. Uses the stack scale from ProjectConfiguration. Currently
+	 * supports CATMAID tile source types 1 and 5.
 	 */
 	std::string tileURL(const unsigned int column, const unsigned int row,
 						const unsigned int section);
@@ -52,7 +48,8 @@ private:
 	const std::string _serverUrl;
 	const unsigned int _project, _stack;
 	std::string _imageBase, _extension;
-	unsigned int _tileWidth, _tileHeight, _stackWidth, _stackHeight, _stackDepth;
+	unsigned int _tileSourceType, _tileWidth, _tileHeight, _stackWidth, _stackHeight, _stackDepth;
+	const unsigned int _stackScale;
 	bool _ok;
 };
 

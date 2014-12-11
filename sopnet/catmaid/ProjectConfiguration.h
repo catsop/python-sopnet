@@ -95,6 +95,16 @@ public:
 	unsigned int getCatmaidProjectId() const;
 
 	/**
+	 * Set the scale at which the CATMAID stack is to be used.
+	 */
+	void setCatmaidStackScale(unsigned int stackScale);
+
+	/**
+	 * Get the scale at which the CATMAID stack is to be used.
+	 */
+	unsigned int getCatmaidStackScale() const;
+
+	/**
 	 * Set the size of a block in voxels.
 	 */
 	void setBlockSize(const util::point3<unsigned int>& blockSize);
@@ -194,6 +204,7 @@ private:
 	unsigned int _rawStackId;
 	unsigned int _membraneStackId;
 	unsigned int _projectId;
+	unsigned int _stackScale;
 
 	util::point3<unsigned int> _blockSize;
 	util::point3<unsigned int> _volumeSize;

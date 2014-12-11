@@ -13,7 +13,8 @@ CatmaidStackStore::CatmaidStackStore(
 		StackType stackType) :
 	_serverUrl(configuration.getCatmaidHost()),
 	_project(configuration.getCatmaidProjectId()),
-	_stack(stackType == Raw ? configuration.getCatmaidRawStackId() : configuration.getCatmaidMembraneStackId())
+	_stack(stackType == Raw ? configuration.getCatmaidRawStackId() : configuration.getCatmaidMembraneStackId()),
+	_stackScale(configuration.getCatmaidStackScale())
 {
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
@@ -28,16 +29,17 @@ CatmaidStackStore::CatmaidStackStore(
 	
 	_imageBase = pt->get_child("image_base").get_value<std::string>();
 	_extension = pt->get_child("file_extension").get_value<std::string>();
-	
-	HttpClient::ptreeVector<unsigned int>(pt->get_child("tile_size"), tileSizeVector);
-	HttpClient::ptreeVector<unsigned int>(pt->get_child("stack_size"), stackSizeVector);
-	
-	_tileWidth = tileSizeVector[0];
-	_tileHeight = tileSizeVector[1];
-	
-	_stackWidth = stackSizeVector[0];
-	_stackHeight = stackSizeVector[1];
-	_stackDepth = stackSizeVector[2];
+	_tileSourceType = pt->get_child("tile_source_type").get_value<unsigned int>();
+
+	_tileWidth = pt->get_child("tile_width").get_value<unsigned int>();
+	_tileHeight = pt->get_child("tile_height").get_value<unsigned int>();
+
+	// Adjust the width and height of the stack for the configured scale
+	_stackWidth = pt->get_child("dimension").get_child("x").get_value<unsigned int>();
+	_stackWidth >>= _stackScale;
+	_stackHeight = pt->get_child("dimension").get_child("y").get_value<unsigned int>();
+	_stackHeight >>= _stackScale;
+	_stackDepth = pt->get_child("dimension").get_child("z").get_value<unsigned int>();;
 
 	// check if the reported stack size matches the expected one:
 	if (!_stackWidth  == configuration.getVolumeSize().x ||
@@ -155,6 +157,21 @@ std::string
 CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, const unsigned int section)
 {
 	std::stringstream url;
-	url << _imageBase << section << "/" << row << "_" << column << "_0." << _extension;
+
+	switch (_tileSourceType) {
+		case 1:
+			url << _imageBase << section << "/" << row << "_" << column << "_"
+			    << _stackScale << "." << _extension;
+			break;
+		case 5:
+			url << _imageBase << _stackScale << '/' << section << '/'
+			    << row << '/' << column << '.' << _extension;
+			break;
+		default:
+			UTIL_THROW_EXCEPTION(
+				NotYetImplemented,
+				"CATMAID stack " << _stack << " uses unimplemented tile source type " << _tileSourceType);
+	}
+
 	return url.str();
 }

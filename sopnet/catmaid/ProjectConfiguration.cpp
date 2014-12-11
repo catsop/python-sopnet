@@ -79,6 +79,18 @@ ProjectConfiguration::getCatmaidProjectId() const {
 }
 
 void
+ProjectConfiguration::setCatmaidStackScale(unsigned int stackScale) {
+
+	_stackScale = stackScale;
+}
+
+unsigned int
+ProjectConfiguration::getCatmaidStackScale() const {
+
+	return _stackScale;
+}
+
+void
 ProjectConfiguration::setBlockSize(const util::point3<unsigned int>& blockSize) {
 
 	_blockSize = blockSize;
