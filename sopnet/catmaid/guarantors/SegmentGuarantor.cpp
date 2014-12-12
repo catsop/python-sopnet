@@ -137,7 +137,7 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 	// expand the request blocks
 	Blocks expandedSliceBlocks = _blockUtils.getBlocksInBox(slicesBoundingBox(*slices));
 
-	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << sliceBlocks << "." << std::endl;
+	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << expandedSliceBlocks << "." << std::endl;
 
 	Blocks newSliceBlocks;
 	foreach (const Block& block, expandedSliceBlocks)
