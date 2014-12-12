@@ -47,7 +47,6 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	unsigned int zBegin = requestBoundingBox.min.z;
 	unsigned int zEnd   = requestBoundingBox.max.z;
 
-	boost::shared_ptr<Slices> prevSlices;
 	boost::shared_ptr<Slices> nextSlices;
 
 	// Special case: for the leftmost section in the stack (index 0) end
@@ -64,7 +63,7 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 		pipeline::Process<SegmentExtractor> extractor;
 
 		// Collect slices for sections z - 1 and z
-		prevSlices = nextSlices;
+		boost::shared_ptr<Slices> prevSlices = nextSlices;
 		nextSlices = collectSlicesByZ(*slices, z);
 
 		// Set up the extractor
