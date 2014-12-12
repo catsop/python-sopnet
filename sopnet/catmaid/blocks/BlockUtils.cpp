@@ -72,7 +72,7 @@ Blocks
 BlockUtils::getBlocksInBox(const util::box<unsigned int>& box) const {
 
 	util::point3<unsigned int> minBlockCoordinate = box.min/_blockSize;
-	util::point3<unsigned int> numBlocks = (box.min*_blockSize - minBlockCoordinate
+	util::point3<unsigned int> numBlocks = (box.min - minBlockCoordinate*_blockSize
 			+ box.size() + _blockSize - util::point3<unsigned int>(1, 1, 1))/_blockSize;
 
 	return collectBlocks(minBlockCoordinate, numBlocks);
