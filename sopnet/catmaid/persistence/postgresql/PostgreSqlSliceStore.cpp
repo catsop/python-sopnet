@@ -145,7 +145,6 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream idSets;
-	idSets << "VALUES";
 	char separator = ' ';
 
 	// Find all conflicting slice pairs
@@ -174,6 +173,10 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	}
 
 	std::string idSetsStr = idSets.str();
+	// If conflictSets only contained self-conflicts (which are not stored),
+	// do nothing.
+	if (idSetsStr.empty())
+		return;
 
 	std::ostringstream tmpTableStream;
 	tmpTableStream << "djsopnet_sliceconflict_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
@@ -183,7 +186,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	q << "BEGIN;"
 			"CREATE TEMP TABLE " << tmpTable << " "
 				"(slice_a_id bigint, slice_b_id bigint, clique_id bigint) ON COMMIT DROP;"
-			"INSERT INTO " << tmpTable << ' ' << idSetsStr << ';';
+			"INSERT INTO " << tmpTable << " VALUES" << idSetsStr << ';';
 	// Insert new conflict sets from the temporary table.
 	q << "LOCK TABLE djsopnet_sliceconflict IN EXCLUSIVE MODE;";
 	q << "INSERT INTO djsopnet_sliceconflict (slice_a_id, slice_b_id) "
