@@ -158,7 +158,7 @@ SliceGuarantor::extractSlicesAndConflicts(
 		// boundary of expansionBlocks
 		Blocks expandedBlocks = expansionBlocks;
 		foreach(boost::shared_ptr<Slice> slice, requiredSlices)
-			checkWhole(*slice, expansionBlocks, expandedBlocks);
+			checkWhole(*slice, expandedBlocks);
 
 		LOG_ALL(sliceguarantorlog) << "Extracted in: " << expansionBlocks << ", have to grow to at least: " << expandedBlocks << std::endl; 
 
@@ -315,11 +315,10 @@ SliceGuarantor::containsAny(const ConflictSet& conflictSet, const Slices& slices
 void
 SliceGuarantor::checkWhole(
 		const Slice&  slice,
-		const Blocks& expansionBlocks,
 		Blocks&       expandedBlocks) const {
 
 	util::rect<unsigned int> sliceBound = slice.getComponent()->getBoundingBox();
-	util::rect<unsigned int> blockBound = _blockUtils.getBoundingBox(expansionBlocks).project_xy();
+	util::rect<unsigned int> blockBound = _blockUtils.getBoundingBox(expandedBlocks).project_xy();
 	
 	LOG_ALL(sliceguarantorlog)
 			<< "block bound: " << blockBound
@@ -329,45 +328,37 @@ SliceGuarantor::checkWhole(
 	
 	if (sliceBound.minX <= blockBound.minX)
 	{
-		Blocks expandBlocks = Blocks(expansionBlocks);
 		_blockUtils.expand(
-				expandBlocks,
+				expandedBlocks,
 				0, 0, 0,
 				1, 0, 0);
-		expandedBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -x boundary" << std::endl;
 	}
 	
 	if (sliceBound.maxX >= blockBound.maxX)
 	{
-		Blocks expandBlocks = Blocks(expansionBlocks);
 		_blockUtils.expand(
-				expandBlocks,
+				expandedBlocks,
 				1, 0, 0,
 				0, 0, 0);
-		expandedBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +x boundary" << std::endl;
 	}
 
 	if (sliceBound.minY <= blockBound.minY)
 	{
-		Blocks expandBlocks = Blocks(expansionBlocks);
 		_blockUtils.expand(
-				expandBlocks,
+				expandedBlocks,
 				0, 0, 0,
 				0, 1, 0);
-		expandedBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches -y boundary" << std::endl;
 	}
 	
 	if (sliceBound.maxY >= blockBound.maxY)
 	{
-		Blocks expandBlocks = Blocks(expansionBlocks);
 		_blockUtils.expand(
-				expandBlocks,
+				expandedBlocks,
 				0, 1, 0,
 				0, 0, 0);
-		expandedBlocks.addAll(expandBlocks);
 		LOG_ALL(sliceguarantorlog) << "Slice touches +y boundary" << std::endl;
 	}
 }

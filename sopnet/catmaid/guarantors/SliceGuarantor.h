@@ -93,7 +93,6 @@ private:
 	 * not
 	 */
 	void checkWhole(const Slice& slice,
-					const Blocks& extractBlocks,
 					Blocks& nbdBlocks) const;
 	
 	boost::shared_ptr<MserParameters> _mserParameters;
