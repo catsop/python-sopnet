@@ -75,7 +75,6 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
 
 	// store solution
-	if (_storeCosts && !_newCosts.empty()) _segmentStore->storeSegmentCosts(_newCosts);
 	_segmentStore->storeSolution(solution, core);
 
 	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
@@ -251,6 +250,9 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 	if (segments.size() == 0)
 		return objective;
 
+	// newly computed segment costs
+	std::map<SegmentHash, double> newCosts;
+
 	foreach (const SegmentDescription& segment, segments) {
 
 		unsigned int var  = _hashToVariable[segment.getHash()];
@@ -259,11 +261,14 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 		if (!_readCosts || std::isnan(cost)) {
 
 			cost = getCost(segment.getFeatures());
-			_newCosts[segment.getHash()] = cost;
+			newCosts[segment.getHash()] = cost;
 		}
 
 		objective->setCoefficient(var, cost);
 	}
+
+	// Store costs if requested.
+	if (_storeCosts && !newCosts.empty()) _segmentStore->storeSegmentCosts(newCosts);
 
 	return objective;
 }

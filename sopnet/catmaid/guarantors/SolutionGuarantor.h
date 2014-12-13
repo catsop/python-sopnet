@@ -124,9 +124,6 @@ private:
 	// the feature weights
 	std::vector<double> _weights;
 
-	// newly computing segment costs
-	std::map<SegmentHash, double> _newCosts;
-
 	BlockUtils _blockUtils;
 };
 
