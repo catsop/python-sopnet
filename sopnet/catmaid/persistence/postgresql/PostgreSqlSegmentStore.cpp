@@ -187,6 +187,24 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
 
+	// Query the number of features configured for this stack, to verify parsed
+	// results and create empty feature sets for user-created segments.
+	std::string numFeaturesQuery =
+			"SELECT size FROM djsopnet_featureinfo WHERE stack_id = " +
+			boost::lexical_cast<std::string>(_config.getCatmaidRawStackId());
+	PGresult* queryResult = PQexec(_pgConnection, numFeaturesQuery.c_str());
+
+	PostgreSqlUtils::checkPostgreSqlError(queryResult, numFeaturesQuery);
+	if (PQntuples(queryResult) != 1 || PQgetisnull(queryResult, 0, 0)) {
+		std::string errorMsg = "Feature size is not configured for this stack.";
+		LOG_ERROR(postgresqlsegmentstorelog) << errorMsg << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg);
+	}
+
+	char* cellStr = PQgetvalue(queryResult, 0, 0);
+	PQclear(queryResult);
+	const unsigned int numFeatures = boost::lexical_cast<unsigned int>(cellStr);
+
 	// Query segments for this set of blocks
 	std::string featureJoin(readCosts ?
 			"LEFT OUTER JOIN djsopnet_segmentfeatures sf "
@@ -206,14 +224,13 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
 			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
 			FIELD_COST, FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
-	PGresult* queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
+	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
 	int nSegments = PQntuples(queryResult);
 
 	// Build SegmentDescription for each row
 	for (int i = 0; i < nSegments; ++i) {
-		char* cellStr;
 		cellStr = PQgetvalue(queryResult, i, FIELD_ID); // Segment ID
 		SegmentHash segmentHash = PostgreSqlUtils::postgreSqlIdToHash(
 				boost::lexical_cast<PostgreSqlHash>(cellStr));
@@ -241,16 +258,21 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		if (readCosts && !PQgetisnull(queryResult, i, FIELD_COST)) {
 			cellStr = PQgetvalue(queryResult, i, FIELD_COST);
 			segmentDescription.setCost(boost::lexical_cast<double>(cellStr));
-		} else {
+		} else if (!PQgetisnull(queryResult, i, FIELD_FEATURES)) {
 			// Parse features of form: {featVal1, featVal2, ...}
 			cellStr = PQgetvalue(queryResult, i, FIELD_FEATURES);
 			std::string featuresString(cellStr);
 			boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
 			std::vector<double> segmentFeatures;
+			segmentFeatures.reserve(numFeatures);
 			foreach (const std::string& feature, features) {
 				segmentFeatures.push_back(boost::lexical_cast<double>(feature));
 			}
 
+			segmentDescription.setFeatures(segmentFeatures);
+		} else {
+			// Non-sopnet-generated segment, no features and assumed to be constrained.
+			std::vector<double> segmentFeatures(numFeatures, 0);
 			segmentDescription.setFeatures(segmentFeatures);
 		}
 
