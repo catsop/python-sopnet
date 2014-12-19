@@ -97,6 +97,8 @@ private:
 
 	double getCost(const std::vector<double>& features);
 
+	util::box<unsigned int> segmentsBoundingBox(const SegmentDescriptions& segments);
+
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
 

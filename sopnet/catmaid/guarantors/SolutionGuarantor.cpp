@@ -54,14 +54,13 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	if (!missingBlocks.empty())
 		return missingBlocks;
 
-	// get all conflict sets for these blocks
-	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsByBlocks(blocks, missingBlocks);
+	// get all conflict sets for blocks overlapping segments
+	Blocks expandedBlocks = _blockUtils.getBlocksInBox(segmentsBoundingBox(*segments));
+	LOG_DEBUG(solutionguarantorlog) << "Expanded blocks for conflict sets are " << expandedBlocks << "." << std::endl;
+	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsByBlocks(expandedBlocks, missingBlocks);
 
 	if (!missingBlocks.empty())
-		UTIL_THROW_EXCEPTION(
-				CorruptedDatabaseException,
-				"the segment store does contain segments for the requested blocks, "
-				"but the slice store reports that no conflict sets have been extracted");
+		return missingBlocks;
 
 	boost::shared_ptr<SegmentConstraints> explicitConstraints = _segmentStore->getConstraintsByBlocks(blocks);
 
@@ -302,11 +301,16 @@ SolutionGuarantor::addOverlapConstraints(
 			if (_lastSlices.count(sliceHash))
 				sliceToSegments = &_rightSliceToSegments;
 
-			foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
+			// Because conflict sets from expanded blocks may include slices not
+			// in this set of segments, first check for the slice.
+			if (sliceToSegments->count(sliceHash)) {
 
-				unsigned int var = _hashToVariable[segmentHash];
+				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
 
-				constraint.setCoefficient(var, 1.0);
+					unsigned int var = _hashToVariable[segmentHash];
+
+					constraint.setCoefficient(var, 1.0);
+				}
 			}
 
 			noConflictSlices.erase(sliceHash);
@@ -422,4 +426,36 @@ SolutionGuarantor::getCost(const std::vector<double>& features) {
 	}
 
 	return cost;
+}
+
+util::box<unsigned int>
+SolutionGuarantor::segmentsBoundingBox(const SegmentDescriptions& segments)
+{
+	if (segments.size() == 0)
+		return util::box<unsigned int>(0, 0, 0, 0, 0, 0);
+
+	util::rect<unsigned int> bound(0, 0, 0, 0);
+	unsigned int zMax = 0;
+	unsigned int zMin = 0;
+
+	foreach (const SegmentDescription& segment, segments) {
+
+		if (bound.area() == 0) {
+
+			bound = segment.get2DBoundingBox();
+			// Because bounding box max is strictly greater than contents but
+			// segment includes a slice in its section supremum, zMax must be
+			// one greater than section supremum.
+			zMax  = segment.getSection() + 1;
+			zMin  = segment.getSection() == 0 ? segment.getSection() : segment.getSection() - 1;
+
+		} else {
+
+			bound.fit(segment.get2DBoundingBox());
+			zMax = std::max(zMax, segment.getSection() + 1);
+			zMin = std::min(zMin, segment.getSection() == 0 ? segment.getSection() : segment.getSection() - 1);
+		}
+	}
+
+	return util::box<unsigned int>(bound.minX, bound.minY, zMin, bound.maxX, bound.maxY, zMax);
 }
