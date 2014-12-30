@@ -39,6 +39,9 @@ public:
 			const Blocks& blocks,
 			Blocks&       missingBlocks) {}
 
+	boost::shared_ptr<ConflictSets> getConflictSetsBySlices(
+			const std::set<SliceHash>& slices) {}
+
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.

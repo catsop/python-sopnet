@@ -55,9 +55,14 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 		return missingBlocks;
 
 	// get all conflict sets for blocks overlapping segments
-	Blocks expandedBlocks = _blockUtils.getBlocksInBox(segmentsBoundingBox(*segments));
-	LOG_DEBUG(solutionguarantorlog) << "Expanded blocks for conflict sets are " << expandedBlocks << "." << std::endl;
-	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsByBlocks(expandedBlocks, missingBlocks);
+	std::set<SliceHash> allSlices;
+	foreach (const SegmentDescription& segment, *segments) {
+		const std::vector<SliceHash>& leftSlices = segment.getLeftSlices();
+		std::copy(leftSlices.begin(), leftSlices.end(), std::inserter(allSlices, allSlices.end()));
+		const std::vector<SliceHash>& rightSlices = segment.getLeftSlices();
+		std::copy(rightSlices.begin(), rightSlices.end(), std::inserter(allSlices, allSlices.end()));
+	}
+	boost::shared_ptr<ConflictSets> conflictSets = _sliceStore->getConflictSetsBySlices(allSlices);
 
 	if (!missingBlocks.empty())
 		UTIL_THROW_EXCEPTION(

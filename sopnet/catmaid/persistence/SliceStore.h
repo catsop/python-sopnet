@@ -64,6 +64,9 @@ public:
 	 */
 	virtual boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block, Blocks& missingBlocks) = 0;
 
+	virtual boost::shared_ptr<ConflictSets> getConflictSetsBySlices(
+			const std::set<SliceHash>& slices) = 0;
+
 	/**
 	 * Check whether the slices for the given block have already been extracted.
 	 */
