@@ -358,6 +358,18 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 			conflictSet.addSlice(sliceHash);
 		}
 
+		cellStr = PQgetvalue(result, i, FIELD_CLIQUE_ID);
+		std::string csPostgreId(cellStr);
+		std::size_t csHash = PostgreSqlUtils::postgreSqlIdToHash(
+				boost::lexical_cast<PostgreSqlHash>(csPostgreId));
+		if (hash_value(conflictSet) != csHash) {
+			std::ostringstream errorMsg;
+			errorMsg << "Retrieved cs has wrong hash. Original: " << csHash <<
+					" Retrieved: " << hash_value(conflictSet);
+
+			LOG_ERROR(postgresqlslicestorelog) << errorMsg.str() << std::endl;
+			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
+		}
 		cellStr = PQgetvalue(result, i, FIELD_MAXIMAL_CLIQUE);
 		conflictSet.setMaximalClique(cellStr[0] == 't');
 

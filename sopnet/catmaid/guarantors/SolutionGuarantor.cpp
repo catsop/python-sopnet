@@ -283,27 +283,44 @@ SolutionGuarantor::addOverlapConstraints(
 			<< " conflict sets" << std::endl;
 
 	std::set<SliceHash> noConflictSlices = _slices;
+	unsigned int skipCount = 0;
 
 	// for each conflict set:
 	foreach (const ConflictSet& conflictSet, conflictSets) {
 
 		LinearConstraint constraint;
+		unsigned int anySet = 0;
+		bool anySkipped = false;
+		bool anySwapped = false;
+		bool anyOrphan = false;
 
 		// get all segments that use the conflict slices on one side and require 
 		// the sum of their variables to be at most one
 		foreach (const SliceHash& sliceHash, conflictSet.getSlices()) {
 
-			std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
+			if (_slices.count(sliceHash)) {
 
-			// find segments that use the slice on their left side, except if 
-			// this is a slice in the last section -- in this case, find 
-			// segments that use it on their right side
-			if (_lastSlices.count(sliceHash))
-				sliceToSegments = &_rightSliceToSegments;
+				std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
 
-			// Because conflict sets from expanded blocks may include slices not
-			// in this set of segments, first check for the slice.
-			if (sliceToSegments->count(sliceHash)) {
+				// find segments that use the slice on their left side, except if 
+				// this is a slice in the last section -- in this case, find 
+				// segments that use it on their right side
+				if (0 == sliceToSegments->count(sliceHash))
+					anySwapped = true;
+				if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
+					anyOrphan = true;
+				if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
+					sliceToSegments = &_rightSliceToSegments;
+
+				if (0 == sliceToSegments->count(sliceHash) || 0 == (*sliceToSegments)[sliceHash].size())
+					UTIL_THROW_EXCEPTION(
+						UsageError,
+						" hash " << sliceHash);
+
+				// Because conflict sets from expanded blocks may include slices not
+				// in this set of segments, first check for the slice.
+
+				anySet++;
 
 				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
 
@@ -311,20 +328,30 @@ SolutionGuarantor::addOverlapConstraints(
 
 					constraint.setCoefficient(var, 1.0);
 				}
+			} else {
+				anySkipped = true;
 			}
 
 			noConflictSlices.erase(sliceHash);
 		}
 
-		constraint.setRelation(_forceExplanation && conflictSet.isMaximalClique() ? Equal : LessEqual);
+		constraint.setRelation(!anyOrphan && !anySkipped && !anySwapped && (anySet > 1) && _forceExplanation && conflictSet.isMaximalClique() ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
-		constraints.add(constraint);
+		if (anySet == 1)
+			LOG_DEBUG(solutionguarantorlog)
+			<< "anySet == 1 " << hash_value(conflictSet)
+			<< (anySkipped ? " s" : " ns")
+			<< (anySwapped ? " sw" : " nsw") << std::endl;
+
+		if (anySet > 0) constraints.add(constraint);
+		else skipCount++;
 	}
 
 	// Create an exclusivity constraint for the segments one one side of each
 	// slice not in any conflict set.
 	foreach (const SliceHash& sliceHash, noConflictSlices) {
+		bool orphan = false;
 
 		LinearConstraint constraint;
 
@@ -333,17 +360,27 @@ SolutionGuarantor::addOverlapConstraints(
 		// find segments that use the slice on their left side, except if
 		// this is a slice in the last section -- in this case, find
 		// segments that use it on their right side
-		if (_lastSlices.count(sliceHash))
+		if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
+					orphan = true;
+		if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
 			sliceToSegments = &_rightSliceToSegments;
+
+				if (0 == sliceToSegments->count(sliceHash) || 0 == (*sliceToSegments)[sliceHash].size())
+					UTIL_THROW_EXCEPTION(
+						UsageError,
+						" hash " << sliceHash);
 
 		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
-		constraint.setRelation(_forceExplanation ? Equal : LessEqual);
+		constraint.setRelation(!orphan && _forceExplanation ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
 		constraints.add(constraint);
 	}
+
+	LOG_DEBUG(solutionguarantorlog)
+			<< "skipped " << skipCount << " conflict sets, " << noConflictSlices.size() << " nc slices" << std::endl;
 }
 
 void
@@ -358,11 +395,34 @@ SolutionGuarantor::addContinuationConstraints(
 		if (_firstSlices.count(sliceHash) || _lastSlices.count(sliceHash))
 			continue;
 
+		if (_rightSliceToSegments.count(sliceHash) == 0 && _leftSliceToSegments.count(sliceHash) == 0)
+			UTIL_THROW_EXCEPTION(
+					UsageError,
+					"leftseg " << _rightSliceToSegments.count(sliceHash)
+					<< " rightseg " << _leftSliceToSegments.count(sliceHash)
+					<< " hash " << sliceHash);
+
+		// if (leftSegments.size() == 0 || rightSegments.size() == 0)
+		if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
+			continue;
+			// UTIL_THROW_EXCEPTION(
+			// 		UsageError,
+			// 		"leftseg " << _rightSliceToSegments.count(sliceHash)
+			// 		<< " rightseg " << _leftSliceToSegments.count(sliceHash)
+			// 		<< " hash " << sliceHash);
+
 		// get all segments that use this slice from the left
 		const std::vector<SegmentHash>& leftSegments = _rightSliceToSegments[sliceHash];
 
 		// get all segments that use this slice from the right
 		const std::vector<SegmentHash>& rightSegments = _leftSliceToSegments[sliceHash];
+
+		if (leftSegments.size() == 0 || rightSegments.size() == 0)
+			UTIL_THROW_EXCEPTION(
+					UsageError,
+					"leftseg " << leftSegments.size()
+					<< " rightseg " << rightSegments.size()
+					<< " hash " << sliceHash);
 
 		// require the sum of their variables to be equal
 
