@@ -440,6 +440,13 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 	// open the offset file
 	std::ifstream componentFile(offsetFilename.c_str());
 
+	if (!componentFile) {
+
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				offsetFilename << " failed to open!");
+	}
+
 	// load the component's value
 	double value;
 	componentFile >> value;
