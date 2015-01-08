@@ -135,6 +135,8 @@ SolutionGuarantor::computeSolution(
 	_lastSlices.clear();
 	_variableToHash.clear();
 
+	std::set<SliceHash> hasEnd;
+
 	unsigned int nextVar = 0;
 	foreach (const SegmentDescription& segment, segments) {
 
@@ -154,6 +156,8 @@ SolutionGuarantor::computeSolution(
 			// special boundary case continuation constraints are applied.
 			if (firstSection != 0 && (segmentSection - 1 == firstSection))
 				_firstSlices.insert(leftSliceHash);
+
+			if (segment.getType() == EndSegmentType) hasEnd.insert(leftSliceHash);
 		}
 
 		foreach (SliceHash rightSliceHash, segment.getRightSlices()) {
@@ -163,6 +167,8 @@ SolutionGuarantor::computeSolution(
 
 			if (segmentSection == lastSection)
 				_lastSlices.insert(rightSliceHash);
+
+			if (segment.getType() == EndSegmentType) hasEnd.insert(rightSliceHash);
 		}
 
 		if (segment.getType() == EndSegmentType)
@@ -172,6 +178,10 @@ SolutionGuarantor::computeSolution(
 		if (segment.getType() == BranchSegmentType)
 			numBranches++;
 	}
+
+	// Leaf slices are slices without an end segment.
+	std::set_difference(_slices.begin(), _slices.end(), hasEnd.begin(), hasEnd.end(),
+			std::inserter(_leafSlices, _leafSlices.end()));
 
 	LOG_DEBUG(solutionguarantorlog)
 			<< "got " << numEnds << " end segments, "
@@ -288,22 +298,29 @@ SolutionGuarantor::addOverlapConstraints(
 	foreach (const ConflictSet& conflictSet, conflictSets) {
 
 		LinearConstraint constraint;
+		bool anySet = false;
+		bool anyLeaf = false;
 
 		// get all segments that use the conflict slices on one side and require 
 		// the sum of their variables to be at most one
 		foreach (const SliceHash& sliceHash, conflictSet.getSlices()) {
 
-			std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
-
-			// find segments that use the slice on their left side, except if 
-			// this is a slice in the last section -- in this case, find 
-			// segments that use it on their right side
-			if (_lastSlices.count(sliceHash))
-				sliceToSegments = &_rightSliceToSegments;
-
 			// Because conflict sets from expanded blocks may include slices not
 			// in this set of segments, first check for the slice.
-			if (sliceToSegments->count(sliceHash)) {
+			if (_slices.count(sliceHash)) {
+
+				anySet = true;
+
+				std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
+
+				if (_leafSlices.count(sliceHash)) anyLeaf = true;
+
+				// Find segments that use the slice on their left side, except
+				// if this is a slice in the last section or a leaf slice with
+				// no left segments. In this case, find segments that use it on
+				// their right side.
+				if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
+					sliceToSegments = &_rightSliceToSegments;
 
 				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
 
@@ -316,10 +333,13 @@ SolutionGuarantor::addOverlapConstraints(
 			noConflictSlices.erase(sliceHash);
 		}
 
-		constraint.setRelation(_forceExplanation && conflictSet.isMaximalClique() ? Equal : LessEqual);
+		// Do not force explanation if this conflict set involves a leaf slice.
+		constraint.setRelation(_forceExplanation && !anyLeaf && conflictSet.isMaximalClique() ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
-		constraints.add(constraint);
+		// Only add the constraint if any variables were set. This is necessary
+		// since some expanded block conflict sets do not involve any _slices.
+		if (anySet) constraints.add(constraint);
 	}
 
 	// Create an exclusivity constraint for the segments one one side of each
@@ -330,16 +350,18 @@ SolutionGuarantor::addOverlapConstraints(
 
 		std::map<SliceHash, std::vector<SegmentHash> >* sliceToSegments = &_leftSliceToSegments;
 
-		// find segments that use the slice on their left side, except if
-		// this is a slice in the last section -- in this case, find
-		// segments that use it on their right side
-		if (_lastSlices.count(sliceHash))
+		// Find segments that use the slice on their left side, except
+		// if this is a slice in the last section or a leaf slice with
+		// no left segments. In this case, find segments that use it on
+		// their right side.
+		if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
 			sliceToSegments = &_rightSliceToSegments;
 
 		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
-		constraint.setRelation(_forceExplanation ? Equal : LessEqual);
+		// Do not force explanation if this is a leaf slice.
+		constraint.setRelation(_forceExplanation && 0 == _leafSlices.count(sliceHash) ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
 		constraints.add(constraint);
@@ -356,6 +378,12 @@ SolutionGuarantor::addContinuationConstraints(
 
 		// if not a first or last slice
 		if (_firstSlices.count(sliceHash) || _lastSlices.count(sliceHash))
+			continue;
+
+		// If the slice has no segments on one side (some leaf, first, last
+		// slices), ignore it.
+		if (0 == _rightSliceToSegments.count(sliceHash) ||
+			0 == _leftSliceToSegments.count(sliceHash))
 			continue;
 
 		// get all segments that use this slice from the left
