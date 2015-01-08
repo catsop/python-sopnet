@@ -131,8 +131,6 @@ SolutionGuarantor::computeSolution(
 	_rightSliceToSegments.clear();
 	_leftSliceToSegments.clear();
 	_slices.clear();
-	_firstSlices.clear();
-	_lastSlices.clear();
 	_variableToHash.clear();
 
 	std::set<SliceHash> hasEnd;
@@ -141,7 +139,6 @@ SolutionGuarantor::computeSolution(
 	foreach (const SegmentDescription& segment, segments) {
 
 		SegmentHash segmentHash = segment.getHash();
-		const unsigned int segmentSection = segment.getSection();
 
 		_hashToVariable[segmentHash] = nextVar;
 		_variableToHash[nextVar] = segmentHash;
@@ -152,11 +149,6 @@ SolutionGuarantor::computeSolution(
 			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
 			_slices.insert(leftSliceHash);
 
-			// First stack section (z=0) segments can be ignored because in this
-			// special boundary case continuation constraints are applied.
-			if (firstSection != 0 && (segmentSection - 1 == firstSection))
-				_firstSlices.insert(leftSliceHash);
-
 			if (segment.getType() == EndSegmentType) hasEnd.insert(leftSliceHash);
 		}
 
@@ -164,9 +156,6 @@ SolutionGuarantor::computeSolution(
 
 			_rightSliceToSegments[rightSliceHash].push_back(segmentHash);
 			_slices.insert(rightSliceHash);
-
-			if (segmentSection == lastSection)
-				_lastSlices.insert(rightSliceHash);
 
 			if (segment.getType() == EndSegmentType) hasEnd.insert(rightSliceHash);
 		}
@@ -187,18 +176,6 @@ SolutionGuarantor::computeSolution(
 			<< "got " << numEnds << " end segments, "
 			<< numContinuations << " continuation segments, and "
 			<< numBranches << " branches" << std::endl;
-
-	LOG_ALL(solutionguarantorlog)
-			<< "first slices are:" << std::endl;
-	foreach (const SliceHash& sliceHash, _firstSlices)
-		LOG_ALL(solutionguarantorlog) << sliceHash << " ";
-	LOG_ALL(solutionguarantorlog) << std::endl;
-
-	LOG_ALL(solutionguarantorlog)
-			<< "last slices are:" << std::endl;
-	foreach (const SliceHash& sliceHash, _lastSlices)
-		LOG_ALL(solutionguarantorlog) << sliceHash << " ";
-	LOG_ALL(solutionguarantorlog) << std::endl;
 
 	// create linear constraints on the variables
 
@@ -319,7 +296,7 @@ SolutionGuarantor::addOverlapConstraints(
 				// if this is a slice in the last section or a leaf slice with
 				// no left segments. In this case, find segments that use it on
 				// their right side.
-				if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
+				if (0 == sliceToSegments->count(sliceHash))
 					sliceToSegments = &_rightSliceToSegments;
 
 				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
@@ -354,7 +331,7 @@ SolutionGuarantor::addOverlapConstraints(
 		// if this is a slice in the last section or a leaf slice with
 		// no left segments. In this case, find segments that use it on
 		// their right side.
-		if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
+		if (0 == sliceToSegments->count(sliceHash))
 			sliceToSegments = &_rightSliceToSegments;
 
 		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
@@ -375,10 +352,6 @@ SolutionGuarantor::addContinuationConstraints(
 
 	// for each slice
 	foreach (const SliceHash& sliceHash, _slices) {
-
-		// if not a first or last slice
-		if (_firstSlices.count(sliceHash) || _lastSlices.count(sliceHash))
-			continue;
 
 		// If the slice has no segments on one side (some leaf, first, last
 		// slices), ignore it.

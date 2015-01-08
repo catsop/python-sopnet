@@ -120,9 +120,6 @@ private:
 	// set of all slices
 	std::set<SliceHash> _slices;
 
-	// set of all slices in the first and last section
-	std::set<SliceHash> _firstSlices, _lastSlices;
-
 	// set of all slices not associated to the request blocks
 	std::set<SliceHash> _leafSlices;
 
