@@ -135,6 +135,8 @@ SolutionGuarantor::computeSolution(
 	_lastSlices.clear();
 	_variableToHash.clear();
 
+	std::set<SliceHash> hasEnd;
+
 	unsigned int nextVar = 0;
 	foreach (const SegmentDescription& segment, segments) {
 
@@ -154,6 +156,8 @@ SolutionGuarantor::computeSolution(
 			// special boundary case continuation constraints are applied.
 			if (firstSection != 0 && (segmentSection - 1 == firstSection))
 				_firstSlices.insert(leftSliceHash);
+
+			if (segment.getType() == EndSegmentType) hasEnd.insert(leftSliceHash);
 		}
 
 		foreach (SliceHash rightSliceHash, segment.getRightSlices()) {
@@ -163,6 +167,8 @@ SolutionGuarantor::computeSolution(
 
 			if (segmentSection == lastSection)
 				_lastSlices.insert(rightSliceHash);
+
+			if (segment.getType() == EndSegmentType) hasEnd.insert(rightSliceHash);
 		}
 
 		if (segment.getType() == EndSegmentType)
@@ -172,6 +178,9 @@ SolutionGuarantor::computeSolution(
 		if (segment.getType() == BranchSegmentType)
 			numBranches++;
 	}
+
+	std::set_difference(_slices.begin(), _slices.end(), hasEnd.begin(), hasEnd.end(),
+			std::inserter(_orphanSlices, _orphanSlices.end()));
 
 	LOG_DEBUG(solutionguarantorlog)
 			<< "got " << numEnds << " end segments, "
@@ -289,9 +298,7 @@ SolutionGuarantor::addOverlapConstraints(
 	foreach (const ConflictSet& conflictSet, conflictSets) {
 
 		LinearConstraint constraint;
-		unsigned int anySet = 0;
-		bool anySkipped = false;
-		bool anySwapped = false;
+		bool anySet = false;
 		bool anyOrphan = false;
 
 		// get all segments that use the conflict slices on one side and require 
@@ -305,10 +312,8 @@ SolutionGuarantor::addOverlapConstraints(
 				// find segments that use the slice on their left side, except if 
 				// this is a slice in the last section -- in this case, find 
 				// segments that use it on their right side
-				if (0 == sliceToSegments->count(sliceHash))
-					anySwapped = true;
-				if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
-					anyOrphan = true;
+				if (_orphanSlices.count(sliceHash)) anyOrphan = true;
+
 				if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
 					sliceToSegments = &_rightSliceToSegments;
 
@@ -320,7 +325,7 @@ SolutionGuarantor::addOverlapConstraints(
 				// Because conflict sets from expanded blocks may include slices not
 				// in this set of segments, first check for the slice.
 
-				anySet++;
+				anySet = true;
 
 				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
 
@@ -328,30 +333,21 @@ SolutionGuarantor::addOverlapConstraints(
 
 					constraint.setCoefficient(var, 1.0);
 				}
-			} else {
-				anySkipped = true;
 			}
 
 			noConflictSlices.erase(sliceHash);
 		}
 
-		constraint.setRelation(!anyOrphan && !anySkipped && !anySwapped && (anySet > 1) && _forceExplanation && conflictSet.isMaximalClique() ? Equal : LessEqual);
+		constraint.setRelation(_forceExplanation && !anyOrphan && conflictSet.isMaximalClique() ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
-		if (anySet == 1)
-			LOG_DEBUG(solutionguarantorlog)
-			<< "anySet == 1 " << hash_value(conflictSet)
-			<< (anySkipped ? " s" : " ns")
-			<< (anySwapped ? " sw" : " nsw") << std::endl;
-
-		if (anySet > 0) constraints.add(constraint);
+		if (anySet) constraints.add(constraint);
 		else skipCount++;
 	}
 
 	// Create an exclusivity constraint for the segments one one side of each
 	// slice not in any conflict set.
 	foreach (const SliceHash& sliceHash, noConflictSlices) {
-		bool orphan = false;
 
 		LinearConstraint constraint;
 
@@ -360,8 +356,6 @@ SolutionGuarantor::addOverlapConstraints(
 		// find segments that use the slice on their left side, except if
 		// this is a slice in the last section -- in this case, find
 		// segments that use it on their right side
-		if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
-					orphan = true;
 		if (_lastSlices.count(sliceHash) || 0 == sliceToSegments->count(sliceHash))
 			sliceToSegments = &_rightSliceToSegments;
 
@@ -373,7 +367,7 @@ SolutionGuarantor::addOverlapConstraints(
 		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
-		constraint.setRelation(!orphan && _forceExplanation ? Equal : LessEqual);
+		constraint.setRelation(_forceExplanation && 0 == _orphanSlices.count(sliceHash) ? Equal : LessEqual);
 		constraint.setValue(1.0);
 
 		constraints.add(constraint);
@@ -403,6 +397,7 @@ SolutionGuarantor::addContinuationConstraints(
 					<< " hash " << sliceHash);
 
 		// if (leftSegments.size() == 0 || rightSegments.size() == 0)
+		//if (_orphanSlices.count(sliceHash))
 		if (_rightSliceToSegments.count(sliceHash) == 0 || _leftSliceToSegments.count(sliceHash) == 0)
 			continue;
 			// UTIL_THROW_EXCEPTION(
