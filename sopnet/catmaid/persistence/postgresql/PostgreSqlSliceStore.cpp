@@ -5,6 +5,7 @@
 #include <boost/tokenizer.hpp>
 #include <boost/timer/timer.hpp>
 #include <fstream>
+#include <sys/stat.h>
 #include <vigra/impex.hxx>
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/Image.h>
@@ -398,6 +399,10 @@ PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const C
 {
 	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
 	std::string offsetFilename = _config.getComponentDirectory() + "/" + slicePostgreId + ".off";
+
+	// If the image file already exists, do nothing.
+	struct stat buffer;
+	if (stat (imageFilename.c_str(), &buffer) == 0) return;
 
 	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
 
