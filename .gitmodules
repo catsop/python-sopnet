@@ -1,6 +1,6 @@
 [submodule "modules/util"]
 	path = modules/util
-	url = https://github.com/funkey/util.git
+	url = https://github.com/catsop/util.git
 [submodule "modules/signals"]
 	path = modules/signals
 	url = https://github.com/funkey/signals.git
