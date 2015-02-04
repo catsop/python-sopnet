@@ -14,7 +14,8 @@ CatmaidStackStore::CatmaidStackStore(
 	_serverUrl(configuration.getCatmaidHost()),
 	_project(configuration.getCatmaidProjectId()),
 	_stack(stackType == Raw ? configuration.getCatmaidRawStackId() : configuration.getCatmaidMembraneStackId()),
-	_stackScale(configuration.getCatmaidStackScale())
+	_stackScale(configuration.getCatmaidStackScale()),
+	_treatMissingAsEmpty(stackType != Raw)
 {
 	boost::shared_ptr<ptree> pt;
 	std::ostringstream os;
@@ -80,14 +81,28 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 	{
 		for (unsigned int c = tileCMin; c < tileCMax; ++c)
 		{
-			boost::shared_ptr<ImageHttpReader> reader =
-				boost::make_shared<ImageHttpReader>(tileURL(c, r, section));
-			pipeline::Value<Image> image = reader->getOutput();
-
 			unsigned int tileWXmin = c * _tileWidth; // Upper left of the tile in world coords.
 			unsigned int tileWYmin = r * _tileHeight;
 
-			copyImageInto(*image, *imageOut, tileWXmin, tileWYmin, bound);
+			try
+			{
+				boost::shared_ptr<ImageHttpReader> reader =
+					boost::make_shared<ImageHttpReader>(tileURL(c, r, section));
+				pipeline::Value<Image> image = reader->getOutput();
+
+				// This must be in the try block as the exception is not thrown
+				// by pipeline until image is dereferenced.
+				copyImageInto(*image, *imageOut, tileWXmin, tileWYmin, bound);
+			}
+			catch (ImageMissing& e)
+			{
+				if (_treatMissingAsEmpty)
+				{
+					Image empty(_tileWidth, _tileHeight);
+					copyImageInto(empty, *imageOut, tileWXmin, tileWYmin, bound);
+				}
+				else throw;
+			}
 		}
 		
 		
