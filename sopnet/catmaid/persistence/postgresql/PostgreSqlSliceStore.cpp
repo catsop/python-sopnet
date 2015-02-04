@@ -41,20 +41,35 @@ PostgreSqlSliceStore::~PostgreSqlSliceStore() {
 void
 PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& block, bool doneWithBlock) {
 
-	if (slices.size() == 0)
-		return;
-
 	boost::timer::cpu_timer queryTimer;
 
 	unsigned int stack_id = _config.getCatmaidRawStackId();
 	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				block, stack_id);
 
+	std::ostringstream q;
+
+	if (slices.size() == 0) {
+		if (doneWithBlock) {
+			q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
+			std::string query = q.str();
+			PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+			int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+			if (0 == asyncStatus) {
+				LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
+				LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
+					std::endl;
+				UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+			}
+		}
+
+		return;
+	}
+
 	std::ostringstream tmpTableStream;
 	tmpTableStream << "djsopnet_slice_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
 	const std::string tmpTable = tmpTableStream.str();
 
-	std::ostringstream q;
 	q << "BEGIN;"
 			"CREATE TEMP TABLE " << tmpTable << " "
 				"(LIKE djsopnet_slice) ON COMMIT DROP;"
