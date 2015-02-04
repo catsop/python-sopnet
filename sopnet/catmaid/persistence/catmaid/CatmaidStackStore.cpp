@@ -78,7 +78,6 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 	
 	for (unsigned int r = tileRMin; r < tileRMax; ++r)
 	{
-		std::vector<boost::shared_ptr<Image> > imageVector;
 		for (unsigned int c = tileCMin; c < tileCMax; ++c)
 		{
 			boost::shared_ptr<ImageHttpReader> reader =
