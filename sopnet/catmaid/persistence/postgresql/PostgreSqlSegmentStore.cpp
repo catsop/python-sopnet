@@ -497,19 +497,23 @@ PostgreSqlSegmentStore::storeSolution(
 	PQclear(queryResult);
 
 	std::ostringstream query;
-	query << "INSERT INTO djsopnet_segmentsolution (solution_id, segment_id) "
-			"SELECT sol.id, s.id FROM (VALUES (" << solutionId << ")) AS sol (id), (VALUES ";
-	char separator = ' ';
 
-	foreach (const SegmentHash& segmentHash, segmentHashes) {
-		query << separator << '('
-			  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
-			  << ')';
-		separator = ',';
+	if (!segmentHashes.empty()) {
+		query << "INSERT INTO djsopnet_segmentsolution (solution_id, segment_id) "
+				"SELECT sol.id, s.id FROM (VALUES (" << solutionId << ")) AS sol (id), (VALUES ";
+		char separator = ' ';
+
+		foreach (const SegmentHash& segmentHash, segmentHashes) {
+			query << separator << '('
+				  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
+				  << ')';
+			separator = ',';
+		}
+
+		query << ") AS s (id);";
 	}
 
-	query << ") AS s (id);"
-			"INSERT INTO djsopnet_solutionprecedence (core_id, solution_id) "
+	query << "INSERT INTO djsopnet_solutionprecedence (core_id, solution_id) "
 			"VALUES (" << coreId << ',' << solutionId << ");"
 			"UPDATE djsopnet_core SET solution_set_flag = TRUE "
 			"WHERE id = " << coreId;
