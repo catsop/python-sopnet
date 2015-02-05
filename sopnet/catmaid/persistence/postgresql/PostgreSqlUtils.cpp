@@ -20,7 +20,8 @@ PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string 
 		UTIL_THROW_EXCEPTION(
 			PostgreSqlException,
 			"A PostgreSQL query returned an unexpected result (" <<
-					PQresStatus(status) << ").");
+					PQresStatus(status) << " " <<
+					PQresultErrorMessage(result) << ").");
 	}
 }
 
