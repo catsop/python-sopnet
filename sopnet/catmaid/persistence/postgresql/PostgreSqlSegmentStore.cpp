@@ -36,6 +36,21 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
 				block, _config.getCatmaidRawStackId());
 
+	if (segments.size() == 0) {
+		std::string query =
+			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" + blockQuery + ");";
+
+		PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+		int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+		if (0 == asyncStatus) {
+			LOG_ERROR(postgresqlsegmentstorelog) << "PQsendQuery returned 0" << std::endl;
+			LOG_ERROR(postgresqlsegmentstorelog) << "The used query was: " << query <<
+				std::endl;
+		}
+
+		return;
+	}
+
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream tmpTableStream;
