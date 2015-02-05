@@ -18,6 +18,7 @@ boost::shared_ptr< util::point3<unsigned int> >
 DjangoUtils::getStackSize(const std::string& server, const unsigned int project, const unsigned int stack)
 {
 	std::ostringstream url;
+	HttpClient client;
 	boost::shared_ptr<ptree> pt;
 	boost::shared_ptr<util::point3<unsigned int> > stackSize;
 	int count;
@@ -27,7 +28,7 @@ DjangoUtils::getStackSize(const std::string& server, const unsigned int project,
 	appendProjectAndStack(url, server, project, stack);
 	url << "/stack_info";
 	
-	pt = HttpClient::getPropertyTree(url.str());
+	pt = client.getPropertyTree(url.str());
 	
 	checkDjangoError(pt, url.str());
 	

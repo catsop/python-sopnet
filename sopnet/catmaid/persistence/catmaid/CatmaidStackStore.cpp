@@ -2,7 +2,6 @@
 #include <imageprocessing/io/ImageHttpReader.h>
 #include <catmaid/persistence/django/DjangoUtils.h>
 #include <util/exceptions.h>
-#include <util/httpclient.h>
 #include <util/Logger.h>
 
 logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackStore] ");
@@ -22,7 +21,7 @@ CatmaidStackStore::CatmaidStackStore(
 	DjangoUtils::appendProjectAndStack(os, _serverUrl, _project, _stack);
 	os << "/stack_info";
 	
-	pt = HttpClient::getPropertyTree(os.str());
+	pt = _client.getPropertyTree(os.str());
 	
 	DjangoUtils::checkDjangoError(pt, os.str());
 
@@ -87,7 +86,7 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 			try
 			{
 				boost::shared_ptr<ImageHttpReader> reader =
-					boost::make_shared<ImageHttpReader>(tileURL(c, r, section));
+					boost::make_shared<ImageHttpReader>(tileURL(c, r, section), _client);
 				pipeline::Value<Image> image = reader->getOutput();
 
 				// This must be in the try block as the exception is not thrown
