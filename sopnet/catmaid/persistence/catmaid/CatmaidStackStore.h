@@ -51,7 +51,6 @@ private:
 	std::string _imageBase, _extension;
 	unsigned int _tileSourceType, _tileWidth, _tileHeight, _stackWidth, _stackHeight, _stackDepth;
 	const unsigned int _stackScale;
-	bool _ok;
 	HttpClient _client;
 
 	/** Whether to replace missing images with black images. Otherwise missing

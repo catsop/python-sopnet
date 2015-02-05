@@ -49,8 +49,6 @@ CatmaidStackStore::CatmaidStackStore(
 				UsageError,
 				"catmaid stack size (" << _stackWidth << "," << _stackHeight << "," << _stackDepth <<
 				" does not match expected size " << configuration.getVolumeSize());
-
-	_ok = true;
 }
 
 
