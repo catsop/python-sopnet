@@ -242,6 +242,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, blockSegmentsQuery);
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	int nSegments = PQntuples(queryResult);
 
 	// Build SegmentDescription for each row
@@ -330,9 +331,10 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	PQclear(queryResult);
 
-	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	boost::chrono::nanoseconds totalElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlsegmentstorelog) << "Retrieved " << segmentDescriptions->size() << " segments in "
-			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
+			<< (totalElapsed.count() / 1e6) << " ms (wall) (query: "
+			<< (queryElapsed.count() / 1e6) << "ms; "
 			<< (1e9 * segmentDescriptions->size()/queryElapsed.count()) << " segments/s)" << std::endl;
 
 	return segmentDescriptions;
