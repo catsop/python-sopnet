@@ -448,6 +448,7 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream query;
+	query << "BEGIN;LOCK TABLE djsopnet_segment IN EXCLUSIVE MODE;";
 	query << "UPDATE djsopnet_segment SET cost=t.cost FROM (VALUES";
 
 	char separator = ' ';
@@ -460,7 +461,7 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 	}
 
 	query << ") AS t (segment_id, cost) "
-			"WHERE t.segment_id = djsopnet_segment.id;";
+			"WHERE t.segment_id = djsopnet_segment.id;COMMIT;";
 	std::string queryStr = query.str();
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	int asyncStatus = PQsendQuery(_pgConnection, queryStr.c_str());
