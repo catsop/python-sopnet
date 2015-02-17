@@ -2,6 +2,7 @@
 #define SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 
 #include <string>
+#include <vector>
 #include <util/point3.hpp>
 
 /**
@@ -145,6 +146,16 @@ public:
 	const std::string& getComponentDirectory() const;
 
 	/**
+	 * Set feature weights for local stores.
+	 */
+	void setLocalFeatureWeights(const std::vector<double>& featureWeights);
+
+	/**
+	 * Get feature weights for local stores.
+	 */
+	const std::vector<double>& getLocalFeatureWeights() const;
+
+	/**
 	 * Set the PosgreSql host name. This can either be a domain name of a 
 	 * directory for Unix socket communication.
 	 */
@@ -211,6 +222,8 @@ private:
 	util::point3<unsigned int> _coreSizeInBlocks;
 
 	std::string _componentDirectory;
+
+	std::vector<double> _localFeatureWeights;
 
 	std::string _postgreSqlHost;
 	std::string _postgreSqlPort;

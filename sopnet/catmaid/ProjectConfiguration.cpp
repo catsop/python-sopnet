@@ -139,6 +139,18 @@ ProjectConfiguration::getComponentDirectory() const {
 }
 
 void
+ProjectConfiguration::setLocalFeatureWeights(const std::vector<double>& featureWeights) {
+
+	_localFeatureWeights = featureWeights;
+}
+
+const std::vector<double>&
+ProjectConfiguration::getLocalFeatureWeights() const {
+
+	return _localFeatureWeights;
+}
+
+void
 ProjectConfiguration::setPostgreSqlHost(const std::string& postgreSqlHost) {
 
 	_postgreSqlHost = postgreSqlHost;

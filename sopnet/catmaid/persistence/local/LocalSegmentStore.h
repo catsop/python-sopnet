@@ -2,6 +2,7 @@
 #define LOCAL_SEGMENT_STORE_H__
 
 #include <boost/shared_ptr.hpp>
+#include <catmaid/ProjectConfiguration.h>
 #include <catmaid/persistence/SegmentStore.h>
 #include <catmaid/blocks/Block.h>
 #include <catmaid/blocks/Core.h>
@@ -11,7 +12,7 @@ class LocalSegmentStore : public SegmentStore {
 
 public:
 
-	LocalSegmentStore() {}
+	LocalSegmentStore(const ProjectConfiguration& config);
 
 	/**
 	 * Associate a set of segment descritptions to a block. A "descritption" is 
@@ -26,7 +27,7 @@ public:
 	 */
 	void associateSegmentsToBlock(
 			const SegmentDescriptions& segments,
-			const Block&               block) {}
+			const Block&               block);
 
 	/**
 	 * Get a description of all the segments in the given blocks. A 
@@ -44,28 +45,30 @@ public:
 	boost::shared_ptr<SegmentDescriptions> getSegmentsByBlocks(
 			const Blocks& blocks,
 			Blocks&       missingBlocks,
-			bool          readCosts) {}
+			bool          readCosts);
 
 	/**
 	 * Get additional constraints for segments in the given blocks. Typically
 	 * these would be user corrections to previous solutions or constraints
 	 * inferred from prior tracing.
 	 *
+	 * NOTE: LocalSegmentStore always returns no constraints.
+	 *
 	 * @param blocks
 	 *              The blocks from which to retrieve the constraints.
 	 */
 	boost::shared_ptr<SegmentConstraints> getConstraintsByBlocks(
-			const Blocks& blocks) {}
+			const Blocks& blocks);
 
 	/**
 	 * Get weights for Segment features used computing problem cost.
 	 */
-	std::vector<double> getFeatureWeights() {}
+	std::vector<double> getFeatureWeights();
 
 	/**
 	 * Store costs for segments.
 	 */
-	void storeSegmentCosts(const std::map<SegmentHash, double>& costs) {}
+	void storeSegmentCosts(const std::map<SegmentHash, double>& costs);
 
 	/**
 	 * Store the solution of processing a core.
@@ -78,13 +81,21 @@ public:
 	 * @param core
 	 *              The core for which the solution was generated.
 	 */
-	void storeSolution(const std::vector<std::size_t>& segmentHashes, const Core& core) {}
+	void storeSolution(const std::vector<SegmentHash>& segmentHashes, const Core& core);
 
 	/**
 	 * Check whether the segments for the given block have already been 
 	 * extracted.
 	 */
-	bool getSegmentsFlag(const Block& block) {}
+	bool getSegmentsFlag(const Block& block);
+
+private:
+
+	std::map<Block, SegmentDescriptions> _segments;
+
+	const std::vector<double> _weights;
+
+	std::map<Core, std::vector<SegmentHash> > _solutions;
 };
 
 #endif //LOCAL_SEGMENT_STORE_H__

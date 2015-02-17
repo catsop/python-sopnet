@@ -61,7 +61,7 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
 		LOG_USER(pylog) << "[BackendClient] create local segment store" << std::endl;
 
-		return boost::make_shared<LocalSegmentStore>();
+		return boost::make_shared<LocalSegmentStore>(configuration);
 	}
 
 #ifdef HAVE_PostgreSQL
