@@ -20,7 +20,7 @@ public:
 	void associateSlicesToBlock(
 			const Slices& slices,
 			const Block&  block,
-			bool  doneWithBlock = true) {}
+			bool  doneWithBlock = true);
 
 	/**
 	 * Associate a set of conflict sets to a block. The conflict sets are 
@@ -28,7 +28,7 @@ public:
 	 */
 	void associateConflictSetsToBlock(
 			const ConflictSets& conflictSets,
-			const Block&        block) {}
+			const Block&        block);
 
 	/**
 	 * Get all slices that are associated to the given blocks. This creates 
@@ -37,18 +37,28 @@ public:
 	 */
 	boost::shared_ptr<Slices> getSlicesByBlocks(
 			const Blocks& blocks,
-			Blocks&       missingBlocks) {}
+			Blocks&       missingBlocks);
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.
 	 */
-	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(const Blocks& block, Blocks& missingBlocks) {}
+	boost::shared_ptr<ConflictSets> getConflictSetsByBlocks(
+			const Blocks& blocks,
+			Blocks&       missingBlocks);
 
 	/**
 	 * Check whether the slices for the given block have already been extracted.
 	 */
-	bool getSlicesFlag(const Block& block) {}
+	bool getSlicesFlag(const Block& block);
+
+private:
+
+	std::map<Block, Slices> _slices;
+
+	std::map<Block, ConflictSets> _conflictSets;
+
+	std::set<Block> _slicesFlags;
 };
 
 #endif //LOCAL_SLICE_STORE_H__
