@@ -225,37 +225,8 @@ SegmentGuarantor::getSegmentDescriptions(
 		if (!overlaps(*segment, block))
 			continue;
 
-		// get the 2D bounding box of the segment
-		util::rect<unsigned int> boundingBox(0, 0, 0, 0);
-		foreach (boost::shared_ptr<Slice> slice, segment->getSlices()) {
-
-			if (boundingBox.area() == 0)
-				boundingBox = slice->getComponent()->getBoundingBox();
-			else
-				boundingBox.fit(slice->getComponent()->getBoundingBox());
-		}
-
 		// create a new segment description
-		SegmentDescription segmentDescription(
-				segment->getInterSectionInterval(),
-				boundingBox,
-				segment->getCenter());
-
-		// add slice hashes
-		if (segment->getDirection() == Left) {
-
-			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
-				segmentDescription.addLeftSlice(slice->hashValue());
-			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
-				segmentDescription.addRightSlice(slice->hashValue());
-
-		} else {
-
-			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
-				segmentDescription.addRightSlice(slice->hashValue());
-			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
-				segmentDescription.addLeftSlice(slice->hashValue());
-		}
+		SegmentDescription segmentDescription(*segment);
 
 		// add features
 		segmentDescription.setFeatures(features.get(segment->getId()));

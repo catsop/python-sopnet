@@ -27,6 +27,8 @@ public:
 		_boundingBox(boundingBox),
 		_center(center) {}
 
+	SegmentDescription(const Segment& segment);
+
 	SegmentHash getHash() const;
 
 	/**
