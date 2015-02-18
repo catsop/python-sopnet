@@ -29,6 +29,11 @@ public:
 		return (_coordinates < other._coordinates);
 	}
 
+	friend std::ostream& operator<<(std::ostream& os, const Block& b) {
+		os << b._coordinates;
+		return os;
+	}
+
 private:
 
 	util::point3<unsigned int> _coordinates;
