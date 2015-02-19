@@ -176,7 +176,7 @@ int main(int argc, char** argv)
 		segmentStore.associateSegmentsToBlock(*segments, block);
 
 		boost::shared_ptr<SegmentDescriptions> retrievedSegments =
-				segmentStore.getSegmentsByBlocks(blocks, missingBlocks);
+				segmentStore.getSegmentsByBlocks(blocks, missingBlocks, false);
 
 	} catch (boost::exception& e) {
 
