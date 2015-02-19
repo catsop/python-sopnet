@@ -3,9 +3,8 @@
 BlockUtils::BlockUtils(const ProjectConfiguration& configuration) :
 	_volumeSize(configuration.getVolumeSize()),
 	_blockSize(configuration.getBlockSize()),
-	_coreSize(configuration.getCoreSize()) {
-
-	util::point3<unsigned int> _coreSizeInVoxels = _coreSize*_blockSize;
+	_coreSize(configuration.getCoreSize()),
+	_coreSizeInVoxels(configuration.getCoreSize()*configuration.getBlockSize()) {
 
 	util::point3<unsigned int> numBlocks = (_volumeSize + _blockSize        - util::point3<unsigned int>(1, 1, 1))/_blockSize;
 	util::point3<unsigned int> numCores  = (_volumeSize + _coreSizeInVoxels - util::point3<unsigned int>(1, 1, 1))/_coreSizeInVoxels;

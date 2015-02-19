@@ -104,7 +104,7 @@ private:
 
 	// core size in blocks and voxels
 	const util::point3<unsigned int>& _coreSize;
-	util::point3<unsigned int> _coreSizeInVoxels;
+	const util::point3<unsigned int> _coreSizeInVoxels;
 
 	// boxes with all the valid block and core coordinates
 	util::box<unsigned int> _validBlockCoordinates;
