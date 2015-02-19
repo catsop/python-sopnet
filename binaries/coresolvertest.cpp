@@ -730,29 +730,43 @@ bool testSegments(const ProjectConfiguration& configuration)
 	ok = ok && bsSegmentSetDiff.size() == 0 && sbSegmentSetDiff.size() == 0;
 
 
-	if (ok)
+	if (bsSegmentSetDiff.size() == 0 && sbSegmentSetDiff.size() == 0)
 	{
 		LOG_USER(out) << "Segments are consistent" << std::endl;
 	}
-	else
+
+	if (bsSegmentSetDiff.size() != 0)
 	{
-		LOG_USER(out) << bsSegmentSetDiff.size() <<
+		LOG_USER(out) << bsSegmentSetDiff.size() << '/' << blockwiseDescriptions->size() <<
 			" segments were found in the blockwise output but not sopnet: " << std::endl;
 		foreach (const SegmentDescription& segment, bsSegmentSetDiff)
 		{
 			logSegment(segment);
-		}
 
-		LOG_USER(out) << sbSegmentSetDiff.size() <<
+			// Ignore end segments at either extent of the volume. These are
+			// intentionally extracted by blockwise SOPNET.
+			if ((segment.getSection() == 0 ||
+				segment.getSection() == blockUtils.getVolumeBoundingBox().max.z) &&
+				segment.getType() == EndSegmentType) {
+				LOG_USER(out) << "(IGNORED)" << std::endl;
+			} else {
+				ok = false;
+			}
+		}
+	}
+
+	if (sbSegmentSetDiff.size() != 0)
+	{
+		ok = false;
+		LOG_USER(out) << sbSegmentSetDiff.size() << '/' << sopnetDescriptions.size() <<
 			" segments were found in the sopnet output but not blockwise: " << std::endl;
 		foreach (const SegmentDescription& segment, sbSegmentSetDiff)
 		{
 			logSegment(segment);
 		}
-
-		return false;
 	}
 
+	if (!ok) return false;
 
 	// If the Segments test passed, check for equality in Features
 	LOG_USER(out) << "Testing features for equality" << std::endl;
