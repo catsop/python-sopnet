@@ -21,7 +21,7 @@ LocalSliceStore::associateConflictSetsToBlock(
 			const ConflictSets& conflictSets,
 			const Block&        block) {
 
-	ConflictSets conflictsForBlock = _conflictSets[block];
+	ConflictSets& conflictsForBlock = _conflictSets[block];
 	conflictsForBlock.addAll(conflictSets);
 }
 
