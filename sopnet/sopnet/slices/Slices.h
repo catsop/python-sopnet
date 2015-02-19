@@ -81,14 +81,6 @@ private:
  */
 class Slices : public pipeline::Data {
 
-	struct SliceComparator {
-		bool operator()(boost::shared_ptr<Slice> a, boost::shared_ptr<Slice> b) {
-			return a->hashValue() < b->hashValue();
-		}
-	};
-
-	typedef std::set<boost::shared_ptr<Slice>, SliceComparator> slices_type;
-
 	// nanoflann kd-tree type
 	typedef nanoflann::KDTreeSingleIndexAdaptor<
 			nanoflann::L2_Simple_Adaptor<double, SliceVectorAdaptor>,
@@ -97,6 +89,14 @@ class Slices : public pipeline::Data {
 			SliceKdTree;
 
 public:
+
+	struct SliceComparator {
+		bool operator()(boost::shared_ptr<Slice> a, boost::shared_ptr<Slice> b) {
+			return a->hashValue() < b->hashValue();
+		}
+	};
+
+	typedef std::set<boost::shared_ptr<Slice>, SliceComparator> slices_type;
 
 	typedef slices_type::iterator       iterator;
 
