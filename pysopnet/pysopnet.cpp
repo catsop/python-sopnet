@@ -109,6 +109,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("getVolumeSize", &ProjectConfiguration::getVolumeSize, boost::python::return_internal_reference<>())
 			.def("setComponentDirectory", &ProjectConfiguration::setComponentDirectory)
 			.def("getComponentDirectory", &ProjectConfiguration::getComponentDirectory, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.def("setLocalFeatureWeights", &ProjectConfiguration::setLocalFeatureWeights)
+			.def("getLocalFeatureWeights", &ProjectConfiguration::getLocalFeatureWeights, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlHost", &ProjectConfiguration::setPostgreSqlHost)
 			.def("getPostgreSqlHost", &ProjectConfiguration::getPostgreSqlHost, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlPort", &ProjectConfiguration::setPostgreSqlPort)
