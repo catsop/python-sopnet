@@ -319,6 +319,8 @@ SegmentGuarantor::computeFeatures(boost::shared_ptr<Segments> segments)
 	util::box<unsigned int> box = segments->boundingBox();
 	Blocks blocks = _blockUtils.getBlocksInBox(box);
 	util::box<unsigned int> blocksBoundingBox = _blockUtils.getBoundingBox(blocks);
+	blocksBoundingBox.max.z =
+			std::min(blocksBoundingBox.max.z, _blockUtils.getVolumeBoundingBox().max.z);
 
 	pipeline::Process<SegmentFeaturesExtractor> featuresExtractor;
 	pipeline::Value<util::point3<unsigned int> > offset(blocksBoundingBox.min);

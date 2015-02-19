@@ -12,7 +12,7 @@ StackStore::getImageStack(const util::box<unsigned int>& box)
 		if (image->width()*image->height() == 0)
 			UTIL_THROW_EXCEPTION(
 					NoImageException,
-					"no image found for box " << box);
+					"no image found for box " << box << " at z " << (box.min.z + i));
 
 		stack->add(image);
 	}

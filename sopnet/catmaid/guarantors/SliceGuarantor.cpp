@@ -34,10 +34,14 @@ SliceGuarantor::guaranteeSlices(const Blocks& requestedBlocks) {
 	if (checkSlices(requestedBlocks))
 		return Blocks();
 
+
 	// get the number of sections
 	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
+	util::box<unsigned int> volumeBoundingBox = _blockUtils.getVolumeBoundingBox();
 	unsigned int firstSection = blockBoundingBox.min.z;
-	unsigned int numSections  = blockBoundingBox.depth();
+	// Clamp the number of sections within the volume extents.
+	unsigned int numSections  =
+		std::min(blockBoundingBox.depth(), volumeBoundingBox.max.z - firstSection);
 
 	// slices and conflict sets for the requested block
 	Slices       slices;
