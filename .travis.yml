@@ -14,4 +14,4 @@ install:
 script:
   - python setup.py build
   - mkdir -p build && cd build && cmake .. && make -j 2
-  - cd ../test/slices && ./coresolvertest --disableSegment
+  - cd ../test/slices && ./coresolvertest --disableSegment --disableSolution
