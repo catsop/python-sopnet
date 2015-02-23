@@ -741,9 +741,6 @@ bool testSegments(const ProjectConfiguration& configuration)
 			blockwiseDescriptions->begin(), blockwiseDescriptions->end(),
 			std::inserter(sbSegmentSetDiff, sbSegmentSetDiff.begin()), segmentComparator);
 
-	ok = ok && bsSegmentSetDiff.size() == 0 && sbSegmentSetDiff.size() == 0;
-
-
 	if (bsSegmentSetDiff.size() == 0 && sbSegmentSetDiff.size() == 0)
 	{
 		LOG_USER(out) << "Segments are consistent" << std::endl;
@@ -753,20 +750,22 @@ bool testSegments(const ProjectConfiguration& configuration)
 	{
 		LOG_USER(out) << bsSegmentSetDiff.size() << '/' << blockwiseDescriptions->size() <<
 			" segments were found in the blockwise output but not sopnet: " << std::endl;
+		int ignored = 0;
 		foreach (const SegmentDescription& segment, bsSegmentSetDiff)
 		{
-			logSegment(segment);
-
 			// Ignore end segments at either extent of the volume. These are
 			// intentionally extracted by blockwise SOPNET.
 			if ((segment.getSection() == 0 ||
 				segment.getSection() == blockUtils.getVolumeBoundingBox().max.z) &&
 				segment.getType() == EndSegmentType) {
-				LOG_USER(out) << "(IGNORED)" << std::endl;
+				ignored++;
 			} else {
+				logSegment(segment);
 				ok = false;
 			}
 		}
+
+		LOG_USER(out) << '(' << ignored << " were ignored ends at volume bounds)" << std::endl;
 	}
 
 	if (sbSegmentSetDiff.size() != 0)
