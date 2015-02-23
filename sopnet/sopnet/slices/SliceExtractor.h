@@ -16,7 +16,7 @@ class ComponentTreeDownSampler;
 class ComponentTreePruner;
 class ComponentTreeConverter;
 template <typename Precision> class Mser;
-class MserParameters;
+struct MserParameters;
 
 template <typename Precision>
 class SliceExtractor : public pipeline::ProcessNode {
