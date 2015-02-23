@@ -3,6 +3,7 @@ notifications:
 language: cpp
 compiler:
   - gcc
+  - clang
 addons:
   postgresql: 9.3
 before_install:
