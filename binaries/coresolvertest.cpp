@@ -720,6 +720,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	foreach (boost::shared_ptr<Segment> segment, sopnetSegments->getSegments())
 	{
 		SegmentDescription segmentDescription(*segment);
+		segmentDescription.setFeatures(sopnetFeatures->get(segment->getId()));
 		sopnetDescriptions.add(segmentDescription);
 	}
 
@@ -779,14 +780,29 @@ bool testSegments(const ProjectConfiguration& configuration)
 		}
 	}
 
-	if (!ok) return false;
+	// For convenience create sets with only the segments (by hash) common to
+	// both.
+	SegmentDescriptions::segments_type bsSegmentSetInt;
+	// vice-versa
+	SegmentDescriptions::segments_type sbSegmentSetInt;
 
-	// If the Segments test passed, check for equality in Features
-	LOG_USER(out) << "Testing features for equality" << std::endl;
+	std::set_intersection(
+			blockwiseDescriptions->begin(), blockwiseDescriptions->end(),
+			sopnetDescriptions.begin(), sopnetDescriptions.end(),
+			std::inserter(bsSegmentSetInt, bsSegmentSetInt.begin()), segmentComparator);
 
-	for (SegmentDescriptions::iterator si = sopnetDescriptions.begin(),
-		 bi = blockwiseDescriptions->begin();
-		 si != sopnetDescriptions.end() && bi != blockwiseDescriptions->end();
+	std::set_intersection(
+			sopnetDescriptions.begin(), sopnetDescriptions.end(),
+			blockwiseDescriptions->begin(), blockwiseDescriptions->end(),
+			std::inserter(sbSegmentSetInt, sbSegmentSetInt.begin()), segmentComparator);
+
+	// For those segment common to both, check for equality in Features
+	LOG_USER(out) << "Testing features for equality for " << bsSegmentSetInt.size()
+			<< " segments" << std::endl;
+
+	for (SegmentDescriptions::iterator si = sbSegmentSetInt.begin(),
+		 bi = bsSegmentSetInt.begin();
+		 si != sbSegmentSetInt.end() && bi != bsSegmentSetInt.end();
 		 si++, bi++) {
 
 		SegmentDescription sopnetSegment = *si;
@@ -796,6 +812,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 
 			LOG_USER(out) << "Features are unequal for segment hashes ("
 					<< sopnetSegment.getHash() << "," << blockwiseSegment.getHash() << ")" << std::endl;
+			ok = false;
 		}
 	}
 
@@ -814,8 +831,6 @@ bool testSegments(const ProjectConfiguration& configuration)
 	else
 	{
 		LOG_USER(out) << "Segment test failed" << std::endl;
-
-
 	}
 
 	return ok;
