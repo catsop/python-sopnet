@@ -646,17 +646,12 @@ bool testSegments(const ProjectConfiguration& configuration)
 
 		if (segExtraction)
 		{
-			// bfe: Bool Force Explanation
-			bool bfe = optionCoreTestForceExplanation;
-			pipeline::Value<bool> forceExplanation =
-				pipeline::Value<bool>(bfe);
 			boost::shared_ptr<SegmentExtractor> segmentExtractor =
 				boost::make_shared<SegmentExtractor>();
 			pipeline::Value<Segments> segments;
 
 			segmentExtractor->setInput("previous slices", prevSlices);
 			segmentExtractor->setInput("next slices", nextSlices);
-			segmentExtractor->setInput("force explanation", forceExplanation);
 
 			segments = segmentExtractor->getOutput("segments");
 			sopnetSegments->addAll(segments);
