@@ -408,7 +408,7 @@ namespace nanoflann
 	struct SearchParams
 	{
 		/** Note: The first argument (checks_IGNORED_) is ignored, but kept for compatibility with the FLANN interface */
-		SearchParams(int /* checks_IGNORED_ = 32 */, float eps_ = 0, bool sorted_ = true ) :
+		SearchParams(int checks_IGNORED_ = 32, float eps_ = 0, bool sorted_ = true ) :
 			eps(eps_), sorted(sorted_) {}
 
 		int   checks;  //!< Ignored parameter (Kept for compatibility with the FLANN interface).
