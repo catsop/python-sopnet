@@ -12,4 +12,4 @@
 	url = https://github.com/catsop/imageprocessing.git
 [submodule "cmake"]
 	path = cmake
-	url = https://github.com/funkey/cmake
+	url = https://github.com/catsop/cmake
