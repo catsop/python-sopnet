@@ -40,6 +40,10 @@ To compile the python wrappers (pysopnet), you need additionally:
 * libpython-dev
 
 The build process is managed by cmake of which you need at least version 2.8.8.
+Instructions are available for installing dependencies for
+[Scientific Linux 6.5](https://github.com/catsop/python-sopnet/wiki/Compiling-in-Scientific-Linux-6.5).
+Python-sopnet also compiles in MacOS X, but dependencies must be found through
+Homebrew or Macports.
 
 Gurobi Solver
 -------------
@@ -51,7 +55,7 @@ free). Run
 $ ./grbgetkey <you-licence-id>
 ```
 
-in the gurobi bin directory from an academic domain to download the licence
+in the gurobi bin directory from an academic domain to download the license
 file (gurobi.lic). Make sure the environment variable `GRB_LICENCE_FILE` points
 to it. Set the cmake variable `Gurobi_ROOT_DIR` to the path containing the lib
 and bin directory or set the environment variable `GUROBI_ROOT_DIR` accordingly
@@ -78,9 +82,9 @@ $ cmake [path_to_sopnet_directory (e.g. '..')]
 ```
 
 Cmake will try to find the required packages and tell you which ones are
-missing. After cmake finished without errors, run
+missing. After cmake finishes without errors, run
 
 ```sh
 $ make
 ```
-
+Python-sopnet compiles in gcc, clang, and icc.
