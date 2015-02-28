@@ -18,7 +18,7 @@
 class ComponentTreeDownSampler;
 class ComponentTreeConverter;
 template <typename Precision> class Mser;
-class MserParameters;
+struct MserParameters;
 
 /**
  * A slice extractor for slices stored in a stack of black-and-white images.
