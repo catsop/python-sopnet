@@ -28,6 +28,11 @@ PostgreSqlSliceStore::PostgreSqlSliceStore(
 			_config.getPostgreSqlDatabase(),
 			_config.getPostgreSqlUser(),
 			_config.getPostgreSqlPassword());
+	std::ostringstream q;
+	q << "SET search_path TO segstack_"
+	  << _config.getCatmaidStackIds(Membrane).segmentation_id
+	  << ",public;";
+	PQsendQuery(_pgConnection, q.str().c_str());
 }
 
 PostgreSqlSliceStore::~PostgreSqlSliceStore() {
@@ -43,15 +48,13 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 	boost::timer::cpu_timer queryTimer;
 
-	unsigned int stack_id = _config.getCatmaidRawStackId();
-	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				block, stack_id);
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(block);
 
 	std::ostringstream q;
 
 	if (slices.size() == 0) {
 		if (doneWithBlock) {
-			q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
+			q << "UPDATE block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
 			std::string query = q.str();
 			PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 			int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
@@ -67,69 +70,68 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	}
 
 	std::ostringstream tmpTableStream;
-	tmpTableStream << "djsopnet_slice_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	tmpTableStream << "slice_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
 	const std::string tmpTable = tmpTableStream.str();
 
 	q << "BEGIN;"
 			"CREATE TEMP TABLE " << tmpTable << " "
-				"(LIKE djsopnet_slice) ON COMMIT DROP;"
+				"(LIKE slice) ON COMMIT DROP;"
 			"INSERT INTO " << tmpTable <<
-				"(stack_id, section, min_x, min_y, max_x, max_y, ctr_x, "
-				"ctr_y, value, size, id) VALUES";
+				"(id, section, min_x, min_y, max_x, max_y, ctr_x, "
+				"ctr_y, value, size) VALUES";
 
 	char separator = ' ';
 	foreach (boost::shared_ptr<Slice> slice, slices)
 	{
-		std::string hash = boost::lexical_cast<std::string>(
+		std::string sliceId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
 		util::point<double> ctr = slice->getComponent()->getCenter();
 
 		// Store pixel data of slice
-		saveConnectedComponent(hash, *slice->getComponent());
+		saveConnectedComponent(sliceId, *slice->getComponent());
 
 		// Bounding Box
 		const util::rect<unsigned int>& bb = slice->getComponent()->getBoundingBox();
 
-		q << separator << "(" << stack_id << "," << slice->getSection() << ",";
+		q << separator << "(" << sliceId << "," << slice->getSection() << ",";
 		q << bb.minX << "," << bb.minY << ",";
 		q << bb.maxX << "," << bb.maxY << ",";
 		q << ctr.x << "," << ctr.y << ",";
 		q << slice->getComponent()->getValue() << ",";
-		q << slice->getComponent()->getSize() << ",";
-		q << hash << ")";
+		q << slice->getComponent()->getSize() << ")";
 
 		separator = ',';
 	}
 
 	// Insert new slices from the temporary table.
-	q << ";LOCK TABLE djsopnet_slice IN EXCLUSIVE MODE;";
+	q << ";LOCK TABLE slice IN EXCLUSIVE MODE;";
 	// Since slices with identical hashes are assumed to be identical, existing
 	// slices are not updated. If needed, that update would be:
-	/* "UPDATE djsopnet_slice "
-		"SET (stack_id, section, min_x, min_y, max_x, max_y, "
+	/* "UPDATE slice "
+		"SET (section, min_x, min_y, max_x, max_y, "
 		"ctr_x, ctr_y, value, size)="
-		"(t.stack_id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
+		"(t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
 		"t.ctr_x, t.ctr_y, t.value, t.size) "
 		"FROM " << tmpTable << " AS t "
-		"WHERE t.id = djsopnet_slice.id;" */
-	q << "INSERT INTO djsopnet_slice "
-			"(stack_id, section, min_x, min_y, max_x, max_y, "
-			"ctr_x, ctr_y, value, size, id) "
+		"WHERE t.id = slice.id;" */
+	q << "INSERT INTO slice "
+			"(id, section, min_x, min_y, max_x, max_y, "
+			"ctr_x, ctr_y, value, size) "
 			"SELECT "
-			"t.stack_id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
-			"t.ctr_x, t.ctr_y, t.value, t.size, t.id "
+			"t.id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
+			"t.ctr_x, t.ctr_y, t.value, t.size "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN djsopnet_slice s "
+			"LEFT OUTER JOIN slice s "
 			"ON (s.id = t.id) WHERE s.id IS NULL;";
-	q << "INSERT INTO djsopnet_sliceblockrelation (block_id, slice_id) "
+	q << "INSERT INTO slice_block_relation (block_id, slice_id) "
 			"SELECT b.id, t.id "
 			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
 			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_sliceblockrelation s WHERE "
+			"(SELECT 1 FROM slice_block_relation s WHERE "
 			"(s.block_id, s.slice_id) = (b.id, t.id));";
 
 	if (doneWithBlock)
-		q << "UPDATE djsopnet_block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
+		q << "UPDATE block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
 
 	q << "COMMIT;";
 	std::string query = q.str();
@@ -155,8 +157,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	if (conflictSets.size() == 0)
 		return;
 
-	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-			block, _config.getCatmaidRawStackId());
+	std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(block);
 
 	boost::timer::cpu_timer queryTimer;
 
@@ -195,7 +196,7 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 		return;
 
 	std::ostringstream tmpTableStream;
-	tmpTableStream << "djsopnet_sliceconflict_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
+	tmpTableStream << "slice_conflict_tmp_" << block.x() << "_" << block.y() << "_" << block.z();
 	const std::string tmpTable = tmpTableStream.str();
 
 	std::ostringstream q;
@@ -204,34 +205,34 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 				"(slice_a_id bigint, slice_b_id bigint, clique_id bigint) ON COMMIT DROP;"
 			"INSERT INTO " << tmpTable << " VALUES" << idSetsStr << ';';
 	// Insert new conflict sets from the temporary table.
-	q << "LOCK TABLE djsopnet_sliceconflict IN EXCLUSIVE MODE;";
-	q << "INSERT INTO djsopnet_sliceconflict (slice_a_id, slice_b_id) "
+	q << "LOCK TABLE slice_conflict IN EXCLUSIVE MODE;";
+	q << "INSERT INTO slice_conflict (slice_a_id, slice_b_id) "
 			"SELECT DISTINCT t.slice_a_id, t.slice_b_id "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN djsopnet_sliceconflict s "
+			"LEFT OUTER JOIN slice_conflict s "
 			"ON (s.slice_a_id, s.slice_b_id) = (t.slice_a_id, t.slice_b_id) "
 			"WHERE s.slice_a_id IS NULL;";
-	q << "INSERT INTO djsopnet_conflictclique (id, maximal_clique) "
+	q << "INSERT INTO conflict_clique (id, maximal_clique) "
 			"SELECT DISTINCT t.clique_id, TRUE "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN djsopnet_conflictclique c "
+			"LEFT OUTER JOIN conflict_clique c "
 			"ON c.id = t.clique_id "
 			"WHERE c.id IS NULL;";
-	q << "INSERT INTO djsopnet_conflictcliqueedge (conflictclique_id, sliceconflict_id) "
+	q << "INSERT INTO conflict_clique_edge (conflict_clique_id, slice_conflict_id) "
 			"SELECT t.clique_id, sc.id "
 			"FROM " << tmpTable << " AS t "
-			"JOIN djsopnet_sliceconflict sc "
+			"JOIN slice_conflict sc "
 			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
 			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_conflictcliqueedge cce WHERE "
-			"(cce.conflictclique_id,cce.sliceconflict_id) = (t.clique_id, sc.id));";
-	q << "INSERT INTO djsopnet_blockconflictrelation (block_id,slice_conflict_id) "
+			"(SELECT 1 FROM conflict_clique_edge cce WHERE "
+			"(cce.conflict_clique_id,cce.slice_conflict_id) = (t.clique_id, sc.id));";
+	q << "INSERT INTO block_conflict_relation (block_id,slice_conflict_id) "
 			"SELECT DISTINCT b.id, sc.id "
 			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
-			"JOIN djsopnet_sliceconflict sc "
+			"JOIN slice_conflict sc "
 			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
 			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_blockconflictrelation bc WHERE "
+			"(SELECT 1 FROM block_conflict_relation bc WHERE "
 			"(bc.block_id, bc.slice_conflict_id) = (b.id, sc.id));";
 	q << "COMMIT;";
 
@@ -263,16 +264,15 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 	// Check if any requested block do not have slices flagged.
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			blocks, _config.getCatmaidRawStackId(),
-			"slices_flag", missingBlocks, _pgConnection);
+			blocks, "slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return slices;
 
 	// Query slices for this set of blocks
 	std::string blockSlicesQuery =
 			"SELECT s.id, s.section "
-			"FROM djsopnet_sliceblockrelation sbr "
-			"JOIN djsopnet_slice s on sbr.slice_id = s.id "
+			"FROM slice_block_relation sbr "
+			"JOIN slice s on sbr.slice_id = s.id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")";
 	enum { FIELD_ID, FIELD_SECTION };
 	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
@@ -332,8 +332,7 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	// Check if any requested block do not have slices flagged.
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			blocks, _config.getCatmaidRawStackId(),
-			"slices_flag", missingBlocks, _pgConnection);
+			blocks,	"slices_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return conflictSets;
 
@@ -344,12 +343,12 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 	std::string blockConflictsQuery =
 			"SELECT cc.id, cc.maximal_clique, "
 			"ARRAY_AGG(DISTINCT sc.slice_a_id) || ARRAY_AGG(DISTINCT sc.slice_b_id) "
-			"FROM djsopnet_conflictclique cc "
-			"LEFT OUTER JOIN djsopnet_conflictcliqueedge cce "
-			"ON cce.conflictclique_id = cc.id "
-			"JOIN djsopnet_sliceconflict sc "
-			"ON sc.id = cce.sliceconflict_id "
-			"JOIN djsopnet_blockconflictrelation bcr ON bcr.slice_conflict_id = sc.id "
+			"FROM conflict_clique cc "
+			"LEFT OUTER JOIN conflict_clique_edge cce "
+			"ON cce.conflict_clique_id = cc.id "
+			"JOIN slice_conflict sc "
+			"ON sc.id = cce.slice_conflict_id "
+			"JOIN block_conflict_relation bcr ON bcr.slice_conflict_id = sc.id "
 			"WHERE bcr.block_id IN (" + blockIdsStr + ") "
 			"GROUP BY cc.id, cc.maximal_clique;";
 	enum { FIELD_CLIQUE_ID, FIELD_MAXIMAL_CLIQUE, FIELD_SLICE_IDS };
@@ -393,9 +392,8 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 bool
 PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 
-	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				block, _config.getCatmaidRawStackId());
-	std::string blockFlagQuery = "SELECT slices_flag FROM djsopnet_block "
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(block);
+	std::string blockFlagQuery = "SELECT slices_flag FROM block "
 			"WHERE id = (" + blockQuery + ")";
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());

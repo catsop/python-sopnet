@@ -18,6 +18,11 @@ PostgreSqlSegmentStore::PostgreSqlSegmentStore(
 			_config.getPostgreSqlDatabase(),
 			_config.getPostgreSqlUser(),
 			_config.getPostgreSqlPassword());
+	std::ostringstream q;
+	q << "SET search_path TO segstack_"
+	  << _config.getCatmaidStackIds(Membrane).segmentation_id
+	  << ",public;";
+	PQsendQuery(_pgConnection, q.str().c_str());
 }
 
 PostgreSqlSegmentStore::~PostgreSqlSegmentStore() {
@@ -33,12 +38,11 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			const SegmentDescriptions& segments,
 			const Block&               block) {
 
-	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				block, _config.getCatmaidRawStackId());
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(block);
 
 	if (segments.size() == 0) {
 		std::string query =
-			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" + blockQuery + ");";
+			"UPDATE block SET segments_flag = TRUE WHERE id = (" + blockQuery + ");";
 
 		PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 		int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
@@ -60,30 +64,30 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	// Remove any existing segment associations for this block.
 	std::ostringstream clearBlockQuery;
 	clearBlockQuery <<
-			"DELETE FROM djsopnet_segmentblockrelation WHERE block_id = (" << blockQuery << ");";
+			"DELETE FROM segment_block_relation WHERE block_id = (" << blockQuery << ");";
 
 	std::ostringstream segmentQuery;
 	segmentQuery << "BEGIN;"
-			"CREATE TEMP TABLE djsopnet_segment" << tmpTable <<
-			"(LIKE djsopnet_segment) ON COMMIT DROP;"
-			"INSERT INTO djsopnet_segment" << tmpTable << " (id, stack_id, section_sup, "
+			"CREATE TEMP TABLE segment" << tmpTable <<
+			"(LIKE segment) ON COMMIT DROP;"
+			"INSERT INTO segment" << tmpTable << " (id, section_sup, "
 			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES";
 
 	std::ostringstream sliceQuery;
 	sliceQuery <<
-			"INSERT INTO djsopnet_segmentslice (segment_id, slice_id, direction) SELECT * FROM (VALUES";
+			"INSERT INTO segment_slice (segment_id, slice_id, direction) SELECT * FROM (VALUES";
 
 	std::ostringstream segmentFeatureQuery;
 	segmentFeatureQuery <<
-			"INSERT INTO djsopnet_segmentfeatures (segment_id, features) SELECT * FROM (VALUES";
+			"INSERT INTO segment_features (segment_id, features) SELECT * FROM (VALUES";
 
 	std::ostringstream blockSegmentQuery;
 	blockSegmentQuery <<
-			"INSERT INTO djsopnet_segmentblockrelation (block_id, segment_id) "
+			"INSERT INTO segment_block_relation (block_id, segment_id) "
 			"SELECT b.id, t.id FROM (" << blockQuery << ") AS b, "
-			"djsopnet_segment" << tmpTable << " AS t "
+			"segment" << tmpTable << " AS t "
 			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_segmentblockrelation s WHERE "
+			"(SELECT 1 FROM segment_block_relation s WHERE "
 			"(s.block_id, s.segment_id) = (b.id, t.id));";
 
 	char separator = ' ';
@@ -98,7 +102,6 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		// Create segment.
 		segmentQuery << separator << '(' <<
 				boost::lexical_cast<std::string>(segmentId) << ',' <<
-				boost::lexical_cast<std::string>(_config.getCatmaidRawStackId()) << ',' <<
 				boost::lexical_cast<std::string>(segment.getSection()) << ',' <<
 				boost::lexical_cast<std::string>(segmentBounds.minX) << ',' <<
 				boost::lexical_cast<std::string>(segmentBounds.minY) << ',' <<
@@ -140,22 +143,22 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		separator = ',';
 	}
 
-	segmentQuery << ";LOCK TABLE djsopnet_segment IN EXCLUSIVE MODE;";
+	segmentQuery << ";LOCK TABLE segment IN EXCLUSIVE MODE;";
 	segmentQuery <<
-			"INSERT INTO djsopnet_segment "
-			"(id, stack_id, section_sup, "
+			"INSERT INTO segment "
+			"(id, section_sup, "
 			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) "
 			"SELECT "
-			"t.id, t.stack_id, t.section_sup, "
+			"t.id, t.section_sup, "
 			"t.min_x, t.min_y, t.max_x, t.max_y, t.ctr_x, t.ctr_y, t.type "
-			"FROM djsopnet_segment" << tmpTable << " AS t "
-			"LEFT OUTER JOIN djsopnet_segment s "
+			"FROM segment" << tmpTable << " AS t "
+			"LEFT OUTER JOIN segment s "
 			"ON (s.id = t.id) WHERE s.id IS NULL;";
 	sliceQuery << " ) AS t (segment_id, slice_id, direction) WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_segmentslice ss "
+			"(SELECT 1 FROM segment_slice ss "
 			"WHERE (ss.segment_id, ss.slice_id) = (t.segment_id, t.slice_id));";
 	segmentFeatureQuery << " ) AS t (segment_id, features) WHERE NOT EXISTS "
-			"(SELECT 1 FROM djsopnet_segmentfeatures sf "
+			"(SELECT 1 FROM segment_features sf "
 			"WHERE sf.segment_id = t.segment_id);";
 
 	segmentQuery << sliceQuery.str() << segmentFeatureQuery.str()
@@ -163,7 +166,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 
 	// Set block flag to show segments have been stored.
 	segmentQuery <<
-			"UPDATE djsopnet_block SET segments_flag = TRUE WHERE id = (" << blockQuery << ");";
+			"UPDATE block SET segments_flag = TRUE WHERE id = (" << blockQuery << ");";
 	segmentQuery << "COMMIT;";
 	std::string query = segmentQuery.str();
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
@@ -197,16 +200,15 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	// Check if any requested block do not have slices flagged.
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	std::string blockIdsStr = PostgreSqlUtils::checkBlocksFlags(
-			blocks, _config.getCatmaidRawStackId(),
-			"segments_flag", missingBlocks, _pgConnection);
+			blocks, "segments_flag", missingBlocks, _pgConnection);
 
 	if (!missingBlocks.empty()) return segmentDescriptions;
 
 	// Query the number of features configured for this stack, to verify parsed
 	// results and create empty feature sets for user-created segments.
 	std::string numFeaturesQuery =
-			"SELECT size FROM djsopnet_featureinfo WHERE stack_id = " +
-			boost::lexical_cast<std::string>(_config.getCatmaidRawStackId());
+			"SELECT size FROM segmentation_feature_info WHERE segmentation_stack_id = " +
+			boost::lexical_cast<std::string>(_config.getCatmaidStackIds(Membrane).segmentation_id);
 	PGresult* queryResult = PQexec(_pgConnection, numFeaturesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, numFeaturesQuery);
@@ -222,16 +224,16 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string featureJoin(readCosts ?
-			"LEFT OUTER JOIN djsopnet_segmentfeatures sf "
+			"LEFT OUTER JOIN segment_features sf "
 			"ON s.cost IS NULL AND s.id = sf.segment_id " :
-			"LEFT JOIN djsopnet_segmentfeatures sf ON s.id = sf.segment_id ");
+			"LEFT JOIN segment_features sf ON s.id = sf.segment_id ");
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
 			"s.ctr_x, s.ctr_y, s.cost, sf.segment_id, sf.features, " // sf.segment_id is needed for GROUP
 			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
-			"FROM djsopnet_segmentblockrelation sbr "
-			"JOIN djsopnet_segment s ON sbr.segment_id = s.id "
-			"JOIN djsopnet_segmentslice ss ON s.id = ss.segment_id "
+			"FROM segment_block_relation sbr "
+			"JOIN segment s ON sbr.segment_id = s.id "
+			"JOIN segment_slice ss ON s.id = ss.segment_id "
 			+ featureJoin +
 			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
 			"GROUP BY s.id, sf.segment_id";
@@ -350,16 +352,15 @@ PostgreSqlSegmentStore::getConstraintsByBlocks(
 
 	boost::timer::cpu_timer queryTimer;
 
-	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(
-			blocks, _config.getCatmaidRawStackId());
+	const std::string blocksQuery = PostgreSqlUtils::createBlockIdQuery(blocks);
 
 	// Query constraints for this set of blocks
 	std::string blockConstraintsQuery =
 			"SELECT cst.id, cst.relation, cst.value, "
 			"array_agg(DISTINCT ROW(csr.segment_id, csr.coefficient)) "
-			"FROM djsopnet_constraint cst "
-			"JOIN djsopnet_blockconstraintrelation bcr ON bcr.constraint_id = cst.id "
-			"JOIN djsopnet_constraintsegmentrelation csr ON csr.constraint_id = cst.id "
+			"FROM solution_constraint cst "
+			"JOIN block_constraint_relation bcr ON bcr.constraint_id = cst.id "
+			"JOIN constraint_segment_relation csr ON csr.constraint_id = cst.id "
 			"WHERE bcr.block_id IN (" + blocksQuery + ") "
 			"GROUP BY cst.id";
 
@@ -414,8 +415,8 @@ std::vector<double>
 PostgreSqlSegmentStore::getFeatureWeights() {
 
 	std::string query =
-			"SELECT weights FROM djsopnet_featureinfo WHERE stack_id="
-			+ boost::lexical_cast<std::string>(_config.getCatmaidRawStackId());
+			"SELECT weights FROM segmentation_feature_info WHERE segmentation_stack_id="
+			+ boost::lexical_cast<std::string>(_config.getCatmaidStackIds(Membrane).segmentation_id);
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, query.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
@@ -450,8 +451,8 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream query;
-	query << "BEGIN;LOCK TABLE djsopnet_segment IN EXCLUSIVE MODE;";
-	query << "UPDATE djsopnet_segment SET cost=t.cost FROM (VALUES";
+	query << "BEGIN;LOCK TABLE segment IN EXCLUSIVE MODE;";
+	query << "UPDATE segment SET cost=t.cost FROM (VALUES";
 
 	char separator = ' ';
 	typedef const std::map<SegmentHash, double> costs_type;
@@ -463,7 +464,7 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 	}
 
 	query << ") AS t (segment_id, cost) "
-			"WHERE t.segment_id = djsopnet_segment.id;COMMIT;";
+			"WHERE t.segment_id = segment.id;COMMIT;";
 	std::string queryStr = query.str();
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	int asyncStatus = PQsendQuery(_pgConnection, queryStr.c_str());
@@ -487,10 +488,9 @@ PostgreSqlSegmentStore::storeSolution(
 
 	boost::timer::cpu_timer queryTimer;
 
-	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(
-			core, _config.getCatmaidRawStackId());
+	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(core);
 	const std::string solutionQuery =
-			"INSERT INTO djsopnet_solution (core_id) (" + coreQuery + ") RETURNING id, core_id;";
+			"INSERT INTO solution (core_id) (" + coreQuery + ") RETURNING id, core_id;";
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, solutionQuery.c_str());
 
@@ -502,7 +502,7 @@ PostgreSqlSegmentStore::storeSolution(
 	std::ostringstream query;
 
 	if (!segmentHashes.empty()) {
-		query << "INSERT INTO djsopnet_segmentsolution (solution_id, segment_id) "
+		query << "INSERT INTO segment_solution (solution_id, segment_id) "
 				"SELECT sol.id, s.id FROM (VALUES (" << solutionId << ")) AS sol (id), (VALUES ";
 		char separator = ' ';
 
@@ -516,9 +516,9 @@ PostgreSqlSegmentStore::storeSolution(
 		query << ") AS s (id);";
 	}
 
-	query << "INSERT INTO djsopnet_solutionprecedence (core_id, solution_id) "
+	query << "INSERT INTO solution_precedence (core_id, solution_id) "
 			"VALUES (" << coreId << ',' << solutionId << ");"
-			"UPDATE djsopnet_core SET solution_set_flag = TRUE "
+			"UPDATE core SET solution_set_flag = TRUE "
 			"WHERE id = " << coreId;
 
 	std::string queryString(query.str());
@@ -536,9 +536,8 @@ PostgreSqlSegmentStore::storeSolution(
 bool
 PostgreSqlSegmentStore::getSegmentsFlag(const Block& block) {
 
-	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(
-				block, _config.getCatmaidRawStackId());
-	std::string blockFlagQuery = "SELECT segments_flag FROM djsopnet_block "
+	const std::string blockQuery = PostgreSqlUtils::createBlockIdQuery(block);
+	std::string blockFlagQuery = "SELECT segments_flag FROM block "
 			"WHERE id = (" + blockQuery + ")";
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, blockFlagQuery.c_str());

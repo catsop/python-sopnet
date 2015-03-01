@@ -68,21 +68,18 @@ public:
 	 * Create a SQL query that selects the block ID for the given block.
 	 */
 	static std::string createBlockIdQuery(
-			const Block& block,
-			unsigned int stackId);
+			const Block& block);
 	/**
 	 * Create a SQL query that selects the block ID for the given blocks.
 	 */
 	static std::string createBlockIdQuery(
-			const Blocks& blocks,
-			unsigned int stackId);
+			const Blocks& blocks);
 
 	/**
 	 * Create a SQL query that selects the core ID for the given core.
 	 */
 	static std::string createCoreIdQuery(
-			const Core& core,
-			unsigned int stackId);
+			const Core& core);
 
 	/**
 	 * Execute a query that checks whether the specified flag is true for each
@@ -92,7 +89,6 @@ public:
 	 */
 	static std::string checkBlocksFlags(
 			const Blocks& blocks,
-			unsigned int stsackId,
 			std::string flag,
 			Blocks& missingBlocks,
 			PGconn* connection);

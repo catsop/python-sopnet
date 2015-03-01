@@ -6,6 +6,7 @@
 #include <util/point3.hpp>
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Block.h>
+#include <catmaid/persistence/StackType.h>
 #include <sopnet/segments/SegmentHash.h>
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"
@@ -91,10 +92,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
 			.def("setBackendType", &ProjectConfiguration::setBackendType)
 			.def("getBackendType", &ProjectConfiguration::getBackendType)
-			.def("setCatmaidRawStackId", &ProjectConfiguration::setCatmaidRawStackId)
-			.def("getCatmaidRawStackId", &ProjectConfiguration::getCatmaidRawStackId)
-			.def("setCatmaidMembraneStackId", &ProjectConfiguration::setCatmaidMembraneStackId)
-			.def("getCatmaidMembraneStackId", &ProjectConfiguration::getCatmaidMembraneStackId)
+			.def("setCatmaidStackIds", &ProjectConfiguration::setCatmaidStackIds)
+			.def("getCatmaidStackIds", &ProjectConfiguration::getCatmaidStackIds)
 			.def("setCatmaidProjectId", &ProjectConfiguration::setCatmaidProjectId)
 			.def("getCatmaidProjectId", &ProjectConfiguration::getCatmaidProjectId)
 			.def("setCatmaidStackScale", &ProjectConfiguration::setCatmaidStackScale)
@@ -127,6 +126,16 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.value("Local", ProjectConfiguration::Local)
 			.value("Django", ProjectConfiguration::Django)
 			.value("PostgreSql", ProjectConfiguration::PostgreSql);
+
+	// StackType
+	boost::python::enum_<StackType>("StackType")
+			.value("Raw", Raw)
+			.value("Membrane", Membrane);
+
+	// StackIds
+	boost::python::class_<ProjectConfiguration::StackIds>("StackIds")
+			.def_readwrite("id", &ProjectConfiguration::StackIds::id)
+			.def_readwrite("segmentation_id", &ProjectConfiguration::StackIds::segmentation_id);
 
 	// Locations
 	boost::python::class_<Locations>("Locations")

@@ -1,6 +1,7 @@
 #ifndef SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 #define SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 
+#include <catmaid/persistence/StackType.h>
 #include <string>
 #include <vector>
 #include <util/point3.hpp>
@@ -12,6 +13,11 @@
 class ProjectConfiguration {
 
 public:
+
+	struct StackIds {
+		unsigned int id;
+		unsigned int segmentation_id;
+	};
 
 	enum BackendType {
 
@@ -62,28 +68,14 @@ public:
 	const std::string& getCatmaidHost() const;
 
 	/**
-	 * Set the CATMAID stack id of the raw data to be used in the Django 
-	 * backend.
+	 * Set the CATMAID stack and segmentation stack ids of data to be used.
 	 */
-	void setCatmaidRawStackId(unsigned int stackId);
+	void setCatmaidStackIds(const StackType stackType, const StackIds stackIds);
 
 	/**
-	 * Get the CATMAID stack id of the raw data to be used in the Django 
-	 * backend.
+	 * Get the CATMAID stack and segmentation stack ids of data to be used.
 	 */
-	unsigned int getCatmaidRawStackId() const;
-
-	/**
-	 * Set the CATMAID stack id of the membrane data to be used in the Django 
-	 * backend.
-	 */
-	void setCatmaidMembraneStackId(unsigned int stackId);
-
-	/**
-	 * Get the CATMAID stack id of the membrane data to be used in the Django 
-	 * backend.
-	 */
-	unsigned int getCatmaidMembraneStackId() const;
+	StackIds getCatmaidStackIds(const StackType stackType) const;
 
 	/**
 	 * Set the CATMAID project id to be used in the Django backend.
@@ -212,8 +204,7 @@ private:
 
 	std::string _catmaidHost;
 
-	unsigned int _rawStackId;
-	unsigned int _membraneStackId;
+	std::vector<StackIds> _stackTypeIds;
 	unsigned int _projectId;
 	unsigned int _stackScale;
 

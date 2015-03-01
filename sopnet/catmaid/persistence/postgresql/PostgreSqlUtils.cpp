@@ -85,12 +85,10 @@ PostgreSqlUtils::getConnection(
 
 std::string
 PostgreSqlUtils::createBlockIdQuery(
-	const Block& block,
-	unsigned int stackId)
+	const Block& block)
 {
 	std::ostringstream blockQuery;
-	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
-	blockQuery << "stack_id=" << stackId << " AND ";
+	blockQuery << "SELECT id FROM block WHERE ";
 	blockQuery << "coordinate_x=" << block.x() << " AND ";
 	blockQuery << "coordinate_y=" << block.y() << " AND ";
 	blockQuery << "coordinate_z=" << block.z() << " LIMIT 1";
@@ -100,13 +98,11 @@ PostgreSqlUtils::createBlockIdQuery(
 
 std::string
 PostgreSqlUtils::createBlockIdQuery(
-	const Blocks& blocks,
-	unsigned int stackId)
+	const Blocks& blocks)
 {
 	std::string delim = "";
 	std::ostringstream blockQuery;
-	blockQuery << "SELECT id FROM djsopnet_block WHERE ";
-	blockQuery << "stack_id=" << stackId << "AND ";
+	blockQuery << "SELECT id FROM block WHERE ";
 	foreach (const Block &block, blocks)
 	{
 		blockQuery << delim;
@@ -121,12 +117,10 @@ PostgreSqlUtils::createBlockIdQuery(
 
 std::string
 PostgreSqlUtils::createCoreIdQuery(
-	const Core& core,
-	unsigned int stackId)
+	const Core& core)
 {
 	std::ostringstream blockQuery;
-	blockQuery << "SELECT id FROM djsopnet_core WHERE ";
-	blockQuery << "stack_id=" << stackId << "AND ";
+	blockQuery << "SELECT id FROM core WHERE ";
 	blockQuery << "coordinate_x=" << core.x() << " AND ";
 	blockQuery << "coordinate_y=" << core.y() << " AND ";
 	blockQuery << "coordinate_z=" << core.z() << " LIMIT 1";
@@ -137,7 +131,6 @@ PostgreSqlUtils::createCoreIdQuery(
 std::string
 PostgreSqlUtils::checkBlocksFlags(
 		const Blocks& blocks,
-		unsigned int stackId,
 		std::string flag,
 		Blocks& missingBlocks,
 		PGconn* connection) {
@@ -158,7 +151,7 @@ PostgreSqlUtils::checkBlocksFlags(
 
 	blockQuery << ") SELECT bm.id, b.id, b." << flag
 			<< " FROM block_coords AS bm (id,coord_x,coord_y,coord_z) "
-				"LEFT JOIN djsopnet_block b ON (b.stack_id = " << stackId << " AND "
+				"LEFT JOIN block b ON ("
 				"b.coordinate_x = bm.coord_x AND "
 				"b.coordinate_y = bm.coord_y AND "
 				"b.coordinate_z = bm.coord_z) ORDER BY bm.id ASC;";

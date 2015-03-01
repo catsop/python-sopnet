@@ -12,7 +12,7 @@ CatmaidStackStore::CatmaidStackStore(
 		StackType stackType) :
 	_serverUrl(configuration.getCatmaidHost()),
 	_project(configuration.getCatmaidProjectId()),
-	_stack(stackType == Raw ? configuration.getCatmaidRawStackId() : configuration.getCatmaidMembraneStackId()),
+	_stack(configuration.getCatmaidStackIds(stackType).id),
 	_stackScale(configuration.getCatmaidStackScale()),
 	_treatMissingAsEmpty(stackType != Raw)
 {
