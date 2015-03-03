@@ -278,6 +278,7 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
+	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	int nSlices = PQntuples(result);
 
 	// Build SegmentDescription for each row
@@ -310,10 +311,12 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	PQclear(result);
 
-	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
+	boost::chrono::nanoseconds totalElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Retrieved " << slices->size() << " slices in "
-			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
-			<< (1e9 * slices->size()/queryElapsed.count()) << " slices/s)" << std::endl;
+			<< (totalElapsed.count() / 1e6) << " ms (wall) "
+			<< (1e9 * slices->size()/totalElapsed.count()) << " segments/s (query: "
+			<< (queryElapsed.count() / 1e6) << "ms; "
+			<< (1e9 * slices->size()/queryElapsed.count()) << " segments/s)" << std::endl;
 
 	return slices;
 }
