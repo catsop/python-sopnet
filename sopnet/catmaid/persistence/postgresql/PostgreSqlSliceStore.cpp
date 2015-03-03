@@ -273,7 +273,8 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 			"SELECT s.id, s.section "
 			"FROM slice_block_relation sbr "
 			"JOIN slice s on sbr.slice_id = s.id "
-			"WHERE sbr.block_id IN (" + blockIdsStr + ")";
+			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
+			"GROUP BY s.id"; // Remove duplicates. GROUP BY is sometimes faster than DISTINCT.
 	enum { FIELD_ID, FIELD_SECTION };
 	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
 
