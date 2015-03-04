@@ -26,7 +26,7 @@ public:
 	 * @param result the returned result
 	 * @param the query used to obtain the result (optional)
 	 */
-	static void checkPostgreSqlError(const PGresult *result, const std::string query = "");
+	static void checkPostgreSqlError(const PGresult *result, const std::string& query = "");
 
 	/**
 	 * Wait for previous asynchronous queries executed on the connection, if

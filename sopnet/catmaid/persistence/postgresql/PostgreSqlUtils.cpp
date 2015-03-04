@@ -8,7 +8,7 @@
 logger::LogChannel postgresqlutilslog("postgresqlutilslog", "[PostgreSqlUtils] ");
 
 void
-PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string query)
+PostgreSqlUtils::checkPostgreSqlError(const PGresult *result, const std::string& query)
 {
 	ExecStatusType status = PQresultStatus(result);
 	if (PGRES_COMMAND_OK != status && PGRES_TUPLES_OK != status) {
