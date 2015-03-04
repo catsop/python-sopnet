@@ -42,9 +42,9 @@ CatmaidStackStore::CatmaidStackStore(
 	_stackDepth = pt->get_child("dimension").get_child("z").get_value<unsigned int>();;
 
 	// check if the reported stack size matches the expected one:
-	if (!_stackWidth  == configuration.getVolumeSize().x ||
-	    !_stackHeight == configuration.getVolumeSize().y ||
-		!_stackDepth  == configuration.getVolumeSize().z)
+	if (_stackWidth  != configuration.getVolumeSize().x ||
+	    _stackHeight != configuration.getVolumeSize().y ||
+		_stackDepth  != configuration.getVolumeSize().z)
 		UTIL_THROW_EXCEPTION(
 				UsageError,
 				"catmaid stack size (" << _stackWidth << "," << _stackHeight << "," << _stackDepth <<
