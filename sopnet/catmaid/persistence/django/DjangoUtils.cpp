@@ -59,7 +59,7 @@ DjangoUtils::segmentBound(const boost::shared_ptr<Segment> segment)
 }
 
 void
-DjangoUtils::checkDjangoError(const boost::shared_ptr<ptree> pt, const std::string url)
+DjangoUtils::checkDjangoError(const boost::shared_ptr<ptree> pt, const std::string& url)
 {
 	if (!pt)
 	{

@@ -53,7 +53,7 @@ public:
 	 * @param pt the property tree to check
 	 */
 	static void checkDjangoError(const boost::shared_ptr<boost::property_tree::ptree> pt,
-		const std::string url = "");
+		const std::string& url = "");
 };
 
 #endif //DJANGO_UTILS_H__
