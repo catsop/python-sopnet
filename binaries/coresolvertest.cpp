@@ -803,7 +803,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	for (SegmentDescriptions::iterator si = sbSegmentSetInt.begin(),
 		 bi = bsSegmentSetInt.begin();
 		 si != sbSegmentSetInt.end() && bi != bsSegmentSetInt.end();
-		 si++, bi++) {
+		 ++si, ++bi) {
 
 		SegmentDescription sopnetSegment = *si;
 		SegmentDescription blockwiseSegment = *bi;

@@ -422,8 +422,8 @@ SolutionGuarantor::getCost(const std::vector<double>& features) {
 	while (i != features.end()) {
 
 		cost += (*i)*(*j);
-		i++;
-		j++;
+		++i;
+		++j;
 	}
 
 	return cost;

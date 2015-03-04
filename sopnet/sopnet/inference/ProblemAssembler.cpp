@@ -208,7 +208,7 @@ ProblemAssembler::addMitochondriaConstraints() {
 		foreach (unsigned int neuronSegmentId, getMitochondriaEnclosingNeuronSegments(mitochondriaSegmentId))
 			constraint->setCoefficient(_problemConfiguration->getVariable(neuronSegmentId), -1);
 
-		constraint++;
+		++constraint;
 	}
 
 	LOG_DEBUG(problemassemblerlog) << "created " << _mitochondriaConstraints.size() << " linear constraints" << std::endl;
@@ -265,7 +265,7 @@ ProblemAssembler::addSynapseConstraints() {
 
 		LOG_ALL(problemassemblerlog) << "finished constraint for synapse segment " << synapseSegment->getId() << std::endl;
 
-		constraint++;
+		++constraint;
 	}
 
 	LOG_DEBUG(problemassemblerlog) << "created " << _synapseConstraints.size() << " linear constraints" << std::endl;

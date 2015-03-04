@@ -388,7 +388,7 @@ private:
 	bool remove(std::vector<boost::shared_ptr<SegmentType> >& segments, boost::shared_ptr<Segment> segment) {
 
 		typename std::vector<boost::shared_ptr<SegmentType> >::iterator i;
-		for (i = segments.begin(); i != segments.end(); i++)
+		for (i = segments.begin(); i != segments.end(); ++i)
 			if ((*i)->getId() == segment->getId())
 				break;
 
