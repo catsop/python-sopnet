@@ -76,6 +76,9 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	// cull solution to requested core
 	std::vector<SegmentHash> culledSolution = cullSolutionToCore(solution, *segments, core);
 
+	// extract assemblies
+	std::vector<std::set<SegmentHash> > assemblies = extractAssemblies(culledSolution, *segments);
+
 	// store solution
 	_segmentStore->storeSolution(culledSolution, core);
 
@@ -495,4 +498,67 @@ SolutionGuarantor::cullSolutionToCore(
 	}
 
 	return culledSolution;
+}
+
+std::vector<std::set<SegmentHash> >
+SolutionGuarantor::extractAssemblies(
+		const std::vector<SegmentHash>& solution,
+		const SegmentDescriptions& segments) {
+
+	std::set<SegmentHash> solutionLookup(solution.begin(), solution.end());
+	std::set<SliceHash> unvisitedSlices;
+	std::stack<SliceHash> boundarySlices;
+	typedef std::pair<SliceHash, SegmentHash> adjacencyEdge;
+	std::map<SliceHash, std::vector<adjacencyEdge> > sliceNeighbors;
+	std::vector<std::set<SegmentHash> > assemblies;
+
+	// Construct slice adjacency graph.
+	foreach (const SegmentDescription& segment, segments) {
+
+		if (solutionLookup.count(segment.getHash())) {
+
+			const std::vector<SliceHash>& leftSliceHashes = segment.getLeftSlices();
+			const std::vector<SliceHash>& rightSliceHashes = segment.getLeftSlices();
+			unvisitedSlices.insert(leftSliceHashes.begin(), leftSliceHashes.end());
+			unvisitedSlices.insert(rightSliceHashes.begin(), rightSliceHashes.end());
+
+			foreach (const SliceHash& leftHash, leftSliceHashes) {
+
+				foreach (const SliceHash& rightHash, rightSliceHashes) {
+
+					sliceNeighbors[leftHash].push_back(std::make_pair(rightHash, segment.getHash()));
+					sliceNeighbors[rightHash].push_back(std::make_pair(leftHash, segment.getHash()));
+				}
+			}
+		}
+	}
+
+	// Collect connected components (assemblies).
+	while (!unvisitedSlices.empty()) {
+
+		std::set<SegmentHash> assembly;
+
+		SliceHash seedSlice = *(unvisitedSlices.begin());
+		boundarySlices.push(seedSlice);
+
+		while (!boundarySlices.empty()) {
+
+			SliceHash currentSlice = boundarySlices.top();
+			boundarySlices.pop();
+
+			unvisitedSlices.erase(currentSlice);
+
+			foreach (const adjacencyEdge& neighbor, sliceNeighbors[currentSlice]) {
+
+				assembly.insert(neighbor.second);
+
+				if (unvisitedSlices.count(neighbor.first))
+					boundarySlices.push(neighbor.first);
+			}
+		}
+
+		assemblies.push_back(assembly);
+	}
+
+	return assemblies;
 }

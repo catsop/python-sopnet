@@ -104,6 +104,10 @@ private:
 			const SegmentDescriptions& segments,
 			const Core& core);
 
+	std::vector<std::set<SegmentHash> > extractAssemblies(
+			const std::vector<SegmentHash>& solution,
+			const SegmentDescriptions& segments);
+
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
 
