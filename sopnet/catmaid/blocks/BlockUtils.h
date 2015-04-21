@@ -48,6 +48,11 @@ public:
 	util::box<unsigned int> getBoundingBox(const Blocks& blocks) const;
 
 	/**
+	 * Get the bounding box of a single core in pixels.
+	 */
+	util::box<unsigned int> getBoundingBox(const Core& core) const;
+
+	/**
 	 * Get the block that contains the given pixel location.
 	 */
 	Block getBlockAtLocation(const util::point3<unsigned int>& location) const;

@@ -61,6 +61,18 @@ BlockUtils::getBoundingBox(const Blocks& blocks) const {
 	return boundingBox;
 }
 
+util::box<unsigned int>
+BlockUtils::getBoundingBox(const Core& core) const {
+
+	return util::box<unsigned int>(
+			 core.x()     *_coreSizeInVoxels.x,
+			 core.y()     *_coreSizeInVoxels.y,
+			 core.z()     *_coreSizeInVoxels.z,
+			(core.x() + 1)*_coreSizeInVoxels.x,
+			(core.y() + 1)*_coreSizeInVoxels.y,
+			(core.z() + 1)*_coreSizeInVoxels.z);
+}
+
 Block
 BlockUtils::getBlockAtLocation(const util::point3<unsigned int>& location) const {
 
