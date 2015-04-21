@@ -73,8 +73,11 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 
 	LOG_DEBUG(solutionguarantorlog) << "solution contains " << solution.size() << " segments" << std::endl;
 
+	// cull solution to requested core
+	std::vector<SegmentHash> culledSolution = cullSolutionToCore(solution, *segments, core);
+
 	// store solution
-	_segmentStore->storeSolution(solution, core);
+	_segmentStore->storeSolution(culledSolution, core);
 
 	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
 
@@ -459,4 +462,37 @@ SolutionGuarantor::segmentsBoundingBox(const SegmentDescriptions& segments)
 	}
 
 	return util::box<unsigned int>(bound.minX, bound.minY, zMin, bound.maxX, bound.maxY, zMax);
+}
+
+std::vector<SegmentHash>
+SolutionGuarantor::cullSolutionToCore(
+		const std::vector<SegmentHash>& solution,
+		const SegmentDescriptions& segments,
+		const Core& core) {
+
+	std::vector<SegmentHash> culledSolution;
+	culledSolution.reserve(solution.size());
+
+	std::set<SegmentHash> solutionLookup(solution.begin(), solution.end());
+
+	util::box<unsigned int> coreBoundingBox = _blockUtils.getBoundingBox(core);
+	util::rect<unsigned int> coreBoundingRect = coreBoundingBox.project_xy();
+
+	foreach (const SegmentDescription& segment, segments) {
+
+		SegmentHash segmentHash = segment.getHash();
+
+		if (solutionLookup.count(segmentHash)) {
+
+			// test in z
+			if (segment.getSection() >= coreBoundingBox.min.z &&
+			    segment.getSection() <= coreBoundingBox.max.z &&
+			    coreBoundingRect.intersects(segment.get2DBoundingBox())) {
+
+				culledSolution.push_back(segmentHash);
+			}
+		}
+	}
+
+	return culledSolution;
 }

@@ -99,6 +99,11 @@ private:
 
 	util::box<unsigned int> segmentsBoundingBox(const SegmentDescriptions& segments);
 
+	std::vector<SegmentHash> cullSolutionToCore(
+			const std::vector<SegmentHash>& solutions,
+			const SegmentDescriptions& segments,
+			const Core& core);
+
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
 
