@@ -19,13 +19,11 @@ public:
 
 	SegmentDescription(
 			unsigned int section,
-			const util::rect<unsigned int>& boundingBox,
-			const util::point<double> center) :
+			const util::rect<unsigned int>& boundingBox) :
 		_hashDirty(true),
 		_cost(std::numeric_limits<double>::signaling_NaN()),
 		_section(section),
-		_boundingBox(boundingBox),
-		_center(center) {}
+		_boundingBox(boundingBox) {}
 
 	SegmentDescription(const Segment& segment);
 
@@ -37,8 +35,6 @@ public:
 	unsigned int getSection() const { return _section; }
 
 	const util::rect<unsigned int>& get2DBoundingBox() const { return _boundingBox; }
-
-	const util::point<double>& getCenter() const { return _center; }
 
 	void setFeatures(const std::vector<double>& features) { _features = features; }
 
@@ -91,9 +87,6 @@ private:
 
 	// the bounding box of the segment in 2D
 	util::rect<unsigned int> _boundingBox;
-
-	// the 2D center of this segment in the inter-section interval
-	util::point<double> _center;
 };
 
 #endif // SOPNET_CATMAID_PERSISTENCE_SEGMENT_DESCRIPTION_H__

@@ -7,8 +7,7 @@ SegmentDescription::SegmentDescription(const Segment& segment) :
 		_hashDirty(true),
 		_cost(std::numeric_limits<double>::signaling_NaN()),
 		_section(segment.getInterSectionInterval()),
-		_boundingBox(0, 0, 0, 0),
-		_center(segment.getCenter()) {
+		_boundingBox(0, 0, 0, 0) {
 
 	// get the 2D bounding box of the segment
 	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {

@@ -71,7 +71,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			"CREATE TEMP TABLE segment" << tmpTable <<
 			"(LIKE segment) ON COMMIT DROP;"
 			"INSERT INTO segment" << tmpTable << " (id, section_sup, "
-			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) VALUES";
+			"min_x, min_y, max_x, max_y, type) VALUES";
 
 	std::ostringstream sliceQuery;
 	sliceQuery <<
@@ -97,7 +97,6 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		std::string segmentId = boost::lexical_cast<std::string>(
 			PostgreSqlUtils::hashToPostgreSqlId(segment.getHash()));
 		const util::rect<unsigned int>& segmentBounds = segment.get2DBoundingBox();
-		const util::point<double>& segmentCenter = segment.getCenter();
 
 		// Create segment.
 		segmentQuery << separator << '(' <<
@@ -107,8 +106,6 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 				boost::lexical_cast<std::string>(segmentBounds.minY) << ',' <<
 				boost::lexical_cast<std::string>(segmentBounds.maxX) << ',' <<
 				boost::lexical_cast<std::string>(segmentBounds.maxY) << ',' <<
-				boost::lexical_cast<std::string>(segmentCenter.x) << ',' <<
-				boost::lexical_cast<std::string>(segmentCenter.y) << ',' <<
 				boost::lexical_cast<std::string>(segment.getType()) << ')';
 
 		// Associate slices to segment.
@@ -147,10 +144,10 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	segmentQuery <<
 			"INSERT INTO segment "
 			"(id, section_sup, "
-			"min_x, min_y, max_x, max_y, ctr_x, ctr_y, type) "
+			"min_x, min_y, max_x, max_y, type) "
 			"SELECT "
 			"t.id, t.section_sup, "
-			"t.min_x, t.min_y, t.max_x, t.max_y, t.ctr_x, t.ctr_y, t.type "
+			"t.min_x, t.min_y, t.max_x, t.max_y, t.type "
 			"FROM segment" << tmpTable << " AS t "
 			"LEFT OUTER JOIN segment s "
 			"ON (s.id = t.id) WHERE s.id IS NULL;";
@@ -229,7 +226,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"LEFT JOIN segment_features sf ON s.id = sf.segment_id ");
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
-			"s.ctr_x, s.ctr_y, s.cost, sf.segment_id, sf.features, " // sf.segment_id is needed for GROUP
+			"s.cost, sf.segment_id, sf.features, " // sf.segment_id is needed for GROUP
 			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
 			"FROM segment_block_relation sbr "
 			"JOIN segment s ON sbr.segment_id = s.id "
@@ -239,7 +236,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			"GROUP BY s.id, sf.segment_id";
 
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
-			FIELD_MAX_X, FIELD_MAX_Y, FIELD_CTR_X, FIELD_CTR_Y,
+			FIELD_MAX_X, FIELD_MAX_Y,
 			FIELD_COST, FIELD_SFID_UNUSED, FIELD_FEATURES, FIELD_SLICE_ARRAY };
 	queryResult = PQexec(_pgConnection, blockSegmentsQuery.c_str());
 
@@ -262,14 +259,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		unsigned int maxX = boost::lexical_cast<unsigned int>(cellStr);
 		cellStr = PQgetvalue(queryResult, i, FIELD_MAX_Y);
 		unsigned int maxY = boost::lexical_cast<unsigned int>(cellStr);
-		cellStr = PQgetvalue(queryResult, i, FIELD_CTR_X);
-		double ctrX = boost::lexical_cast<double>(cellStr);
-		cellStr = PQgetvalue(queryResult, i, FIELD_CTR_Y);
-		double ctrY = boost::lexical_cast<double>(cellStr);
 		SegmentDescription segmentDescription(
 				section,
-				util::rect<unsigned int>(minX, minY, maxX, maxY),
-				util::point<double>(ctrX, ctrY));
+				util::rect<unsigned int>(minX, minY, maxX, maxY));
 
 		boost::char_separator<char> separator("{}()\", \t");
 
