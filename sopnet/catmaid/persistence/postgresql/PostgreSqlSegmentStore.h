@@ -78,15 +78,16 @@ public:
 	/**
 	 * Store the solution of processing a core.
 	 *
-	 * @param segmentHashes
-	 *              A list of segment hashes that are part of the solution. A
-	 *              concrete implementation has to make sure that all other
-	 *              segments associated to this core are marked as not belonging
-	 *              to the solution.
+	 * @param assemblies
+	 *              A list of sets of segment hashes that are part of the
+	 *              solution. Each set is a connected component of segments (an
+	 *              assembly) A concrete implementation has to make sure that
+	 *              all other segments associated to this core are marked as
+	 *              not belonging to the solution.
 	 * @param core
 	 *              The core for which the solution was generated.
 	 */
-	void storeSolution(const std::vector<SegmentHash>& segmentHashes, const Core& core);
+	void storeSolution(const std::vector<std::set<SegmentHash> >& assemblies, const Core& core);
 
 	/**
 	 * Check whether the segments for the given block have already been 

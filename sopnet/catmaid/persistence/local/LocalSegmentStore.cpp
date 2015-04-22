@@ -61,10 +61,10 @@ LocalSegmentStore::storeSegmentCosts(
 
 void
 LocalSegmentStore::storeSolution(
-		const std::vector<SegmentHash>& segmentHashes,
-		const Core&                     core) {
+		const std::vector<std::set<SegmentHash> >& assemblies,
+		const Core&                                core) {
 
-	_solutions[core] = segmentHashes;
+	_solutions[core] = assemblies;
 }
 
 bool

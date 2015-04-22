@@ -475,10 +475,11 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 
 void
 PostgreSqlSegmentStore::storeSolution(
-		const std::vector<SegmentHash>& segmentHashes,
+		const std::vector<std::set<SegmentHash> >& assemblies,
 		const Core& core) {
 
 	boost::timer::cpu_timer queryTimer;
+	unsigned int totalSegments = 0;
 
 	const std::string coreQuery = PostgreSqlUtils::createCoreIdQuery(core);
 	const std::string solutionQuery =
@@ -493,36 +494,130 @@ PostgreSqlSegmentStore::storeSolution(
 
 	std::ostringstream query;
 
-	if (!segmentHashes.empty()) {
-		query << "INSERT INTO segment_solution (solution_id, segment_id) "
-				"SELECT sol.id, s.id FROM (VALUES (" << solutionId << ")) AS sol (id), (VALUES ";
+	if (!assemblies.empty()) {
+		std::vector<SegmentHash> assemblyHashes;
+		assemblyHashes.reserve(assemblies.size());
+
+		// Create assemblies and find which are new.
+		std::ostringstream assemblyHashStream;
 		char separator = ' ';
 
-		foreach (const SegmentHash& segmentHash, segmentHashes) {
-			query << separator << '('
-				  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
-				  << ')';
+		foreach (const std::set<SegmentHash> segmentHashes, assemblies) {
+			SegmentHash assemblyHash = 0;
+
+			foreach (const SegmentHash& segmentHash, segmentHashes) {
+				boost::hash_combine(assemblyHash, segmentHash);
+			}
+
+			assemblyHashes.push_back(assemblyHash);
+			assemblyHashStream << separator << '('
+					<< boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(assemblyHash))
+					<< ')';
 			separator = ',';
 		}
+		std::string assemblyHashString(assemblyHashStream.str());
 
-		query << ") AS s (id);";
+		// Lock all assemblies for core so there are no race conditions with
+		// concurrent solutions for this core about which assemblies to insert.
+		// Once this set has been established the lock can be released even
+		// while assembly segments are being inserted.
+		std::ostringstream assemblyQuery;
+		assemblyQuery << "BEGIN;"
+				"SELECT * FROM assembly WHERE core_id=" << coreId << " FOR UPDATE;"
+				"INSERT INTO assembly (core_id, hash) "
+					"(SELECT " << coreId << ", v.hash FROM (VALUES " << assemblyHashString << ") "
+					"AS v (hash) "
+					"WHERE NOT EXISTS (SELECT 1 FROM assembly a "
+					"WHERE a.core_id = " << coreId << " AND a.hash = v.hash)) "
+				"RETURNING id, hash;";
+		enum { FIELD_ASSEMBLY_ID, FIELD_ASSEMBLY_HASH };
+
+		std::string assemblyQueryString(assemblyQuery.str());
+		queryResult = PQexec(_pgConnection, assemblyQueryString.c_str());
+		PostgreSqlUtils::checkPostgreSqlError(queryResult, assemblyQueryString);
+
+		// Commit the transaction while further queries are prepared.
+		int asyncStatus = PQsendQuery(_pgConnection, "COMMIT;");
+		if (0 == asyncStatus) {
+			LOG_ERROR(postgresqlsegmentstorelog) << "PQsendQuery returned 0" << std::endl;
+			LOG_ERROR(postgresqlsegmentstorelog) << "The used query was: COMMIT;" <<
+				std::endl;
+			UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+		}
+
+		int nNewAssemblies = PQntuples(queryResult);
+
+		std::map<SegmentHash, int> assemblyIdMap;
+
+		// Parse assemblies.
+		for (int i = 0; i < nNewAssemblies; ++i) {
+			char* cellStr;
+			cellStr = PQgetvalue(queryResult, i, FIELD_ASSEMBLY_ID);
+			int assemblyId = boost::lexical_cast<int>(cellStr);
+			cellStr = PQgetvalue(queryResult, i, FIELD_ASSEMBLY_HASH);
+			SegmentHash assemblyHash = PostgreSqlUtils::postgreSqlIdToHash(
+					boost::lexical_cast<PostgreSqlHash>(cellStr));
+
+			assemblyIdMap[assemblyHash] = assemblyId;
+		}
+
+		PQclear(queryResult);
+
+		// Insert assembly solution relationships.
+		query << "INSERT INTO solution_assembly (solution_id, assembly_id) "
+				"SELECT " << solutionId << ",a.id FROM assembly a "
+				"JOIN (VALUES " << assemblyHashString << ") AS v (hash) "
+				"ON (a.core_id = " << coreId << " AND a.hash = v.hash);";
+
+		if (nNewAssemblies > 0) {
+
+			// Insert assembly segment relationships only for new assemblies.
+			query << "INSERT INTO assembly_segment (assembly_id, segment_id) VALUES";
+
+			separator = ' ';
+			for (unsigned int i = 0; i < assemblies.size(); ++i) {
+
+				std::map<SegmentHash, int>::iterator it;
+				it = assemblyIdMap.find(assemblyHashes[i]);
+
+				if (it != assemblyIdMap.end()) {
+
+					int assemblyId = it->second;
+
+					foreach (const SegmentHash& segmentHash, assemblies[i]) {
+
+						query << separator << '('
+							  << boost::lexical_cast<std::string>(assemblyId) << ','
+							  << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(segmentHash))
+							  << ')';
+						separator = ',';
+					}
+
+					totalSegments += assemblies[i].size();
+				}
+			}
+
+			query << ";";
+		}
 	}
 
+	// Mark this solution as precedent.
 	query << "INSERT INTO solution_precedence (core_id, solution_id) "
 			"VALUES (" << coreId << ',' << solutionId << ");"
 			"UPDATE core SET solution_set_flag = TRUE "
 			"WHERE id = " << coreId;
 
 	std::string queryString(query.str());
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	queryResult = PQexec(_pgConnection, queryString.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, queryString);
 	PQclear(queryResult);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
-	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << segmentHashes.size() << " solutions in "
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << totalSegments << " segments in "
 			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
-			<< (1e9 * segmentHashes.size()/queryElapsed.count()) << " solutions/s)" << std::endl;
+			<< (1e9 * totalSegments/queryElapsed.count()) << " segments/s)" << std::endl;
 }
 
 bool

@@ -80,7 +80,7 @@ SolutionGuarantor::guaranteeSolution(const Core& core) {
 	std::vector<std::set<SegmentHash> > assemblies = extractAssemblies(culledSolution, *segments);
 
 	// store solution
-	_segmentStore->storeSolution(culledSolution, core);
+	_segmentStore->storeSolution(assemblies, core);
 
 	LOG_DEBUG(solutionguarantorlog) << "done" << std::endl;
 
