@@ -162,12 +162,11 @@ int main(int argc, char** argv)
 
 		PostgreSqlSegmentStore segmentStore(pc);
 		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
-		util::point<double> segmentCenter(0.0, 0.0);
 		std::vector<double> segmentFeatures;
 		segmentFeatures.push_back(0.0);
 		segmentFeatures.push_back(1.0);
 		segmentFeatures.push_back(2.0);
-		SegmentDescription segment(0, segmentBounds, segmentCenter);
+		SegmentDescription segment(0, segmentBounds);
 		segment.addLeftSlice(slice1->hashValue());
 		segment.addRightSlice(slice2->hashValue());
 		segment.setFeatures(segmentFeatures);
