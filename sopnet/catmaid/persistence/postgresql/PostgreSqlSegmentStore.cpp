@@ -2,6 +2,7 @@
 #ifdef HAVE_PostgreSQL
 
 #include <boost/tokenizer.hpp>
+#include <boost/functional/hash.hpp>
 #include <boost/timer/timer.hpp>
 #include <util/Logger.h>
 #include "PostgreSqlSegmentStore.h"
