@@ -41,14 +41,17 @@ CatmaidStackStore::CatmaidStackStore(
 	_stackHeight >>= _stackScale;
 	_stackDepth = pt->get_child("dimension").get_child("z").get_value<unsigned int>();;
 
-	// check if the reported stack size matches the expected one:
-	if (_stackWidth  != configuration.getVolumeSize().x ||
-	    _stackHeight != configuration.getVolumeSize().y ||
-		_stackDepth  != configuration.getVolumeSize().z)
+	// Check if the reported stack size is larger than the expected one or
+	// smaller than the expected one by more than one block:
+	const util::point3<unsigned int>& configVolume = configuration.getVolumeSize();
+	const util::point3<unsigned int>& blockSize = configuration.getBlockSize();
+	if (_stackWidth > configVolume.x || _stackWidth + blockSize.x <= configVolume.x ||
+		_stackHeight > configVolume.y || _stackHeight + blockSize.y <= configVolume.y ||
+		_stackDepth > configVolume.z || _stackDepth + blockSize.z <= configVolume.z)
 		UTIL_THROW_EXCEPTION(
 				UsageError,
 				"catmaid stack size (" << _stackWidth << "," << _stackHeight << "," << _stackDepth <<
-				" does not match expected size " << configuration.getVolumeSize());
+				") does not match expected size " << configVolume);
 }
 
 
