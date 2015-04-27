@@ -414,7 +414,7 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 }
 
 void
-PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const ConnectedComponent& component)
+PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component)
 {
 	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
 
@@ -432,7 +432,7 @@ PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const C
 }
 
 boost::shared_ptr<ConnectedComponent>
-PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId, double value)
+PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, double value)
 {
 	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
 

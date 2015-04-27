@@ -81,12 +81,12 @@ private:
 	/**
 	 * Store a connected component as a file in the component directory.
 	 */
-	void saveConnectedComponent(std::string slicePostgreId, const ConnectedComponent& component);
+	void saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component);
 
 	/**
 	 * Load a connected component from a file in the component directory.
 	 */
-	boost::shared_ptr<ConnectedComponent> loadConnectedComponent(std::string slicePostgreId, double value);
+	boost::shared_ptr<ConnectedComponent> loadConnectedComponent(const std::string& slicePostgreId, double value);
 };
 
 #endif // HAVE_PostgreSQL
