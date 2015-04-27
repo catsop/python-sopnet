@@ -270,12 +270,12 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	// Query slices for this set of blocks
 	std::string blockSlicesQuery =
-			"SELECT s.id, s.section "
+			"SELECT s.id, s.section, s.value "
 			"FROM slice_block_relation sbr "
 			"JOIN slice s on sbr.slice_id = s.id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id"; // Remove duplicates. GROUP BY is sometimes faster than DISTINCT.
-	enum { FIELD_ID, FIELD_SECTION };
+	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE };
 	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
@@ -291,11 +291,13 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 				boost::lexical_cast<PostgreSqlHash>(slicePostgreId));
 		cellStr = PQgetvalue(result, i, FIELD_SECTION);
 		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
+		cellStr = PQgetvalue(result, i, FIELD_VALUE);
+		double value = boost::lexical_cast<double>(cellStr);
 
 		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
 				ComponentTreeConverter::getNextSliceId(),
 				section,
-				loadConnectedComponent(slicePostgreId));
+				loadConnectedComponent(slicePostgreId, value));
 
 		// Check that the loaded slice has the correct hash.
 		if (slice->hashValue() != sliceHash) {
@@ -415,34 +417,24 @@ void
 PostgreSqlSliceStore::saveConnectedComponent(std::string slicePostgreId, const ConnectedComponent& component)
 {
 	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
-	std::string offsetFilename = _config.getComponentDirectory() + "/" + slicePostgreId + ".off";
 
 	// If the image file already exists, do nothing.
 	struct stat buffer;
 	if (stat (imageFilename.c_str(), &buffer) == 0) return;
 
 	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
+	const vigra::Diff2D offset(component.getBoundingBox().minX, component.getBoundingBox().minY);
 
 	// store the image
 	vigra::exportImage(
 			vigra::srcImageRange(bitmap),
-			vigra::ImageExportInfo(imageFilename.c_str()));
-
-	std::ofstream componentFile(offsetFilename.c_str());
-
-	// store the component's value
-	componentFile << component.getValue() << " ";
-
-	// store the component's offset
-	componentFile << component.getBoundingBox().minX << " ";
-	componentFile << component.getBoundingBox().minY;
+			vigra::ImageExportInfo(imageFilename.c_str()).setPosition(offset));
 }
 
 boost::shared_ptr<ConnectedComponent>
-PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
+PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId, double value)
 {
 	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
-	std::string offsetFilename = _config.getComponentDirectory() + "/" + slicePostgreId + ".off";
 
 	// get information about the image to read
 	vigra::ImageImportInfo info(imageFilename.c_str());
@@ -459,24 +451,7 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 	ConnectedComponent::bitmap_type bitmap(ConnectedComponent::bitmap_type::difference_type(info.width(), info.height()));
 	importImage(info, vigra::destImage(bitmap));
 
-	// open the offset file
-	std::ifstream componentFile(offsetFilename.c_str());
-
-	if (!componentFile) {
-
-		UTIL_THROW_EXCEPTION(
-				IOError,
-				offsetFilename << " failed to open!");
-	}
-
-	// load the component's value
-	double value;
-	componentFile >> value;
-
-	// load the component's offset
-	unsigned int offsetX, offsetY;
-	componentFile >> offsetX;
-	componentFile >> offsetY;
+	const vigra::Diff2D offset = info.getPosition();
 
 	// create a pixel list
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
@@ -486,7 +461,7 @@ PostgreSqlSliceStore::loadConnectedComponent(std::string slicePostgreId)
 	for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
 		for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
 			if (bitmap(x, y) == 1.0)
-				pixelList->push_back(util::point<unsigned int>(offsetX + x, offsetY + y));
+				pixelList->push_back(util::point<unsigned int>(offset.x + x, offset.y + y));
 
 	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
