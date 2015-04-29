@@ -616,7 +616,8 @@ PostgreSqlSegmentStore::storeSolution(
 	PQclear(queryResult);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
-	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << totalSegments << " segments in "
+	LOG_DEBUG(postgresqlsegmentstorelog) << "Stored " << totalSegments << " segments ("
+			<< assemblies.size() << " assemblies) in "
 			<< (queryElapsed.count() / 1e6) << " ms (wall) ("
 			<< (1e9 * totalSegments/queryElapsed.count()) << " segments/s)" << std::endl;
 }

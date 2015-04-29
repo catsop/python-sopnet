@@ -508,26 +508,34 @@ SolutionGuarantor::extractAssemblies(
 	std::set<SegmentHash> solutionLookup(solution.begin(), solution.end());
 	std::set<SliceHash> unvisitedSlices;
 	std::stack<SliceHash> boundarySlices;
-	typedef std::pair<SliceHash, SegmentHash> adjacencyEdge;
-	std::map<SliceHash, std::vector<adjacencyEdge> > sliceNeighbors;
+	std::map<SliceHash, std::vector<SegmentHash> > sliceSegments;
+	std::map<SliceHash, std::vector<SliceHash> > sliceNeighbors;
 	std::vector<std::set<SegmentHash> > assemblies;
 
 	// Construct slice adjacency graph.
 	foreach (const SegmentDescription& segment, segments) {
 
-		if (solutionLookup.count(segment.getHash())) {
+		const SegmentHash segmentHash = segment.getHash();
+
+		if (solutionLookup.count(segmentHash)) {
 
 			const std::vector<SliceHash>& leftSliceHashes = segment.getLeftSlices();
-			const std::vector<SliceHash>& rightSliceHashes = segment.getLeftSlices();
+			const std::vector<SliceHash>& rightSliceHashes = segment.getRightSlices();
 			unvisitedSlices.insert(leftSliceHashes.begin(), leftSliceHashes.end());
 			unvisitedSlices.insert(rightSliceHashes.begin(), rightSliceHashes.end());
 
-			foreach (const SliceHash& leftHash, leftSliceHashes) {
+			foreach (const SliceHash leftHash, leftSliceHashes)
+				sliceSegments[leftHash].push_back(segmentHash);
 
-				foreach (const SliceHash& rightHash, rightSliceHashes) {
+			foreach (const SliceHash rightHash, rightSliceHashes)
+				sliceSegments[rightHash].push_back(segmentHash);
 
-					sliceNeighbors[leftHash].push_back(std::make_pair(rightHash, segment.getHash()));
-					sliceNeighbors[rightHash].push_back(std::make_pair(leftHash, segment.getHash()));
+			foreach (const SliceHash leftHash, leftSliceHashes) {
+
+				foreach (const SliceHash rightHash, rightSliceHashes) {
+
+					sliceNeighbors[leftHash].push_back(rightHash);
+					sliceNeighbors[rightHash].push_back(leftHash);
 				}
 			}
 		}
@@ -548,12 +556,15 @@ SolutionGuarantor::extractAssemblies(
 
 			unvisitedSlices.erase(currentSlice);
 
-			foreach (const adjacencyEdge& neighbor, sliceNeighbors[currentSlice]) {
+			const std::vector<SegmentHash>& currentSegments = sliceSegments[currentSlice];
+			assembly.insert(currentSegments.begin(), currentSegments.end());
 
-				assembly.insert(neighbor.second);
+			foreach (const SliceHash neighbor, sliceNeighbors[currentSlice]) {
 
-				if (unvisitedSlices.count(neighbor.first))
-					boundarySlices.push(neighbor.first);
+				if (unvisitedSlices.count(neighbor)) {
+
+					boundarySlices.push(neighbor);
+				}
 			}
 		}
 
