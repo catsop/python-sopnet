@@ -25,8 +25,6 @@ CatmaidStackStore::CatmaidStackStore(
 	
 	DjangoUtils::checkDjangoError(pt, os.str());
 
-	std::vector<unsigned int> tileSizeVector, stackSizeVector;
-	
 	_imageBase = pt->get_child("image_base").get_value<std::string>();
 	_extension = pt->get_child("file_extension").get_value<std::string>();
 	_tileSourceType = pt->get_child("tile_source_type").get_value<unsigned int>();
