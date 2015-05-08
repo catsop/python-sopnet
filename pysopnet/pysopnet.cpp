@@ -6,6 +6,7 @@
 #include <util/point3.hpp>
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Block.h>
+#include <catmaid/persistence/StackDescription.h>
 #include <catmaid/persistence/StackType.h>
 #include <sopnet/segments/SegmentHash.h>
 #include "SliceGuarantor.h"
@@ -92,12 +93,10 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
 			.def("setBackendType", &ProjectConfiguration::setBackendType)
 			.def("getBackendType", &ProjectConfiguration::getBackendType)
-			.def("setCatmaidStackIds", &ProjectConfiguration::setCatmaidStackIds)
-			.def("getCatmaidStackIds", &ProjectConfiguration::getCatmaidStackIds)
+			.def("setCatmaidStack", &ProjectConfiguration::setCatmaidStack)
+			.def("getCatmaidStack", &ProjectConfiguration::getCatmaidStack, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setCatmaidProjectId", &ProjectConfiguration::setCatmaidProjectId)
 			.def("getCatmaidProjectId", &ProjectConfiguration::getCatmaidProjectId)
-			.def("setCatmaidStackScale", &ProjectConfiguration::setCatmaidStackScale)
-			.def("getCatmaidStackScale", &ProjectConfiguration::getCatmaidStackScale)
 			.def("setCatmaidHost", &ProjectConfiguration::setCatmaidHost)
 			.def("getCatmaidHost", &ProjectConfiguration::getCatmaidHost, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)
@@ -132,10 +131,19 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.value("Raw", Raw)
 			.value("Membrane", Membrane);
 
-	// StackIds
-	boost::python::class_<ProjectConfiguration::StackIds>("StackIds")
-			.def_readwrite("id", &ProjectConfiguration::StackIds::id)
-			.def_readwrite("segmentation_id", &ProjectConfiguration::StackIds::segmentation_id);
+	// StackDescription
+	boost::python::class_<StackDescription>("StackDescription")
+			.def_readwrite("imageBase", &StackDescription::imageBase)
+			.def_readwrite("fileExtension", &StackDescription::fileExtension)
+			.def_readwrite("tileSourceType", &StackDescription::tileSourceType)
+			.def_readwrite("tileWidth", &StackDescription::tileWidth)
+			.def_readwrite("tileHeight", &StackDescription::tileHeight)
+			.def_readwrite("width", &StackDescription::width)
+			.def_readwrite("height", &StackDescription::height)
+			.def_readwrite("depth", &StackDescription::depth)
+			.def_readwrite("scale", &StackDescription::scale)
+			.def_readwrite("id", &StackDescription::id)
+			.def_readwrite("segmentationId", &StackDescription::segmentationId);
 
 	// Locations
 	boost::python::class_<Locations>("Locations")

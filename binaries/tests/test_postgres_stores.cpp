@@ -107,9 +107,9 @@ int main(int argc, char** argv)
 		pc.setBackendType(ProjectConfiguration::PostgreSql);
 		pc.setCatmaidHost(host);
 		pc.setCatmaidProjectId(project_id);
-		ProjectConfiguration::StackIds stackIds;
-		stackIds.id = stack_id;
-		pc.setCatmaidStackIds(Raw, stackIds);
+		StackDescription stack;
+		stack.id = stack_id;
+		pc.setCatmaidStack(Raw, stack);
 		pc.setComponentDirectory(comp_dir);
 		pc.setPostgreSqlHost(pg_host);
 		pc.setPostgreSqlUser(pg_user);

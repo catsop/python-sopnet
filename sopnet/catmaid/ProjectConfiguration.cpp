@@ -4,7 +4,7 @@ ProjectConfiguration::ProjectConfiguration() :
 
 	_backendType(Django),
 	_catmaidHost("localhost:8000"),
-	_stackTypeIds(Membrane + 1),
+	_stackTypes(Membrane + 1),
 	_projectId(2),
 	_blockSize(256, 256, 10),
 	_volumeSize(1024, 1024, 20),
@@ -43,15 +43,15 @@ ProjectConfiguration::getCatmaidHost() const {
 
 
 void
-ProjectConfiguration::setCatmaidStackIds(const StackType stackType, const StackIds stackIds) {
+ProjectConfiguration::setCatmaidStack(const StackType stackType, const StackDescription stack) {
 
-	_stackTypeIds.at(stackType) = stackIds;
+	_stackTypes.at(stackType) = stack;
 }
 
-ProjectConfiguration::StackIds
-ProjectConfiguration::getCatmaidStackIds(const StackType stackType) const {
+const StackDescription&
+ProjectConfiguration::getCatmaidStack(const StackType stackType) const {
 
-	return _stackTypeIds.at(stackType);
+	return _stackTypes.at(stackType);
 }
 
 void
@@ -64,18 +64,6 @@ unsigned int
 ProjectConfiguration::getCatmaidProjectId() const {
 
 	return _projectId;
-}
-
-void
-ProjectConfiguration::setCatmaidStackScale(unsigned int stackScale) {
-
-	_stackScale = stackScale;
-}
-
-unsigned int
-ProjectConfiguration::getCatmaidStackScale() const {
-
-	return _stackScale;
 }
 
 void

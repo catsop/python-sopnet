@@ -1,10 +1,11 @@
 #ifndef SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 #define SOPNET_PYTHON_PROJECT_CONFIGURATION_H__
 
-#include <catmaid/persistence/StackType.h>
 #include <string>
 #include <vector>
 #include <util/point3.hpp>
+#include <catmaid/persistence/StackType.h>
+#include <catmaid/persistence/StackDescription.h>
 
 /**
  * Project specific configuration to be passed to all the stateless python 
@@ -13,11 +14,6 @@
 class ProjectConfiguration {
 
 public:
-
-	struct StackIds {
-		unsigned int id;
-		unsigned int segmentation_id;
-	};
 
 	enum BackendType {
 
@@ -68,14 +64,14 @@ public:
 	const std::string& getCatmaidHost() const;
 
 	/**
-	 * Set the CATMAID stack and segmentation stack ids of data to be used.
+	 * Set the CATMAID stack description to be used.
 	 */
-	void setCatmaidStackIds(const StackType stackType, const StackIds stackIds);
+	void setCatmaidStack(const StackType stackType, const StackDescription stack);
 
 	/**
-	 * Get the CATMAID stack and segmentation stack ids of data to be used.
+	 * Get the CATMAID stack description to be used.
 	 */
-	StackIds getCatmaidStackIds(const StackType stackType) const;
+	const StackDescription& getCatmaidStack(const StackType stackType) const;
 
 	/**
 	 * Set the CATMAID project id to be used in the Django backend.
@@ -86,16 +82,6 @@ public:
 	 * Get the CATMAID project id to be used in the Django backend.
 	 */
 	unsigned int getCatmaidProjectId() const;
-
-	/**
-	 * Set the scale at which the CATMAID stack is to be used.
-	 */
-	void setCatmaidStackScale(unsigned int stackScale);
-
-	/**
-	 * Get the scale at which the CATMAID stack is to be used.
-	 */
-	unsigned int getCatmaidStackScale() const;
 
 	/**
 	 * Set the size of a block in voxels.
@@ -204,9 +190,8 @@ private:
 
 	std::string _catmaidHost;
 
-	std::vector<StackIds> _stackTypeIds;
+	std::vector<StackDescription> _stackTypes;
 	unsigned int _projectId;
-	unsigned int _stackScale;
 
 	util::point3<unsigned int> _blockSize;
 	util::point3<unsigned int> _volumeSize;

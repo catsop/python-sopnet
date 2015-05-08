@@ -1,6 +1,7 @@
 #ifndef CATMAID_STACK_STORE_H__
 #define CATMAID_STACK_STORE_H__
 #include <catmaid/ProjectConfiguration.h>
+#include <catmaid/persistence/StackDescription.h>
 #include <catmaid/persistence/StackStore.h>
 #include <catmaid/persistence/StackType.h>
 #include <util/httpclient.h>
@@ -45,12 +46,9 @@ private:
 					   const unsigned int tileWXmin,
 					   const unsigned int tileWYmin,
 					   const util::rect<unsigned int> bound);
-	
-	const std::string _serverUrl;
-	const unsigned int _project, _stack;
-	std::string _imageBase, _extension;
-	unsigned int _tileSourceType, _tileWidth, _tileHeight, _stackWidth, _stackHeight, _stackDepth;
-	const unsigned int _stackScale;
+
+	const StackDescription& _stack;
+
 	HttpClient _client;
 
 	/** Whether to replace missing images with black images. Otherwise missing

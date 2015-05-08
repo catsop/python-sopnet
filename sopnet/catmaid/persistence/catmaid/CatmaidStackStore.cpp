@@ -10,45 +10,27 @@ logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackSt
 CatmaidStackStore::CatmaidStackStore(
 		const ProjectConfiguration& configuration,
 		StackType stackType) :
-	_serverUrl(configuration.getCatmaidHost()),
-	_project(configuration.getCatmaidProjectId()),
-	_stack(configuration.getCatmaidStackIds(stackType).id),
-	_stackScale(configuration.getCatmaidStackScale()),
+	_stack(configuration.getCatmaidStack(stackType)),
 	_treatMissingAsEmpty(stackType != Raw)
 {
-	boost::shared_ptr<ptree> pt;
-	std::ostringstream os;
-	DjangoUtils::appendProjectAndStack(os, _serverUrl, _project, _stack);
-	os << "/stack_info";
-	
-	pt = _client.getPropertyTree(os.str());
-	
-	DjangoUtils::checkDjangoError(pt, os.str());
-
-	_imageBase = pt->get_child("image_base").get_value<std::string>();
-	_extension = pt->get_child("file_extension").get_value<std::string>();
-	_tileSourceType = pt->get_child("tile_source_type").get_value<unsigned int>();
-
-	_tileWidth = pt->get_child("tile_width").get_value<unsigned int>();
-	_tileHeight = pt->get_child("tile_height").get_value<unsigned int>();
 
 	// Adjust the width and height of the stack for the configured scale
-	_stackWidth = pt->get_child("dimension").get_child("x").get_value<unsigned int>();
-	_stackWidth >>= _stackScale;
-	_stackHeight = pt->get_child("dimension").get_child("y").get_value<unsigned int>();
-	_stackHeight >>= _stackScale;
-	_stackDepth = pt->get_child("dimension").get_child("z").get_value<unsigned int>();;
+	unsigned int scaledWidth, scaledHeight;
+	scaledWidth = _stack.width;
+	scaledWidth >>= _stack.scale;
+	scaledHeight = _stack.height;
+	scaledHeight >>= _stack.scale;
 
 	// Check if the reported stack size is larger than the expected one or
 	// smaller than the expected one by more than one block:
 	const util::point3<unsigned int>& configVolume = configuration.getVolumeSize();
 	const util::point3<unsigned int>& blockSize = configuration.getBlockSize();
-	if (_stackWidth > configVolume.x || _stackWidth + blockSize.x <= configVolume.x ||
-		_stackHeight > configVolume.y || _stackHeight + blockSize.y <= configVolume.y ||
-		_stackDepth > configVolume.z || _stackDepth + blockSize.z <= configVolume.z)
+	if (scaledWidth > configVolume.x || scaledWidth + blockSize.x <= configVolume.x ||
+		scaledHeight > configVolume.y || scaledHeight + blockSize.y <= configVolume.y ||
+		_stack.depth > configVolume.z || _stack.depth + blockSize.z <= configVolume.z)
 		UTIL_THROW_EXCEPTION(
 				UsageError,
-				"catmaid stack size (" << _stackWidth << "," << _stackHeight << "," << _stackDepth <<
+				"Scaled catmaid stack size (" << scaledWidth << "," << scaledHeight << "," << _stack.depth <<
 				") does not match expected size " << configVolume);
 }
 
@@ -67,20 +49,20 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 	std::vector<boost::shared_ptr<Image> > catImages;
 	boost::shared_ptr<Image> imageOut = boost::make_shared<Image>(bound.width(), bound.height());
 	
-	tileCMin = bound.minX / _tileWidth;
-	tileRMin = bound.minY / _tileHeight;
+	tileCMin = bound.minX / _stack.tileWidth;
+	tileRMin = bound.minY / _stack.tileHeight;
 	// For the max, we want the integer division to round up to get exclusive 
 	// (c,r)-max coordinates. We do that by adding the tilesize - 1 before 
 	// dividing and rounding down.
-	tileCMax = (bound.maxX + _tileWidth - 1) / _tileWidth;
-	tileRMax = (bound.maxY + _tileHeight -1) / _tileHeight;
+	tileCMax = (bound.maxX + _stack.tileWidth - 1) / _stack.tileWidth;
+	tileRMax = (bound.maxY + _stack.tileHeight -1) / _stack.tileHeight;
 	
 	for (unsigned int r = tileRMin; r < tileRMax; ++r)
 	{
 		for (unsigned int c = tileCMin; c < tileCMax; ++c)
 		{
-			unsigned int tileWXmin = c * _tileWidth; // Upper left of the tile in world coords.
-			unsigned int tileWYmin = r * _tileHeight;
+			unsigned int tileWXmin = c * _stack.tileWidth; // Upper left of the tile in world coords.
+			unsigned int tileWYmin = r * _stack.tileHeight;
 
 			try
 			{
@@ -96,7 +78,7 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 			{
 				if (_treatMissingAsEmpty)
 				{
-					Image empty(_tileWidth, _tileHeight);
+					Image empty(_stack.tileWidth, _stack.tileHeight);
 					copyImageInto(empty, *imageOut, tileWXmin, tileWYmin, bound);
 				}
 				else throw;
@@ -143,18 +125,18 @@ CatmaidStackStore::copyImageInto(const Image& tile,
 		dst[1] = 0;
 	}
 	
-	if (tileWXmin + _tileWidth <= bound.maxX)
+	if (tileWXmin + _stack.tileWidth <= bound.maxX)
 	{
-		end[0] = _tileWidth;
+		end[0] = _stack.tileWidth;
 	}
 	else
 	{
 		end[0] = bound.maxX - tileWXmin;
 	}
 	
-	if (tileWYmin + _tileHeight <= bound.maxY)
+	if (tileWYmin + _stack.tileHeight <= bound.maxY)
 	{
-		end[1] = _tileHeight;
+		end[1] = _stack.tileHeight;
 	}
 	else
 	{
@@ -170,19 +152,19 @@ CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, co
 {
 	std::stringstream url;
 
-	switch (_tileSourceType) {
+	switch (_stack.tileSourceType) {
 		case 1:
-			url << _imageBase << section << "/" << row << "_" << column << "_"
-			    << _stackScale << "." << _extension;
+			url << _stack.imageBase << section << "/" << row << "_" << column << "_"
+			    << _stack.scale << "." << _stack.fileExtension;
 			break;
 		case 5:
-			url << _imageBase << _stackScale << '/' << section << '/'
-			    << row << '/' << column << '.' << _extension;
+			url << _stack.imageBase << _stack.scale << '/' << section << '/'
+			    << row << '/' << column << '.' << _stack.fileExtension;
 			break;
 		default:
 			UTIL_THROW_EXCEPTION(
 				NotYetImplemented,
-				"CATMAID stack " << _stack << " uses unimplemented tile source type " << _tileSourceType);
+				"CATMAID stack " << _stack.id << " uses unimplemented tile source type " << _stack.tileSourceType);
 	}
 
 	return url.str();

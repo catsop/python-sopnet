@@ -30,7 +30,7 @@ PostgreSqlSliceStore::PostgreSqlSliceStore(
 			_config.getPostgreSqlPassword());
 	std::ostringstream q;
 	q << "SET search_path TO segstack_"
-	  << _config.getCatmaidStackIds(Membrane).segmentation_id
+	  << _config.getCatmaidStack(Membrane).segmentationId
 	  << ",public;";
 	PQsendQuery(_pgConnection, q.str().c_str());
 }
