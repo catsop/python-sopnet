@@ -9,12 +9,6 @@
 #include <util/point.hpp>
 #include <sopnet/slices/ConflictSets.h>
 
-util::ProgramOption optionProjectId(
-		util::_long_name        = "project",
-		util::_short_name       = "p",
-		util::_description_text = "The Sopnet project ID.",
-		util::_default_value	  = 3);
-
 util::ProgramOption optionStackId(
 		util::_long_name        = "stack",
 		util::_short_name       = "s",
@@ -78,7 +72,6 @@ int main(int argc, char** argv)
 		// init command line parser
 		util::ProgramOptions::init(argc, argv);
 
-		int project_id = optionProjectId.as<int>();
 		int stack_id = optionStackId.as<int>();
 		std::string comp_dir = optionComponentDir.as<std::string>();
 		std::string pg_host = optionPGHost.as<std::string>();
@@ -87,8 +80,7 @@ int main(int argc, char** argv)
 		std::string pg_dbase = optionPGDatabase.as<std::string>();
 
 
-		std::cout << "Testing PostgreSQL stores with project ID " << project_id
-				  << " and stack ID " << stack_id << std::endl;
+		std::cout << "Testing PostgreSQL stores with stack ID " << stack_id << std::endl;
 
 		// init logger
 		logger::LogManager::init();
@@ -97,7 +89,6 @@ int main(int argc, char** argv)
 		// create new project configuration
 		ProjectConfiguration pc;
 		pc.setBackendType(ProjectConfiguration::PostgreSql);
-		pc.setCatmaidProjectId(project_id);
 		StackDescription stack;
 		stack.id = stack_id;
 		pc.setCatmaidStack(Raw, stack);

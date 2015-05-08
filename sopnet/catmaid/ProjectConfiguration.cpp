@@ -4,7 +4,6 @@ ProjectConfiguration::ProjectConfiguration() :
 
 	_backendType(Django),
 	_stackTypes(Membrane + 1),
-	_projectId(2),
 	_blockSize(256, 256, 10),
 	_volumeSize(1024, 1024, 20),
 	_coreSizeInBlocks(1, 1, 1),
@@ -38,18 +37,6 @@ const StackDescription&
 ProjectConfiguration::getCatmaidStack(const StackType stackType) const {
 
 	return _stackTypes.at(stackType);
-}
-
-void
-ProjectConfiguration::setCatmaidProjectId(unsigned int projectId) {
-
-	_projectId = projectId;
-}
-
-unsigned int
-ProjectConfiguration::getCatmaidProjectId() const {
-
-	return _projectId;
 }
 
 void

@@ -63,16 +63,6 @@ public:
 	const StackDescription& getCatmaidStack(const StackType stackType) const;
 
 	/**
-	 * Set the CATMAID project id to be used in the Django backend.
-	 */
-	void setCatmaidProjectId(unsigned int projectId);
-
-	/**
-	 * Get the CATMAID project id to be used in the Django backend.
-	 */
-	unsigned int getCatmaidProjectId() const;
-
-	/**
 	 * Set the size of a block in voxels.
 	 */
 	void setBlockSize(const util::point3<unsigned int>& blockSize);
@@ -178,7 +168,6 @@ private:
 	BackendType _backendType;
 
 	std::vector<StackDescription> _stackTypes;
-	unsigned int _projectId;
 
 	util::point3<unsigned int> _blockSize;
 	util::point3<unsigned int> _volumeSize;

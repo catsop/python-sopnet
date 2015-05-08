@@ -95,8 +95,6 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("getBackendType", &ProjectConfiguration::getBackendType)
 			.def("setCatmaidStack", &ProjectConfiguration::setCatmaidStack)
 			.def("getCatmaidStack", &ProjectConfiguration::getCatmaidStack, boost::python::return_value_policy<boost::python::copy_const_reference>())
-			.def("setCatmaidProjectId", &ProjectConfiguration::setCatmaidProjectId)
-			.def("getCatmaidProjectId", &ProjectConfiguration::getCatmaidProjectId)
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)
 			.def("getBlockSize", &ProjectConfiguration::getBlockSize, boost::python::return_internal_reference<>())
 			.def("setCoreSize", &ProjectConfiguration::setCoreSize)
