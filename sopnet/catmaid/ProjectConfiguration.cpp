@@ -3,7 +3,6 @@
 ProjectConfiguration::ProjectConfiguration() :
 
 	_backendType(Django),
-	_catmaidHost("localhost:8000"),
 	_stackTypes(Membrane + 1),
 	_projectId(2),
 	_blockSize(256, 256, 10),
@@ -28,19 +27,6 @@ ProjectConfiguration::getBackendType() const {
 
 	return _backendType;
 }
-
-void
-ProjectConfiguration::setCatmaidHost(const std::string& url) {
-
-	_catmaidHost = url;
-}
-
-const std::string&
-ProjectConfiguration::getCatmaidHost() const {
-
-	return _catmaidHost;
-}
-
 
 void
 ProjectConfiguration::setCatmaidStack(const StackType stackType, const StackDescription stack) {

@@ -21,12 +21,6 @@ util::ProgramOption optionStackId(
 		util::_description_text = "The Sopnet raw stack ID.",
 		util::_default_value	  = 2);
 
-util::ProgramOption optionHost(
-		util::_long_name        = "host",
-		util::_short_name       = "m",
-		util::_description_text = "The CATMAID host",
-		util::_default_value	  = "neurocity.janelia.org/catsop");
-
 util::ProgramOption optionComponentDir(
 		util::_long_name        = "compdir",
 		util::_short_name       = "c",
@@ -84,7 +78,6 @@ int main(int argc, char** argv)
 		// init command line parser
 		util::ProgramOptions::init(argc, argv);
 
-		std::string host = optionHost.as<std::string>();
 		int project_id = optionProjectId.as<int>();
 		int stack_id = optionStackId.as<int>();
 		std::string comp_dir = optionComponentDir.as<std::string>();
@@ -94,9 +87,8 @@ int main(int argc, char** argv)
 		std::string pg_dbase = optionPGDatabase.as<std::string>();
 
 
-		std::cout << "Testing PostgreSQL stores with host \"" << host <<
-				"\", project ID " << project_id << " and stack ID " <<
-				stack_id << std::endl;
+		std::cout << "Testing PostgreSQL stores with project ID " << project_id
+				  << " and stack ID " << stack_id << std::endl;
 
 		// init logger
 		logger::LogManager::init();
@@ -105,7 +97,6 @@ int main(int argc, char** argv)
 		// create new project configuration
 		ProjectConfiguration pc;
 		pc.setBackendType(ProjectConfiguration::PostgreSql);
-		pc.setCatmaidHost(host);
 		pc.setCatmaidProjectId(project_id);
 		StackDescription stack;
 		stack.id = stack_id;

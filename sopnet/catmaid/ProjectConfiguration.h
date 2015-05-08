@@ -53,17 +53,6 @@ public:
 	BackendType getBackendType() const;
 
 	/**
-	 * Set the CATMAID host name in the form "host:port". The ":port" can be 
-	 * omited if it is 80 (http).
-	 */
-	void setCatmaidHost(const std::string& host);
-
-	/**
-	 * Get the CATMAID host name.
-	 */
-	const std::string& getCatmaidHost() const;
-
-	/**
 	 * Set the CATMAID stack description to be used.
 	 */
 	void setCatmaidStack(const StackType stackType, const StackDescription stack);
@@ -187,8 +176,6 @@ public:
 private:
 
 	BackendType _backendType;
-
-	std::string _catmaidHost;
 
 	std::vector<StackDescription> _stackTypes;
 	unsigned int _projectId;
