@@ -457,11 +457,27 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
 			boost::make_shared<ConnectedComponent::pixel_list_type>();
 
-	// fill it with white pixels from the bitmap
-	for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
-		for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
-			if (bitmap(x, y) == 1.0)
+	// Vigra png normalization workaround: rectangular slices are stored as 
+	// black only. Hence, if the max is not 1.0, all pixels of the bounding box 
+	// belong to the slice.
+	bool _, hasWhitePixels;
+	bitmap.minmax(&_, &hasWhitePixels);
+
+	if (hasWhitePixels) {
+
+		// fill it with white pixels from the bitmap
+		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
+			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
+				if (bitmap(x, y) == 1.0)
+					pixelList->push_back(util::point<unsigned int>(offset.x + x, offset.y + y));
+
+	} else {
+
+		// fill it with all pixels from the bitmap
+		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
+			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
 				pixelList->push_back(util::point<unsigned int>(offset.x + x, offset.y + y));
+	}
 
 	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
