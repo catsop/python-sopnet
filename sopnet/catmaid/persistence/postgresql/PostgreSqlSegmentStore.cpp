@@ -222,18 +222,21 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 
 	// Query segments for this set of blocks
 	std::string featureJoin(readCosts ?
-			"LEFT OUTER JOIN segment_features sf "
-			"ON s.cost IS NULL AND s.id = sf.segment_id " :
-			"LEFT JOIN segment_features sf ON s.id = sf.segment_id ");
+			"LEFT JOIN segment_features sf "
+			"ON (s.cost IS NULL AND sf.segment_id = s.id) " :
+			"JOIN segment_features sf ON sf.segment_id = s.id ");
 	std::string blockSegmentsQuery =
 			"SELECT s.id, s.section_sup, s.min_x, s.min_y, s.max_x, s.max_y, "
 			"s.cost, sf.segment_id, sf.features, " // sf.segment_id is needed for GROUP
-			"array_agg(DISTINCT ROW(ss.slice_id, ss.direction)) "
-			"FROM segment_block_relation sbr "
-			"JOIN segment s ON sbr.segment_id = s.id "
-			"JOIN segment_slice ss ON s.id = ss.segment_id "
+			"array_agg(ROW(ss.slice_id, ss.direction)) "
+			"FROM segment s "
 			+ featureJoin +
-			"WHERE sbr.block_id IN (" + blockIdsStr + ") "
+			"JOIN segment_slice ss ON ss.segment_id = s.id "
+			"WHERE s.id = ANY (ARRAY("
+				"SELECT DISTINCT sbr.segment_id "
+				"FROM segment_block_relation sbr "
+				"WHERE sbr.block_id IN (" + blockIdsStr + ")"
+			")::bigint[]) "
 			"GROUP BY s.id, sf.segment_id";
 
 	enum { FIELD_ID, FIELD_SECTION, FIELD_MIN_X, FIELD_MIN_Y,
