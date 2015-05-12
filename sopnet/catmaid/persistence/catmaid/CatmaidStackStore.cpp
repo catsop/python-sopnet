@@ -1,6 +1,5 @@
 #include "CatmaidStackStore.h"
 #include <imageprocessing/io/ImageHttpReader.h>
-#include <catmaid/persistence/django/DjangoUtils.h>
 #include <util/exceptions.h>
 #include <util/Logger.h>
 
