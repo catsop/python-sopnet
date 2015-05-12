@@ -59,7 +59,7 @@ LinearCostFunction::costs(
 
 	unsigned int i = 0;
 
-	foreach (boost::shared_ptr<EndSegment> end, ends) {
+	for (boost::shared_ptr<EndSegment> end : ends) {
 
 		double c = costs(*end, weights);
 
@@ -69,7 +69,7 @@ LinearCostFunction::costs(
 		i++;
 	}
 
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
+	for (boost::shared_ptr<ContinuationSegment> continuation : continuations) {
 
 		double c = costs(*continuation, weights);
 
@@ -79,7 +79,7 @@ LinearCostFunction::costs(
 		i++;
 	}
 
-	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
+	for (boost::shared_ptr<BranchSegment> branch : branches) {
 
 		double c = costs(*branch, weights);
 

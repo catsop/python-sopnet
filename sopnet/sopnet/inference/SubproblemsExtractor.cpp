@@ -132,7 +132,7 @@ SubproblemsExtractor::updateOutputs() {
 
 		// remember mapping of subproblem variable ids to this subproblem 
 		// (needed for unary terms)
-		foreach (unsigned int workingVarId, workingVarIds) {
+		for (unsigned int workingVarId : workingVarIds) {
 
 			LOG_ALL(subproblemsextractorlog) << "assigning variable " << workingVarId << " to subproblem " << subproblemId << std::endl;
 			_subproblems->assignVariable(workingVarId, subproblemId);
@@ -143,7 +143,7 @@ SubproblemsExtractor::updateOutputs() {
 		std::vector<unsigned int> constraints = _constraints->getConstraints(workingVarIds);
 
 		// remember mapping of constraints to this subproblem
-		foreach (unsigned int i, constraints) {
+		for (unsigned int i : constraints) {
 
 			LinearConstraint& constraint = (*_constraints)[i];
 
@@ -160,13 +160,11 @@ SubproblemsExtractor::updateOutputs() {
 
 			// Working variable ids have already been assigned to subproblem 
 			// ids. We can thus just ask for that.
-			unsigned int workingVarId;
-			double _;
 			bool addConstraint = true;
-			foreach (boost::tie(workingVarId, _), constraint.getCoefficients()) {
+			for (const auto& pair : constraint.getCoefficients()) {
 
 				// get all subproblems that are assigned to the working variable
-				std::set<unsigned int>& assignedSubproblems = _subproblems->getVariableSubproblems(workingVarId);
+				std::set<unsigned int>& assignedSubproblems = _subproblems->getVariableSubproblems(pair.first);
 
 				// does it containt the current subproblem?
 				if (!assignedSubproblems.count(subproblemId)) {

@@ -22,7 +22,7 @@ public:
 	/**
 	 * Add a set of blocks to this collection.
 	 */
-	void addAll(const Cores& blocks) { foreach (const Core& block, blocks) add(block); }
+	void addAll(const Cores& blocks) { for (const Core& block : blocks) add(block); }
 
 	/**
 	 * Check whether this collection is empty.

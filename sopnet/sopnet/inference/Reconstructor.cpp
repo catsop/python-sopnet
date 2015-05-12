@@ -39,13 +39,13 @@ Reconstructor::updateReconstruction() {
 
 	_currentSegmentNum = 0;
 
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+	for (boost::shared_ptr<EndSegment> segment : _segments->getEnds())
 		probe(segment);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> segment : _segments->getContinuations())
 		probe(segment);
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+	for (boost::shared_ptr<BranchSegment> segment : _segments->getBranches())
 		probe(segment);
 
 	LOG_ALL(reconstructorlog) << std::endl;

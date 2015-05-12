@@ -10,7 +10,7 @@ SegmentDescription::SegmentDescription(const Segment& segment) :
 		_boundingBox(0, 0, 0, 0) {
 
 	// get the 2D bounding box of the segment
-	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
+	for (boost::shared_ptr<Slice> slice : segment.getSlices()) {
 
 		if (_boundingBox.area() == 0)
 			_boundingBox = slice->getComponent()->getBoundingBox();
@@ -21,16 +21,16 @@ SegmentDescription::SegmentDescription(const Segment& segment) :
 	// add slice hashes
 	if (segment.getDirection() == Left) {
 
-		foreach (boost::shared_ptr<Slice> slice, segment.getTargetSlices())
+		for (boost::shared_ptr<Slice> slice : segment.getTargetSlices())
 			addLeftSlice(slice->hashValue());
-		foreach (boost::shared_ptr<Slice> slice, segment.getSourceSlices())
+		for (boost::shared_ptr<Slice> slice : segment.getSourceSlices())
 			addRightSlice(slice->hashValue());
 
 	} else {
 
-		foreach (boost::shared_ptr<Slice> slice, segment.getTargetSlices())
+		for (boost::shared_ptr<Slice> slice : segment.getTargetSlices())
 			addRightSlice(slice->hashValue());
-		foreach (boost::shared_ptr<Slice> slice, segment.getSourceSlices())
+		for (boost::shared_ptr<Slice> slice : segment.getSourceSlices())
 			addLeftSlice(slice->hashValue());
 	}
 }

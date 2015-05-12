@@ -41,7 +41,7 @@ ObjectiveGenerator::updateObjective() {
 	// costs vector)
 	unsigned int i = 0;
 	unsigned int numInterSectionIntervals = _segments->getNumInterSectionIntervals();
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
+	for (boost::shared_ptr<EndSegment> end : _segments->getEnds()) {
 
 		if (end->getInterSectionInterval() == 0 || end->getInterSectionInterval() == numInterSectionIntervals - 1)
 			allCosts[i] = 0;

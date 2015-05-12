@@ -32,7 +32,7 @@ LinearConstraints::getConstraints(const std::vector<unsigned int>& variableIds) 
 
 		LinearConstraint& constraint = _linearConstraints[i];
 
-		foreach (unsigned int v, variableIds) {
+		for (unsigned int v : variableIds) {
 
 			if (constraint.getCoefficients().count(v) != 0) {
 

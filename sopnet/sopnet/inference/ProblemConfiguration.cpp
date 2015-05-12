@@ -55,13 +55,10 @@ std::vector<unsigned int>
 ProblemConfiguration::getVariables(unsigned int minInterSectionInterval, unsigned int maxInterSectionInterval) {
 
 	std::vector<unsigned int> variables;
-	unsigned int variableId;
-	unsigned int interSectionInterval;
+	for (const auto& pair : _interSectionIntervals) {
 
-	foreach (boost::tie(variableId, interSectionInterval), _interSectionIntervals) {
-
-		if (interSectionInterval >= minInterSectionInterval && interSectionInterval < maxInterSectionInterval)
-			variables.push_back(variableId);
+		if (pair.second >= minInterSectionInterval && pair.second < maxInterSectionInterval)
+			variables.push_back(pair.first);
 	}
 
 	return variables;

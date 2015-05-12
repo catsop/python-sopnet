@@ -30,15 +30,15 @@ SegmentTrees::updateSectionNums() {
 	if (_lastSection == -1) {
 
 		// for every neuron...
-		foreach (boost::shared_ptr<SegmentTree> neuron, _neurons) {
+		for (boost::shared_ptr<SegmentTree> neuron : _neurons) {
 
-			foreach (boost::shared_ptr<EndSegment> endSegment, neuron->getEnds())
+			for (boost::shared_ptr<EndSegment> endSegment : neuron->getEnds())
 				fit(endSegment->getSlice()->getSection());
-			foreach (boost::shared_ptr<ContinuationSegment> continuationSegment, neuron->getContinuations()) {
+			for (boost::shared_ptr<ContinuationSegment> continuationSegment : neuron->getContinuations()) {
 				fit(continuationSegment->getSourceSlice()->getSection());
 				fit(continuationSegment->getTargetSlice()->getSection());
 			}
-			foreach (boost::shared_ptr<BranchSegment> branchSegment, neuron->getBranches()) {
+			for (boost::shared_ptr<BranchSegment> branchSegment : neuron->getBranches()) {
 				fit(branchSegment->getSourceSlice()->getSection());
 				fit(branchSegment->getTargetSlice1()->getSection());
 				fit(branchSegment->getTargetSlice2()->getSection());

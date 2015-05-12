@@ -85,20 +85,20 @@ ProblemAssembler::collectSegments() {
 	_allSynapseSegments->clear();
 	_numSynapseSegments = 0;
 
-	foreach (boost::shared_ptr<Segments> segments, _neuronSegments) {
+	for (boost::shared_ptr<Segments> segments : _neuronSegments) {
 
 		_allSegments->addAll(segments);
 		_allNeuronSegments->addAll(segments);
 	}
 
-	foreach (boost::shared_ptr<Segments> segments, _mitochondriaSegments) {
+	for (boost::shared_ptr<Segments> segments : _mitochondriaSegments) {
 
 		_allSegments->addAll(segments);
 		_allMitochondriaSegments->addAll(segments);
 		_numMitochondriaSegments += segments->size();
 	}
 
-	foreach (boost::shared_ptr<Segments> segments, _synapseSegments) {
+	for (boost::shared_ptr<Segments> segments : _synapseSegments) {
 
 		_allSegments->addAll(segments);
 		_allSynapseSegments->addAll(segments);
@@ -135,25 +135,25 @@ ProblemAssembler::addExplanationConstraints() {
 	_consistencyConstraints = LinearConstraints(_numSlices);
 
 	// set the relation and value
-	foreach (LinearConstraint& constraint, _consistencyConstraints) {
+	for (LinearConstraint& constraint : _consistencyConstraints) {
 
 		constraint.setValue(0);
 		constraint.setRelation(Equal);
 	}
 
 	// set the coefficients
-	foreach (boost::shared_ptr<EndSegment> segment, _allSegments->getEnds())
+	for (boost::shared_ptr<EndSegment> segment : _allSegments->getEnds())
 		setCoefficient(*segment);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _allSegments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> segment : _allSegments->getContinuations())
 		setCoefficient(*segment);
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _allSegments->getBranches())
+	for (boost::shared_ptr<BranchSegment> segment : _allSegments->getBranches())
 		setCoefficient(*segment);
 
 	LOG_DEBUG(problemassemblerlog) << "created " << _consistencyConstraints.size() << " linear constraints" << std::endl;
 
-	foreach (const LinearConstraint& constraint, _consistencyConstraints)
+	for (const LinearConstraint& constraint : _consistencyConstraints)
 		LOG_ALL(problemassemblerlog) << constraint << std::endl;
 
 	_allLinearConstraints->addAll(_consistencyConstraints);
@@ -164,9 +164,9 @@ ProblemAssembler::addConsistencyConstraints() {
 
 	LOG_DEBUG(problemassemblerlog) << "adding consistency constraints..." << std::endl;
 
-	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _neuronLinearConstraints)
+	for (boost::shared_ptr<LinearConstraints> linearConstraints : _neuronLinearConstraints)
 		mapConstraints(linearConstraints);
-	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _mitochondriaLinearConstraints)
+	for (boost::shared_ptr<LinearConstraints> linearConstraints : _mitochondriaLinearConstraints)
 		mapConstraints(linearConstraints);
 
 	LOG_DEBUG(problemassemblerlog) << "collected " << _allLinearConstraints->size() << " linear constraints" << std::endl;
@@ -192,20 +192,20 @@ ProblemAssembler::addMitochondriaConstraints() {
 	_mitochondriaConstraints = LinearConstraints(_numMitochondriaSegments);
 
 	// set the relation and value
-	foreach (LinearConstraint& constraint, _mitochondriaConstraints) {
+	for (LinearConstraint& constraint : _mitochondriaConstraints) {
 
 		constraint.setValue(0);
 		constraint.setRelation(LessEqual);
 	}
 
 	LinearConstraints::iterator constraint = _mitochondriaConstraints.begin();
-	foreach (boost::shared_ptr<Segment> mitochondriaSegment, _allMitochondriaSegments->getSegments()) {
+	for (boost::shared_ptr<Segment> mitochondriaSegment : _allMitochondriaSegments->getSegments()) {
 
 		unsigned int mitochondriaSegmentId = mitochondriaSegment->getId();
 
 		constraint->setCoefficient(_problemConfiguration->getVariable(mitochondriaSegmentId), 1);
 
-		foreach (unsigned int neuronSegmentId, getMitochondriaEnclosingNeuronSegments(mitochondriaSegmentId))
+		for (unsigned int neuronSegmentId : getMitochondriaEnclosingNeuronSegments(mitochondriaSegmentId))
 			constraint->setCoefficient(_problemConfiguration->getVariable(neuronSegmentId), -1);
 
 		++constraint;
@@ -236,7 +236,7 @@ ProblemAssembler::addSynapseConstraints() {
 	_synapseConstraints = LinearConstraints(_numSynapseSegments);
 
 	LinearConstraints::iterator constraint = _synapseConstraints.begin();
-	foreach (boost::shared_ptr<Segment> synapseSegment, _allSynapseSegments->getSegments()) {
+	for (boost::shared_ptr<Segment> synapseSegment : _allSynapseSegments->getSegments()) {
 
 		LOG_ALL(problemassemblerlog) << "processing synapse segment " << synapseSegment->getId() << std::endl;
 
@@ -257,7 +257,7 @@ ProblemAssembler::addSynapseConstraints() {
 
 		LOG_ALL(problemassemblerlog) << "setting enclosing segments coefficients" << std::endl;
 
-		foreach (unsigned int neuronSegmentId, getSynapseEnclosingNeuronSegments(synapseSegmentId)) {
+		for (unsigned int neuronSegmentId : getSynapseEnclosingNeuronSegments(synapseSegmentId)) {
 
 			LOG_ALL(problemassemblerlog) << "setting coefficient for segment " << neuronSegmentId << std::endl;
 			constraint->setCoefficient(_problemConfiguration->getVariable(neuronSegmentId), 1);
@@ -276,7 +276,7 @@ ProblemAssembler::addSynapseConstraints() {
 void
 ProblemAssembler::mapConstraints(boost::shared_ptr<LinearConstraints> linearConstraints) {
 
-	foreach (const LinearConstraint& linearConstraint, *linearConstraints) {
+	for (const LinearConstraint& linearConstraint : *linearConstraints) {
 
 		LinearConstraint mappedConstraint;
 
@@ -389,13 +389,13 @@ ProblemAssembler::extractSliceIdsMap() {
 	/* Collect all slice ids and assign them uniquely to a number between 0 and
 	 * the number of slices in the problem.
 	 */
-	foreach (boost::shared_ptr<EndSegment> segment, _allSegments->getEnds())
+	for (boost::shared_ptr<EndSegment> segment : _allSegments->getEnds())
 		addSlices(*segment);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _allSegments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> segment : _allSegments->getContinuations())
 		addSlices(*segment);
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _allSegments->getBranches())
+	for (boost::shared_ptr<BranchSegment> segment : _allSegments->getBranches())
 		addSlices(*segment);
 }
 
@@ -446,25 +446,25 @@ ProblemAssembler::extractMitochondriaEnclosingNeuronSegments() {
 	unsigned int maxMitochondriaNeuronDistance = optionMaxMitochondriaNeuronDistance;
 	_enclosingMitochondriaThreshold = optionMitochondriaEnclosingThreshold;
 
-	foreach (boost::shared_ptr<Segment> mitochondriaSegment, _allMitochondriaSegments->getSegments()) {
+	for (boost::shared_ptr<Segment> mitochondriaSegment : _allMitochondriaSegments->getSegments()) {
 
 		unsigned int mitochondriaSegmentId = mitochondriaSegment->getId();
 
-		foreach (boost::shared_ptr<EndSegment> end, _allNeuronSegments->findEnds(
+		for (boost::shared_ptr<EndSegment> end : _allNeuronSegments->findEnds(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
 			if (encloses(end, mitochondriaSegment, _enclosingMitochondriaThreshold))
 				_mitochondriaEnclosingNeuronSegments[mitochondriaSegmentId].push_back(end->getId());
 
-		foreach (boost::shared_ptr<ContinuationSegment> continuation, _allNeuronSegments->findContinuations(
+		for (boost::shared_ptr<ContinuationSegment> continuation : _allNeuronSegments->findContinuations(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
 			if (encloses(continuation, mitochondriaSegment, _enclosingMitochondriaThreshold))
 				_mitochondriaEnclosingNeuronSegments[mitochondriaSegmentId].push_back(continuation->getId());
 
-		foreach (boost::shared_ptr<BranchSegment> branch, _allNeuronSegments->findBranches(
+		for (boost::shared_ptr<BranchSegment> branch : _allNeuronSegments->findBranches(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
@@ -479,25 +479,25 @@ ProblemAssembler::extractSynapseEnclosingNeuronSegments() {
 	unsigned int maxSynapseNeuronDistance = optionMaxSynapseNeuronDistance;
 	_enclosingSynapseThreshold = optionSynapseEnclosingThreshold;
 
-	foreach (boost::shared_ptr<Segment> synapseSegment, _allSynapseSegments->getSegments()) {
+	for (boost::shared_ptr<Segment> synapseSegment : _allSynapseSegments->getSegments()) {
 
 		unsigned int synapseSegmentId = synapseSegment->getId();
 
-		foreach (boost::shared_ptr<EndSegment> end, _allNeuronSegments->findEnds(
+		for (boost::shared_ptr<EndSegment> end : _allNeuronSegments->findEnds(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))
 			if (encloses(end, synapseSegment, _enclosingSynapseThreshold))
 				_synapseEnclosingNeuronSegments[synapseSegmentId].push_back(end->getId());
 
-		foreach (boost::shared_ptr<ContinuationSegment> continuation, _allNeuronSegments->findContinuations(
+		for (boost::shared_ptr<ContinuationSegment> continuation : _allNeuronSegments->findContinuations(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))
 			if (encloses(continuation, synapseSegment, _enclosingSynapseThreshold))
 				_synapseEnclosingNeuronSegments[synapseSegmentId].push_back(continuation->getId());
 
-		foreach (boost::shared_ptr<BranchSegment> branch, _allNeuronSegments->findBranches(
+		for (boost::shared_ptr<BranchSegment> branch : _allNeuronSegments->findBranches(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))
@@ -516,9 +516,9 @@ ProblemAssembler::encloses(boost::shared_ptr<Segment> neuronSegment, boost::shar
 
 	// get the sum of sizes of the other slices
 	unsigned int mitoSize = 0;
-	foreach (boost::shared_ptr<Slice> slice, otherSegment->getSourceSlices())
+	for (boost::shared_ptr<Slice> slice : otherSegment->getSourceSlices())
 		mitoSize += slice->getComponent()->getSize();
-	foreach (boost::shared_ptr<Slice> slice, otherSegment->getTargetSlices())
+	for (boost::shared_ptr<Slice> slice : otherSegment->getTargetSlices())
 		mitoSize += slice->getComponent()->getSize();
 
 	// get the neuron source and target slices

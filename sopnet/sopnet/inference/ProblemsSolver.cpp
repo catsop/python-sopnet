@@ -16,7 +16,7 @@ ProblemsSolver::updateOutputs() {
 
 	_solutionAssembler->clearInputs("solutions");
 
-	foreach (boost::shared_ptr<Problem> problem, *_problems) {
+	for (boost::shared_ptr<Problem> problem : *_problems) {
 
 		pipeline::Process<LinearSolver> solver;
 
@@ -45,7 +45,7 @@ ProblemsSolver::SolutionsAssembler::updateOutputs() {
 
 	_solutions->clear();
 
-	foreach (boost::shared_ptr<Solution> solution, _singleSolutions) {
+	for (boost::shared_ptr<Solution> solution : _singleSolutions) {
 
 		_solutions->addSolution(solution);
 	}

@@ -50,7 +50,7 @@ BlockUtils::getBoundingBox(const Blocks& blocks) const {
 
 	util::box<unsigned int, 3> boundingBox(0, 0, 0, 0, 0, 0);
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 
 		if (boundingBox.volume() == 0)
 			boundingBox = getBoundingBox(block);
@@ -109,7 +109,7 @@ BlockUtils::getCoresBlocks(const Cores& cores) const {
 
 	Blocks blocks;
 
-	foreach (const Core& core, cores) {
+	for (const Core& core : cores) {
 
 		blocks.addAll(getCoreBlocks(core));
 	}
@@ -150,7 +150,7 @@ BlockUtils::expandOneDimension(
 
 	Blocks newBlocks;
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 
 		for (int i = -neg; i <= static_cast<int>(pos); i++) {
 

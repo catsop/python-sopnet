@@ -123,7 +123,7 @@ Features::getSegmentsIdsMap() const {
 std::ostream&
 operator<<(std::ostream& out, const Features& features) {
 
-	foreach (const std::string& name, features.getNames())
+	for (const std::string& name : features.getNames())
 		out << "\t" << name << std::endl;;
 	out << std::endl;
 

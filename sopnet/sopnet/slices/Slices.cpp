@@ -115,8 +115,8 @@ Slices::find(const util::point<double, 2>& center, double distance) {
 
 	std::vector<boost::shared_ptr<Slice> > found;
 
-	foreach (boost::tie(index, dist), results)
-		found.push_back((*_adaptor)[index]);
+	for (const auto& pair : results)
+		found.push_back((*_adaptor)[pair.first]);
 
 	return found;
 }
@@ -124,7 +124,7 @@ Slices::find(const util::point<double, 2>& center, double distance) {
 void Slices::addConflictsFromSlices(const Slices& slices)
 {
 	
-	foreach (conflicts_type::value_type conflict, slices._conflicts)
+	for (conflicts_type::value_type conflict : slices._conflicts)
 	{
 		const unsigned int id = conflict.first;
 		
@@ -160,7 +160,7 @@ Slices::setConflicts(unsigned int id, std::vector<unsigned int> conflicts)
 void
 Slices::translate(const util::point<int, 2>& offset) {
 
-	foreach (boost::shared_ptr<Slice> slice, _slices)
+	for (boost::shared_ptr<Slice> slice : _slices)
 		slice->translate(offset);
 
 	_kdTreeDirty = true;

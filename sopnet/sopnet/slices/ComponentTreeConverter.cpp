@@ -44,7 +44,7 @@ ComponentTreeConverter::convert() {
 	_conflictSets->clear();
 
 	// skip the fake root
-	foreach (boost::shared_ptr<ComponentTree::Node> node, _componentTree->getRoot()->getChildren())
+	for (boost::shared_ptr<ComponentTree::Node> node : _componentTree->getRoot()->getChildren())
 		_componentTree->visit(node, *this);
 
 	LOG_DEBUG(componenttreeconverterlog) << "extracted " << _slices->size() << " slices" << std::endl;
@@ -81,7 +81,7 @@ ComponentTreeConverter::addConflictSet() {
 
 	ConflictSet conflictSet;
 
-	foreach (SliceHash sliceHash, _path)
+	for (SliceHash sliceHash : _path)
 		conflictSet.addSlice(sliceHash);
 
 	conflictSet.setMaximalClique(true);

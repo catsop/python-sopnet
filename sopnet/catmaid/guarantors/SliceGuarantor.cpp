@@ -70,7 +70,7 @@ SliceGuarantor::checkSlices(const Blocks& blocks)
 {
 	// Check to see whether each block has already had its slices extracted.
 	// If this is the case, we have no work to do
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		if (!_sliceStore->getSlicesFlag(block))
 			return false;
 	}
@@ -133,20 +133,20 @@ SliceGuarantor::extractSlicesAndConflicts(
 		// Slices are extracted in [0 0 w h]. Translate them to section 
 		// coordinates.
 		std::map<SliceHash, SliceHash> sliceTranslationMap;
-		foreach (boost::shared_ptr<Slice> slice, *slicesValue) {
+		for (boost::shared_ptr<Slice> slice : *slicesValue) {
 			SliceHash oldHash = slice->hashValue();
 			slice->translate(bound.min());
 			sliceTranslationMap[oldHash] = slice->hashValue();
 		}
 
 		// Update conflict sets to reflect hash changes due to translation.
-		foreach (ConflictSet& conflictSet, *conflictsValue) {
+		for (ConflictSet& conflictSet : *conflictsValue) {
 			std::set<SliceHash> newHashes;
-			foreach (SliceHash oldHash, conflictSet.getSlices())
+			for (SliceHash oldHash : conflictSet.getSlices())
 				newHashes.insert(sliceTranslationMap.at(oldHash));
 
 			conflictSet.clear();
-			foreach (SliceHash newHash, newHashes)
+			for (SliceHash newHash : newHashes)
 				conflictSet.addSlice(newHash);
 		}
 
@@ -200,7 +200,7 @@ SliceGuarantor::writeSlicesAndConflicts(
 		const Blocks&       expansionBlocks) {
 
 	// store all slices of non-required expansion blocks
-	foreach (const Block& block, expansionBlocks) {
+	for (const Block& block : expansionBlocks) {
 
 		// is this a non-required expansion block?
 		if (requestedBlocks.contains(block))
@@ -214,7 +214,7 @@ SliceGuarantor::writeSlicesAndConflicts(
 	}
 
 	// store all slices of the requested blocks
-	foreach (const Block& block, requestedBlocks) {
+	for (const Block& block : requestedBlocks) {
 
 		// get all the slices for this block
 		boost::shared_ptr<Slices> blockSlices = collectSlicesByBlock(slices, block);
@@ -224,7 +224,7 @@ SliceGuarantor::writeSlicesAndConflicts(
 	}
 
 	// store all conflict sets (of only the requested blocks)
-	foreach (const Block& block, requestedBlocks) {
+	for (const Block& block : requestedBlocks) {
 
 		boost::shared_ptr<Slices>       blockSlices       = collectSlicesByBlock(slices, block);
 		boost::shared_ptr<ConflictSets> blockConflictSets = collectConflictsBySlices(conflictSets, *blockSlices);
@@ -246,7 +246,7 @@ SliceGuarantor::getRequiredSlicesAndConflicts(
 
 	// build a hash -> slice map
 	std::map<SliceHash, boost::shared_ptr<Slice> > hashToSlice;
-	foreach (boost::shared_ptr<Slice> slice, slices)
+	for (boost::shared_ptr<Slice> slice : slices)
 		hashToSlice[slice->hashValue()] = slice;
 
 	// get the 2D bounding box of requestedBlocks
@@ -254,17 +254,17 @@ SliceGuarantor::getRequiredSlicesAndConflicts(
 
 	// every slice that overlaps with requestBound is required
 	Slices overlappingSlices;
-	foreach (boost::shared_ptr<Slice> slice, slices)
+	for (boost::shared_ptr<Slice> slice : slices)
 		if (slice->getComponent()->getBoundingBox().intersects(requestBound))
 			overlappingSlices.add(slice);
 
 	// every slice that is in conflict with an overlapping slice is required
 	Slices conflictSlices;
-	foreach (const ConflictSet& conflictSet, conflictSets)
+	for (const ConflictSet& conflictSet : conflictSets)
 		if (containsAny(conflictSet, overlappingSlices)) {
 
 			// all the slices are required
-			foreach (SliceHash sliceHash, conflictSet.getSlices())
+			for (SliceHash sliceHash : conflictSet.getSlices())
 				conflictSlices.add(hashToSlice[sliceHash]);
 
 			// the conflict set is required
@@ -283,7 +283,7 @@ SliceGuarantor::collectSlicesByBlock(const Slices& slices, const Block& block) {
 
 	boost::shared_ptr<Slices> blockSlices = boost::make_shared<Slices>();
 
-	foreach (boost::shared_ptr<Slice> slice, slices) {
+	for (boost::shared_ptr<Slice> slice : slices) {
 
 		util::box<unsigned int, 2> sliceBoundingBox = slice->getComponent()->getBoundingBox();
 
@@ -299,7 +299,7 @@ SliceGuarantor::collectConflictsBySlices(const ConflictSets& conflictSets, const
 
 	boost::shared_ptr<ConflictSets> sliceConflictSets = boost::make_shared<ConflictSets>();
 
-	foreach (ConflictSet conflictSet, conflictSets)
+	for (ConflictSet conflictSet : conflictSets)
 		if (containsAny(conflictSet, slices))
 			sliceConflictSets->add(conflictSet);
 
@@ -309,7 +309,7 @@ SliceGuarantor::collectConflictsBySlices(const ConflictSets& conflictSets, const
 bool
 SliceGuarantor::containsAny(const ConflictSet& conflictSet, const Slices& slices) {
 
-	foreach (const boost::shared_ptr<Slice> slice, slices)
+	for (const boost::shared_ptr<Slice> slice : slices)
 		if (conflictSet.getSlices().count(slice->hashValue()))
 			return true;
 

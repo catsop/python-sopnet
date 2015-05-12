@@ -24,7 +24,7 @@ public:
 	
 	void addAll(const ConflictSets& conflictSets)
 	{
-		foreach (const ConflictSet& conflictSet, conflictSets)
+		for (const ConflictSet& conflictSet : conflictSets)
 		{
 			add(conflictSet);
 		}

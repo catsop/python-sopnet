@@ -75,14 +75,12 @@ QuadraticSolver::getNumVariables() {
 	// number of vars in the objective
 	numVars = std::max<unsigned int>(numVars, _objective->getCoefficients().size());
 
-	typedef std::pair<std::pair<unsigned int, unsigned int>, double> quad_coef_type;
-	foreach (const quad_coef_type& pair, _objective->getQuadraticCoefficients())
+	for (const auto& pair : _objective->getQuadraticCoefficients())
 		numVars = std::max(numVars, std::max(pair.first.first + 1, pair.first.second + 1));
 
 	// number of vars in the constraints
-	typedef std::pair<unsigned int, double> lin_coef_type;
-	foreach (const LinearConstraint& constraint, *_linearConstraints)
-		foreach (const lin_coef_type& pair, constraint.getCoefficients())
+	for (const LinearConstraint& constraint : *_linearConstraints)
+		for (const auto& pair : constraint.getCoefficients())
 			numVars = std::max(numVars, pair.first + 1);
 
 	return numVars;

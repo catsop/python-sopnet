@@ -114,13 +114,11 @@ GurobiBackend::initialize(
 	}
 
 	// handle special variable types
-	unsigned int v;
-	VariableType type;
-	foreach (boost::tie(v, type), specialVariableTypes) {
+	for (auto& pair : specialVariableTypes) {
 
-		char t = (type == Binary ? 'B' : (type == Integer ? 'I' : 'C'));
-		LOG_ALL(gurobilog) << "changing type of variable " << v << " to " << t << std::endl;
-		_variables[v].set(GRB_CharAttr_VType, t);
+		char t = (pair.second == Binary ? 'B' : (pair.second == Integer ? 'I' : 'C'));
+		LOG_ALL(gurobilog) << "changing type of variable " << pair.first << " to " << t << std::endl;
+		_variables[pair.first].set(GRB_CharAttr_VType, t);
 	}
 
 	LOG_DEBUG(gurobilog) << "creating " << _numVariables << " ceofficients" << std::endl;
@@ -153,8 +151,7 @@ GurobiBackend::setObjective(const QuadraticObjective& objective) {
 		// set the quadratic coefficients for all pairs of variables
 		LOG_DEBUG(gurobilog) << "setting quadratic coefficients" << std::endl;
 
-		typedef std::pair<std::pair<unsigned int, unsigned int>, double> quad_coef_pair_type;
-		foreach (const quad_coef_pair_type& pair, objective.getQuadraticCoefficients()) {
+		for (const auto& pair : objective.getQuadraticCoefficients()) {
 
 			const std::pair<unsigned int, unsigned int>& variables = pair.first;
 			float value = pair.second;
@@ -183,13 +180,13 @@ GurobiBackend::setObjective(const QuadraticObjective& objective) {
 void
 GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 
-	foreach (const LinearConstraint& constraint, constraints)
+	for (const LinearConstraint& constraint : constraints)
 	{
 		LOG_ALL(gurobilog) << constraint << std::endl;
 	}
 	
 	// remove previous constraints
-	foreach (GRBConstr constraint, _constraints)
+	for (GRBConstr constraint : _constraints)
 		_model.remove(constraint);
 	_constraints.clear();
 
@@ -203,7 +200,7 @@ GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 		LOG_DEBUG(gurobilog) << "setting " << constraints.size() << " constraints" << std::endl;
 
 		unsigned int j = 0;
-		foreach (const LinearConstraint& constraint, constraints) {
+		for (const LinearConstraint& constraint : constraints) {
 
 			if (j > 0)
 				if (j % 1000 == 0)
@@ -213,8 +210,7 @@ GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 			GRBLinExpr lhsExpr;
 
 			// set the coefficients
-			typedef std::pair<unsigned int, double> pair_type;
-			foreach (const pair_type& pair, constraint.getCoefficients())
+			for (const auto& pair : constraint.getCoefficients())
 				lhsExpr += pair.second*_variables[pair.first];
 
 			// add to the model

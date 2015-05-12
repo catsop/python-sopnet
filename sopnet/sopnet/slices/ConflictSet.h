@@ -56,7 +56,7 @@ public:
 		}
 		
 		// Two ConflictSet's are equal if they contain each other.
-		foreach (const SliceHash id, _sliceIds)
+		for (const SliceHash id : _sliceIds)
 		{
 			if (!other._sliceIds.count(id))
 			{
@@ -64,7 +64,7 @@ public:
 			}
 		}
 		
-		foreach (const SliceHash id, other._sliceIds)
+		for (const SliceHash id : other._sliceIds)
 		{
 			if (!_sliceIds.count(id))
 			{

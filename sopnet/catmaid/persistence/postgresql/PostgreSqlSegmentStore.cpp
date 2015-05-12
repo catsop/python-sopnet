@@ -94,7 +94,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	char separator = ' ';
 	char sliceSeparator = ' ';
 
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 		std::string segmentId = boost::lexical_cast<std::string>(
 			PostgreSqlUtils::hashToPostgreSqlId(segment.getHash()));
 		const util::box<unsigned int, 2>& segmentBounds = segment.get2DBoundingBox();
@@ -110,7 +110,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 				boost::lexical_cast<std::string>(segment.getType()) << ')';
 
 		// Associate slices to segment.
-		foreach (const SliceHash& hash, segment.getLeftSlices()) {
+		for (const SliceHash& hash : segment.getLeftSlices()) {
 			sliceQuery << sliceSeparator << '(' <<
 				segmentId << ',' <<
 				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) <<
@@ -118,7 +118,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			sliceSeparator = ',';
 		}
 
-		foreach (const SliceHash& hash, segment.getRightSlices()) {
+		for (const SliceHash& hash : segment.getRightSlices()) {
 			sliceQuery << sliceSeparator << '(' <<
 				segmentId << ',' <<
 				boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(hash)) <<
@@ -129,7 +129,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		// Store segment features.
 		segmentFeatureQuery << separator << '(' << segmentId << ",'";
 		char featureSeparator = '{';
-		foreach (const double featVal, segment.getFeatures()) {
+		for (const double featVal : segment.getFeatures()) {
 			segmentFeatureQuery << featureSeparator << boost::lexical_cast<std::string>(featVal);
 			featureSeparator = ',';
 		}
@@ -279,7 +279,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			boost::tokenizer<boost::char_separator<char> > features(featuresString, separator);
 			std::vector<double> segmentFeatures;
 			segmentFeatures.reserve(numFeatures);
-			foreach (const std::string& feature, features) {
+			for (const std::string& feature : features) {
 				segmentFeatures.push_back(boost::lexical_cast<double>(feature));
 			}
 
@@ -316,9 +316,9 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 			errorMsg << "Retrieved segment has wrong hash. Original: " << segmentHash <<
 					" Retrieved: " << segmentDescription.getHash() << std::endl;
 			errorMsg << "Retrieved segment left slice hashes: ";
-			foreach (SliceHash hash, segmentDescription.getLeftSlices()) errorMsg << hash << " ";
+			for (SliceHash hash : segmentDescription.getLeftSlices()) errorMsg << hash << " ";
 			errorMsg << std::endl << "Retrieved segment right slice hashes: ";
-			foreach (SliceHash hash, segmentDescription.getRightSlices()) errorMsg << hash << " ";
+			for (SliceHash hash : segmentDescription.getRightSlices()) errorMsg << hash << " ";
 
 			LOG_ERROR(postgresqlsegmentstorelog) << errorMsg.str() << std::endl;
 			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
@@ -432,7 +432,7 @@ PostgreSqlSegmentStore::getFeatureWeights() {
 
 	std::vector<double> weights;
 
-	foreach (const std::string& weight, weightsTokens) {
+	for (const std::string& weight : weightsTokens) {
 		weights.push_back(boost::lexical_cast<double>(weight));
 	}
 
@@ -454,7 +454,7 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 
 	char separator = ' ';
 	typedef const std::map<SegmentHash, double> costs_type;
-	foreach (const costs_type::value_type pair, costs) {
+	for (const costs_type::value_type pair : costs) {
 		query << separator
 			  << '(' << boost::lexical_cast<std::string>(PostgreSqlUtils::hashToPostgreSqlId(pair.first))
 			  << ',' << pair.second << ')';
@@ -514,10 +514,10 @@ PostgreSqlSegmentStore::storeSolution(
 		std::ostringstream assemblyHashStream;
 		char separator = ' ';
 
-		foreach (const std::set<SegmentHash> segmentHashes, assemblies) {
+		for (const std::set<SegmentHash> segmentHashes : assemblies) {
 			SegmentHash assemblyHash = 0;
 
-			foreach (const SegmentHash& segmentHash, segmentHashes) {
+			for (const SegmentHash& segmentHash : segmentHashes) {
 				boost::hash_combine(assemblyHash, segmentHash);
 			}
 
@@ -596,7 +596,7 @@ PostgreSqlSegmentStore::storeSolution(
 
 					int assemblyId = it->second;
 
-					foreach (const SegmentHash& segmentHash, assemblies[i]) {
+					for (const SegmentHash& segmentHash : assemblies[i]) {
 
 						query << separator << '('
 							  << boost::lexical_cast<std::string>(assemblyId) << ','

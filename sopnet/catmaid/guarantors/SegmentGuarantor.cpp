@@ -35,7 +35,7 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	LOG_DEBUG(segmentguarantorlog) << "Altogether, I have " << slices->size() << " slices" << std::endl;
 
 	LOG_ALL(segmentguarantorlog) << "Finally found slices are:" << std::endl;
-	foreach (boost::shared_ptr<Slice> slice, *slices)
+	for (boost::shared_ptr<Slice> slice : *slices)
 		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
 
 	// the requested segments
@@ -95,7 +95,7 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 bool
 SegmentGuarantor::alreadyPresent(const Blocks& blocks) {
 
-	foreach (const Block& block, blocks)
+	for (const Block& block : blocks)
 		if (!_segmentStore->getSegmentsFlag(block))
 			return false;
 
@@ -131,7 +131,7 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 			<< ". Expanding blocks to fit." << std::endl;
 
 	LOG_ALL(segmentguarantorlog) << "First found slices are:" << std::endl;
-	foreach (boost::shared_ptr<Slice> slice, *slices)
+	for (boost::shared_ptr<Slice> slice : *slices)
 		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
 
 	// expand the request blocks
@@ -140,7 +140,7 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << expandedSliceBlocks << "." << std::endl;
 
 	Blocks newSliceBlocks;
-	foreach (const Block& block, expandedSliceBlocks)
+	for (const Block& block : expandedSliceBlocks)
 		if (!sliceBlocks.contains(block))
 			newSliceBlocks.add(block);
 
@@ -151,18 +151,18 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 	// Load conflict sets for slices
 	std::map<SliceHash, unsigned int> internalIdMap;
 
-	foreach (const boost::shared_ptr<Slice> slice, *slices) {
+	for (const boost::shared_ptr<Slice> slice : *slices) {
 		internalIdMap[slice->hashValue()] = slice->getId();
 	}
 
 	boost::shared_ptr<ConflictSets> conflictSets =
 			_sliceStore->getConflictSetsByBlocks(expandedSliceBlocks, missingBlocks);
 
-	foreach (const ConflictSet& conflictSet, *conflictSets) {
+	for (const ConflictSet& conflictSet : *conflictSets) {
 		std::vector<unsigned int> setInternalIds;
 		setInternalIds.reserve(conflictSet.getSlices().size());
 
-		foreach (const SliceHash& sliceHash, conflictSet.getSlices())
+		for (const SliceHash& sliceHash : conflictSet.getSlices())
 			if (internalIdMap.count(sliceHash))
 				setInternalIds.push_back(internalIdMap[sliceHash]);
 
@@ -179,9 +179,9 @@ SegmentGuarantor::discardNonRequestedSegments(
 
 	boost::shared_ptr<Segments> requestedSegments = boost::make_shared<Segments>();
 
-	foreach (boost::shared_ptr<Segment> segment, allSegments->getSegments()) {
+	for (boost::shared_ptr<Segment> segment : allSegments->getSegments()) {
 
-		foreach (const Block& block, requestedBlocks) {
+		for (const Block& block : requestedBlocks) {
 
 			if (overlaps(*segment, block)) {
 
@@ -204,7 +204,7 @@ SegmentGuarantor::writeSegmentsAndFeatures(
 		const Features& features,
 		const Blocks&   requestedBlocks) {
 
-	foreach (const Block& block, requestedBlocks) {
+	for (const Block& block : requestedBlocks) {
 
 		SegmentDescriptions blockSegments = getSegmentDescriptions(segments, features, block);
 		_segmentStore->associateSegmentsToBlock(blockSegments, block);
@@ -219,7 +219,7 @@ SegmentGuarantor::getSegmentDescriptions(
 
 	SegmentDescriptions segmentDescriptions;
 
-	foreach (boost::shared_ptr<Segment> segment, segments.getSegments()) {
+	for (boost::shared_ptr<Segment> segment : segments.getSegments()) {
 
 		// only if the segment overlaps with the current block
 		if (!overlaps(*segment, block))
@@ -252,7 +252,7 @@ SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 
 	// test in x-y
 	util::box<unsigned int, 2> blockRect = blockBoundingBox.project<2>();
-	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
+	for (boost::shared_ptr<Slice> slice : segment.getSlices()) {
 
 		util::box<unsigned int, 2> sliceBoundingBox = slice->getComponent()->getBoundingBox();
 
@@ -270,7 +270,7 @@ SegmentGuarantor::collectSlicesByZ(
 {
 	boost::shared_ptr<Slices> zSlices = boost::make_shared<Slices>();
 
-	foreach (boost::shared_ptr<Slice> slice, slices)
+	for (boost::shared_ptr<Slice> slice : slices)
 	{
 		if (slice->getSection() == z)
 		{
@@ -294,7 +294,7 @@ SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 	unsigned int zMax = 0;
 	unsigned int zMin = 0;
 
-	foreach (const boost::shared_ptr<Slice> slice, slices)
+	for (const boost::shared_ptr<Slice> slice : slices)
 	{
 		if (bound.area() == 0) {
 

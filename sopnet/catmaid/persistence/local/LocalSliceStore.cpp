@@ -32,7 +32,7 @@ LocalSliceStore::getSlicesByBlocks(
 
 	boost::shared_ptr<Slices> _blocksSlices = boost::make_shared<Slices>();
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		std::map<Block, Slices>::const_iterator it = _slices.find(block);
 
 		if (it == _slices.end())
@@ -51,7 +51,7 @@ LocalSliceStore::getConflictSetsByBlocks(
 
 	boost::shared_ptr<ConflictSets> _blocksConflicts = boost::make_shared<ConflictSets>();
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		std::map<Block, ConflictSets>::const_iterator it = _conflictSets.find(block);
 
 		if (it == _conflictSets.end())

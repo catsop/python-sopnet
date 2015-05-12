@@ -66,7 +66,7 @@ ProblemGraphWriter::writeSlices(
 
 	out << "id sectionid bb.min().x() bb.max().x() bb.min().y() bb.max().y() value center.x center.y size" << std::endl;
 
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
+	for (boost::shared_ptr<EndSegment> end : _segments->getEnds()) {
 
 		if (end->getDirection() == Left)
 			writeSlice(*end->getSlice(), out);
@@ -74,7 +74,7 @@ ProblemGraphWriter::writeSlices(
 
 	LOG_DEBUG(problemgraphwriterlog) << "writing slice images to " << sliceImageDirectory << std::endl;
 
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
+	for (boost::shared_ptr<EndSegment> end : _segments->getEnds()) {
 
 		if (end->getDirection() == Left)
 			writeSliceImage(*end->getSlice(), sliceImageDirectory, originSlice, targetSlice);
@@ -108,19 +108,19 @@ ProblemGraphWriter::writeSegments(const std::string& segmentsFile, int originSli
 	(*_segmentationCostFunction)( _segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), segmentationCosts );
 
 	unsigned int counter = 0;
-	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
+	for (boost::shared_ptr<Segment> segment : _segments->getSegments()) {
 		_randomForestCostMap[ segment->getId() ] = randomForestCosts[counter];
 		_segmentationCostMap[ segment->getId() ] = segmentationCosts[counter];
 		counter++;
 	
 }
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
+	for (boost::shared_ptr<EndSegment> end : _segments->getEnds())
 		writeSegment(*end, out, originSlice, targetSlice);
 
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> continuation : _segments->getContinuations())
 		writeSegment(*continuation, out, originSlice, targetSlice);
 
-	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches())
+	for (boost::shared_ptr<BranchSegment> branch : _segments->getBranches())
 		writeSegment(*branch, out, originSlice, targetSlice);
 
 	out.close();
@@ -141,12 +141,12 @@ ProblemGraphWriter::writeConstraints(const std::string& constraintsFile) {
 	// constraints are not inserted into the database by means of checking by a paired
 	// foreign key consisting of the segment ids
 
-	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _linearConstraints) {
+	for (boost::shared_ptr<LinearConstraints> linearConstraints : _linearConstraints) {
 
-		foreach (const LinearConstraint& linearConstraint, *linearConstraints) {
+		for (const LinearConstraint& linearConstraint : *linearConstraints) {
 
 
-		//foreach (LinearConstraint& linearConstraint, *_linearConstraints) {
+		//for (LinearConstraint& linearConstraint : *_linearConstraints) {
 	
 		// out << "relation,value,coefficients (variable length)";
 
@@ -160,11 +160,9 @@ ProblemGraphWriter::writeConstraints(const std::string& constraintsFile) {
 
 		out << linearConstraint.getValue();
 
-		unsigned int variable;
-		double coef;
-		foreach (boost::tie(variable, coef), linearConstraint.getCoefficients()) {
-			unsigned int segmentId = _problemConfiguration->getSegmentId(variable);
-			out << "," << segmentId << "," << coef;
+		for (const auto& pair : linearConstraint.getCoefficients()) {
+			unsigned int segmentId = _problemConfiguration->getSegmentId(pair.first);
+			out << "," << segmentId << "," << pair.second;
 		}
 
 		out << std::endl;
@@ -227,7 +225,7 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 
 
 	// FIXME: get section and check which to set.
-	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
+	for (boost::shared_ptr<Slice> slice : segment.getSlices()) {
 		if( slice->getSection() == 0 ) {
 			out << " " << originSection;
 		} else {

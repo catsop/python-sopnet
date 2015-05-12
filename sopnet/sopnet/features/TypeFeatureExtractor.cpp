@@ -27,21 +27,21 @@ TypeFeatureExtractor::updateOutputs() {
 	_features->addName("is branch");
 
 
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds()) {
+	for (boost::shared_ptr<EndSegment> segment : _segments->getEnds()) {
 
 		_features->get(segment->getId())[0] = 1;
 		_features->get(segment->getId())[1] = 0;
 		_features->get(segment->getId())[2] = 0;
 	}
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations()) {
+	for (boost::shared_ptr<ContinuationSegment> segment : _segments->getContinuations()) {
 
 		_features->get(segment->getId())[0] = 0;
 		_features->get(segment->getId())[1] = 1;
 		_features->get(segment->getId())[2] = 0;
 	}
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches()) {
+	for (boost::shared_ptr<BranchSegment> segment : _segments->getBranches()) {
 
 		_features->get(segment->getId())[0] = 0;
 		_features->get(segment->getId())[1] = 0;

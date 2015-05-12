@@ -14,34 +14,34 @@ Segments::clear() {
 
 	// delete all trees
 
-	foreach (EndSegmentKdTree* endTree, _endTrees)
+	for (EndSegmentKdTree* endTree : _endTrees)
 		if (endTree)
 			delete endTree;
 	_endTrees.clear();
 
-	foreach (ContinuationSegmentKdTree* continuationTree, _continuationTrees)
+	for (ContinuationSegmentKdTree* continuationTree : _continuationTrees)
 		if (continuationTree)
 			delete continuationTree;
 	_continuationTrees.clear();
 
-	foreach (BranchSegmentKdTree* branchTree, _branchTrees)
+	for (BranchSegmentKdTree* branchTree : _branchTrees)
 		if (branchTree)
 			delete branchTree;
 	_branchTrees.clear();
 
 	// delete all adaptors
 
-	foreach (EndSegmentVectorAdaptor* endVectorAdaptor, _endAdaptors)
+	for (EndSegmentVectorAdaptor* endVectorAdaptor : _endAdaptors)
 		if (endVectorAdaptor)
 			delete endVectorAdaptor;
 	_endAdaptors.clear();
 
-	foreach (ContinuationSegmentVectorAdaptor* continuationVectorAdaptor, _continuationAdaptors)
+	for (ContinuationSegmentVectorAdaptor* continuationVectorAdaptor : _continuationAdaptors)
 		if (continuationVectorAdaptor)
 			delete continuationVectorAdaptor;
 	_continuationAdaptors.clear();
 
-	foreach (BranchSegmentVectorAdaptor* branchVectorAdaptor, _branchAdaptors)
+	for (BranchSegmentVectorAdaptor* branchVectorAdaptor : _branchAdaptors)
 		if (branchVectorAdaptor)
 			delete branchVectorAdaptor;
 	_branchAdaptors.clear();
@@ -301,11 +301,11 @@ Segments::size() const {
 
 	unsigned int size = 0;
 
-	foreach (std::vector<boost::shared_ptr<EndSegment> > ends, _ends)
+	for (std::vector<boost::shared_ptr<EndSegment> > ends : _ends)
 		size += ends.size();
-	foreach (std::vector<boost::shared_ptr<ContinuationSegment> > continuations, _continuations)
+	for (std::vector<boost::shared_ptr<ContinuationSegment> > continuations : _continuations)
 		size += continuations.size();
-	foreach (std::vector<boost::shared_ptr<BranchSegment> > branches, _branches)
+	for (std::vector<boost::shared_ptr<BranchSegment> > branches : _branches)
 		size += branches.size();
 
 	return size;
@@ -319,10 +319,10 @@ Segments::operator==(const Segments& other) const
 		return false;
 	}
 	
-	foreach (boost::shared_ptr<EndSegment> otherEnd, other.getEnds())
+	for (boost::shared_ptr<EndSegment> otherEnd : other.getEnds())
 	{
 		bool found = false;
-		foreach (boost::shared_ptr<EndSegment> end, getEnds())
+		for (boost::shared_ptr<EndSegment> end : getEnds())
 		{
 			if (*end == *otherEnd)
 			{
@@ -336,10 +336,10 @@ Segments::operator==(const Segments& other) const
 		}
 	}
 	
-	foreach (boost::shared_ptr<ContinuationSegment> otherContinuation, other.getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> otherContinuation : other.getContinuations())
 	{
 		bool found = false;
-		foreach (boost::shared_ptr<ContinuationSegment> continuation, getContinuations())
+		for (boost::shared_ptr<ContinuationSegment> continuation : getContinuations())
 		{
 			if (*continuation == *otherContinuation)
 			{
@@ -353,10 +353,10 @@ Segments::operator==(const Segments& other) const
 		}
 	}
 	
-	foreach (boost::shared_ptr<BranchSegment> otherBranch, other.getBranches())
+	for (boost::shared_ptr<BranchSegment> otherBranch : other.getBranches())
 	{
 		bool found = false;
-		foreach (boost::shared_ptr<BranchSegment> branch, getBranches())
+		for (boost::shared_ptr<BranchSegment> branch : getBranches())
 		{
 			if (*branch == *otherBranch)
 			{
@@ -388,9 +388,9 @@ Segments::boundingBox()
 	minZ = getSegments()[0]->getSlices()[0]->getSection();
 	maxZ = minZ;
 	
-	foreach (boost::shared_ptr<Segment> segment, getSegments())
+	for (boost::shared_ptr<Segment> segment : getSegments())
 	{
-		foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+		for (boost::shared_ptr<Slice> slice : segment->getSlices())
 		{
 			util::box<int, 2> componentBound = slice->getComponent()->getBoundingBox();
 						rectBound.fit(componentBound);

@@ -5,7 +5,7 @@ operator<<(std::ostream& out, const Blocks& blocks) {
 
 	out << "[";
 
-	foreach (const Block& block, blocks)
+	for (const Block& block : blocks)
 		out << block;
 
 	out << "]";

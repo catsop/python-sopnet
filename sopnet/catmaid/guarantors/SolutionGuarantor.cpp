@@ -113,7 +113,7 @@ SolutionGuarantor::computeSolution(
 	unsigned int lastSection  = 0;
 
 	// get the first and last section
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		const unsigned int segmentSection = segment.getSection();
 		// Special case for the first section in a stack to prevent underflow
@@ -142,7 +142,7 @@ SolutionGuarantor::computeSolution(
 	std::set<SliceHash> hasEnd;
 
 	unsigned int nextVar = 0;
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		SegmentHash segmentHash = segment.getHash();
 
@@ -150,7 +150,7 @@ SolutionGuarantor::computeSolution(
 		_variableToHash[nextVar] = segmentHash;
 		nextVar++;
 
-		foreach (SliceHash leftSliceHash, segment.getLeftSlices()) {
+		for (SliceHash leftSliceHash : segment.getLeftSlices()) {
 
 			_leftSliceToSegments[leftSliceHash].push_back(segmentHash);
 			_slices.insert(leftSliceHash);
@@ -158,7 +158,7 @@ SolutionGuarantor::computeSolution(
 			if (segment.getType() == EndSegmentType) hasEnd.insert(leftSliceHash);
 		}
 
-		foreach (SliceHash rightSliceHash, segment.getRightSlices()) {
+		for (SliceHash rightSliceHash : segment.getRightSlices()) {
 
 			_rightSliceToSegments[rightSliceHash].push_back(segmentHash);
 			_slices.insert(rightSliceHash);
@@ -245,7 +245,7 @@ SolutionGuarantor::createObjective(const SegmentDescriptions& segments) {
 	// newly computed segment costs
 	std::map<SegmentHash, double> newCosts;
 
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		unsigned int var  = _hashToVariable[segment.getHash()];
 		double       cost = segment.getCost();
@@ -278,7 +278,7 @@ SolutionGuarantor::addOverlapConstraints(
 	std::set<SliceHash> noConflictSlices = _slices;
 
 	// for each conflict set:
-	foreach (const ConflictSet& conflictSet, conflictSets) {
+	for (const ConflictSet& conflictSet : conflictSets) {
 
 		LinearConstraint constraint;
 		bool anySet = false;
@@ -286,7 +286,7 @@ SolutionGuarantor::addOverlapConstraints(
 
 		// get all segments that use the conflict slices on one side and require 
 		// the sum of their variables to be at most one
-		foreach (const SliceHash& sliceHash, conflictSet.getSlices()) {
+		for (const SliceHash& sliceHash : conflictSet.getSlices()) {
 
 			// Because conflict sets from expanded blocks may include slices not
 			// in this set of segments, first check for the slice.
@@ -305,7 +305,7 @@ SolutionGuarantor::addOverlapConstraints(
 				if (0 == sliceToSegments->count(sliceHash))
 					sliceToSegments = &_rightSliceToSegments;
 
-				foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash]) {
+				for (const SegmentHash& segmentHash : (*sliceToSegments)[sliceHash]) {
 
 					unsigned int var = _hashToVariable[segmentHash];
 
@@ -327,7 +327,7 @@ SolutionGuarantor::addOverlapConstraints(
 
 	// Create an exclusivity constraint for the segments one one side of each
 	// slice not in any conflict set.
-	foreach (const SliceHash& sliceHash, noConflictSlices) {
+	for (const SliceHash& sliceHash : noConflictSlices) {
 
 		LinearConstraint constraint;
 
@@ -340,7 +340,7 @@ SolutionGuarantor::addOverlapConstraints(
 		if (0 == sliceToSegments->count(sliceHash))
 			sliceToSegments = &_rightSliceToSegments;
 
-		foreach (const SegmentHash& segmentHash, (*sliceToSegments)[sliceHash])
+		for (const SegmentHash& segmentHash : (*sliceToSegments)[sliceHash])
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 
 		// Do not force explanation if this is a leaf slice.
@@ -357,7 +357,7 @@ SolutionGuarantor::addContinuationConstraints(
 		LinearConstraints&         constraints) {
 
 	// for each slice
-	foreach (const SliceHash& sliceHash, _slices) {
+	for (const SliceHash& sliceHash : _slices) {
 
 		// If the slice has no segments on one side (some leaf, first, last
 		// slices), ignore it.
@@ -377,11 +377,11 @@ SolutionGuarantor::addContinuationConstraints(
 
 		LOG_ALL(solutionguarantorlog) << "create new continuation constraint for slice " << sliceHash << std::endl;
 
-		foreach (SegmentHash segmentHash, leftSegments) {
+		for (SegmentHash segmentHash : leftSegments) {
 			constraint.setCoefficient(_hashToVariable[segmentHash], 1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is left segment" << std::endl;
 		}
-		foreach (SegmentHash segmentHash, rightSegments) {
+		for (SegmentHash segmentHash : rightSegments) {
 			constraint.setCoefficient(_hashToVariable[segmentHash], -1.0);
 			LOG_ALL(solutionguarantorlog) << _hashToVariable[segmentHash] << " is right segment" << std::endl;
 		}
@@ -399,10 +399,10 @@ SolutionGuarantor::addExplicitConstraints(
 		LinearConstraints&         constraints) {
 
 	typedef std::map<SegmentHash, double>::value_type segmentCoeff;
-	foreach (const SegmentConstraint& segmentConstraint, explicitConstraints) {
+	for (const SegmentConstraint& segmentConstraint : explicitConstraints) {
 		LinearConstraint constraint;
 
-		foreach (const segmentCoeff& coeff, segmentConstraint.getCoefficients())
+		for (const segmentCoeff& coeff : segmentConstraint.getCoefficients())
 			constraint.setCoefficient(_hashToVariable[coeff.first], coeff.second);
 
 		constraint.setRelation(segmentConstraint.getRelation());
@@ -445,7 +445,7 @@ SolutionGuarantor::segmentsBoundingBox(const SegmentDescriptions& segments)
 	unsigned int zMax = 0;
 	unsigned int zMin = 0;
 
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		if (bound.area() == 0) {
 
@@ -481,7 +481,7 @@ SolutionGuarantor::cullSolutionToCore(
 	util::box<unsigned int, 3> coreBoundingBox = _blockUtils.getBoundingBox(core);
 	util::box<unsigned int, 2> coreBoundingRect = coreBoundingBox.project<2>();
 
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		SegmentHash segmentHash = segment.getHash();
 
@@ -513,7 +513,7 @@ SolutionGuarantor::extractAssemblies(
 	std::vector<std::set<SegmentHash> > assemblies;
 
 	// Construct slice adjacency graph.
-	foreach (const SegmentDescription& segment, segments) {
+	for (const SegmentDescription& segment : segments) {
 
 		const SegmentHash segmentHash = segment.getHash();
 
@@ -524,15 +524,15 @@ SolutionGuarantor::extractAssemblies(
 			unvisitedSlices.insert(leftSliceHashes.begin(), leftSliceHashes.end());
 			unvisitedSlices.insert(rightSliceHashes.begin(), rightSliceHashes.end());
 
-			foreach (const SliceHash leftHash, leftSliceHashes)
+			for (const SliceHash leftHash : leftSliceHashes)
 				sliceSegments[leftHash].push_back(segmentHash);
 
-			foreach (const SliceHash rightHash, rightSliceHashes)
+			for (const SliceHash rightHash : rightSliceHashes)
 				sliceSegments[rightHash].push_back(segmentHash);
 
-			foreach (const SliceHash leftHash, leftSliceHashes) {
+			for (const SliceHash leftHash : leftSliceHashes) {
 
-				foreach (const SliceHash rightHash, rightSliceHashes) {
+				for (const SliceHash rightHash : rightSliceHashes) {
 
 					sliceNeighbors[leftHash].push_back(rightHash);
 					sliceNeighbors[rightHash].push_back(leftHash);
@@ -559,7 +559,7 @@ SolutionGuarantor::extractAssemblies(
 			const std::vector<SegmentHash>& currentSegments = sliceSegments[currentSlice];
 			assembly.insert(currentSegments.begin(), currentSegments.end());
 
-			foreach (const SliceHash neighbor, sliceNeighbors[currentSlice]) {
+			for (const SliceHash neighbor : sliceNeighbors[currentSlice]) {
 
 				if (unvisitedSlices.count(neighbor)) {
 

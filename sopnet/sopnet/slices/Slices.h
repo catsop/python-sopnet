@@ -148,11 +148,11 @@ public:
 	template <typename Collection>
 	void addConflicts(const Collection& conflicts) {
 
-		foreach (unsigned int id, conflicts) {
+		for (unsigned int id : conflicts) {
 
 			_conflicts[id].reserve(_conflicts[id].size() + conflicts.size() - 1);
 
-			foreach (unsigned int otherId, conflicts)
+			for (unsigned int otherId : conflicts)
 				if (id != otherId)
 					_conflicts[id].push_back(otherId);
 		}
@@ -190,7 +190,7 @@ public:
 		if (!_conflicts.count(id1))
 			return false;
 
-		foreach (unsigned int conflictId, _conflicts[id1])
+		for (unsigned int conflictId : _conflicts[id1])
 			if (conflictId == id2)
 				return true;
 

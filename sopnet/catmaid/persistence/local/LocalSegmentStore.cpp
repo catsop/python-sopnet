@@ -12,7 +12,7 @@ LocalSegmentStore::associateSegmentsToBlock(
 		const Block&               block) {
 
 	SegmentDescriptions& segmentsForBlock = _segments[block];
-	foreach (const SegmentDescription& segment, segments)
+	for (const SegmentDescription& segment : segments)
 		segmentsForBlock.add(segment);
 }
 
@@ -24,13 +24,13 @@ LocalSegmentStore::getSegmentsByBlocks(
 
 	boost::shared_ptr<SegmentDescriptions> _blocksSegments = boost::make_shared<SegmentDescriptions>();
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		std::map<Block, SegmentDescriptions>::const_iterator it = _segments.find(block);
 
 		if (it == _segments.end())
 			missingBlocks.add(block);
 		else
-			foreach (const SegmentDescription& segment, it->second)
+			for (const SegmentDescription& segment : it->second)
 				_blocksSegments->add(segment);
 	}
 

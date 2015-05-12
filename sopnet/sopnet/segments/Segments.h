@@ -134,7 +134,7 @@ public:
 	template <typename SegmentType>
 	void addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments) {
 
-		foreach (boost::shared_ptr<SegmentType> segment, segments)
+		for (boost::shared_ptr<SegmentType> segment : segments)
 			add(segment);
 	}
 
@@ -307,7 +307,7 @@ private:
 
 		std::vector<boost::shared_ptr<SegmentType> > segments;
 
-		foreach (const std::vector<boost::shared_ptr<SegmentType> >& interSegments, allSegments)
+		for (const std::vector<boost::shared_ptr<SegmentType> >& interSegments : allSegments)
 			std::copy(interSegments.begin(), interSegments.end(), std::back_inserter(segments));
 
 		return segments;
@@ -365,11 +365,8 @@ private:
 		trees[interSectionInterval]->radiusSearch(&query[0], distance, results, params);
 
 		// fill result vector
-		size_t index;
-		double dist;
-
-		foreach (boost::tie(index, dist), results)
-			found.push_back(allSegments[interSectionInterval][index]);
+		for (auto& pair : results)
+			found.push_back(allSegments[interSectionInterval][pair.first]);
 
 		return found;
 	}
@@ -377,7 +374,7 @@ private:
 	template <typename SegmentType>
 	bool contains(std::vector<boost::shared_ptr<SegmentType> >& segments, boost::shared_ptr<SegmentType> segment) {
 
-		foreach (boost::shared_ptr<SegmentType> s, segments)
+		for (boost::shared_ptr<SegmentType> s : segments)
 			if (s->getId() == segment->getId())
 				return true;
 

@@ -103,7 +103,7 @@ PostgreSqlUtils::createBlockIdQuery(
 	std::string delim = "";
 	std::ostringstream blockQuery;
 	blockQuery << "SELECT id FROM block WHERE ";
-	foreach (const Block &block, blocks)
+	for (const Block &block : blocks)
 	{
 		blockQuery << delim;
 		blockQuery << "(coordinate_x=" << block.x() << " AND ";
@@ -140,7 +140,7 @@ PostgreSqlUtils::checkBlocksFlags(
 	char separator = ' ';
 	unsigned int blockIndex = 0;
 
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		blockQuery << separator << '('
 				<< blockIndex++ << ','
 				<< block.x() << ','
@@ -178,7 +178,7 @@ PostgreSqlUtils::checkBlocksFlags(
 	separator = ' ';
 
 	// Since Blocks uses a std::set we are guaranteed the same iteration order as above.
-	foreach (const Block& block, blocks) {
+	for (const Block& block : blocks) {
 		if (0 != strcmp(PQgetvalue(queryResult, i, FIELD_FLAG), "t")) {
 			missingBlocks.add(block);
 		} else {

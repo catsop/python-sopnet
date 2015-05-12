@@ -30,7 +30,7 @@ public:
 	/**
 	 * Add a set of neurons.
 	 */
-	void addAll(boost::shared_ptr<SegmentTrees> neurons) { foreach (boost::shared_ptr<SegmentTree> neuron, *neurons) _neurons.push_back(neuron); _lastSection = -1; }
+	void addAll(boost::shared_ptr<SegmentTrees> neurons) { for (boost::shared_ptr<SegmentTree> neuron : *neurons) _neurons.push_back(neuron); _lastSection = -1; }
 
 	/**
 	 * Get the number of neurons.

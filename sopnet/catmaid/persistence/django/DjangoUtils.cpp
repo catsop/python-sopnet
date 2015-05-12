@@ -51,7 +51,7 @@ util::box<int, 2>
 DjangoUtils::segmentBound(const boost::shared_ptr<Segment> segment)
 {
 	util::box<int, 2> bound = segment->getSlices()[0]->getComponent()->getBoundingBox();
-	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
+	for (boost::shared_ptr<Slice> slice : segment->getSlices())
 	{
 		bound.fit(slice->getComponent()->getBoundingBox());
 	}

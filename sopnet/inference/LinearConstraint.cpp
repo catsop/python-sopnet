@@ -51,8 +51,7 @@ LinearConstraint::getValue() const {
 
 std::ostream& operator<<(std::ostream& out, const LinearConstraint& constraint) {
 
-	typedef std::map<unsigned int, double>::value_type pair_t;
-	foreach (const pair_t& pair, constraint.getCoefficients())
+	for (const auto& pair : constraint.getCoefficients())
 		out << pair.second << "*" << pair.first << " ";
 
 	out << (constraint.getRelation() == LessEqual ? "<=" : (constraint.getRelation() == GreaterEqual ? ">=" : "=="));

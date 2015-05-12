@@ -13,7 +13,7 @@ hash_value(const Segment& segment) {
 
 		std::vector<SliceHash> sliceHashes;
 
-		foreach (boost::shared_ptr<Slice> slice, segment.getSlices())
+		for (boost::shared_ptr<Slice> slice : segment.getSlices())
 			sliceHashes.push_back(slice->hashValue());
 
 		return hash_value(sliceHashes);
@@ -50,9 +50,9 @@ hash_value(const std::vector<SliceHash>& leftSliceHashes,
 
 	std::vector<SliceHash> sliceHashes;
 
-	foreach (SliceHash hash, leftSliceHashes)
+	for (SliceHash hash : leftSliceHashes)
 		sliceHashes.push_back(hash);
-	foreach (SliceHash hash, rightSliceHashes)
+	for (SliceHash hash : rightSliceHashes)
 		sliceHashes.push_back(hash);
 
 	SliceHash hash = hash_value(sliceHashes);

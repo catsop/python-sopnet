@@ -132,10 +132,10 @@ int main(int argc, char** argv)
 		sliceStore.associateConflictSetsToBlock(conflictSets, block);
 		boost::shared_ptr<ConflictSets> retrievedConflictSets =
 				sliceStore.getConflictSetsByBlocks(blocks, missingBlocks);
-		foreach (const ConflictSet& cs, *retrievedConflictSets) {
+		for (const ConflictSet& cs : *retrievedConflictSets) {
 			std::cout << "ConflictSet hash: " << hash_value(cs);
 
-			foreach (const SliceHash& sh, cs.getSlices()) {
+			for (const SliceHash& sh : cs.getSlices()) {
 				std::cout << " Slice hash: " << sh;
 			}
 

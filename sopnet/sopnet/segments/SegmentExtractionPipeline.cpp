@@ -54,7 +54,7 @@ SegmentExtractionPipeline::create() {
 	if (_sliceStackDirectories) {
 
 		// for every stack directory
-		foreach (std::string directory, *_sliceStackDirectories) {
+		for (std::string directory : *_sliceStackDirectories) {
 
 			if (boost::filesystem::is_directory(directory)) {
 

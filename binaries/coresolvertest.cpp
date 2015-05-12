@@ -154,9 +154,9 @@ void writeConflictSets(const boost::shared_ptr<ConflictSets> conflictSets,
 	std::string conflictFilePath = path + "/conflict.txt";
 	conflictFile.open(conflictFilePath.c_str());
 
-	foreach (const ConflictSet conflictSet, *conflictSets)
+	for (const ConflictSet conflictSet : *conflictSets)
 	{
-		foreach (unsigned int id, conflictSet.getSlices())
+		for (unsigned int id : conflictSet.getSlices())
 		{
 			conflictFile << id << " ";
 		}
@@ -209,7 +209,7 @@ void writeSlices(const boost::shared_ptr<Slices> slices,
 	}
 
 
-	foreach (boost::shared_ptr<Slice> slice, *slices)
+	for (boost::shared_ptr<Slice> slice : *slices)
 	{
 		writeSlice(*slice, path, sliceFile);
 	}
@@ -249,10 +249,10 @@ void writeSegment(std::ofstream& file, const SegmentDescription& segment)
 
 	file << segment.getHash() << " ";
 
-	foreach (SliceHash sliceHash, segment.getLeftSlices())
+	for (SliceHash sliceHash : segment.getLeftSlices())
 		file << 'L' << sliceHash << " ";
 
-	foreach (SliceHash sliceHash, segment.getRightSlices())
+	for (SliceHash sliceHash : segment.getRightSlices())
 		file << 'R' << sliceHash << " ";
 
 	file << std::endl;
@@ -268,7 +268,7 @@ void writeSegments(const SegmentDescriptions& segments,
 
 	segmentFile.open(segmentlog.c_str());
 
-	foreach (const SegmentDescription& segment, segments)
+	for (const SegmentDescription& segment : segments)
 	{
 		writeSegment(segmentFile, segment);
 	}
@@ -279,11 +279,11 @@ boost::shared_ptr<ConflictSets> mapConflictSets(const boost::shared_ptr<Conflict
 												std::map<unsigned int, unsigned int>& idMap)
 {
 	boost::shared_ptr<ConflictSets> mappedSets = boost::make_shared<ConflictSets>();
-	foreach (ConflictSet conflictSet, *conflictSets)
+	for (ConflictSet conflictSet : *conflictSets)
 	{
 		ConflictSet mappedSet;
 
-		foreach (unsigned int id, conflictSet.getSlices())
+		for (unsigned int id : conflictSet.getSlices())
 		{
 			mappedSet.addSlice(idMap[id]);
 		}
@@ -297,7 +297,7 @@ boost::shared_ptr<ConflictSets> mapConflictSets(const boost::shared_ptr<Conflict
 bool conflictSetContains(const boost::shared_ptr<ConflictSets> conflictSets,
 						 const ConflictSet conflictSet)
 {
-	foreach (ConflictSet otherConflictSet, *conflictSets)
+	for (ConflictSet otherConflictSet : *conflictSets)
 	{
 		if (otherConflictSet == conflictSet)
 		{
@@ -311,7 +311,7 @@ bool conflictSetContains(const boost::shared_ptr<ConflictSets> conflictSets,
 bool segmentsContains(const boost::shared_ptr<Segments> segments,
 					  const boost::shared_ptr<Segment> segment)
 {
-	foreach (boost::shared_ptr<Segment> otherSegment, segments->getSegments())
+	for (boost::shared_ptr<Segment> otherSegment : segments->getSegments())
 	{
 		if (*otherSegment == *segment)
 		{
@@ -338,7 +338,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	LOG_USER(out) << "Read " << stack->size() << " images" << std::endl;
 
 	// Extract Slices as in the original SOPNET pipeline.
-	foreach (boost::shared_ptr<Image> image, *stack)
+	for (boost::shared_ptr<Image> image : *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
 			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
@@ -368,7 +368,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	// Now, do it blockwise
 	if (optionCoreTestSequential)
 	{
-		foreach (const Block& block, blocks)
+		for (const Block& block : blocks)
 		{
 			Blocks missingBlocks;
 			Blocks singleBlock;
@@ -398,7 +398,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 		{
 			LOG_USER(out) << "SliceGuarantor needs images for " <<
 				missingBlocks.size() << " blocks:" << std::endl;
-			foreach (const Block& block, missingBlocks)
+			for (const Block& block : missingBlocks)
 			{
 				LOG_USER(out) << "\t" << block << std::endl;
 			}
@@ -441,7 +441,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	{
 		LOG_USER(out) << bsSlicesSetDiff.size() <<
 			" slices were found in the blockwise output but not sopnet: " << std::endl;
-		foreach (boost::shared_ptr<Slice> slice, bsSlicesSetDiff)
+		for (boost::shared_ptr<Slice> slice : bsSlicesSetDiff)
 		{
 			LOG_USER(out) << slice->getId() << ", " << slice->hashValue() << std::endl;
 		}
@@ -451,7 +451,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	{
 		LOG_USER(out) << sbSlicesSetDiff.size() <<
 			" slices were found in the sopnet output but not blockwise: " << std::endl;
-		foreach (boost::shared_ptr<Slice> slice, sbSlicesSetDiff)
+		for (boost::shared_ptr<Slice> slice : sbSlicesSetDiff)
 		{
 			LOG_USER(out) << slice->getId() << ", " << slice->hashValue() << std::endl;
 		}
@@ -462,9 +462,9 @@ bool testSlices(const ProjectConfiguration& configuration)
 			<< sopnetConflictSets->size() << " sopnet conflict sets." << std::endl;
 
 	// Naive N^2 difference between conflict sets since an ordering is not defined.
-	foreach (ConflictSet blockwiseConflict, *blockwiseConflictSets) {
+	for (ConflictSet blockwiseConflict : *blockwiseConflictSets) {
 		bool found = false;
-		foreach (ConflictSet sopnetConflict, *sopnetConflictSets) {
+		for (ConflictSet sopnetConflict : *sopnetConflictSets) {
 			if (sopnetConflict == blockwiseConflict) {
 				found = true;
 				break;
@@ -474,9 +474,9 @@ bool testSlices(const ProjectConfiguration& configuration)
 		if (!found) bsConflictSetDiff.add(blockwiseConflict);
 	}
 
-	foreach (ConflictSet sopnetConflict, *sopnetConflictSets) {
+	for (ConflictSet sopnetConflict : *sopnetConflictSets) {
 		bool found = false;
-		foreach (ConflictSet blockwiseConflict, *blockwiseConflictSets) {
+		for (ConflictSet blockwiseConflict : *blockwiseConflictSets) {
 			if (sopnetConflict == blockwiseConflict) {
 				found = true;
 				break;
@@ -492,7 +492,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	{
 		LOG_USER(out) << bsConflictSetDiff.size() << '/' << blockwiseConflictSets->size() <<
 			" ConflictSets were found in the blockwise output but not sopnet:" << std::endl;
-		foreach (const ConflictSet& conflictSet, bsConflictSetDiff)
+		for (const ConflictSet& conflictSet : bsConflictSetDiff)
 		{
 			LOG_USER(out) << conflictSet << std::endl;
 		}
@@ -502,7 +502,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	{
 		LOG_USER(out) << sbConflictSetDiff.size() << '/' << sopnetConflictSets->size() <<
 			" ConflictSets were found in the sopnet output but not blockwise:" << std::endl;
-		foreach (const ConflictSet& conflictSet, sbConflictSetDiff)
+		for (const ConflictSet& conflictSet : sbConflictSetDiff)
 		{
 			LOG_USER(out) << conflictSet << std::endl;
 		}
@@ -547,7 +547,7 @@ bool guaranteeSegments(const ProjectConfiguration& configuration,
 	{
 		int count = 0;
 
-		foreach (const Block& block, blocks)
+		for (const Block& block : blocks)
 		{
 			Blocks missingBlocks;
 			Blocks singleBlock;
@@ -587,7 +587,7 @@ bool guaranteeSegments(const ProjectConfiguration& configuration,
 		{
 			LOG_USER(out) << "SegmentGuarantor says it needs slices for " <<
 				missingBlocks.size() << ", but we extracted slices for all of them" << std::endl;
-			foreach (const Block& block, missingBlocks)
+			for (const Block& block : missingBlocks)
 			{
 				LOG_USER(out) << "\t" << block << std::endl;
 			}
@@ -607,9 +607,9 @@ void logSegment(const SegmentDescription& segment)
 
 	// Use hash values rather than ids because we want to cross-reference later
 	// hash values are consistent across equality, whereas slice ids can vary.
-	foreach (SliceHash sliceHash, segment.getLeftSlices())
+	for (SliceHash sliceHash : segment.getLeftSlices())
 		LOG_USER(out) << 'L' << sliceHash << " ";
-	foreach (SliceHash sliceHash, segment.getRightSlices())
+	for (SliceHash sliceHash : segment.getRightSlices())
 		LOG_USER(out) << 'R' << sliceHash << " ";
 
 	LOG_USER(out) << std::endl;
@@ -637,7 +637,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	pipeline::Value<Features> sopnetFeatures;
 
 	// Extract Segments as in the original SOPNET pipeline.
-	foreach (boost::shared_ptr<Image> image, *stack)
+	for (boost::shared_ptr<Image> image : *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
 			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
@@ -648,15 +648,15 @@ bool testSegments(const ProjectConfiguration& configuration)
 		// Set conflict sets in slices
 		std::map<SliceHash, unsigned int> internalIdMap;
 
-		foreach (const boost::shared_ptr<Slice> slice, *nextSlices) {
+		for (const boost::shared_ptr<Slice> slice : *nextSlices) {
 			internalIdMap[slice->hashValue()] = slice->getId();
 		}
 
-		foreach (const ConflictSet& conflictSet, *conflictSets) {
+		for (const ConflictSet& conflictSet : *conflictSets) {
 			std::vector<unsigned int> setInternalIds;
 			setInternalIds.reserve(conflictSet.getSlices().size());
 
-			foreach (const SliceHash& sliceHash, conflictSet.getSlices())
+			for (const SliceHash& sliceHash : conflictSet.getSlices())
 				if (internalIdMap.count(sliceHash))
 					setInternalIds.push_back(internalIdMap[sliceHash]);
 
@@ -717,7 +717,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 
 	// Map SOPNET Segments to SegmentDescriptions for easy comparison.
 	SegmentDescriptions sopnetDescriptions;
-	foreach (boost::shared_ptr<Segment> segment, sopnetSegments->getSegments())
+	for (boost::shared_ptr<Segment> segment : sopnetSegments->getSegments())
 	{
 		SegmentDescription segmentDescription(*segment);
 		segmentDescription.setFeatures(sopnetFeatures->get(segment->getId()));
@@ -752,7 +752,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 		LOG_USER(out) << bsSegmentSetDiff.size() << '/' << blockwiseDescriptions->size() <<
 			" segments were found in the blockwise output but not sopnet: " << std::endl;
 		int ignored = 0;
-		foreach (const SegmentDescription& segment, bsSegmentSetDiff)
+		for (const SegmentDescription& segment : bsSegmentSetDiff)
 		{
 			// Ignore end segments at either extent of the volume. These are
 			// intentionally extracted by blockwise SOPNET.
@@ -774,7 +774,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 		ok = false;
 		LOG_USER(out) << sbSegmentSetDiff.size() << '/' << sopnetDescriptions.size() <<
 			" segments were found in the sopnet output but not blockwise: " << std::endl;
-		foreach (const SegmentDescription& segment, sbSegmentSetDiff)
+		for (const SegmentDescription& segment : sbSegmentSetDiff)
 		{
 			logSegment(segment);
 		}

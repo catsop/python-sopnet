@@ -127,11 +127,9 @@ LinearSolver::getNumVariables() {
 	unsigned int numVars = _objective->getCoefficients().size();
 
 	// number of vars in the constraints
-	unsigned int varNum;
-	double coef;
-	foreach (const LinearConstraint& constraint, *_linearConstraints)
-		foreach (boost::tie(varNum, coef), constraint.getCoefficients())
-			numVars = std::max(numVars, varNum + 1);
+	for (const LinearConstraint& constraint : *_linearConstraints)
+		for (const auto& pair : constraint.getCoefficients())
+			numVars = std::max(numVars, pair.first + 1);
 
 	LOG_ALL(linearsolverlog)
 			<< "together with the constraints, "

@@ -87,7 +87,7 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 
 	// create a copy of the input slice collections
 	std::vector<Slices> inputSlices;
-	foreach (boost::shared_ptr<Slices> slices, _slices)
+	for (boost::shared_ptr<Slices> slices : _slices)
 		inputSlices.push_back(*slices);
 
 	// remove all duplicates from the slice collections
@@ -153,7 +153,7 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 	for (unsigned int level = 0; level < slices.size(); level++) { 
 
 		// for each slice
-		foreach (boost::shared_ptr<Slice> slice, slices[level]) {
+		for (boost::shared_ptr<Slice> slice : slices[level]) {
 
 			std::vector<boost::shared_ptr<Slice> > duplicates;
 
@@ -163,7 +163,7 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 				std::vector<boost::shared_ptr<Slice> > toBeRemoved;
 
 				// for each slice
-				foreach (boost::shared_ptr<Slice> subSlice, slices[subLevel]) {
+				for (boost::shared_ptr<Slice> subSlice : slices[subLevel]) {
 
 					// if the overlap exceeds the threshold...
 					if (normalizedOverlap.exceeds(*slice, *subSlice, overlapThreshold)) {
@@ -187,12 +187,12 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 				}
 
 				// remove duplicates from this level
-				foreach (boost::shared_ptr<Slice> subSlice, toBeRemoved)
+				for (boost::shared_ptr<Slice> subSlice : toBeRemoved)
 					slices[subLevel].remove(subSlice);
 			}
 
 			// replace slice and duplicates by their intersection
-			foreach (boost::shared_ptr<Slice> duplicate, duplicates) {
+			for (boost::shared_ptr<Slice> duplicate : duplicates) {
 
 				LOG_ALL(stacksliceextractorlog)
 						<< "intersecting " << slice->getId()
@@ -234,7 +234,7 @@ StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices
 	for (unsigned int level = 0; level < slices.size(); level++) { 
 
 		// for each slice
-		foreach (boost::shared_ptr<Slice> slice, slices[level]) {
+		for (boost::shared_ptr<Slice> slice : slices[level]) {
 
 			unsigned int numOverlaps = 0;
 
@@ -242,7 +242,7 @@ StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices
 			for (unsigned int subLevel = level + 1; subLevel < slices.size(); subLevel++) {
 
 				// for each slice
-				foreach (boost::shared_ptr<Slice> subSlice, slices[subLevel]) {
+				for (boost::shared_ptr<Slice> subSlice : slices[subLevel]) {
 
 					// if there is overlap, add a consistency constraint
 					if (overlap.exceeds(*slice, *subSlice, 0)) {

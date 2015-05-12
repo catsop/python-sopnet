@@ -58,7 +58,7 @@ Segment::getSourceSlices() const {
 
 	std::vector<boost::shared_ptr<Slice> > sourceSlices;
 
-	foreach (boost::shared_ptr<Slice> slice, slices)
+	for (boost::shared_ptr<Slice> slice : slices)
 		if (slice->getSection() == sourceSection)
 			sourceSlices.push_back(slice);
 
@@ -75,7 +75,7 @@ Segment::getTargetSlices() const {
 
 	std::vector<boost::shared_ptr<Slice> > targetSlices;
 
-	foreach (boost::shared_ptr<Slice> slice, slices)
+	for (boost::shared_ptr<Slice> slice : slices)
 		if (slice->getSection() == targetSection)
 			targetSlices.push_back(slice);
 
@@ -91,10 +91,10 @@ Segment::operator==(const Segment& other) const
 		// Worst-case O(N * N), but N is at most 3.
 		// Typical-case O(N)
 		
-		foreach (boost::shared_ptr<Slice> slice, getSlices())
+		for (boost::shared_ptr<Slice> slice : getSlices())
 		{
 			bool contains = false;
-			foreach (boost::shared_ptr<Slice> otherSlice, other.getSlices())
+			for (boost::shared_ptr<Slice> otherSlice : other.getSlices())
 			{
 				if (*otherSlice == *slice)
 				{

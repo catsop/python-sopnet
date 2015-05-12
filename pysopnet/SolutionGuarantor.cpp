@@ -42,7 +42,7 @@ SolutionGuarantor::fill(
 
 	// collect missing block locations
 	Locations missing;
-	foreach (const Block& block, missingBlocks)
+	for (const Block& block : missingBlocks)
 		missing.push_back(util::point<unsigned int, 3>(block.x(), block.y(), block.z()));
 
 	return missing;
