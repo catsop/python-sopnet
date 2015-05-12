@@ -51,8 +51,8 @@ createSlice(unsigned int sourceSize, unsigned int pixelEntry) {
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
 			boost::make_shared<ConnectedComponent::pixel_list_type>();
 
-	pixelList->push_back(util::point<unsigned int>(pixelEntry, pixelEntry));
-	pixelList->push_back(util::point<unsigned int>(pixelEntry + 1, pixelEntry + 1));
+	pixelList->add(util::point<unsigned int, 2>(pixelEntry, pixelEntry));
+	pixelList->add(util::point<unsigned int, 2>(pixelEntry + 1, pixelEntry + 1));
 
 	boost::shared_ptr<Image> source = boost::make_shared<Image>(sourceSize, sourceSize);
 
@@ -60,8 +60,8 @@ createSlice(unsigned int sourceSize, unsigned int pixelEntry) {
 			source,
 			0,
 			pixelList,
-			0,
-			2);
+			pixelList->begin(),
+			pixelList->end());
 
 	return boost::make_shared<Slice>(0, 0, cc);
 }
