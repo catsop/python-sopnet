@@ -447,8 +447,10 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 	boost::timer::cpu_timer queryTimer;
 
 	std::ostringstream query;
-	query << "BEGIN;LOCK TABLE segment IN EXCLUSIVE MODE;";
-	query << "UPDATE segment SET cost=t.cost FROM (VALUES";
+	query << "BEGIN;"
+			"CREATE TEMP TABLE segment_costs"
+			"(id bigint PRIMARY KEY, cost double precision NOT NULL) ON COMMIT DROP;";
+	query << "INSERT INTO segment_costs (id, cost) VALUES ";
 
 	char separator = ' ';
 	typedef const std::map<SegmentHash, double> costs_type;
@@ -459,8 +461,14 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 		separator = ',';
 	}
 
-	query << ") AS t (segment_id, cost) "
-			"WHERE t.segment_id = segment.id;COMMIT;";
+	query << ";"
+			"SELECT 1 FROM segment s "
+			"JOIN segment_costs sc ON sc.id = s.id "
+			"ORDER BY s.id " // Ordering by id is crucial to prevent row-level deadlocks during SELECT .. FOR UPDATE
+			"FOR UPDATE OF s;"
+			"UPDATE segment SET cost=sc.cost "
+			"FROM segment_costs sc "
+			"WHERE sc.id = segment.id;COMMIT;";
 	std::string queryStr = query.str();
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	int asyncStatus = PQsendQuery(_pgConnection, queryStr.c_str());
