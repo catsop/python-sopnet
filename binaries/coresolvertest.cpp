@@ -174,8 +174,8 @@ void writeSlice(const Slice& slice, const std::string& sliceImageDirectory, std:
 	util::box<int, 2> bbox = slice.getComponent()->getBoundingBox();
 
 	std::string filename = sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section) +
-		"/" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
-		"_" + boost::lexical_cast<std::string>(bbox.minY) + ".png";
+		"/" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.min().x()) +
+		"_" + boost::lexical_cast<std::string>(bbox.min().y()) + ".png";
 	mkdir(sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section));
 
 	if (optionCoreTestWriteDebugFiles)
@@ -757,7 +757,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 			// Ignore end segments at either extent of the volume. These are
 			// intentionally extracted by blockwise SOPNET.
 			if ((segment.getSection() == 0 ||
-				segment.getSection() == blockUtils.getVolumeBoundingBox().max.z) &&
+				segment.getSection() == blockUtils.getVolumeBoundingBox().max().z()) &&
 				segment.getType() == EndSegmentType) {
 				ignored++;
 			} else {
@@ -953,9 +953,9 @@ util::point<unsigned int, 3> parseBlockSize(
 		num = boost::lexical_cast<int>(numStr);
 		denom = boost::lexical_cast<int>(denomStr);
 
-		blockSize = util::point<unsigned int, 3>(fractionCeiling(stackSize.x, num, denom),
-										fractionCeiling(stackSize.y, num, denom),
-										stackSize.z / 2 + 1);
+		blockSize = util::point<unsigned int, 3>(fractionCeiling(stackSize.x(), num, denom),
+										fractionCeiling(stackSize.y(), num, denom),
+										stackSize.z() / 2 + 1);
 	}
 
 	LOG_USER(out) << "Stack size: " << stackSize << ", block size: " << blockSize << std::endl;
@@ -1013,13 +1013,13 @@ int main(int optionc, char** optionv)
 		{
 			LOG_USER(out) << "Creating output directories" << std::endl;
 			blockwiseOutputPath = blockwiseOutputPath + "_" +
-				boost::lexical_cast<std::string>(stackSize.x) + "x" +
-				boost::lexical_cast<std::string>(stackSize.y) + "_" +
-				boost::lexical_cast<std::string>(blockSize.x) + "x" +
-				boost::lexical_cast<std::string>(blockSize.y);
+				boost::lexical_cast<std::string>(stackSize.x()) + "x" +
+				boost::lexical_cast<std::string>(stackSize.y()) + "_" +
+				boost::lexical_cast<std::string>(blockSize.x()) + "x" +
+				boost::lexical_cast<std::string>(blockSize.y());
 			sopnetOutputPath = sopnetOutputPath + "_" +
-				boost::lexical_cast<std::string>(stackSize.x) + "x" +
-				boost::lexical_cast<std::string>(stackSize.y);
+				boost::lexical_cast<std::string>(stackSize.x()) + "x" +
+				boost::lexical_cast<std::string>(stackSize.y());
 			mkdir(sopnetOutputPath);
 			mkdir(blockwiseOutputPath);
 		}
