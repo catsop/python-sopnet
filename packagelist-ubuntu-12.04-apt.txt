@@ -15,3 +15,4 @@ libtiff4-dev
 libhdf5-serial-dev
 libboost-python1.48-dev
 python-dev
+mercurial

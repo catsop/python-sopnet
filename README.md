@@ -13,24 +13,16 @@ $ git submodule update --init
 Dependencies
 ------------
 
-All packages except for the vigra library and the Gurobi solver can be
-installed using the default Ubuntu repositories:
+The build process is managed by cmake of which you need at least version 3.
 
-* libboost-all-dev (make sure libboost-timer-dev is included)
-* liblapack-dev
-* libx11-dev
-* libx11-xcb-dev
-* libxcb1-dev
-* libxrandr-dev
-* libxi-dev
-* freeglut3-dev
-* libglew1.6-dev
-* libcairo2-dev
-* libpng12-dev
-* libmagick++-dev
-* libcurl4-openssl-dev
-* libtiff4-dev
-* libhdf5-serial-dev (optional)
+All packages except for the vigra library and the Gurobi solver can be
+installed using the default Ubuntu repositories for your release:
+
+* [12.04 Precise](packagelist-ubuntu-12.04-apt.txt)
+* [14.04 Trusty](packagelist-ubuntu-14.04-apt.txt)
+
+Make sure your version of libboost includes libboost-timer-dev. Optional HDF5
+support is enabled if you have libhdf5-serial-dev installed.
 
 A recent version of vigra will be downloaded and compiled automatically.
 
@@ -39,7 +31,6 @@ To compile the python wrappers (pysopnet), you need additionally:
 * libboost-python-dev
 * libpython-dev
 
-The build process is managed by cmake of which you need at least version 2.8.8.
 Instructions are available for installing dependencies for
 [Scientific Linux 6.5](https://github.com/catsop/python-sopnet/wiki/Compiling-in-Scientific-Linux-6.5).
 Python-sopnet also compiles in MacOS X, but dependencies must be found through
