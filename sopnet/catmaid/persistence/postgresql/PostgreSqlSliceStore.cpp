@@ -453,17 +453,16 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 
 	const vigra::Diff2D offset = info.getPosition();
 
+	// Vigra png normalization workaround: rectangular slices are stored as
+	// black only. Hence, if the sum of all pixels is zero, all pixels of the
+	// bounding box belong to the slice.
+	size_t nNonzero = bitmap.sum<size_t>();
+
 	// create a pixel list
 	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
-			boost::make_shared<ConnectedComponent::pixel_list_type>();
+			boost::make_shared<ConnectedComponent::pixel_list_type>(nNonzero);
 
-	// Vigra png normalization workaround: rectangular slices are stored as 
-	// black only. Hence, if the max is not 1.0, all pixels of the bounding box 
-	// belong to the slice.
-	bool _, hasWhitePixels;
-	bitmap.minmax(&_, &hasWhitePixels);
-
-	if (hasWhitePixels) {
+	if (nNonzero) {
 
 		// fill it with white pixels from the bitmap
 		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
