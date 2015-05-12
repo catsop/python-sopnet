@@ -265,7 +265,7 @@ Segments::findBranches(
 
 std::vector<boost::shared_ptr<EndSegment> >
 Segments::findEnds(
-		const util::point<double>& center,
+		const util::point<double, 2>& center,
 		unsigned int interSectionInterval,
 		double distance) {
 
@@ -274,7 +274,7 @@ Segments::findEnds(
 
 std::vector<boost::shared_ptr<ContinuationSegment> >
 Segments::findContinuations(
-		const util::point<double>& center,
+		const util::point<double, 2>& center,
 		unsigned int interSectionInterval,
 		double distance) {
 
@@ -283,7 +283,7 @@ Segments::findContinuations(
 
 std::vector<boost::shared_ptr<BranchSegment> >
 Segments::findBranches(
-		const util::point<double>& center,
+		const util::point<double, 2>& center,
 		unsigned int interSectionInterval,
 		double distance) {
 
@@ -373,15 +373,15 @@ Segments::operator==(const Segments& other) const
 	return true;
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 Segments::boundingBox()
 {
 	if (size() == 0)
-		return util::box<unsigned int>(
+		return util::box<unsigned int, 3>(
 				0, 0, 0,
 				0, 0, 0);
 
-	util::rect<int>rectBound =
+	util::box<int, 2>rectBound =
 		getSegments()[0]->getSlices()[0]->getComponent()->getBoundingBox();
 	unsigned int minZ, maxZ;
 	
@@ -392,7 +392,7 @@ Segments::boundingBox()
 	{
 		foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 		{
-			util::rect<int> componentBound = slice->getComponent()->getBoundingBox();
+			util::box<int, 2> componentBound = slice->getComponent()->getBoundingBox();
 						rectBound.fit(componentBound);
 			unsigned int z = slice->getSection();
 			if (z > maxZ)
@@ -406,5 +406,5 @@ Segments::boundingBox()
 		}
 	}
 	
-	return  util::box<unsigned int>(rectBound.minX, rectBound.minY, minZ, rectBound.maxX, rectBound.maxY, maxZ + 1);
+	return  util::box<unsigned int, 3>(rectBound.min().x(), rectBound.min().y(), minZ, rectBound.max().x(), rectBound.max().y(), maxZ + 1);
 }

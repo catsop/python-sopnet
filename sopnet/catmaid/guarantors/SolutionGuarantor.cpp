@@ -435,13 +435,13 @@ SolutionGuarantor::getCost(const std::vector<double>& features) {
 	return cost;
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 SolutionGuarantor::segmentsBoundingBox(const SegmentDescriptions& segments)
 {
 	if (segments.size() == 0)
-		return util::box<unsigned int>(0, 0, 0, 0, 0, 0);
+		return util::box<unsigned int, 3>(0, 0, 0, 0, 0, 0);
 
-	util::rect<unsigned int> bound(0, 0, 0, 0);
+	util::box<unsigned int, 2> bound(0, 0, 0, 0);
 	unsigned int zMax = 0;
 	unsigned int zMin = 0;
 
@@ -464,7 +464,7 @@ SolutionGuarantor::segmentsBoundingBox(const SegmentDescriptions& segments)
 		}
 	}
 
-	return util::box<unsigned int>(bound.minX, bound.minY, zMin, bound.maxX, bound.maxY, zMax);
+	return util::box<unsigned int, 3>(bound.min().x(), bound.min().y(), zMin, bound.max().x(), bound.max().y(), zMax);
 }
 
 std::vector<SegmentHash>
@@ -478,8 +478,8 @@ SolutionGuarantor::cullSolutionToCore(
 
 	std::set<SegmentHash> solutionLookup(solution.begin(), solution.end());
 
-	util::box<unsigned int> coreBoundingBox = _blockUtils.getBoundingBox(core);
-	util::rect<unsigned int> coreBoundingRect = coreBoundingBox.project_xy();
+	util::box<unsigned int, 3> coreBoundingBox = _blockUtils.getBoundingBox(core);
+	util::box<unsigned int, 2> coreBoundingRect = coreBoundingBox.project<2>();
 
 	foreach (const SegmentDescription& segment, segments) {
 
@@ -488,8 +488,8 @@ SolutionGuarantor::cullSolutionToCore(
 		if (solutionLookup.count(segmentHash)) {
 
 			// test in z
-			if (segment.getSection() >= coreBoundingBox.min.z &&
-			    segment.getSection() <= coreBoundingBox.max.z &&
+			if (segment.getSection() >= coreBoundingBox.min().z() &&
+			    segment.getSection() <= coreBoundingBox.max().z() &&
 			    coreBoundingRect.intersects(segment.get2DBoundingBox())) {
 
 				culledSolution.push_back(segmentHash);

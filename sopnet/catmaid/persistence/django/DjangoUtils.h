@@ -5,8 +5,8 @@
 #include <sstream>
 #include <string>
 #include <boost/shared_ptr.hpp>
-#include <util/point3.hpp>
-#include <util/rect.hpp>
+#include <util/point.hpp>
+#include <util/box.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <sopnet/segments/Segment.h>
 
@@ -36,16 +36,16 @@ public:
 	 *                 "catmaid:8000"
 	 * @param project - the project id for the stack in question
 	 * @param stack - the stack id for the stack in question
-	 * @return a point3 representing the size of the stack in x,y,z
+	 * @return a point representing the size of the stack in x,y,z
 	 */
-	static boost::shared_ptr<util::point3<unsigned int> > getStackSize(const std::string& server,
+	static boost::shared_ptr<util::point<unsigned int, 3> > getStackSize(const std::string& server,
 																	const unsigned int project,
 																	const unsigned int stack);
 	
 	/**
 	 * A helper function to return a rect that bounds the given segment in 2D
 	 */
-	static util::rect<int> segmentBound(const boost::shared_ptr<Segment> segment);
+	static util::box<int, 2> segmentBound(const boost::shared_ptr<Segment> segment);
 	
 	/**
 	 * Check a property tree for django errors. If an error is detected, this function

@@ -103,19 +103,19 @@ ProblemConfiguration::fit(const Segment& segment) {
 
 		_minInterSectionInterval = segment.getInterSectionInterval();
 		_maxInterSectionInterval = segment.getInterSectionInterval();
-		_minX = (int)segment.getCenter().x;
-		_maxX = (int)segment.getCenter().x;
-		_minY = (int)segment.getCenter().y;
-		_maxY = (int)segment.getCenter().y;
+		_minX = (int)segment.getCenter().x();
+		_maxX = (int)segment.getCenter().x();
+		_minY = (int)segment.getCenter().y();
+		_maxY = (int)segment.getCenter().y();
 
 	} else {
 
 		_minInterSectionInterval = std::min(_minInterSectionInterval, (int)segment.getInterSectionInterval());
 		_maxInterSectionInterval = std::max(_maxInterSectionInterval, (int)segment.getInterSectionInterval());
-		_minX = std::min(_minX, (int)segment.getCenter().x);
-		_maxX = std::max(_maxX, (int)segment.getCenter().x);
-		_minY = std::min(_minY, (int)segment.getCenter().y);
-		_maxY = std::max(_maxY, (int)segment.getCenter().y);
+		_minX = std::min(_minX, (int)segment.getCenter().x());
+		_maxX = std::max(_maxX, (int)segment.getCenter().x());
+		_minY = std::min(_minY, (int)segment.getCenter().y());
+		_maxY = std::max(_maxY, (int)segment.getCenter().y());
 	}
 
 	LOG_ALL(problemconfigurationlog) << "extents are now " << _minInterSectionInterval << "-" << _maxInterSectionInterval << std::endl;

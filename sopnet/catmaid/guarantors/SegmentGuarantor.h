@@ -64,7 +64,7 @@ private:
 			unsigned int z) const;
 
 	// compute the bounding box of a set of slices
-	util::box<unsigned int> slicesBoundingBox(const Slices& slices);
+	util::box<unsigned int, 3> slicesBoundingBox(const Slices& slices);
 
 	// extract the features for the given segments
 	boost::shared_ptr<Features> computeFeatures(const boost::shared_ptr<Segments> segments);

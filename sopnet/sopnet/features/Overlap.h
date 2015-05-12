@@ -102,7 +102,7 @@ private:
 	unsigned int overlap(
 			const ConnectedComponent& c1,
 			const ConnectedComponent& c2,
-			const util::point<int>& offset2);
+			const util::point<int, 2>& offset2);
 
 	bool _normalized;
 

@@ -3,7 +3,7 @@
 #include <catmaid/persistence/postgresql/PostgreSqlSegmentStore.h>
 #include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
 #include <util/exceptions.h>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/point.hpp>
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
 		}
 
 		PostgreSqlSegmentStore segmentStore(pc);
-		util::rect<unsigned int> segmentBounds(0, 0, 0, 0);
+		util::box<unsigned int, 2> segmentBounds(0, 0, 0, 0);
 		std::vector<double> segmentFeatures;
 		segmentFeatures.push_back(0.0);
 		segmentFeatures.push_back(1.0);

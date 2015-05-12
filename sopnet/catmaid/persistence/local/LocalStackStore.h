@@ -16,7 +16,7 @@ public:
 	LocalStackStore(std::string directory);
 
 private:
-	boost::shared_ptr<Image> getImage(util::rect<unsigned int> bound,
+	boost::shared_ptr<Image> getImage(util::box<unsigned int, 2> bound,
 									  unsigned int section);
 	
 	/**

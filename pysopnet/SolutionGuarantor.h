@@ -29,7 +29,7 @@ public:
 	 *             process the request. Empty on success.
 	 */
 	Locations fill(
-			const util::point3<unsigned int>& blockLocation,
+			const util::point<unsigned int, 3>& blockLocation,
 			const SolutionGuarantorParameters& parameters,
 			const ProjectConfiguration& configuration);
 };

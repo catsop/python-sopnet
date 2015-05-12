@@ -97,7 +97,7 @@ private:
 
 	double getCost(const std::vector<double>& features);
 
-	util::box<unsigned int> segmentsBoundingBox(const SegmentDescriptions& segments);
+	util::box<unsigned int, 3> segmentsBoundingBox(const SegmentDescriptions& segments);
 
 	std::vector<SegmentHash> cullSolutionToCore(
 			const std::vector<SegmentHash>& solutions,

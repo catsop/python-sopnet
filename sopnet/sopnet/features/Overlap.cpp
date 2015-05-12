@@ -1,5 +1,5 @@
 #include <imageprocessing/ConnectedComponent.h>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <sopnet/slices/Slice.h>
 #include "Overlap.h"
 
@@ -7,7 +7,7 @@ double
 Overlap::operator()(const Slice& slice1, const Slice& slice2) {
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align both slices
 	if (_align)
@@ -32,13 +32,13 @@ double
 Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2) {
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align slice2 to both slice1s
 	if (_align) {
 
 		// the mean pixel location of slice1a and slice1b
-		util::point<double> center1 = 
+		util::point<double, 2> center1 = 
 				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
 				 +
 				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
@@ -85,13 +85,13 @@ Overlap::exceeds(const Slice& slice1, const Slice& slice2, double value, double&
 	 */
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align both slices
 	if (_align)
 		offset2 = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
 
-	util::rect<double> bb_intersection = slice1.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+	util::box<double, 2> bb_intersection = slice1.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
 
 	double maxOverlap = bb_intersection.area();
 
@@ -123,13 +123,13 @@ Overlap::exceeds(const Slice& slice1a, const Slice& slice1b, const Slice& slice2
 	 */
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align slice2 to both slice1s
 	if (_align) {
 
 		// the mean pixel location of slice1a and slice1b
-		util::point<double> center1 = 
+		util::point<double, 2> center1 = 
 				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
 				 +
 				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
@@ -139,8 +139,8 @@ Overlap::exceeds(const Slice& slice1a, const Slice& slice1b, const Slice& slice2
 		offset2 = center1 - slice2.getComponent()->getCenter();
 	}
 
-	util::rect<double> bb_intersection_a = slice1a.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
-	util::rect<double> bb_intersection_b = slice1b.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+	util::box<double, 2> bb_intersection_a = slice1a.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+	util::box<double, 2> bb_intersection_b = slice1b.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
 
 	double maxOverlap = bb_intersection_a.area() + bb_intersection_b.area();
 
@@ -162,7 +162,7 @@ unsigned int
 Overlap::overlap(
 		const ConnectedComponent& c1,
 		const ConnectedComponent& c2,
-		const util::point<int>& offset2) {
+		const util::point<int, 2>& offset2) {
 
 	if (!c1.getBoundingBox().intersects(c2.getBoundingBox() + offset2))
 		return 0;
@@ -175,23 +175,23 @@ Overlap::overlap(
 	const ConnectedComponent::bitmap_type& biggerBitmap = (c1 < c2 ? c2.getBitmap() : c1.getBitmap());
 
 	// the offset from the smaller component to the bigger component
-	util::point<int> smallerToBigger = (c1 < c2 ? -offset2 : offset2);
+	util::point<int, 2> smallerToBigger = (c1 < c2 ? -offset2 : offset2);
 
 	// the same, but to the pixel positions in the bigger component's bitmap
-	util::point<int> toBitmap = smallerToBigger - util::point<int>(bigger.getBoundingBox().minX, bigger.getBoundingBox().minY);
+	util::point<int, 2> toBitmap = smallerToBigger - util::point<int, 2>(bigger.getBoundingBox().min().x(), bigger.getBoundingBox().min().y());
 
 	// width and height of the bigger bounding box
 	int width  = bigger.getBoundingBox().width();
 	int height = bigger.getBoundingBox().height();
 
 	// iterate over all pixels in the smaller component
-	foreach (const util::point<unsigned int>& pixel, smaller.getPixels()) {
+	for (const util::point<unsigned int, 2>& pixel : smaller.getPixels()) {
 
 		// add offset from smaller to bigger pixel positions in the bitmap
-		util::point<int> inBitmap = util::point<int>(pixel) + toBitmap;
+		util::point<int, 2> inBitmap = util::point<int, 2>(pixel) + toBitmap;
 
-		if (inBitmap.x >= 0 && inBitmap.y >= 0 && inBitmap.x < width && inBitmap.y < height)
-			if (biggerBitmap(inBitmap.x, inBitmap.y))
+		if (inBitmap.x() >= 0 && inBitmap.y() >= 0 && inBitmap.x() < width && inBitmap.y() < height)
+			if (biggerBitmap(inBitmap.x(), inBitmap.y()))
 				numOverlap++;
 	}
 

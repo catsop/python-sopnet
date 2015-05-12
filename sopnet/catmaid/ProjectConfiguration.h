@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include <catmaid/persistence/StackType.h>
 #include <catmaid/persistence/StackDescription.h>
 
@@ -65,32 +65,32 @@ public:
 	/**
 	 * Set the size of a block in voxels.
 	 */
-	void setBlockSize(const util::point3<unsigned int>& blockSize);
+	void setBlockSize(const util::point<unsigned int, 3>& blockSize);
 
 	/**
 	 * Get the size of a block in voxels.
 	 */
-	const util::point3<unsigned int>& getBlockSize() const;
+	const util::point<unsigned int, 3>& getBlockSize() const;
 
 	/**
 	 * Set the size of the whole volume in voxels.
 	 */
-	void setVolumeSize(const util::point3<unsigned int>& volumeSize);
+	void setVolumeSize(const util::point<unsigned int, 3>& volumeSize);
 
 	/**
 	 * Get the size of a volume in voxels.
 	 */
-	const util::point3<unsigned int>& getVolumeSize() const;
+	const util::point<unsigned int, 3>& getVolumeSize() const;
 
 	/**
 	 * Set the size of a core in blocks.
 	 */
-	void setCoreSize(const util::point3<unsigned int>& coreSizeInBlocks);
+	void setCoreSize(const util::point<unsigned int, 3>& coreSizeInBlocks);
 
 	/**
 	 * Get the size of a core in blocks.
 	 */
-	const util::point3<unsigned int>& getCoreSize() const;
+	const util::point<unsigned int, 3>& getCoreSize() const;
 
 	/**
 	 * Set a local directory to store the connected components of slices.
@@ -169,9 +169,9 @@ private:
 
 	std::vector<StackDescription> _stackTypes;
 
-	util::point3<unsigned int> _blockSize;
-	util::point3<unsigned int> _volumeSize;
-	util::point3<unsigned int> _coreSizeInBlocks;
+	util::point<unsigned int, 3> _blockSize;
+	util::point<unsigned int, 3> _volumeSize;
+	util::point<unsigned int, 3> _coreSizeInBlocks;
 
 	std::string _componentDirectory;
 

@@ -2,7 +2,7 @@
 #include <pipeline/Process.h>
 #include <catmaid/guarantors/SliceGuarantor.h>
 #include <catmaid/blocks/Blocks.h>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include "SliceGuarantor.h"
 #include "logging.h"
 
@@ -12,7 +12,7 @@ struct MissingSliceData : virtual Exception {};
 
 void
 SliceGuarantor::fill(
-		const util::point3<unsigned int>& request,
+		const util::point<unsigned int, 3>& request,
 		const SliceGuarantorParameters& parameters,
 		const ProjectConfiguration& configuration) {
 
@@ -23,7 +23,7 @@ SliceGuarantor::fill(
 	boost::shared_ptr<SliceStore>   sliceStore         = createSliceStore(configuration);
 
 	// create a valid request block
-	Block requestBlock(request.x, request.y, request.z);
+	Block requestBlock(request.x(), request.y(), request.z());
 
 	// wrap requested block into Blocks
 	Blocks blocks;
@@ -35,13 +35,11 @@ SliceGuarantor::fill(
 	::SliceGuarantor sliceGuarantor(configuration, sliceStore, membraneStackStore);
 
 	// slice extraction parameters
-	pipeline::Value<MserParameters> mserParameters;
-	mserParameters->darkToBright =  parameters.membraneIsBright();
-	mserParameters->brightToDark = !parameters.membraneIsBright();
-	mserParameters->minArea      =  parameters.getMinSliceSize();
-	mserParameters->maxArea      =  parameters.getMaxSliceSize();
-	mserParameters->fullComponentTree = true;
-	sliceGuarantor.setMserParameters(mserParameters);
+	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	cteParameters->darkToBright =  parameters.membraneIsBright();
+	cteParameters->minSize      =  parameters.getMinSliceSize();
+	cteParameters->maxSize      =  parameters.getMaxSliceSize();
+	sliceGuarantor.setComponentTreeExtractorParameters(cteParameters);
 
 	LOG_DEBUG(pylog) << "[SliceGuarantor] asking for slices..." << std::endl;
 

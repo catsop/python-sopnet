@@ -23,11 +23,11 @@ CatmaidStackStore::CatmaidStackStore(
 
 	// Check if the reported stack size is larger than the expected one or
 	// smaller than the expected one by more than one block:
-	const util::point3<unsigned int>& configVolume = configuration.getVolumeSize();
-	const util::point3<unsigned int>& blockSize = configuration.getBlockSize();
-	if (scaledWidth > configVolume.x || scaledWidth + blockSize.x <= configVolume.x ||
-		scaledHeight > configVolume.y || scaledHeight + blockSize.y <= configVolume.y ||
-		_stack.depth > configVolume.z || _stack.depth + blockSize.z <= configVolume.z)
+	const util::point<unsigned int, 3>& configVolume = configuration.getVolumeSize();
+	const util::point<unsigned int, 3>& blockSize = configuration.getBlockSize();
+	if (scaledWidth > configVolume.x() || scaledWidth + blockSize.x() <= configVolume.x() ||
+		scaledHeight > configVolume.y() || scaledHeight + blockSize.y() <= configVolume.y() ||
+		_stack.depth > configVolume.z() || _stack.depth + blockSize.z() <= configVolume.z())
 		UTIL_THROW_EXCEPTION(
 				UsageError,
 				"Scaled catmaid stack size (" << scaledWidth << "," << scaledHeight << "," << _stack.depth <<
@@ -36,7 +36,7 @@ CatmaidStackStore::CatmaidStackStore(
 
 
 boost::shared_ptr<Image>
-CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
+CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
 							const unsigned int section)
 {
 	/*
@@ -49,13 +49,13 @@ CatmaidStackStore::getImage(const util::rect<unsigned int> bound,
 	std::vector<boost::shared_ptr<Image> > catImages;
 	boost::shared_ptr<Image> imageOut = boost::make_shared<Image>(bound.width(), bound.height());
 	
-	tileCMin = bound.minX / _stack.tileWidth;
-	tileRMin = bound.minY / _stack.tileHeight;
+	tileCMin = bound.min().x() / _stack.tileWidth;
+	tileRMin = bound.min().y() / _stack.tileHeight;
 	// For the max, we want the integer division to round up to get exclusive 
 	// (c,r)-max coordinates. We do that by adding the tilesize - 1 before 
 	// dividing and rounding down.
-	tileCMax = (bound.maxX + _stack.tileWidth - 1) / _stack.tileWidth;
-	tileRMax = (bound.maxY + _stack.tileHeight -1) / _stack.tileHeight;
+	tileCMax = (bound.max().x() + _stack.tileWidth - 1) / _stack.tileWidth;
+	tileRMax = (bound.max().y() + _stack.tileHeight -1) / _stack.tileHeight;
 	
 	for (unsigned int r = tileRMin; r < tileRMax; ++r)
 	{
@@ -97,50 +97,50 @@ CatmaidStackStore::copyImageInto(const Image& tile,
 								 const Image& request,
 								 const unsigned int tileWXmin,
 								 const unsigned int tileWYmin,
-								 const util::rect<unsigned int> bound)
+								 const util::box<unsigned int, 2> bound)
 {
 	// beg, end refer to source tile image, dst refers to destination request region,
 	// which belongs to the Image that we eventually return.
 	Image::difference_type beg, end, dst;
 	
-	if (tileWXmin >= bound.minX)
+	if (tileWXmin >= bound.min().x())
 	{
 		beg[0] = 0;
-		dst[0] = tileWXmin - bound.minX;
+		dst[0] = tileWXmin - bound.min().x();
 	}
 	else
 	{
-		beg[0] = bound.minX - tileWXmin;
+		beg[0] = bound.min().x() - tileWXmin;
 		dst[0] = 0;
 	}
 	
-	if (tileWYmin >= bound.minY)
+	if (tileWYmin >= bound.min().y())
 	{
 		beg[1] = 0;
-		dst[1] = tileWYmin - bound.minY;
+		dst[1] = tileWYmin - bound.min().y();
 	}
 	else
 	{
-		beg[1] = bound.minY - tileWYmin;
+		beg[1] = bound.min().y() - tileWYmin;
 		dst[1] = 0;
 	}
 	
-	if (tileWXmin + _stack.tileWidth <= bound.maxX)
+	if (tileWXmin + _stack.tileWidth <= bound.max().x())
 	{
 		end[0] = _stack.tileWidth;
 	}
 	else
 	{
-		end[0] = bound.maxX - tileWXmin;
+		end[0] = bound.max().x() - tileWXmin;
 	}
 	
-	if (tileWYmin + _stack.tileHeight <= bound.maxY)
+	if (tileWYmin + _stack.tileHeight <= bound.max().y())
 	{
 		end[1] = _stack.tileHeight;
 	}
 	else
 	{
-		end[1] = bound.maxY - tileWYmin;
+		end[1] = bound.max().y() - tileWYmin;
 	}
 	
 	vigra::copyImage(tile.subarray(beg, end), request.subarray(dst, dst + end - beg));

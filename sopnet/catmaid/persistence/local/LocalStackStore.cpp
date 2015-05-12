@@ -34,7 +34,7 @@ LocalStackStore::LocalStackStore(std::string directory)
 
 }
 
-boost::shared_ptr<Image> LocalStackStore::getImage(util::rect<unsigned int> bound,
+boost::shared_ptr<Image> LocalStackStore::getImage(util::box<unsigned int, 2> bound,
 												   unsigned int section)
 {
 	if (section < _imagePaths.size())
@@ -43,8 +43,8 @@ boost::shared_ptr<Image> LocalStackStore::getImage(util::rect<unsigned int> boun
 		boost::shared_ptr<ImageFileReader> reader = boost::make_shared<ImageFileReader>(file.c_str());
 		boost::shared_ptr<ImageCrop> cropper = boost::make_shared<ImageCrop>();
 		pipeline::Value<Image> croppedImage, image;
-		pipeline::Value<int> x(bound.minX), y(bound.minY),
-							 w(bound.maxX - bound.minX), h(bound.maxY - bound.minY);
+		pipeline::Value<int> x(bound.min().x()), y(bound.min().y()),
+							 w(bound.max().x() - bound.min().x()), h(bound.max().y() - bound.min().y());
 
 		LOG_ALL(localstackstorelog) << "Reading image from " << file << std::endl;
 		// check bounds

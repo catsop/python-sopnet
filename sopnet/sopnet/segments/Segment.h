@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <sopnet/slices/Slice.h>
 #include <util/point.hpp>
+#include <util/Hashable.h>
 #include "SegmentHash.h"
 
 /**
@@ -30,14 +31,14 @@ enum SegmentType {
  * implement one-to-one segments (continuations), one-to-two segments
  * (branches), and one-to-zero segments (ends).
  */
-class Segment : public pipeline::Data {
+class Segment : public pipeline::Data, public Hashable<Segment, SegmentHash> {
 
 public:
 
 	/**
 	 * Create a new segment.
 	 */
-	Segment(unsigned int id, Direction direction, const util::point<double>& center, unsigned int interSectionInterval);
+	Segment(unsigned int id, Direction direction, const util::point<double, 2>& center, unsigned int interSectionInterval);
 
 	/**
 	 * Get the id of this segment.
@@ -52,7 +53,7 @@ public:
 	/**
 	 * Get the 2D center of gravity of this segment.
 	 */
-	const util::point<double>& getCenter() const { return _center; }
+	const util::point<double, 2>& getCenter() const { return _center; }
 
 	/**
 	 * Get the inter-section interval this segment is spanning over.
@@ -78,8 +79,6 @@ public:
 	
 	virtual SegmentType getType() const = 0;
 
-	SegmentHash hashValue() const;
-
 private:
 
 	static unsigned int NextSegmentId;
@@ -94,14 +93,10 @@ private:
 	Direction _direction;
 
 	// the 2D center of this segment in the inter-section interval
-	util::point<double> _center;
+	util::point<double, 2> _center;
 
 	// the number of the inter-section interval this segment lives in
 	unsigned int _interSectionInterval;
-
-	// the hash value of this segment
-	mutable SegmentHash _hash;
-	mutable bool _hashDirty;
 };
 
 #endif // CELLTRACKER_TRACKLET_H__

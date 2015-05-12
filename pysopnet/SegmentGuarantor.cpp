@@ -1,6 +1,6 @@
 #include <catmaid/guarantors/SegmentGuarantor.h>
 #include <catmaid/blocks/Blocks.h>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include "SegmentGuarantor.h"
 #include "logging.h"
 
@@ -8,7 +8,7 @@ namespace python {
 
 Locations
 SegmentGuarantor::fill(
-		const util::point3<unsigned int>& request,
+		const util::point<unsigned int, 3>& request,
 		const SegmentGuarantorParameters& /*parameters*/,
 		const ProjectConfiguration& configuration) {
 
@@ -20,7 +20,7 @@ SegmentGuarantor::fill(
 	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);
 
 	// create a valid request block
-	Block requestBlock(request.x, request.y, request.z);
+	Block requestBlock(request.x(), request.y(), request.z());
 
 	// wrap requested block into Blocks
 	Blocks blocks;
@@ -39,7 +39,7 @@ SegmentGuarantor::fill(
 	// collect missing block locations
 	Locations missing;
 	foreach (const Block& block, missingBlocks)
-		missing.push_back(util::point3<unsigned int>(block.x(), block.y(), block.z()));
+		missing.push_back(util::point<unsigned int, 3>(block.x(), block.y(), block.z()));
 
 	return missing;
 }

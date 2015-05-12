@@ -3,7 +3,7 @@
 
 #include <cstddef>
 #include <vector>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <segments/Segment.h>
 #include <segments/SegmentHash.h>
 #include <slices/SliceHash.h>
@@ -19,7 +19,7 @@ public:
 
 	SegmentDescription(
 			unsigned int section,
-			const util::rect<unsigned int>& boundingBox) :
+			const util::box<unsigned int, 2>& boundingBox) :
 		_hashDirty(true),
 		_cost(std::numeric_limits<double>::signaling_NaN()),
 		_section(section),
@@ -34,7 +34,7 @@ public:
 	 */
 	unsigned int getSection() const { return _section; }
 
-	const util::rect<unsigned int>& get2DBoundingBox() const { return _boundingBox; }
+	const util::box<unsigned int, 2>& get2DBoundingBox() const { return _boundingBox; }
 
 	void setFeatures(const std::vector<double>& features) { _features = features; }
 
@@ -86,7 +86,7 @@ private:
 	unsigned int _section;
 
 	// the bounding box of the segment in 2D
-	util::rect<unsigned int> _boundingBox;
+	util::box<unsigned int, 2> _boundingBox;
 };
 
 #endif // SOPNET_CATMAID_PERSISTENCE_SEGMENT_DESCRIPTION_H__

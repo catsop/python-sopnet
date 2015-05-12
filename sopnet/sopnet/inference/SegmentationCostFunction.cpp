@@ -71,21 +71,21 @@ SegmentationCostFunction::costs(
 
 	unsigned int i = 0;
 
-	foreach (boost::shared_ptr<EndSegment> end, ends) {
+	for (boost::shared_ptr<EndSegment> end : ends) {
 
 		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
 		i++;
 	}
 
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
+	for (boost::shared_ptr<ContinuationSegment> continuation : continuations) {
 
 		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
 		i++;
 	}
 
-	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
+	for (boost::shared_ptr<BranchSegment> branch : branches) {
 
 		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
@@ -99,13 +99,13 @@ SegmentationCostFunction::computeSegmentationCosts(
 		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
 		const std::vector<boost::shared_ptr<BranchSegment> >&       branches) {
 
-	foreach (boost::shared_ptr<EndSegment> end, ends)
+	for (boost::shared_ptr<EndSegment> end : ends)
 		computeSegmentationCost(*end);
 
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+	for (boost::shared_ptr<ContinuationSegment> continuation : continuations)
 		computeSegmentationCost(*continuation);
 
-	foreach (boost::shared_ptr<BranchSegment> branch, branches)
+	for (boost::shared_ptr<BranchSegment> branch : branches)
 		computeSegmentationCost(*branch);
 }
 
@@ -115,13 +115,13 @@ SegmentationCostFunction::computeBoundaryLengths(
 		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
 		const std::vector<boost::shared_ptr<BranchSegment> >&       branches) {
 
-	foreach (boost::shared_ptr<EndSegment> end, ends)
+	for (boost::shared_ptr<EndSegment> end : ends)
 		computeBoundaryLength(*end);
 
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+	for (boost::shared_ptr<ContinuationSegment> continuation : continuations)
 		computeBoundaryLength(*continuation);
 
-	foreach (boost::shared_ptr<BranchSegment> branch, branches)
+	for (boost::shared_ptr<BranchSegment> branch : branches)
 		computeBoundaryLength(*branch);
 }
 
@@ -177,18 +177,18 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	if (_sliceSegmentationCosts.count(slice.getId()))
 		return _sliceSegmentationCosts[slice.getId()];
 
-	util::point3<unsigned int> offset = _cropOffset.isSet() ? *_cropOffset :
-		util::point3<unsigned int>(0, 0, 0);
+	util::point<unsigned int, 3> offset = _cropOffset.isSet() ? *_cropOffset :
+		util::point<unsigned int, 3>(0, 0, 0);
 	
-	unsigned int section = slice.getSection() - offset.z;
+	unsigned int section = slice.getSection() - offset.z();
 
 	double costs = 0.0;
 
 	// for each pixel in the slice
-	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
+	for (const util::point<unsigned int, 2>& pixel : slice.getComponent()->getPixels()) {
 
 		// get the membrane data probability p(x|y=membrane)
-		double probMembrane = (*(*_membranes)[section])(pixel.x - offset.x, pixel.y - offset.y);
+		double probMembrane = (*(*_membranes)[section])(pixel.x() - offset.x(), pixel.y() - offset.y());
 
 		if (optionInvertMembraneMaps)
 			probMembrane = 1.0 - probMembrane;
@@ -233,26 +233,26 @@ SegmentationCostFunction::computeBoundaryLength(const Slice& slice) {
 
 	unsigned int width   = (unsigned int)(component->getBoundingBox().width()  + 1);
 	unsigned int height  = (unsigned int)(component->getBoundingBox().height() + 1);
-	unsigned int offsetX = (unsigned int)component->getBoundingBox().minX;
-	unsigned int offsetY = (unsigned int)component->getBoundingBox().minY;
+	unsigned int offsetX = (unsigned int)component->getBoundingBox().min().x();
+	unsigned int offsetY = (unsigned int)component->getBoundingBox().min().y();
 
 	std::vector<bool> pixels(width*height, false);
 
-	foreach (const util::point<unsigned int>& p, component->getPixels()) {
+	for (const util::point<unsigned int, 2>& p : component->getPixels()) {
 
-		unsigned int x = p.x - offsetX;
-		unsigned int y = p.y - offsetY;
+		unsigned int x = p.x() - offsetX;
+		unsigned int y = p.y() - offsetY;
 
 		pixels[x + y*width] = true;
 	}
 
 	unsigned int boundaryLength = 0;
 
-	foreach (const util::point<unsigned int>& p, component->getPixels()) {
+	for (const util::point<unsigned int, 2>& p : component->getPixels()) {
 
 		// for neighborhood testing with offset
-		unsigned int x = p.x - offsetX;
-		unsigned int y = p.y - offsetY;
+		unsigned int x = p.x() - offsetX;
+		unsigned int y = p.y() - offsetY;
 
 		// left
 		if (x == 0 || !pixels[(x - 1) + y*width])

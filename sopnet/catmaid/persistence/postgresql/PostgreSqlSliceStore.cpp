@@ -85,18 +85,18 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	{
 		std::string sliceId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
-		util::point<double> ctr = slice->getComponent()->getCenter();
+		util::point<double, 2> ctr = slice->getComponent()->getCenter();
 
 		// Store pixel data of slice
 		saveConnectedComponent(sliceId, *slice->getComponent());
 
 		// Bounding Box
-		const util::rect<unsigned int>& bb = slice->getComponent()->getBoundingBox();
+		const util::box<unsigned int, 2>& bb = slice->getComponent()->getBoundingBox();
 
 		q << separator << "(" << sliceId << "," << slice->getSection() << ",";
-		q << bb.minX << "," << bb.minY << ",";
-		q << bb.maxX << "," << bb.maxY << ",";
-		q << ctr.x << "," << ctr.y << ",";
+		q << bb.min().x() << "," << bb.min().y() << ",";
+		q << bb.max().x() << "," << bb.max().y() << ",";
+		q << ctr.x() << "," << ctr.y() << ",";
 		q << slice->getComponent()->getValue() << ",";
 		q << slice->getComponent()->getSize() << ")";
 
@@ -423,7 +423,7 @@ PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, 
 	if (stat (imageFilename.c_str(), &buffer) == 0) return;
 
 	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
-	const vigra::Diff2D offset(component.getBoundingBox().minX, component.getBoundingBox().minY);
+	const vigra::Diff2D offset(component.getBoundingBox().min().x(), component.getBoundingBox().min().y());
 
 	// store the image
 	vigra::exportImage(
@@ -469,14 +469,14 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
 			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
 				if (bitmap(x, y) == 1.0)
-					pixelList->push_back(util::point<unsigned int>(offset.x + x, offset.y + y));
+					pixelList->add(util::point<unsigned int, 2>(offset.x + x, offset.y + y));
 
 	} else {
 
 		// fill it with all pixels from the bitmap
 		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
 			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
-				pixelList->push_back(util::point<unsigned int>(offset.x + x, offset.y + y));
+				pixelList->add(util::point<unsigned int, 2>(offset.x + x, offset.y + y));
 	}
 
 	// create the component
@@ -484,8 +484,8 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 			boost::shared_ptr<Image>(),
 			value,
 			pixelList,
-			0,
-			pixelList->size());
+			pixelList->begin(),
+			pixelList->end());
 
 	return component;
 }

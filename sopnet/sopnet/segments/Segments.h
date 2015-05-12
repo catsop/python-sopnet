@@ -37,8 +37,8 @@ public:
 	 */
 	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t) const {
 
-		double d0 = p1[0] - _segments[index_p2]->getCenter().x;
-		double d1 = p1[1] - _segments[index_p2]->getCenter().y;
+		double d0 = p1[0] - _segments[index_p2]->getCenter().x();
+		double d1 = p1[1] - _segments[index_p2]->getCenter().y();
 
 		return d0*d0 + d1*d1;
 	}
@@ -50,9 +50,9 @@ public:
 	inline double kdtree_get_pt(const size_t index, int dim) const {
 
 		if (dim == 0)
-			return _segments[index]->getCenter().x;
+			return _segments[index]->getCenter().x();
 		else if (dim == 1)
-			return _segments[index]->getCenter().y;
+			return _segments[index]->getCenter().y();
 		else return 0;
 	}
 
@@ -224,7 +224,7 @@ public:
 	 *                 given segments.
 	 */
 	std::vector<boost::shared_ptr<EndSegment> > findEnds(
-			const util::point<double>& center,
+			const util::point<double, 2>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
 
@@ -238,7 +238,7 @@ public:
 	 *                 given segments.
 	 */
 	std::vector<boost::shared_ptr<ContinuationSegment> > findContinuations(
-			const util::point<double>& center,
+			const util::point<double, 2>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
 
@@ -252,7 +252,7 @@ public:
 	 *                 given segments.
 	 */
 	std::vector<boost::shared_ptr<BranchSegment> > findBranches(
-			const util::point<double>& center,
+			const util::point<double, 2>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
 
@@ -290,7 +290,7 @@ public:
 
 	bool operator==(const Segments& other) const;
 
-	util::box<unsigned int> boundingBox();
+	util::box<unsigned int, 3> boundingBox();
 
 private:
 
@@ -315,7 +315,7 @@ private:
 
 	template <typename SegmentType, typename SegmentAdaptorType, typename SegmentKdTreeType>
 	std::vector<boost::shared_ptr<SegmentType> > find(
-			const util::point<double>& center,
+			const util::point<double, 2>& center,
 			unsigned int interSectionInterval,
 			double distance,
 			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments,
@@ -357,8 +357,8 @@ private:
 		std::vector<std::pair<size_t, double> > results;
 
 		double query[2];
-		query[0] = center.x;
-		query[1] = center.y;
+		query[0] = center.x();
+		query[1] = center.y();
 
 		nanoflann::SearchParams params(0 /* ignored parameter */);
 

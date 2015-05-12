@@ -14,13 +14,13 @@ DjangoUtils::appendProjectAndStack(std::ostringstream& os, const std::string& se
 	os << "http://" << server << "/sopnet/" << project << "/stack/" << stack;
 }
 
-boost::shared_ptr< util::point3<unsigned int> >
+boost::shared_ptr< util::point<unsigned int, 3> >
 DjangoUtils::getStackSize(const std::string& server, const unsigned int project, const unsigned int stack)
 {
 	std::ostringstream url;
 	HttpClient client;
 	boost::shared_ptr<ptree> pt;
-	boost::shared_ptr<util::point3<unsigned int> > stackSize;
+	boost::shared_ptr<util::point<unsigned int, 3> > stackSize;
 	int count;
 	std::vector<unsigned int> stackSizeVector;
 
@@ -35,22 +35,22 @@ DjangoUtils::getStackSize(const std::string& server, const unsigned int project,
 	count = HttpClient::ptreeVector<unsigned int>(pt->get_child("stack_size"), stackSizeVector);
 	if (count >= 3)
 	{
-		stackSize = boost::make_shared<util::point3<unsigned int> >(stackSizeVector[0],
+		stackSize = boost::make_shared<util::point<unsigned int, 3> >(stackSizeVector[0],
 																	stackSizeVector[1],
 																	stackSizeVector[2]);
 	}
 	else
 	{
-		stackSize = boost::make_shared<util::point3<unsigned int> >(0,0,0);
+		stackSize = boost::make_shared<util::point<unsigned int, 3> >(0,0,0);
 	}
 
 	return stackSize;
 }
 
-util::rect<int>
+util::box<int, 2>
 DjangoUtils::segmentBound(const boost::shared_ptr<Segment> segment)
 {
-	util::rect<int> bound = segment->getSlices()[0]->getComponent()->getBoundingBox();
+	util::box<int, 2> bound = segment->getSlices()[0]->getComponent()->getBoundingBox();
 	foreach (boost::shared_ptr<Slice> slice, segment->getSlices())
 	{
 		bound.fit(slice->getComponent()->getBoundingBox());

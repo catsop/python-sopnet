@@ -5,7 +5,7 @@
 #include <imageprocessing/ImageExtractor.h>
 #include <sopnet/sopnet/slices/SliceExtractor.h>
 #include <sopnet/sopnet/slices/Slice.h>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <util/Logger.h>
 #include <util/foreach.h>
 #include <pipeline/Process.h>
@@ -22,9 +22,9 @@ SliceGuarantor::SliceGuarantor(
 	_blockUtils(projectConfiguration) {}
 
 void
-SliceGuarantor::setMserParameters(const boost::shared_ptr<MserParameters> mserParameters) {
+SliceGuarantor::setComponentTreeExtractorParameters(const boost::shared_ptr<ComponentTreeExtractorParameters> parameters) {
 
-	_mserParameters = mserParameters;
+	_parameters = parameters;
 }
 
 Blocks
@@ -36,12 +36,12 @@ SliceGuarantor::guaranteeSlices(const Blocks& requestedBlocks) {
 
 
 	// get the number of sections
-	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
-	util::box<unsigned int> volumeBoundingBox = _blockUtils.getVolumeBoundingBox();
-	unsigned int firstSection = blockBoundingBox.min.z;
+	util::box<unsigned int, 3> blockBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
+	util::box<unsigned int, 3> volumeBoundingBox = _blockUtils.getVolumeBoundingBox();
+	unsigned int firstSection = blockBoundingBox.min().z();
 	// Clamp the number of sections within the volume extents.
 	unsigned int numSections  =
-		std::min(blockBoundingBox.depth(), volumeBoundingBox.max.z - firstSection);
+		std::min(blockBoundingBox.depth(), volumeBoundingBox.max().z() - firstSection);
 
 	// slices and conflict sets for the requested block
 	Slices       slices;
@@ -108,10 +108,10 @@ SliceGuarantor::extractSlicesAndConflicts(
 	while (!slicesComplete) {
 
 		// 2D bonding box of expansion blocks
-		util::rect<unsigned int> bound = _blockUtils.getBoundingBox(expansionBlocks).project_xy();
+		util::box<unsigned int, 2> bound = _blockUtils.getBoundingBox(expansionBlocks).project<2>();
 
 		// box for only the current section
-		util::box<unsigned int> sectionBox(bound.minX, bound.minY, z, bound.maxX, bound.maxY, z + 1);
+		util::box<unsigned int, 3> sectionBox(bound.min().x(), bound.min().y(), z, bound.max().x(), bound.max().y(), z + 1);
 
 		// get the image for this box
 		boost::shared_ptr<Image> image = (*_stackStore->getImageStack(sectionBox))[0];
@@ -120,8 +120,8 @@ SliceGuarantor::extractSlicesAndConflicts(
 
 		// extract slices and conflict sets
 		sliceExtractor->setInput("membrane", image);
-		if (_mserParameters)
-			sliceExtractor->setInput("mser parameters", _mserParameters);
+		if (_parameters)
+			sliceExtractor->setInput("parameters", _parameters);
 
 		slicesValue = sliceExtractor->getOutput("slices");
 		conflictsValue = sliceExtractor->getOutput("conflict sets");
@@ -135,7 +135,7 @@ SliceGuarantor::extractSlicesAndConflicts(
 		std::map<SliceHash, SliceHash> sliceTranslationMap;
 		foreach (boost::shared_ptr<Slice> slice, *slicesValue) {
 			SliceHash oldHash = slice->hashValue();
-			slice->translate(bound.upperLeft());
+			slice->translate(bound.min());
 			sliceTranslationMap[oldHash] = slice->hashValue();
 		}
 
@@ -166,8 +166,8 @@ SliceGuarantor::extractSlicesAndConflicts(
 
 		LOG_ALL(sliceguarantorlog) << "Extracted in: " << expansionBlocks << ", have to grow to at least: " << expandedBlocks << std::endl; 
 
-		util::rect<unsigned int> expansionBlocksSize = _blockUtils.getBoundingBox(expansionBlocks).project_xy();
-		util::rect<unsigned int> expandedBlocksSize  = _blockUtils.getBoundingBox(expandedBlocks).project_xy();
+		util::box<unsigned int, 2> expansionBlocksSize = _blockUtils.getBoundingBox(expansionBlocks).project<2>();
+		util::box<unsigned int, 2> expandedBlocksSize  = _blockUtils.getBoundingBox(expandedBlocks).project<2>();
 
 		// if the bounding rectangle of the blocks we extracted slices for has 
 		// the same size as the one for the blocks we should extract, we are 
@@ -250,7 +250,7 @@ SliceGuarantor::getRequiredSlicesAndConflicts(
 		hashToSlice[slice->hashValue()] = slice;
 
 	// get the 2D bounding box of requestedBlocks
-	util::rect<int> requestBound = _blockUtils.getBoundingBox(requestedBlocks).project_xy();
+	util::box<int, 2> requestBound = _blockUtils.getBoundingBox(requestedBlocks).project<2>();
 
 	// every slice that overlaps with requestBound is required
 	Slices overlappingSlices;
@@ -279,13 +279,13 @@ SliceGuarantor::getRequiredSlicesAndConflicts(
 boost::shared_ptr<Slices>
 SliceGuarantor::collectSlicesByBlock(const Slices& slices, const Block& block) {
 
-	util::rect<unsigned int> blockRect = _blockUtils.getBoundingBox(block).project_xy();
+	util::box<unsigned int, 2> blockRect = _blockUtils.getBoundingBox(block).project<2>();
 
 	boost::shared_ptr<Slices> blockSlices = boost::make_shared<Slices>();
 
 	foreach (boost::shared_ptr<Slice> slice, slices) {
 
-		util::rect<unsigned int> sliceBoundingBox = slice->getComponent()->getBoundingBox();
+		util::box<unsigned int, 2> sliceBoundingBox = slice->getComponent()->getBoundingBox();
 
 		if (blockRect.intersects(sliceBoundingBox))
 			blockSlices->add(slice);
@@ -321,8 +321,8 @@ SliceGuarantor::checkWhole(
 		const Slice&  slice,
 		Blocks&       expandedBlocks) const {
 
-	util::rect<unsigned int> sliceBound = slice.getComponent()->getBoundingBox();
-	util::rect<unsigned int> blockBound = _blockUtils.getBoundingBox(expandedBlocks).project_xy();
+	util::box<unsigned int, 2> sliceBound = slice.getComponent()->getBoundingBox();
+	util::box<unsigned int, 2> blockBound = _blockUtils.getBoundingBox(expandedBlocks).project<2>();
 	
 	LOG_ALL(sliceguarantorlog)
 			<< "block bound: " << blockBound
@@ -330,7 +330,7 @@ SliceGuarantor::checkWhole(
 			<< " for slice " << slice.getId()
 			<< std::endl;
 	
-	if (sliceBound.minX <= blockBound.minX)
+	if (sliceBound.min().x() <= blockBound.min().x())
 	{
 		_blockUtils.expand(
 				expandedBlocks,
@@ -339,7 +339,7 @@ SliceGuarantor::checkWhole(
 		LOG_ALL(sliceguarantorlog) << "Slice touches -x boundary" << std::endl;
 	}
 	
-	if (sliceBound.maxX >= blockBound.maxX)
+	if (sliceBound.max().x() >= blockBound.max().x())
 	{
 		_blockUtils.expand(
 				expandedBlocks,
@@ -348,7 +348,7 @@ SliceGuarantor::checkWhole(
 		LOG_ALL(sliceguarantorlog) << "Slice touches +x boundary" << std::endl;
 	}
 
-	if (sliceBound.minY <= blockBound.minY)
+	if (sliceBound.min().y() <= blockBound.min().y())
 	{
 		_blockUtils.expand(
 				expandedBlocks,
@@ -357,7 +357,7 @@ SliceGuarantor::checkWhole(
 		LOG_ALL(sliceguarantorlog) << "Slice touches -y boundary" << std::endl;
 	}
 	
-	if (sliceBound.maxY >= blockBound.maxY)
+	if (sliceBound.max().y() >= blockBound.max().y())
 	{
 		_blockUtils.expand(
 				expandedBlocks,

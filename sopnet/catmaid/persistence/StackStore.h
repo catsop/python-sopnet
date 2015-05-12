@@ -20,7 +20,7 @@ public:
 	 * Return an ImageStack Value for the given Box by calling getImage for each 
 	 * section (z-coordinate) contained in the Box.
 	 */
-	virtual pipeline::Value<ImageStack> getImageStack(const util::box<unsigned int>& box);
+	virtual pipeline::Value<ImageStack> getImageStack(const util::box<unsigned int, 3>& box);
 	
 protected:
 	
@@ -30,7 +30,7 @@ protected:
 	 * bound does not overlap any image data in the section).
 	 */
 	virtual boost::shared_ptr<Image> getImage(
-			const util::rect<unsigned int> bound,
+			const util::box<unsigned int, 2> bound,
 			const unsigned int section) = 0;
 };
 

@@ -2,7 +2,7 @@
 #include <pipeline/Process.h>
 #include <catmaid/guarantors/SolutionGuarantor.h>
 #include <catmaid/blocks/Cores.h>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include "SolutionGuarantor.h"
 #include "logging.h"
 
@@ -10,7 +10,7 @@ namespace python {
 
 Locations
 SolutionGuarantor::fill(
-		const util::point3<unsigned int>& request,
+		const util::point<unsigned int, 3>& request,
 		const SolutionGuarantorParameters& parameters,
 		const ProjectConfiguration& configuration) {
 
@@ -33,7 +33,7 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] processing..." << std::endl;
 
 	// find the core that corresponds to the request
-	Core core(request.x, request.y, request.z);
+	Core core(request.x(), request.y(), request.z());
 
 	// let it do what it was build for
 	Blocks missingBlocks = solutionGuarantor.guaranteeSolution(core);
@@ -43,7 +43,7 @@ SolutionGuarantor::fill(
 	// collect missing block locations
 	Locations missing;
 	foreach (const Block& block, missingBlocks)
-		missing.push_back(util::point3<unsigned int>(block.x(), block.y(), block.z()));
+		missing.push_back(util::point<unsigned int, 3>(block.x(), block.y(), block.z()));
 
 	return missing;
 }

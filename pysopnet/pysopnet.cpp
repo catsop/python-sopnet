@@ -3,7 +3,7 @@
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 
 #include <util/exceptions.h>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include <catmaid/ProjectConfiguration.h>
 #include <catmaid/blocks/Block.h>
 #include <catmaid/persistence/StackDescription.h>
@@ -64,11 +64,11 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			"segmentHashValue",
 			static_cast<SegmentHash (*)(const std::vector<SliceHash>&, const std::vector<SliceHash>&)>(hash_value));
 
-	// point3<unsigned int>
-	boost::python::class_<util::point3<unsigned int> >("point3", boost::python::init<unsigned int, unsigned int, unsigned int>())
-			.def_readwrite("x", &util::point3<unsigned int>::x)
-			.def_readwrite("y", &util::point3<unsigned int>::y)
-			.def_readwrite("z", &util::point3<unsigned int>::z);
+	// point<unsigned int, 3>
+	boost::python::class_<util::point<unsigned int, 3> >("point3", boost::python::init<unsigned int, unsigned int, unsigned int>())
+			.add_property("x", &util::point<unsigned int, 3>::__get_x, &util::point<unsigned int, 3>::__set_x)
+			.add_property("y", &util::point<unsigned int, 3>::__get_y, &util::point<unsigned int, 3>::__set_y)
+			.add_property("z", &util::point<unsigned int, 3>::__get_z, &util::point<unsigned int, 3>::__set_z);
 
 	// SliceGuarantorParameters
 	boost::python::class_<SliceGuarantorParameters>("SliceGuarantorParameters")

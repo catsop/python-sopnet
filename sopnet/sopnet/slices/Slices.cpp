@@ -74,7 +74,7 @@ Slices::remove(boost::shared_ptr<Slice> slice) {
 }
 
 std::vector<boost::shared_ptr<Slice> >
-Slices::find(const util::point<double>& center, double distance) {
+Slices::find(const util::point<double, 2>& center, double distance) {
 
 	if (_kdTreeDirty) {
 
@@ -102,8 +102,8 @@ Slices::find(const util::point<double>& center, double distance) {
 	std::vector<std::pair<size_t, double> > results;
 
 	double query[2];
-	query[0] = center.x;
-	query[1] = center.y;
+	query[0] = center.x();
+	query[1] = center.y();
 
 	nanoflann::SearchParams params(0 /* ignored parameter */);
 
@@ -158,7 +158,7 @@ Slices::setConflicts(unsigned int id, std::vector<unsigned int> conflicts)
 }
 
 void
-Slices::translate(const util::point<int>& offset) {
+Slices::translate(const util::point<int, 2>& offset) {
 
 	foreach (boost::shared_ptr<Slice> slice, _slices)
 		slice->translate(offset);

@@ -63,13 +63,13 @@ GeometryFeatureExtractor::updateOutputs() {
 		_features->addName("c&b aligned max slice distance");
 	}
 
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+	for (boost::shared_ptr<EndSegment> segment : _segments->getEnds())
 		getFeatures(*segment);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> segment : _segments->getContinuations())
 		getFeatures(*segment);
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+	for (boost::shared_ptr<BranchSegment> segment : _segments->getBranches())
 		getFeatures(*segment);
 
 	LOG_ALL(geometryfeatureextractorlog) << "found features: " << *_features << std::endl;
@@ -115,15 +115,15 @@ GeometryFeatureExtractor::computeFeatures(const EndSegment& end, std::vector<dou
 void
 GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuation, std::vector<double>& features) {
 
-	const util::point<double>& sourceCenter = continuation.getSourceSlice()->getComponent()->getCenter();
-	const util::point<double>& targetCenter = continuation.getTargetSlice()->getComponent()->getCenter();
+	const util::point<double, 2>& sourceCenter = continuation.getSourceSlice()->getComponent()->getCenter();
+	const util::point<double, 2>& targetCenter = continuation.getTargetSlice()->getComponent()->getCenter();
 
 	int sourceSize = continuation.getSourceSlice()->getComponent()->getSize();
 	int targetSize = continuation.getTargetSlice()->getComponent()->getSize();
 
-	util::point<double> difference = sourceCenter - targetCenter;
+	util::point<double, 2> difference = sourceCenter - targetCenter;
 
-	double distance = difference.x*difference.x + difference.y*difference.y;
+	double distance = difference.x()*difference.x() + difference.y()*difference.y();
 
 	double overlap = _overlap(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
@@ -174,18 +174,18 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 void
 GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vector<double>& features) {
 
-	const util::point<double>& sourceCenter  = branch.getSourceSlice()->getComponent()->getCenter();
-	const util::point<double>& targetCenter1 = branch.getTargetSlice1()->getComponent()->getCenter();
-	const util::point<double>& targetCenter2 = branch.getTargetSlice2()->getComponent()->getCenter();
+	const util::point<double, 2>& sourceCenter  = branch.getSourceSlice()->getComponent()->getCenter();
+	const util::point<double, 2>& targetCenter1 = branch.getTargetSlice1()->getComponent()->getCenter();
+	const util::point<double, 2>& targetCenter2 = branch.getTargetSlice2()->getComponent()->getCenter();
 
 	int sourceSize  = branch.getSourceSlice()->getComponent()->getSize();
 	int targetSize1 = branch.getTargetSlice1()->getComponent()->getSize();
 	int targetSize2 = branch.getTargetSlice2()->getComponent()->getSize();
 	int targetSize  = targetSize1 + targetSize2;
 
-	util::point<double> difference = sourceCenter - (targetCenter1*targetSize1 + targetCenter2*targetSize2)/((double)(targetSize));
+	util::point<double, 2> difference = sourceCenter - (targetCenter1*targetSize1 + targetCenter2*targetSize2)/((double)(targetSize));
 
-	double distance = difference.x*difference.x + difference.y*difference.y;
+	double distance = difference.x()*difference.x() + difference.y()*difference.y();
 
 
 	double overlap = _overlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());

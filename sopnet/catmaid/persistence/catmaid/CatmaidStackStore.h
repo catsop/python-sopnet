@@ -20,7 +20,7 @@ public:
 	CatmaidStackStore(const ProjectConfiguration& configuration, StackType stackType);
 
 private:
-	boost::shared_ptr<Image> getImage(const util::rect<unsigned int> bound,
+	boost::shared_ptr<Image> getImage(const util::box<unsigned int, 2> bound,
 									  const unsigned int section);
 
 	/**
@@ -45,7 +45,7 @@ private:
 					   const Image& request,
 					   const unsigned int tileWXmin,
 					   const unsigned int tileWYmin,
-					   const util::rect<unsigned int> bound);
+					   const util::box<unsigned int, 2> bound);
 
 	const StackDescription& _stack;
 

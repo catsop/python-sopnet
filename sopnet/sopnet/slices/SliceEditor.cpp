@@ -2,14 +2,14 @@
 #include <util/foreach.h>
 #include <pipeline/Value.h>
 #include <imageprocessing/ConnectedComponent.h>
-#include <imageprocessing/MserParameters.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <sopnet/slices/SliceExtractor.h>
 #include <sopnet/features/Overlap.h>
 #include "SliceEditor.h"
 
 logger::LogChannel sliceeditorlog("sliceeditorlog", "[SliceEditor] ");
 
-SliceEditor::SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSlices, unsigned int section, const util::rect<int>& region) :
+SliceEditor::SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSlices, unsigned int section, const util::box<int, 2>& region) :
 	_initialSlices(initialSlices.begin(), initialSlices.end()),
 	_section(section),
 	_region(region),
@@ -20,7 +20,7 @@ SliceEditor::SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSl
 
 	// draw initial slices
 	_sliceImage->init(0.0);
-	foreach (boost::shared_ptr<Slice> slice, _initialSlices)
+	for (boost::shared_ptr<Slice> slice : _initialSlices)
 		drawSlice(slice);
 }
 
@@ -31,16 +31,16 @@ SliceEditor::getSliceImage() {
 }
 
 void
-SliceEditor::draw(const util::point<double>& position, double radius, bool foreground) {
+SliceEditor::draw(const util::point<double, 2>& position, double radius, bool foreground) {
 
-	util::point<int> p = position - _region.upperLeft();
+	util::point<int, 2> p = position - _region.min();
 
 	for (int dx = -radius; dx <= radius; dx++)
 		for (int dy = -radius; dy <= radius; dy++)
 			if (dx*dx + dy*dy <= radius*radius)
-				if (p.x + dx >= 0 && p.x + dx < _sliceImage->width()
-				&&  p.y + dy >= 0 && p.y + dy < _sliceImage->height())
-					(*_sliceImage)(p.x + dx, p.y + dy) = (foreground ? 0.8 : 0.0);
+				if (p.x() + dx >= 0 && p.x() + dx < _sliceImage->width()
+				&&  p.y() + dy >= 0 && p.y() + dy < _sliceImage->height())
+					(*_sliceImage)(p.x() + dx, p.y() + dy) = (foreground ? 0.8 : 0.0);
 }
 
 SliceEdits
@@ -48,26 +48,21 @@ SliceEditor::finish() {
 
 	SliceEdits edits;
 
-	// create mser parameters suitable to extract connected
-	// components
-	pipeline::Value<MserParameters> mserParameters;
-	mserParameters->delta        = 1;
-	mserParameters->minArea      = 0;
-	mserParameters->maxArea      = 10000000;
-	mserParameters->maxVariation = 100;
-	mserParameters->minDiversity = 0;
-	mserParameters->darkToBright = false;
-	mserParameters->brightToDark = true;
-	mserParameters->sameIntensityComponents = false;
+	// create parameters suitable to extract connected components
+	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	cteParameters->minSize      = 0;
+	cteParameters->maxSize      = 10000000;
+	cteParameters->darkToBright = false;
+	cteParameters->sameIntensityComponents = false;
 
 	LOG_DEBUG(sliceeditorlog) << "extracting slices from current slice image" << std::endl;
 
 	// create a SliceExtractor
 	pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(_section, false /* don't downsample */);
 
-	// give it the section it has to process and our mser parameters
+	// give it the section it has to process and our parameters
 	sliceExtractor->setInput("membrane", _sliceImage);
-	sliceExtractor->setInput("mser parameters", mserParameters);
+	sliceExtractor->setInput("parameters", cteParameters);
 
 	// get the slices in the current section
 	pipeline::Value<Slices> extractedSlices = sliceExtractor->getOutput("slices");
@@ -76,7 +71,7 @@ SliceEditor::finish() {
 
 	// translate them back to the initial slices
 	Slices translatedSlices = *extractedSlices;
-	translatedSlices.translate(_region.upperLeft());
+	translatedSlices.translate(_region.min());
 
 	// find all perfectly overlapping slices and remove them (they have not 
 	// changed)
@@ -85,7 +80,7 @@ SliceEditor::finish() {
 	std::set<boost::shared_ptr<Slice> > changedInitialSlices(_initialSlices.begin(), _initialSlices.end());
 	std::set<boost::shared_ptr<Slice> > newSlices(translatedSlices.begin(), translatedSlices.end());
 
-	foreach (boost::shared_ptr<Slice> initialSlice, _initialSlices) {
+	for (boost::shared_ptr<Slice> initialSlice : _initialSlices) {
 
 		std::vector<boost::shared_ptr<Slice> > closeSlices = translatedSlices.find(initialSlice->getComponent()->getCenter(), 1);
 
@@ -108,17 +103,17 @@ SliceEditor::finish() {
 	std::map<boost::shared_ptr<Slice>, std::vector<boost::shared_ptr<Slice> > > links;
 
 	// init with empty link partners
-	foreach (boost::shared_ptr<Slice> is, changedInitialSlices)
+	for (boost::shared_ptr<Slice> is : changedInitialSlices)
 		links[is] = std::vector<boost::shared_ptr<Slice> >();
 
 	// init with empty link partners
-	foreach (boost::shared_ptr<Slice> ns, newSlices)
+	for (boost::shared_ptr<Slice> ns : newSlices)
 		links[ns] = std::vector<boost::shared_ptr<Slice> >();
 
 	// find partially overlapping partners
-	foreach (boost::shared_ptr<Slice> is, changedInitialSlices) {
+	for (boost::shared_ptr<Slice> is : changedInitialSlices) {
 
-		foreach (boost::shared_ptr<Slice> ns, newSlices) {
+		for (boost::shared_ptr<Slice> ns : newSlices) {
 
 			double o = overlap(*is, *ns);
 
@@ -138,7 +133,7 @@ SliceEditor::finish() {
 
 	// turn overlap map into slice edits
 	std::set<boost::shared_ptr<Slice> > processed;
-	foreach (boost::shared_ptr<Slice> s, links | boost::adaptors::map_keys) {
+	for (boost::shared_ptr<Slice> s : links | boost::adaptors::map_keys) {
 
 		if (processed.count(s))
 			continue;
@@ -150,8 +145,8 @@ SliceEditor::finish() {
 		while (!done) {
 
 			done = true;
-			foreach (boost::shared_ptr<Slice> t, component)
-				foreach (boost::shared_ptr<Slice> u, links[t])
+			for (boost::shared_ptr<Slice> t : component)
+				for (boost::shared_ptr<Slice> u : links[t])
 					done = done && !component.insert(u).second;
 		}
 
@@ -160,11 +155,11 @@ SliceEditor::finish() {
 		std::vector<boost::shared_ptr<Slice> > editNewSlices;
 
 		LOG_ALL(sliceeditorlog) << "found component:" << std::endl;
-		foreach (boost::shared_ptr<Slice> s, component)
+		for (boost::shared_ptr<Slice> s : component)
 			LOG_ALL(sliceeditorlog) << s->getId() << " ";
 		LOG_ALL(sliceeditorlog) << std::endl;
 
-		foreach (boost::shared_ptr<Slice> t, component) {
+		for (boost::shared_ptr<Slice> t : component) {
 
 			if (_initialSlices.count(t))
 				editInitialSlices.push_back(t);
@@ -174,11 +169,11 @@ SliceEditor::finish() {
 
 		LOG_ALL(sliceeditorlog)
 				<< "found replacement of slices ";
-		foreach (boost::shared_ptr<Slice> s, editInitialSlices)
+		for (boost::shared_ptr<Slice> s : editInitialSlices)
 			LOG_ALL(sliceeditorlog) << s->getId() << " ";
 		LOG_ALL(sliceeditorlog)
 				<< "with ";
-		foreach (boost::shared_ptr<Slice> s, editNewSlices)
+		for (boost::shared_ptr<Slice> s : editNewSlices)
 			LOG_ALL(sliceeditorlog) << s->getId() << " ";
 		LOG_ALL(sliceeditorlog) << std::endl;
 
@@ -193,6 +188,6 @@ SliceEditor::finish() {
 void
 SliceEditor::drawSlice(boost::shared_ptr<Slice> slice) {
 
-	foreach (const util::point<int>& p, slice->getComponent()->getPixels())
-		(*_sliceImage)(p.x - _region.minX, p.y - _region.minY) = 0.8;
+	for (const util::point<int, 2>& p : slice->getComponent()->getPixels())
+		(*_sliceImage)(p.x() - _region.min().x(), p.y() - _region.min().y()) = 0.8;
 }

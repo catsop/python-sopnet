@@ -2,9 +2,9 @@
 #define SOPNET_PYTHON_LOCATIONS_H__
 
 #include <vector>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 
-typedef std::vector<util::point3<unsigned int> > Locations;
+typedef std::vector<util::point<unsigned int, 3> > Locations;
 
 #endif // SOPNET_PYTHON_LOCATIONS_H__
 

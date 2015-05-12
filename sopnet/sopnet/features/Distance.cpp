@@ -3,7 +3,7 @@
 #include <vigra/transformimage.hxx>
 
 #include <imageprocessing/ConnectedComponent.h>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <sopnet/slices/Slice.h>
 #include "Distance.h"
 
@@ -30,7 +30,7 @@ Distance::operator()(
 		double& maxSliceDistance) {
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align both slices
 	if (align)
@@ -63,13 +63,13 @@ Distance::operator()(
 		double& maxSliceDistance) {
 
 	// values to add to slice2's pixel positions
-	util::point<int> offset2(0, 0);
+	util::point<int, 2> offset2(0, 0);
 
 	// ...only non-zero if we want to align slice2 to both slice1s
 	if (align) {
 
 		// the mean pixel location of slice1a and slice1b
-		util::point<double> center1 = 
+		util::point<double, 2> center1 = 
 				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
 				 +
 				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
@@ -110,19 +110,19 @@ void
 Distance::distance(
 		const Slice& s1,
 		const Slice& s2,
-		const util::point<int>& offset2,
+		const util::point<int, 2>& offset2,
 		double& avgSliceDistance,
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<int> s2dmbb = getDistanceMapBoundingBox(s2);
+	const util::box<int, 2> s2dmbb = getDistanceMapBoundingBox(s2);
 
 	double totalDistance = 0.0;
 
 	maxSliceDistance = 0.0;
 
-	foreach (util::point<int> p1, c1.getPixels()) {
+	for (util::point<int, 2> p1 : c1.getPixels()) {
 
 		// correct for offset2
 		p1 += offset2;
@@ -136,10 +136,10 @@ Distance::distance(
 		}
 
 		// get p1's position in s2's distance map
-		p1 -= util::point<int>(s2dmbb.minX, s2dmbb.minY);
+		p1 -= util::point<int, 2>(s2dmbb.min().x(), s2dmbb.min().y());
 
 		// add up the value
-		double dist = getDistanceMap(s2)(p1.x, p1.y);
+		double dist = getDistanceMap(s2)(p1.x(), p1.y());
 		totalDistance += dist;
 		maxSliceDistance = std::max(maxSliceDistance, dist);
 	}
@@ -152,20 +152,20 @@ Distance::distance(
 		const Slice& s1,
 		const Slice& s2a,
 		const Slice& s2b,
-		const util::point<int>& offset2,
+		const util::point<int, 2>& offset2,
 		double& avgSliceDistance,
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<int> s2dmbba = getDistanceMapBoundingBox(s2a);
-	const util::rect<int> s2dmbbb = getDistanceMapBoundingBox(s2b);
+	const util::box<int, 2> s2dmbba = getDistanceMapBoundingBox(s2a);
+	const util::box<int, 2> s2dmbbb = getDistanceMapBoundingBox(s2b);
 
 	double totalDistance = 0.0;
 
 	maxSliceDistance = 0.0;
 
-	foreach (util::point<int> p1, c1.getPixels()) {
+	for (util::point<int, 2> p1 : c1.getPixels()) {
 
 		// correct for offset2
 		p1 += offset2;
@@ -173,7 +173,7 @@ Distance::distance(
 		double distancea;
 
 		{
-			util::point<int> p1a = p1;
+			util::point<int, 2> p1a = p1;
 
 			// is it within s2a's distance map bounding box?
 			if (!s2dmbba.contains(p1a)) {
@@ -183,17 +183,17 @@ Distance::distance(
 			} else {
 
 				// get p1a's position in s2a's distance map
-				p1a -= util::point<int>(s2dmbba.minX, s2dmbba.minY);
+				p1a -= util::point<int, 2>(s2dmbba.min().x(), s2dmbba.min().y());
 
 				// add up the value
-				distancea = getDistanceMap(s2a)(p1a.x, p1a.y);
+				distancea = getDistanceMap(s2a)(p1a.x(), p1a.y());
 			}
 		}
 
 		double distanceb;
 
 		{
-			util::point<int> p1b = p1;
+			util::point<int, 2> p1b = p1;
 
 			// is it within s2b's distance map bounding box?
 			if (!s2dmbbb.contains(p1b)) {
@@ -203,10 +203,10 @@ Distance::distance(
 			} else {
 
 				// get p1b's position in s2b's distance map
-				p1b -= util::point<int>(s2dmbbb.minX, s2dmbbb.minY);
+				p1b -= util::point<int, 2>(s2dmbbb.min().x(), s2dmbbb.min().y());
 
 				// add up the value
-				distanceb = getDistanceMap(s2b)(p1b.x, p1b.y);
+				distanceb = getDistanceMap(s2b)(p1b.x(), p1b.y());
 			}
 		}
 
@@ -219,18 +219,18 @@ Distance::distance(
 	avgSliceDistance = totalDistance/s1.getComponent()->getSize();
 }
 
-util::rect<int>
+util::box<int, 2>
 Distance::getDistanceMapBoundingBox(const Slice& slice) {
 
 
-	const util::rect<int>& boundingBox = slice.getComponent()->getBoundingBox();
+	const util::box<int, 2>& boundingBox = slice.getComponent()->getBoundingBox();
 
 	// comput size and offset of distance map
-	util::rect<int> distanceMapBoundingBox;
-	distanceMapBoundingBox.minX = boundingBox.minX - _maxDistance;
-	distanceMapBoundingBox.minY = boundingBox.minY - _maxDistance;
-	distanceMapBoundingBox.maxX = boundingBox.maxX + _maxDistance;
-	distanceMapBoundingBox.maxY = boundingBox.maxY + _maxDistance;
+	util::box<int, 2> distanceMapBoundingBox;
+	distanceMapBoundingBox.min().x() = boundingBox.min().x() - _maxDistance;
+	distanceMapBoundingBox.min().y() = boundingBox.min().y() - _maxDistance;
+	distanceMapBoundingBox.max().x() = boundingBox.max().x() + _maxDistance;
+	distanceMapBoundingBox.max().y() = boundingBox.max().y() + _maxDistance;
 
 	return distanceMapBoundingBox;
 }
@@ -247,10 +247,10 @@ Distance::getDistanceMap(const Slice& slice) {
 Distance::distance_map_type
 Distance::computeDistanceMap(const Slice& slice) {
 
-	const util::rect<int>& boundingBox = slice.getComponent()->getBoundingBox();
+	const util::box<int, 2>& boundingBox = slice.getComponent()->getBoundingBox();
 
 	// comput size and offset of distance map
-	util::rect<int> distanceMapBoundingBox = getDistanceMapBoundingBox(slice);
+	util::box<int, 2> distanceMapBoundingBox = getDistanceMapBoundingBox(slice);
 
 	distance_map_type::size_type shape(distanceMapBoundingBox.width(), distanceMapBoundingBox.height());
 
@@ -258,10 +258,10 @@ Distance::computeDistanceMap(const Slice& slice) {
 	distance_map_type objectImage(shape, 0.0);
 
 	// copy slice pixels into object image
-	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
+	for (const util::point<unsigned int, 2>& pixel : slice.getComponent()->getPixels()) {
 
-		int x = pixel.x - boundingBox.minX + _maxDistance;
-		int y = pixel.y - boundingBox.minY + _maxDistance;
+		int x = pixel.x() - boundingBox.min().x() + _maxDistance;
+		int y = pixel.y() - boundingBox.min().y() + _maxDistance;
 
 		if (x < 0 || x >= (int)distanceMapBoundingBox.width() || y < 0 || y >= (int)distanceMapBoundingBox.height()) {
 

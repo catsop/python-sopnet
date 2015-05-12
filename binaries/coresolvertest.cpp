@@ -8,7 +8,7 @@
 
 #include <imageprocessing/ImageStack.h>
 
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include <util/ProgramOptions.h>
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
@@ -171,7 +171,7 @@ void writeSlice(const Slice& slice, const std::string& sliceImageDirectory, std:
 
 	unsigned int section = slice.getSection();
 	unsigned int id      = slice.getId();
-	util::rect<int> bbox = slice.getComponent()->getBoundingBox();
+	util::box<int, 2> bbox = slice.getComponent()->getBoundingBox();
 
 	std::string filename = sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section) +
 		"/" + boost::lexical_cast<std::string>(id) + "_" + boost::lexical_cast<std::string>(bbox.minX) +
@@ -854,7 +854,7 @@ bool coreSolver(
 
 	Blocks missingBlocks;
 	BlockUtils blockUtils(configuration);
-	Core core = blockUtils.getCoreAtLocation(util::point3<unsigned int>(0, 0, 0));
+	Core core = blockUtils.getCoreAtLocation(util::point<unsigned int, 3>(0, 0, 0));
 
 	LOG_USER(out) << "HERE" << std::endl;
 
@@ -928,12 +928,12 @@ bool testSolutions(const ProjectConfiguration& configuration)
 }
 
 
-util::point3<unsigned int> parseBlockSize(
+util::point<unsigned int, 3> parseBlockSize(
 		std::string blockSizeFraction,
-		const util::point3<unsigned int> stackSize)
+		const util::point<unsigned int, 3> stackSize)
 {
     std::string item;
-	util::point3<unsigned int> blockSize;
+	util::point<unsigned int, 3> blockSize;
 	int num, denom;
 
 	std::size_t slashPos = blockSizeFraction.find("/");
@@ -953,7 +953,7 @@ util::point3<unsigned int> parseBlockSize(
 		num = boost::lexical_cast<int>(numStr);
 		denom = boost::lexical_cast<int>(denomStr);
 
-		blockSize = util::point3<unsigned int>(fractionCeiling(stackSize.x, num, denom),
+		blockSize = util::point<unsigned int, 3>(fractionCeiling(stackSize.x, num, denom),
 										fractionCeiling(stackSize.y, num, denom),
 										stackSize.z / 2 + 1);
 	}
@@ -975,7 +975,7 @@ int main(int optionc, char** optionv)
 		std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 		pipeline::Value<ImageStack> testStack;
 		unsigned int nx, ny, nz;
-		util::point3<unsigned int> stackSize, blockSize, numBlocks, coreSize;
+		util::point<unsigned int, 3> stackSize, blockSize, numBlocks, coreSize;
 
 		boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
 			boost::make_shared<ImageStackDirectoryReader>(membranePath);
@@ -985,13 +985,13 @@ int main(int optionc, char** optionv)
 		ny = testStack->height();
 		nz = testStack->size();
 
-		stackSize = util::point3<unsigned int>(nx, ny, nz);
+		stackSize = util::point<unsigned int, 3>(nx, ny, nz);
 
 		std::string blockSizeFraction = optionCoreTestBlockSizeFraction.as<std::string>();
 		blockSize = parseBlockSize(blockSizeFraction, stackSize);
 
 		std::string coreSizeFraction = optionCoreTestCoreSizeFraction.as<std::string>();
-		numBlocks = (stackSize + blockSize - util::point3<unsigned int>(1, 1, 1))/blockSize;
+		numBlocks = (stackSize + blockSize - util::point<unsigned int, 3>(1, 1, 1))/blockSize;
 		coreSize = parseBlockSize(coreSizeFraction, numBlocks);
 
 		std::ifstream weightsFile(optionCoreTestFeatureWeightsFile.as<std::string>().c_str());

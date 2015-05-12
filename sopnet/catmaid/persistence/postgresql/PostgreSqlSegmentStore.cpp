@@ -97,16 +97,16 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 	foreach (const SegmentDescription& segment, segments) {
 		std::string segmentId = boost::lexical_cast<std::string>(
 			PostgreSqlUtils::hashToPostgreSqlId(segment.getHash()));
-		const util::rect<unsigned int>& segmentBounds = segment.get2DBoundingBox();
+		const util::box<unsigned int, 2>& segmentBounds = segment.get2DBoundingBox();
 
 		// Create segment.
 		segmentQuery << separator << '(' <<
 				boost::lexical_cast<std::string>(segmentId) << ',' <<
 				boost::lexical_cast<std::string>(segment.getSection()) << ',' <<
-				boost::lexical_cast<std::string>(segmentBounds.minX) << ',' <<
-				boost::lexical_cast<std::string>(segmentBounds.minY) << ',' <<
-				boost::lexical_cast<std::string>(segmentBounds.maxX) << ',' <<
-				boost::lexical_cast<std::string>(segmentBounds.maxY) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.min().x()) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.min().y()) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.max().x()) << ',' <<
+				boost::lexical_cast<std::string>(segmentBounds.max().y()) << ',' <<
 				boost::lexical_cast<std::string>(segment.getType()) << ')';
 
 		// Associate slices to segment.
@@ -265,7 +265,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 		unsigned int maxY = boost::lexical_cast<unsigned int>(cellStr);
 		SegmentDescription segmentDescription(
 				section,
-				util::rect<unsigned int>(minX, minY, maxX, maxY));
+				util::box<unsigned int, 2>(minX, minY, maxX, maxY));
 
 		boost::char_separator<char> separator("{}()\", \t");
 

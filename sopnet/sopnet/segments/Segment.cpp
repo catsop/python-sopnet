@@ -7,13 +7,12 @@ logger::LogChannel segmentlog("segmentlog", "[Segment] ");
 Segment::Segment(
 		unsigned int id,
 		Direction direction,
-		const util::point<double>& center,
+		const util::point<double, 2>& center,
 		unsigned int interSectionInterval) :
 	_id(id),
 	_direction(direction),
 	_center(center),
-	_interSectionInterval(interSectionInterval),
-	_hashDirty(true) {}
+	_interSectionInterval(interSectionInterval) {}
 
 unsigned int
 Segment::getNextSegmentId() {
@@ -131,18 +130,6 @@ std::string Segment::typeString(const SegmentType type)
 		default:
 			return "unknown";
 	}
-}
-
-SegmentHash
-Segment::hashValue() const {
-
-	if (_hashDirty) {
-
-		_hash = hash_value(*this);
-		_hashDirty = false;
-	}
-
-	return _hash;
 }
 
 unsigned int Segment::NextSegmentId = 0;

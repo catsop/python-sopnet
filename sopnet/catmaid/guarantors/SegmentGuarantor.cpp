@@ -41,11 +41,11 @@ SegmentGuarantor::guaranteeSegments(const Blocks& requestedBlocks) {
 	// the requested segments
 	boost::shared_ptr<Segments> segments = boost::make_shared<Segments>();
 
-	util::box<unsigned int> requestBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
+	util::box<unsigned int, 3> requestBoundingBox = _blockUtils.getBoundingBox(requestedBlocks);
 
 	// begin and end section of the request
-	unsigned int zBegin = requestBoundingBox.min.z;
-	unsigned int zEnd   = requestBoundingBox.max.z;
+	unsigned int zBegin = requestBoundingBox.min().z();
+	unsigned int zEnd   = requestBoundingBox.max().z();
 
 	boost::shared_ptr<Slices> nextSlices;
 
@@ -243,18 +243,18 @@ SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 
 	unsigned int section = segment.getInterSectionInterval();
 
-	util::box<unsigned int> blockBoundingBox = _blockUtils.getBoundingBox(block);
+	util::box<unsigned int, 3> blockBoundingBox = _blockUtils.getBoundingBox(block);
 
 	// test in z
-	if (section < blockBoundingBox.min.z ||
-	    section > blockBoundingBox.max.z)
+	if (section < blockBoundingBox.min().z() ||
+	    section > blockBoundingBox.max().z())
 		return false;
 
 	// test in x-y
-	util::rect<unsigned int> blockRect = blockBoundingBox.project_xy();
+	util::box<unsigned int, 2> blockRect = blockBoundingBox.project<2>();
 	foreach (boost::shared_ptr<Slice> slice, segment.getSlices()) {
 
-		util::rect<unsigned int> sliceBoundingBox = slice->getComponent()->getBoundingBox();
+		util::box<unsigned int, 2> sliceBoundingBox = slice->getComponent()->getBoundingBox();
 
 		if (blockRect.intersects(sliceBoundingBox))
 			return true;
@@ -284,13 +284,13 @@ SegmentGuarantor::collectSlicesByZ(
 	return zSlices;
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 {
 	if (slices.size() == 0)
-		return util::box<unsigned int>(0, 0, 0, 0, 0, 0);
+		return util::box<unsigned int, 3>(0, 0, 0, 0, 0, 0);
 
-	util::rect<unsigned int> bound(0, 0, 0, 0);
+	util::box<unsigned int, 2> bound(0, 0, 0, 0);
 	unsigned int zMax = 0;
 	unsigned int zMin = 0;
 
@@ -310,20 +310,20 @@ SegmentGuarantor::slicesBoundingBox(const Slices& slices)
 		}
 	}
 
-	return util::box<unsigned int>(bound.minX, bound.minY, zMin, bound.maxX, bound.maxY, zMax);
+	return util::box<unsigned int, 3>(bound.min().x(), bound.min().y(), zMin, bound.max().x(), bound.max().y(), zMax);
 }
 
 boost::shared_ptr<Features>
 SegmentGuarantor::computeFeatures(boost::shared_ptr<Segments> segments)
 {
-	util::box<unsigned int> box = segments->boundingBox();
+	util::box<unsigned int, 3> box = segments->boundingBox();
 	Blocks blocks = _blockUtils.getBlocksInBox(box);
-	util::box<unsigned int> blocksBoundingBox = _blockUtils.getBoundingBox(blocks);
-	blocksBoundingBox.max.z =
-			std::min(blocksBoundingBox.max.z, _blockUtils.getVolumeBoundingBox().max.z);
+	util::box<unsigned int, 3> blocksBoundingBox = _blockUtils.getBoundingBox(blocks);
+	blocksBoundingBox.max().z() =
+			std::min(blocksBoundingBox.max().z(), _blockUtils.getVolumeBoundingBox().max().z());
 
 	pipeline::Process<SegmentFeaturesExtractor> featuresExtractor;
-	pipeline::Value<util::point3<unsigned int> > offset(blocksBoundingBox.min);
+	pipeline::Value<util::point<unsigned int, 3> > offset(blocksBoundingBox.min());
 	pipeline::Value<Features> features;
 
 	LOG_DEBUG(segmentguarantorlog)

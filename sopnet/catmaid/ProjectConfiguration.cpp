@@ -40,36 +40,36 @@ ProjectConfiguration::getCatmaidStack(const StackType stackType) const {
 }
 
 void
-ProjectConfiguration::setBlockSize(const util::point3<unsigned int>& blockSize) {
+ProjectConfiguration::setBlockSize(const util::point<unsigned int, 3>& blockSize) {
 
 	_blockSize = blockSize;
 }
 
-const util::point3<unsigned int>&
+const util::point<unsigned int, 3>&
 ProjectConfiguration::getBlockSize() const {
 
 	return _blockSize;
 }
 
 void
-ProjectConfiguration::setVolumeSize(const util::point3<unsigned int>& volumeSize) {
+ProjectConfiguration::setVolumeSize(const util::point<unsigned int, 3>& volumeSize) {
 
 	_volumeSize = volumeSize;
 }
 
-const util::point3<unsigned int>&
+const util::point<unsigned int, 3>&
 ProjectConfiguration::getVolumeSize() const {
 
 	return _volumeSize;
 }
 
 void
-ProjectConfiguration::setCoreSize(const util::point3<unsigned int>& coreSizeInBlocks)
+ProjectConfiguration::setCoreSize(const util::point<unsigned int, 3>& coreSizeInBlocks)
 {
 	_coreSizeInBlocks = coreSizeInBlocks;
 }
 
-const util::point3<unsigned int>&
+const util::point<unsigned int, 3>&
 ProjectConfiguration::getCoreSize() const
 {
 	return _coreSizeInBlocks;

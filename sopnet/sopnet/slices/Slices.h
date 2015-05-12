@@ -38,8 +38,8 @@ public:
 	 */
 	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t) const {
 
-		double d0 = p1[0] - _slices[index_p2]->getComponent()->getCenter().x;
-		double d1 = p1[1] - _slices[index_p2]->getComponent()->getCenter().y;
+		double d0 = p1[0] - _slices[index_p2]->getComponent()->getCenter().x();
+		double d1 = p1[1] - _slices[index_p2]->getComponent()->getCenter().y();
 
 		return d0*d0 + d1*d1;
 	}
@@ -51,9 +51,9 @@ public:
 	inline double kdtree_get_pt(const size_t index, int dim) const {
 
 		if (dim == 0)
-			return _slices[index]->getComponent()->getCenter().x;
+			return _slices[index]->getComponent()->getCenter().x();
 		else if (dim == 1)
-			return _slices[index]->getComponent()->getCenter().y;
+			return _slices[index]->getComponent()->getCenter().y();
 		else return 0;
 	}
 
@@ -210,12 +210,12 @@ public:
 	/**
 	 * Find all slices within distance to the given center.
 	 */
-	std::vector<boost::shared_ptr<Slice> > find(const util::point<double>& center, double distance);
+	std::vector<boost::shared_ptr<Slice> > find(const util::point<double, 2>& center, double distance);
 
 	/**
 	 * Move all slices in 2D.
 	 */
-	void translate(const util::point<int>& offset);
+	void translate(const util::point<int, 2>& offset);
 
 private:
 

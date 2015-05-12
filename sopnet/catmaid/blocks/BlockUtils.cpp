@@ -6,15 +6,15 @@ BlockUtils::BlockUtils(const ProjectConfiguration& configuration) :
 	_coreSize(configuration.getCoreSize()),
 	_coreSizeInVoxels(configuration.getCoreSize()*configuration.getBlockSize()) {
 
-	util::point3<unsigned int> numBlocks = (_volumeSize + _blockSize        - util::point3<unsigned int>(1, 1, 1))/_blockSize;
-	util::point3<unsigned int> numCores  = (_volumeSize + _coreSizeInVoxels - util::point3<unsigned int>(1, 1, 1))/_coreSizeInVoxels;
+	util::point<unsigned int, 3> numBlocks = (_volumeSize + _blockSize        - util::point<unsigned int, 3>(1, 1, 1))/_blockSize;
+	util::point<unsigned int, 3> numCores  = (_volumeSize + _coreSizeInVoxels - util::point<unsigned int, 3>(1, 1, 1))/_coreSizeInVoxels;
 
-	_validBlockCoordinates = util::box<unsigned int>(
+	_validBlockCoordinates = util::box<unsigned int, 3>(
 			0, 0, 0,
-			numBlocks.x, numBlocks.y, numBlocks.z);
-	_validCoreCoordinates = util::box<unsigned int>(
+			numBlocks.x(), numBlocks.y(), numBlocks.z());
+	_validCoreCoordinates = util::box<unsigned int, 3>(
 			0, 0, 0,
-			numCores.x, numCores.y, numCores.z);
+			numCores.x(), numCores.y(), numCores.z());
 }
 
 void
@@ -33,22 +33,22 @@ BlockUtils::expand(
 	expandOneDimension(blocks, 2, posZ, negZ);
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 BlockUtils::getBoundingBox(const Block& block) const {
 
-	return util::box<unsigned int>(
-			 block.x()     *_blockSize.x,
-			 block.y()     *_blockSize.y,
-			 block.z()     *_blockSize.z,
-			(block.x() + 1)*_blockSize.x,
-			(block.y() + 1)*_blockSize.y,
-			(block.z() + 1)*_blockSize.z);
+	return util::box<unsigned int, 3>(
+			 block.x()     *_blockSize.x(),
+			 block.y()     *_blockSize.y(),
+			 block.z()     *_blockSize.z(),
+			(block.x() + 1)*_blockSize.x(),
+			(block.y() + 1)*_blockSize.y(),
+			(block.z() + 1)*_blockSize.z());
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 BlockUtils::getBoundingBox(const Blocks& blocks) const {
 
-	util::box<unsigned int> boundingBox(0, 0, 0, 0, 0, 0);
+	util::box<unsigned int, 3> boundingBox(0, 0, 0, 0, 0, 0);
 
 	foreach (const Block& block, blocks) {
 
@@ -61,36 +61,36 @@ BlockUtils::getBoundingBox(const Blocks& blocks) const {
 	return boundingBox;
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 BlockUtils::getBoundingBox(const Core& core) const {
 
-	return util::box<unsigned int>(
-			 core.x()     *_coreSizeInVoxels.x,
-			 core.y()     *_coreSizeInVoxels.y,
-			 core.z()     *_coreSizeInVoxels.z,
-			(core.x() + 1)*_coreSizeInVoxels.x,
-			(core.y() + 1)*_coreSizeInVoxels.y,
-			(core.z() + 1)*_coreSizeInVoxels.z);
+	return util::box<unsigned int, 3>(
+			 core.x()     *_coreSizeInVoxels.x(),
+			 core.y()     *_coreSizeInVoxels.y(),
+			 core.z()     *_coreSizeInVoxels.z(),
+			(core.x() + 1)*_coreSizeInVoxels.x(),
+			(core.y() + 1)*_coreSizeInVoxels.y(),
+			(core.z() + 1)*_coreSizeInVoxels.z());
 }
 
 Block
-BlockUtils::getBlockAtLocation(const util::point3<unsigned int>& location) const {
+BlockUtils::getBlockAtLocation(const util::point<unsigned int, 3>& location) const {
 
 	return Block(location/_blockSize);
 }
 
 Blocks
-BlockUtils::getBlocksInBox(const util::box<unsigned int>& box) const {
+BlockUtils::getBlocksInBox(const util::box<unsigned int, 3>& box) const {
 
-	util::point3<unsigned int> minBlockCoordinate = box.min/_blockSize;
-	util::point3<unsigned int> numBlocks = (box.min - minBlockCoordinate*_blockSize
-			+ box.size() + _blockSize - util::point3<unsigned int>(1, 1, 1))/_blockSize;
+	util::point<unsigned int, 3> minBlockCoordinate = box.min()/_blockSize;
+	util::point<unsigned int, 3> numBlocks = (box.min() - minBlockCoordinate*_blockSize
+			+ box.size() + _blockSize - util::point<unsigned int, 3>(1, 1, 1))/_blockSize;
 
 	return collectBlocks(minBlockCoordinate, numBlocks);
 }
 
 Core
-BlockUtils::getCoreAtLocation(const util::point3<unsigned int>& location) const {
+BlockUtils::getCoreAtLocation(const util::point<unsigned int, 3>& location) const {
 
 	return Core(location/_coreSizeInVoxels);
 }
@@ -98,8 +98,8 @@ BlockUtils::getCoreAtLocation(const util::point3<unsigned int>& location) const 
 Blocks
 BlockUtils::getCoreBlocks(const Core& core) const {
 
-	util::point3<unsigned int> minBlockCoordinate = core.getCoordinates()*_coreSize;
-	util::point3<unsigned int> numBlocks = _coreSize;
+	util::point<unsigned int, 3> minBlockCoordinate = core.getCoordinates()*_coreSize;
+	util::point<unsigned int, 3> numBlocks = _coreSize;
 
 	return collectBlocks(minBlockCoordinate, numBlocks);
 }
@@ -119,26 +119,26 @@ BlockUtils::getCoresBlocks(const Cores& cores) const {
 
 Blocks
 BlockUtils::collectBlocks(
-	util::point3<unsigned int> start,
-	util::point3<unsigned int> numBlocks) const {
+	util::point<unsigned int, 3> start,
+	util::point<unsigned int, 3> numBlocks) const {
 
 	Blocks blocks;
 
-	for (unsigned int x = start.x; x < start.x + numBlocks.x; x++)
-	for (unsigned int y = start.y; y < start.y + numBlocks.y; y++)
-	for (unsigned int z = start.z; z < start.z + numBlocks.z; z++)
+	for (unsigned int x = start.x(); x < start.x() + numBlocks.x(); x++)
+	for (unsigned int y = start.y(); y < start.y() + numBlocks.y(); y++)
+	for (unsigned int z = start.z(); z < start.z() + numBlocks.z(); z++)
 		if (isValidBlockCoordinate(x, y, z))
 			blocks.add(Block(x, y, z));
 
 	return blocks;
 }
 
-util::box<unsigned int>
+util::box<unsigned int, 3>
 BlockUtils::getVolumeBoundingBox() const {
 
-	return util::box<unsigned int>(
+	return util::box<unsigned int, 3>(
 			0, 0, 0,
-			_volumeSize.x, _volumeSize.y, _volumeSize.z);
+			_volumeSize.x(), _volumeSize.y(), _volumeSize.z());
 }
 
 void
@@ -181,5 +181,5 @@ BlockUtils::expandOneDimension(
 bool
 BlockUtils::isValidBlockCoordinate(int x, int y, int z) const {
 
-	return _validBlockCoordinates.contains(util::point3<int>(x, y, z));
+	return _validBlockCoordinates.contains(util::point<int, 3>(x, y, z));
 }

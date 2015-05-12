@@ -5,7 +5,7 @@
 #include <boost/shared_ptr.hpp>
 #include <imageprocessing/Image.h>
 #include <util/point.hpp>
-#include <util/rect.hpp>
+#include <util/box.hpp>
 #include <sopnet/slices/Slice.h>
 #include <sopnet/slices/SliceEdits.h>
 
@@ -27,7 +27,7 @@ public:
 	 *              The edit region in pixel coordinats. Should fit at least the 
 	 *              initial slices.
 	 */
-	SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSlices, unsigned int section, const util::rect<int>& region);
+	SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSlices, unsigned int section, const util::box<int, 2>& region);
 
 	/**
 	 * Get a shared pointer to the current b/w slice image.
@@ -37,7 +37,7 @@ public:
 	/**
 	 * Draw to the slice image.
 	 */
-	void draw(const util::point<double>& position, double radius, bool foreground);
+	void draw(const util::point<double, 2>& position, double radius, bool foreground);
 
 	/**
 	 * Finish the slice editing.
@@ -57,7 +57,7 @@ private:
 	unsigned int _section;
 
 	// the edit region
-	util::rect<int> _region;
+	util::box<int, 2> _region;
 
 	// b/w image of the current slices
 	boost::shared_ptr<Image> _sliceImage;

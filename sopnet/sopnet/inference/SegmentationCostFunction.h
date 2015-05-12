@@ -1,7 +1,7 @@
 #ifndef SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_H__
 #define SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_H__
 
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include <imageprocessing/ImageStack.h>
 #include "SegmentationCostFunctionParameters.h"
 
@@ -65,7 +65,7 @@ private:
 
 	pipeline::Input<SegmentationCostFunctionParameters> _parameters;
 
-	pipeline::Input<util::point3<unsigned int> > _cropOffset;
+	pipeline::Input<util::point<unsigned int, 3> > _cropOffset;
 
 	pipeline::Output<costs_function_type> _costFunction;
 

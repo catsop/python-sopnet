@@ -51,13 +51,13 @@ HistogramFeatureExtractor::updateOutputs() {
 
 	_features->resize(_segments->size(), 4*_numBins);
 
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+	for (boost::shared_ptr<EndSegment> segment : _segments->getEnds())
 		getFeatures(*segment, _features->get(segment->getId()));
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+	for (boost::shared_ptr<ContinuationSegment> segment : _segments->getContinuations())
 		getFeatures(*segment, _features->get(segment->getId()));
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+	for (boost::shared_ptr<BranchSegment> segment : _segments->getBranches())
 		getFeatures(*segment, _features->get(segment->getId()));
 }
 
@@ -128,11 +128,11 @@ HistogramFeatureExtractor::getFeatures(const BranchSegment& branch, std::vector<
 std::vector<double>
 HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
-	util::point3<unsigned int> offset = _cropOffset.isSet() ? *_cropOffset :
-		util::point3<unsigned int>(0, 0, 0);
+	util::point<unsigned int, 3> offset = _cropOffset.isSet() ? *_cropOffset :
+		util::point<unsigned int, 3>(0, 0, 0);
 	std::vector<double> histogram(_numBins, 0);
 
-	unsigned int section = slice.getSection() - offset.z;
+	unsigned int section = slice.getSection() - offset.z();
 
 	Image& image = *(*_sections)[section];
 	
@@ -142,9 +142,9 @@ HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 	LOG_ALL(histogramfeaturelog) << "Slice bound: " << slice.getComponent()->getBoundingBox() <<
 		std::endl;
 
-	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
+	for (const util::point<unsigned int, 2>& pixel : slice.getComponent()->getPixels()) {
 
-		double value = image(pixel.x - offset.x, pixel.y - offset.y);
+		double value = image(pixel.x() - offset.x(), pixel.y() - offset.y());
 
 		unsigned int bin = std::min(_numBins - 1, (unsigned int)(value*_numBins));
 

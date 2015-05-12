@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
-#include <util/point3.hpp>
+#include <util/point.hpp>
 #include "Features.h"
 
 // forward declaration
@@ -21,7 +21,7 @@ public:
 	 * Inputs:
 	 *   Segments "segments" - the Segments for which Features are to be extracted
 	 *   ImageStack "raw sections" - raw images representing the sections
-	 *   util::point3<unsigned int> "crop offset" - optional - points to the offset of the stack
+	 *   util::point<unsigned int, 3> "crop offset" - optional - points to the offset of the stack
 	 *                               crop, in the case that the stack has been cropped before
 	 *                               features are to be extracted.
 	 * 
@@ -55,7 +55,7 @@ private:
 
 	pipeline::Input<ImageStack> _rawSections;
 	
-	pipeline::Input<util::point3<unsigned int> > _cropOffset;
+	pipeline::Input<util::point<unsigned int, 3> > _cropOffset;
 
 	boost::shared_ptr<GeometryFeatureExtractor>  _geometryFeatureExtractor;
 

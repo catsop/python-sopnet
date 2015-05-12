@@ -24,7 +24,7 @@ public:
 	 *             Project specific configuration.
 	 */
 	void fill(
-			const util::point3<unsigned int>& blockLocation,
+			const util::point<unsigned int, 3>& blockLocation,
 			const SliceGuarantorParameters& parameters,
 			const ProjectConfiguration& configuration);
 };

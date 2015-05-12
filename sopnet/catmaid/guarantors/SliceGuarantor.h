@@ -11,7 +11,7 @@
 #include <sopnet/slices/ConflictSets.h>
 #include <imageprocessing/io/ImageBlockStackReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
-#include <imageprocessing/MserParameters.h>
+#include <imageprocessing/ComponentTreeExtractorParameters.h>
 
 /**
  * SliceGuarantor is a class that, given a sub-stack (measured in Blocks), guarantees that all
@@ -39,9 +39,9 @@ public:
 			boost::shared_ptr<StackStore> stackStore);
 
 	/**
-	 * Set non-default mser parameters for the slice extraction.
+	 * Set non-default parameters for the slice extraction.
 	 */
-	void setMserParameters(const boost::shared_ptr<MserParameters> mserParameters);
+	void setComponentTreeExtractorParameters(const boost::shared_ptr<ComponentTreeExtractorParameters> parameters);
 
 	/**
 	 * Extracts the slices for the requested blocks. Returns empty Blocks for 
@@ -95,9 +95,9 @@ private:
 	void checkWhole(const Slice& slice,
 					Blocks& nbdBlocks) const;
 	
-	boost::shared_ptr<MserParameters> _mserParameters;
-	boost::shared_ptr<SliceStore>     _sliceStore;
-	boost::shared_ptr<StackStore>     _stackStore;
+	boost::shared_ptr<ComponentTreeExtractorParameters> _parameters;
+	boost::shared_ptr<SliceStore>                       _sliceStore;
+	boost::shared_ptr<StackStore>                       _stackStore;
 
 	BlockUtils _blockUtils;
 };

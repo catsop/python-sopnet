@@ -64,7 +64,7 @@ ProblemGraphWriter::writeSlices(
 
 	std::ofstream out(slicesFile.c_str());
 
-	out << "id sectionid bb.minX bb.maxX bb.minY bb.maxY value center.x center.y size" << std::endl;
+	out << "id sectionid bb.min().x() bb.max().x() bb.min().y() bb.max().y() value center.x center.y size" << std::endl;
 
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
 
@@ -181,13 +181,13 @@ ProblemGraphWriter::writeSlice(const Slice& slice, std::ofstream& out) {
 
 	out << slice.getId() << " ";
 	out << slice.getSection() << " ";
-	out << slice.getComponent()->getBoundingBox().minX << " ";
-	out << slice.getComponent()->getBoundingBox().maxX << " ";
-	out << slice.getComponent()->getBoundingBox().minY << " ";
-	out << slice.getComponent()->getBoundingBox().maxY << " ";
+	out << slice.getComponent()->getBoundingBox().min().x() << " ";
+	out << slice.getComponent()->getBoundingBox().max().x() << " ";
+	out << slice.getComponent()->getBoundingBox().min().y() << " ";
+	out << slice.getComponent()->getBoundingBox().max().y() << " ";
 	out << slice.getComponent()->getValue() << " ";
-	out << slice.getComponent()->getCenter().x << " ";
-	out << slice.getComponent()->getCenter().y << " ";
+	out << slice.getComponent()->getCenter().x() << " ";
+	out << slice.getComponent()->getCenter().y() << " ";
 	out << slice.getComponent()->getSize() << " ";
 	out << std::endl;
 }
