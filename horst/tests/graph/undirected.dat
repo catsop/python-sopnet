@@ -1,0 +1,19 @@
+@nodes
+label
+0
+1
+2
+3
+4
+5
+@edges
+		label	weight	type
+0	1	a		0.5		0
+0	2	b		0.5		0
+0	3	c		0.5		0
+0	4	d		0.5		0
+0	5	e		0.5		0
+@attributes
+
+undirected 1
+root 0

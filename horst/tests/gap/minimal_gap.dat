@@ -1,0 +1,44 @@
+#
+# A cycle of conflicts with two zero edges:
+#
+#     A--#--B
+#     |\   /|
+#     | Ε ε |    Ε>ε: Ε=0.3, ε=0.1
+#     #  x  #
+#     | / \ |
+#     |/   \|
+#     D--#--C
+#      \   /
+#      ε\ /Ε
+#        R
+#
+# Solvable, if λ on i->j->k conflict edges are δ, Ε>δ>ε.
+
+@nodes
+label
+A
+B
+C
+D
+R
+
+@edges
+		weight	type	label
+
+# conflict edges
+A	B	0	1	0
+B	C	0	1	0
+C	D	0	1	0
+D	A	0	1	0
+
+# epsilon edges
+A	C	0.3	0	0
+B	D	0.1	0	0
+
+# R edges
+R	D	0.1	0	0
+R	C	0.3	0	0
+
+@attributes
+undirected 1
+root 4

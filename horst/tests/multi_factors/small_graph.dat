@@ -1,0 +1,60 @@
+# We consider the following undirected graph:
+#
+#   ---1---
+#  /  / \  \
+# 0  /   \  4
+#  \ |   | /
+#   -2---3-
+#
+# We set the edge weights such that the MST without multi-factors is
+#
+#   ---1---
+#  /  / \  \
+# 0  /   \  4  (all visible edges have costs -1)
+#    |   |
+#    2   3
+#
+# and add a multi-factor that says that
+#
+#      1
+#     / \
+#    /   \     (multi-factor has costs 10, see small_graph_factors.dat)
+#    |   |
+#    2   3
+#
+# does not look like a branch. The optimal solution with the multi-factor
+# should be
+#
+#   ---1---
+#  /    \  \
+# 0      \  4  (edge (2,3) has costs 0, all remaining cost 1)
+#        |
+#    2---3
+#
+# The optimal value is -3.
+
+@nodes
+label
+0
+1
+2
+3
+4
+
+@edges
+		label	weight	type
+0	1	a		-1		0	
+1	4	b		-1		0	
+0	2	c		1		0	
+2	3	d		0		0	
+3	4	e		1		0	
+1	2	f		-1		0	
+1	3	g		-1		0	
+
+@attributes
+
+# create symmetric arcs
+undirected 1
+
+# start with node 0
+root 0

@@ -62,6 +62,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(modules)
 add_subdirectory(sopnet)
 add_subdirectory(pysopnet)
+add_subdirectory(horst)
 
 ###############
 # config file #

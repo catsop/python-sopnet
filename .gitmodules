@@ -16,3 +16,15 @@
 [submodule "modules/solvers"]
 	path = modules/solvers
 	url = https://github.com/funkey/solvers
+[submodule "modules/cohear"]
+	path = modules/cohear
+	url = https://github.com/funkey/cohear
+[submodule "modules/scopegraph"]
+	path = modules/scopegraph
+	url = https://github.com/funkey/scopegraph
+[submodule "modules/sg_gui"]
+	path = modules/sg_gui
+	url = https://github.com/funkey/sg_gui
+[submodule "modules/region_features"]
+	path = modules/region_features
+	url = https://github.com/funkey/region_features
