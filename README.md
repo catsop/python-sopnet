@@ -21,8 +21,10 @@ installed using the default Ubuntu repositories for your release:
 * [12.04 Precise](packagelist-ubuntu-12.04-apt.txt)
 * [14.04 Trusty](packagelist-ubuntu-14.04-apt.txt)
 
-Make sure your version of libboost includes libboost-timer-dev. Optional HDF5
-support is enabled if you have libhdf5-serial-dev installed.
+Note that SOPNET now requires Boost >= 1.49.0 (for C++11 compatibility), which
+is not available from the default Ubuntu 12.04 respositories. Make sure your
+version of Boost includes libboost-timer-dev. Optional HDF5 support is enabled
+if you have libhdf5-serial- dev installed.
 
 A recent version of vigra will be downloaded and compiled automatically.
 
@@ -43,13 +45,13 @@ Download and unpack the Gurobi solver, request a licence (academic licences are
 free). Run
 
 ```sh
-$ ./grbgetkey <you-licence-id>
+$ ./grbgetkey <your-licence-id>
 ```
 
-in the gurobi bin directory from an academic domain to download the license
-file (gurobi.lic). Make sure the environment variable `GRB_LICENCE_FILE` points
-to it. Set the cmake variable `Gurobi_ROOT_DIR` to the path containing the lib
-and bin directory or set the environment variable `GUROBI_ROOT_DIR` accordingly
+in the gurobi bin directory from an academic domain to download the license file
+(`gurobi.lic`). Make sure the environment variable `GRB_LICENCE_FILE` points to
+it. Set the cmake variable `Gurobi_ROOT_DIR` to the path containing the lib and
+bin directory or set the environment variable `GUROBI_ROOT_DIR` accordingly
 before calling cmake.
 
 Compiling
@@ -65,7 +67,7 @@ from the repository's main directory. This will launch cmake and install the
 wrappers, given that all dependencies are fulfilled. You might have to run the
 above command as root to install the wrappers in the python system directory.
 
-For a standard build, create a build directory (e.g., ./build), change into it
+For a standard build, create a build directory (e.g., `./build`), change into it
 and type
 
 ```sh
@@ -78,4 +80,5 @@ missing. After cmake finishes without errors, run
 ```sh
 $ make
 ```
+
 Python-sopnet compiles in gcc, clang, and icc.
