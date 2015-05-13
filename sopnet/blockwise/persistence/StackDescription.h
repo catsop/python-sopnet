@@ -16,6 +16,8 @@ struct StackDescription {
 
 	unsigned int width, height, depth;
 
+	float resX, resY, resZ;
+
 	unsigned int scale;
 
 	unsigned int id, segmentationId;
