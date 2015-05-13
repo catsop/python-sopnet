@@ -1,6 +1,7 @@
 #include "config.h"
 #include <blockwise/persistence/catmaid/CatmaidStackStore.h>
 #ifdef HAVE_PostgreSQL
+#include <blockwise/persistence/postgresql/PostgreSqlProjectConfigurationStore.h>
 #include <blockwise/persistence/postgresql/PostgreSqlSliceStore.h>
 #include <blockwise/persistence/postgresql/PostgreSqlSegmentStore.h>
 #endif
@@ -12,21 +13,35 @@
 
 logger::LogChannel backendclientlog("backendclientlog", "[BackendClient] ");
 
-namespace python {
+void
+BackendClient::fillProjectConfiguration(ProjectConfiguration& configuration) {
+
+#ifdef HAVE_PostgreSQL
+	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
+
+		PostgreSqlProjectConfigurationStore store(configuration);
+		store.fill(configuration);
+
+		return;
+	}
+#endif // HAVE_PostgreSQL
+
+	UTIL_THROW_EXCEPTION(UsageError, "backend type " << configuration.getBackendType() << " not yet implemented");
+}
 
 boost::shared_ptr<StackStore>
 BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-		LOG_USER(backendclientlog) << "[BackendClient] create local stack store for membranes" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create local stack store for " << (type == Raw ? "raw" : "membranes") << std::endl;
 
 		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
-		LOG_USER(backendclientlog) << "[BackendClient] create catmaid stack store for membranes" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create catmaid stack store for " << (type == Raw ? "raw" : "membranes") << std::endl;
 
 		return boost::make_shared<CatmaidStackStore>(configuration, type);
 	}
@@ -77,5 +92,3 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
-
-} // namespace python
