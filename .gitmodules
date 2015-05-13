@@ -13,3 +13,6 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/catsop/cmake
+[submodule "modules/solvers"]
+	path = modules/solvers
+	url = https://github.com/funkey/solvers
