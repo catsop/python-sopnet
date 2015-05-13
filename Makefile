@@ -1,0 +1,2 @@
+default:
+	./setup.py install
