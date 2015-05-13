@@ -3,8 +3,8 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
-#include <sopnet/features/Overlap.h>
-#include <sopnet/segments/Segments.h>
+#include <features/Overlap.h>
+#include <segments/Segments.h>
 #include "ProblemConfiguration.h"
 
 class ProblemAssembler : public pipeline::SimpleProcessNode<> {

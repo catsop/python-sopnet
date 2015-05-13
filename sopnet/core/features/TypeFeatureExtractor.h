@@ -2,7 +2,7 @@
 #define SOPNET_TYPE_FEATURE_EXTRACTOR_H_
 
 #include <pipeline/all.h>
-#include <sopnet/segments/Segments.h>
+#include <segments/Segments.h>
 #include "Features.h"
 
 class TypeFeatureExtractor : public pipeline::SimpleProcessNode<> {

@@ -1,9 +1,9 @@
 #include "PriorCostFunction.h"
 #include <imageprocessing/ConnectedComponent.h>
-#include <sopnet/segments/EndSegment.h>
-#include <sopnet/segments/ContinuationSegment.h>
-#include <sopnet/segments/BranchSegment.h>
-#include <sopnet/slices/Slice.h>
+#include <segments/EndSegment.h>
+#include <segments/ContinuationSegment.h>
+#include <segments/BranchSegment.h>
+#include <slices/Slice.h>
 
 logger::LogChannel priorcostfunctionlog("priorcostfunctionlog", "[PriorCostFunction] ");
 

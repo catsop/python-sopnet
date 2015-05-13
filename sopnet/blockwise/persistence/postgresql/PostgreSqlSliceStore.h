@@ -8,8 +8,8 @@
 #include <blockwise/blocks/Blocks.h>
 #include <blockwise/blocks/BlockUtils.h>
 #include <blockwise/persistence/SliceStore.h>
-#include <sopnet/slices/ConflictSets.h>
-#include <sopnet/slices/Slices.h>
+#include <slices/ConflictSets.h>
+#include <slices/Slices.h>
 #include <libpq-fe.h>
 
 #include "PostgreSqlUtils.h"

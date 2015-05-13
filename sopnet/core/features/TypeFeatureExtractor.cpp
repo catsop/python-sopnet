@@ -1,6 +1,6 @@
-#include <sopnet/segments/EndSegment.h>
-#include <sopnet/segments/ContinuationSegment.h>
-#include <sopnet/segments/BranchSegment.h>
+#include <segments/EndSegment.h>
+#include <segments/ContinuationSegment.h>
+#include <segments/BranchSegment.h>
 #include "TypeFeatureExtractor.h"
 
 logger::LogChannel typefeatureextractorlog("typefeatureextractorlog", "[TypeFeatureExtractor] ");

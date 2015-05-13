@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/segments/Segments.h>
+#include <segments/Segments.h>
 #include <util/point.hpp>
 #include "Features.h"
 

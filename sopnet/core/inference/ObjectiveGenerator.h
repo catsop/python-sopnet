@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearObjective.h>
-#include <sopnet/segments/Segments.h>
+#include <segments/Segments.h>
 
 class ObjectiveGenerator : public pipeline::SimpleProcessNode<> {
 

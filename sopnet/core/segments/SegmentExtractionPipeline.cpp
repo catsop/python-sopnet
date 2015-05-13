@@ -1,6 +1,6 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
-#include <sopnet/slices/SliceExtractor.h>
-#include <sopnet/slices/StackSliceExtractor.h>
+#include <slices/SliceExtractor.h>
+#include <slices/StackSliceExtractor.h>
 #include "SegmentExtractionPipeline.h"
 
 static logger::LogChannel segmentextractionpipelinelog("segmentextractionpipelinelog", "[SegmentExtractionPipeline] ");

@@ -8,7 +8,7 @@
 #include <blockwise/blocks/Block.h>
 #include <blockwise/persistence/StackDescription.h>
 #include <blockwise/persistence/StackType.h>
-#include <sopnet/segments/SegmentHash.h>
+#include <segments/SegmentHash.h>
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"
 #include "SolutionGuarantor.h"

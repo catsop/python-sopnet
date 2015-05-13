@@ -6,9 +6,9 @@
 
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/inference/LinearConstraints.h>
-#include <sopnet/segments/Segments.h>
-#include <sopnet/segments/SegmentExtractor.h>
+#include <inference/LinearConstraints.h>
+#include <segments/Segments.h>
+#include <segments/SegmentExtractor.h>
 #include <pipeline/Output.h>
 #include <pipeline/Value.h>
 

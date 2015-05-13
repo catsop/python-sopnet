@@ -3,8 +3,8 @@
 #include <pipeline/Value.h>
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/ComponentTreeExtractor.h>
-#include <sopnet/slices/SliceExtractor.h>
-#include <sopnet/features/Overlap.h>
+#include <slices/SliceExtractor.h>
+#include <features/Overlap.h>
 #include "SliceEditor.h"
 
 logger::LogChannel sliceeditorlog("sliceeditorlog", "[SliceEditor] ");

@@ -3,7 +3,7 @@
 
 #include <util/foreach.h>
 #include <boost/functional/hash.hpp>
-#include <sopnet/slices/SliceHash.h>
+#include <slices/SliceHash.h>
 
 #include <set>
 

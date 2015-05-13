@@ -9,13 +9,13 @@
 #include <vigra/impex.hxx>
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/Image.h>
-#include <sopnet/slices/ComponentTreeConverter.h>
+#include <slices/ComponentTreeConverter.h>
 #include <util/ProgramOptions.h>
 #include <util/httpclient.h>
 #include <util/box.hpp>
 #include <util/point.hpp>
 #include "PostgreSqlSliceStore.h"
-#include <sopnet/slices/SliceHash.h>
+#include <slices/SliceHash.h>
 
 logger::LogChannel postgresqlslicestorelog("postgresqlslicestorelog", "[PostgreSqlSliceStore] ");
 

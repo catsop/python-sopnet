@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include <sopnet/slices/Slice.h>
+#include <slices/Slice.h>
 
 class SliceReplacements {
 

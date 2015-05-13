@@ -4,8 +4,8 @@
 #include <boost/lexical_cast.hpp>
 
 #include <pipeline/all.h>
-#include <sopnet/exceptions.h>
-#include <sopnet/segments/Segments.h>
+#include <exceptions.h>
+#include <segments/Segments.h>
 
 class ProblemConfiguration : public pipeline::Data {
 

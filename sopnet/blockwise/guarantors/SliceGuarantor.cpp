@@ -3,8 +3,8 @@
 #include <map>
 #include <set>
 #include <imageprocessing/ImageExtractor.h>
-#include <sopnet/sopnet/slices/SliceExtractor.h>
-#include <sopnet/sopnet/slices/Slice.h>
+#include <slices/SliceExtractor.h>
+#include <slices/Slice.h>
 #include <util/box.hpp>
 #include <util/Logger.h>
 #include <util/foreach.h>

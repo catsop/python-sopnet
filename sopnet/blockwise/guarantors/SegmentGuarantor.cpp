@@ -1,6 +1,6 @@
 #include "SegmentGuarantor.h"
 #include <util/Logger.h>
-#include <sopnet/segments/SegmentExtractor.h>
+#include <segments/SegmentExtractor.h>
 #include <features/SegmentFeaturesExtractor.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>

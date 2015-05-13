@@ -3,8 +3,8 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/segments/Segments.h>
-#include <sopnet/features/Features.h>
+#include <segments/Segments.h>
+#include <features/Features.h>
 #include <util/point.hpp>
 
 class HistogramFeatureExtractor : public pipeline::SimpleProcessNode<> {

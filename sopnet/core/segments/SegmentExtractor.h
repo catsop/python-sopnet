@@ -5,11 +5,11 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
-#include <sopnet/slices/ConflictSets.h>
-#include <sopnet/features/Overlap.h>
-#include <sopnet/features/Distance.h>
-#include <sopnet/slices/Slices.h>
-#include <sopnet/segments/Segments.h>
+#include <slices/ConflictSets.h>
+#include <features/Overlap.h>
+#include <features/Distance.h>
+#include <slices/Slices.h>
+#include <segments/Segments.h>
 
 class SegmentExtractor : public pipeline::SimpleProcessNode<> {
 

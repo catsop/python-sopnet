@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <inference/Solution.h>
-#include <sopnet/segments/Segments.h>
+#include <segments/Segments.h>
 
 class Reconstructor : public pipeline::SimpleProcessNode<> {
 

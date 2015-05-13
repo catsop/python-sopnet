@@ -6,8 +6,8 @@
 #include <imageprocessing/Image.h>
 #include <util/point.hpp>
 #include <util/box.hpp>
-#include <sopnet/slices/Slice.h>
-#include <sopnet/slices/SliceEdits.h>
+#include <slices/Slice.h>
+#include <slices/SliceEdits.h>
 
 /**
  * Editor to modify a set of slices on the pixel level.

@@ -3,9 +3,9 @@
 #include <util/Logger.h>
 #include <util/point.hpp>
 #include <imageprocessing/ConnectedComponent.h>
-#include <sopnet/segments/EndSegment.h>
-#include <sopnet/segments/ContinuationSegment.h>
-#include <sopnet/segments/BranchSegment.h>
+#include <segments/EndSegment.h>
+#include <segments/ContinuationSegment.h>
+#include <segments/BranchSegment.h>
 #include "RandomForestCostFunction.h"
 
 static logger::LogChannel randomforestcostfunctionlog("randomforestcostfunctionlog", "[RandomForestCostFunction] ");

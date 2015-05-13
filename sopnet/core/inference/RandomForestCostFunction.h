@@ -3,8 +3,8 @@
 
 #include <pipeline/all.h>
 #include <inference/RandomForest.h>
-#include <sopnet/features/Features.h>
-#include <sopnet/segments/Segment.h>
+#include <features/Features.h>
+#include <segments/Segment.h>
 
 class RandomForestCostFunction : public pipeline::SimpleProcessNode<> {
 

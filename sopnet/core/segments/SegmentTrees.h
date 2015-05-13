@@ -6,7 +6,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <pipeline/all.h>
-#include <sopnet/segments/SegmentTree.h>
+#include <segments/SegmentTree.h>
 
 class SegmentTrees : public pipeline::Data {
 

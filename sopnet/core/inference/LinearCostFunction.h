@@ -2,8 +2,8 @@
 #define CELLTRACKER_TRACKLET_EVALUATOR_H__
 
 #include <pipeline/all.h>
-#include <sopnet/features/Features.h>
-#include <sopnet/segments/Segment.h>
+#include <features/Features.h>
+#include <segments/Segment.h>
 #include "LinearCostFunctionParameters.h"
 
 // forward declarations

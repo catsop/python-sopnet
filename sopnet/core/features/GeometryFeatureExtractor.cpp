@@ -4,10 +4,10 @@
 
 #include <util/helpers.hpp>
 #include <imageprocessing/ConnectedComponent.h>
-#include <sopnet/exceptions.h>
-#include <sopnet/segments/EndSegment.h>
-#include <sopnet/segments/ContinuationSegment.h>
-#include <sopnet/segments/BranchSegment.h>
+#include <exceptions.h>
+#include <segments/EndSegment.h>
+#include <segments/ContinuationSegment.h>
+#include <segments/BranchSegment.h>
 #include "GeometryFeatureExtractor.h"
 
 logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[GeometryFeatureExtractor] ");

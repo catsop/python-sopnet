@@ -8,7 +8,7 @@
 #include <blockwise/persistence/StackStore.h>
 #include <blockwise/blocks/Blocks.h>
 #include <blockwise/blocks/BlockUtils.h>
-#include <sopnet/slices/ConflictSets.h>
+#include <slices/ConflictSets.h>
 #include <imageprocessing/io/ImageBlockStackReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/ComponentTreeExtractorParameters.h>

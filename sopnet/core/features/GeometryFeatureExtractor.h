@@ -2,7 +2,7 @@
 #define SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_
 
 #include <pipeline/all.h>
-#include <sopnet/segments/Segments.h>
+#include <segments/Segments.h>
 #include "Distance.h"
 #include "Features.h"
 #include "Overlap.h"

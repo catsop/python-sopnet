@@ -4,7 +4,7 @@
 
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/box.hpp>
-#include <sopnet/slices/Slice.h>
+#include <slices/Slice.h>
 #include "Distance.h"
 
 util::ProgramOption optionMaxDistanceMapValue(

@@ -9,9 +9,9 @@
 #include <blockwise/blocks/BlockUtils.h>
 #include <blockwise/blocks/Core.h>
 
-#include <sopnet/segments/SegmentHash.h>
-#include <sopnet/inference/LinearConstraints.h>
-#include <sopnet/inference/LinearObjective.h>
+#include <segments/SegmentHash.h>
+#include <inference/LinearConstraints.h>
+#include <inference/LinearObjective.h>
 
 class SolutionGuarantor {
 

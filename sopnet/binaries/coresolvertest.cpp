@@ -13,12 +13,12 @@
 #include <pipeline/all.h>
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
-#include <sopnet/inference/PriorCostFunctionParameters.h>
-#include <sopnet/inference/SegmentationCostFunctionParameters.h>
-#include <sopnet/inference/Reconstructor.h>
-#include <sopnet/slices/ComponentTreeConverter.h>
-#include <sopnet/segments/Segments.h>
-#include <sopnet/segments/SegmentExtractor.h>
+#include <inference/PriorCostFunctionParameters.h>
+#include <inference/SegmentationCostFunctionParameters.h>
+#include <inference/Reconstructor.h>
+#include <slices/ComponentTreeConverter.h>
+#include <segments/Segments.h>
+#include <segments/SegmentExtractor.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
@@ -31,10 +31,10 @@
 #include <blockwise/persistence/local/LocalSegmentStore.h>
 #include <blockwise/persistence/local/LocalSliceStore.h>
 #include <blockwise/persistence/local/LocalStackStore.h>
-#include <sopnet/features/SegmentFeaturesExtractor.h>
+#include <features/SegmentFeaturesExtractor.h>
 
 #include <vigra/impex.hxx>
-#include <sopnet/slices/SliceExtractor.h>
+#include <slices/SliceExtractor.h>
 
 #include <util/Logger.h>
 

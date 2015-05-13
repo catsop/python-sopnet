@@ -1,4 +1,4 @@
-#include <sopnet/segments/SegmentTrees.h>
+#include <segments/SegmentTrees.h>
 
 unsigned int
 SegmentTrees::getNumSections() {

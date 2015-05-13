@@ -1,4 +1,4 @@
-#include <sopnet/exceptions.h>
+#include <exceptions.h>
 #include "Features.h"
 
 double Features::NoFeatureValue = 0;

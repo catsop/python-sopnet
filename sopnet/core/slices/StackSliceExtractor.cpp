@@ -1,5 +1,5 @@
 #include <imageprocessing/ComponentTreeExtractor.h>
-#include <sopnet/features/Overlap.h>
+#include <features/Overlap.h>
 #include <util/ProgramOptions.h>
 #include "ComponentTreeConverter.h"
 #include "StackSliceExtractor.h"

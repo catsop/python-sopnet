@@ -7,7 +7,7 @@
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/point.hpp>
-#include <sopnet/slices/ConflictSets.h>
+#include <slices/ConflictSets.h>
 
 util::ProgramOption optionStackId(
 		util::_long_name        = "stack",

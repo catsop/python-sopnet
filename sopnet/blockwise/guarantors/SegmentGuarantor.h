@@ -6,8 +6,8 @@
 #include <blockwise/persistence/SegmentStore.h>
 #include <blockwise/persistence/SliceStore.h>
 #include <blockwise/persistence/StackStore.h>
-#include <sopnet/segments/Segments.h>
-#include <sopnet/features/Features.h>
+#include <segments/Segments.h>
+#include <features/Features.h>
 
 class SegmentGuarantor {
 

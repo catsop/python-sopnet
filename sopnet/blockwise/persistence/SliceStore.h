@@ -3,9 +3,9 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <sopnet/slices/Slice.h>
-#include <sopnet/slices/Slices.h>
-#include <sopnet/slices/ConflictSets.h>
+#include <slices/Slice.h>
+#include <slices/Slices.h>
+#include <slices/ConflictSets.h>
 #include <blockwise/blocks/Blocks.h>
 
 #include <util/exceptions.h>

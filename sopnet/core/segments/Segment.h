@@ -4,7 +4,7 @@
 #include <boost/thread.hpp>
 
 #include <pipeline/all.h>
-#include <sopnet/slices/Slice.h>
+#include <slices/Slice.h>
 #include <util/point.hpp>
 #include <util/Hashable.h>
 #include "SegmentHash.h"
