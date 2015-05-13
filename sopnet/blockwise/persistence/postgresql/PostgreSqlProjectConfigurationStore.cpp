@@ -33,16 +33,19 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 	StackDescription rawStackDescription = config.getCatmaidStack(Raw);
 	StackDescription memStackDescription = config.getCatmaidStack(Membrane);
 
-	fill(rawStackDescription, Raw);
-	fill(memStackDescription, Membrane);
+	fill(rawStackDescription);
+	fill(memStackDescription);
 
 	// fill project configuration
 
 	std::stringstream q;
 	q <<
-			"SELECT num_x, num_y, num_z, block_dim_x, block_dim_y, block_dim_z, core_dim_x, core_dim_y, core_dim_z, scale "
-			"FROM segmentation_block_info "
-			"WHERE configuration_id=" << rawStackDescription.segmentationId;
+			"SELECT bi.num_x, bi.num_y, bi.num_z, "
+			"bi.block_dim_x, bi.block_dim_y, bi.block_dim_z, "
+			"bi.core_dim_x, bi.core_dim_y, bi.core_dim_z, bi.scale "
+			"FROM segmentation_block_info bi "
+			"JOIN segmentation_stack ss ON ss.configuration_id = bi.configuration_id "
+			"WHERE ss.id=" << rawStackDescription.segmentationId;
 	PGresult* result = PQexec(_pgConnection, q.str().c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result);
 
@@ -82,35 +85,23 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 }
 
 void
-PostgreSqlProjectConfigurationStore::fill(StackDescription& stackDescription, StackType stackType) {
-
-	// get stack id
-
-	std::string type = (stackType == Raw ? "Raw" : "Membrane");
-
-	std::stringstream q;
-	q <<
-			"SELECT project_stack_id "
-			"FROM segmentation_stack "
-			"WHERE configuration_id=" << stackDescription.segmentationId << " "
-			"AND type='" << type << "'";
-	PGresult* result = PQexec(_pgConnection, q.str().c_str());
-	PostgreSqlUtils::checkPostgreSqlError(result);
-
-	char* stackIdStr = PQgetvalue(result, 0, 0);
-	stackDescription.id = boost::lexical_cast<int>(stackIdStr);
-	PQclear(result);
+PostgreSqlProjectConfigurationStore::fill(StackDescription& stackDescription) {
 
 	// get complete stack description
 
-	q.str("");
+	std::stringstream q;
 	q <<
-			"SELECT dimension, resolution, image_base, file_extension, tile_width, tile_height, tile_source_type "
-			"FROM stack WHERE id=" << stackDescription.id;
-	result = PQexec(_pgConnection, q.str().c_str());
+			"SELECT s.id, s.dimension, s.resolution, "
+			"s.image_base, s.file_extension, "
+			"s.tile_width, s.tile_height, s.tile_source_type "
+			"FROM segmentation_stack ss "
+			"JOIN project_stack ps ON ps.id = ss.project_stack_id "
+			"JOIN stack s ON s.id = ps.stack_id "
+			"WHERE ss.id=" << stackDescription.segmentationId << ";";
+	PGresult* result = PQexec(_pgConnection, q.str().c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result);
 
-	enum { DIM, RES, IMAGE_BASE, FILE_EXTENSION, TILE_WIDTH, TILE_HEIGHT, TILE_SOURCE_TYPE};
+	enum { ID, DIM, RES, IMAGE_BASE, FILE_EXTENSION, TILE_WIDTH, TILE_HEIGHT, TILE_SOURCE_TYPE};
 
 	std::stringstream dimss(PQgetvalue(result, 0, DIM));
 	char _;
@@ -129,6 +120,7 @@ PostgreSqlProjectConfigurationStore::fill(StackDescription& stackDescription, St
 	resss >> _;
 	resss >> stackDescription.resZ;
 
+	stackDescription.id             = boost::lexical_cast<int>(PQgetvalue(result, 0, ID));
 	stackDescription.imageBase      = PQgetvalue(result, 0, IMAGE_BASE);
 	stackDescription.fileExtension  = PQgetvalue(result, 0, FILE_EXTENSION);
 	stackDescription.tileWidth      = boost::lexical_cast<int>(PQgetvalue(result, 0, TILE_WIDTH));
