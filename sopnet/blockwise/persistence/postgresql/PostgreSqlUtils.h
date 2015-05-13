@@ -9,9 +9,9 @@
 #include <string>
 #include <libpq-fe.h>
 #include <util/exceptions.h>
-#include <catmaid/blocks/BlockUtils.h>
-#include <catmaid/blocks/Block.h>
-#include <catmaid/blocks/Blocks.h>
+#include <blockwise/blocks/BlockUtils.h>
+#include <blockwise/blocks/Block.h>
+#include <blockwise/blocks/Blocks.h>
 
 typedef signed long long PostgreSqlHash;
 

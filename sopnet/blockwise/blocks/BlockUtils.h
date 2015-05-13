@@ -1,7 +1,7 @@
-#ifndef SOPNET_CATMAID_BLOCKS_BLOCK_UTILS_H__
-#define SOPNET_CATMAID_BLOCKS_BLOCK_UTILS_H__
+#ifndef SOPNET_BLOCKWISE_BLOCKS_BLOCK_UTILS_H__
+#define SOPNET_BLOCKWISE_BLOCKS_BLOCK_UTILS_H__
 
-#include <catmaid/ProjectConfiguration.h>
+#include <blockwise/ProjectConfiguration.h>
 #include <util/box.hpp>
 #include "Block.h"
 #include "Blocks.h"
@@ -116,5 +116,5 @@ private:
 	util::box<unsigned int, 3> _validCoreCoordinates;
 };
 
-#endif // SOPNET_CATMAID_BLOCKS_BLOCK_UTILS_H__
+#endif // SOPNET_BLOCKWISE_BLOCKS_BLOCK_UTILS_H__
 

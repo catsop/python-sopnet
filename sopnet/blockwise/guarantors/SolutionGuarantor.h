@@ -3,11 +3,11 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/SegmentStore.h>
-#include <catmaid/persistence/SliceStore.h>
-#include <catmaid/blocks/BlockUtils.h>
-#include <catmaid/blocks/Core.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/persistence/SegmentStore.h>
+#include <blockwise/persistence/SliceStore.h>
+#include <blockwise/blocks/BlockUtils.h>
+#include <blockwise/blocks/Core.h>
 
 #include <sopnet/segments/SegmentHash.h>
 #include <sopnet/inference/LinearConstraints.h>

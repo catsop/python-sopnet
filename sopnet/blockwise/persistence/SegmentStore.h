@@ -3,11 +3,11 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <catmaid/blocks/Block.h>
-#include <catmaid/blocks/Blocks.h>
-#include <catmaid/blocks/Core.h>
-#include <catmaid/persistence/SegmentConstraints.h>
-#include <catmaid/persistence/SegmentDescriptions.h>
+#include <blockwise/blocks/Block.h>
+#include <blockwise/blocks/Blocks.h>
+#include <blockwise/blocks/Core.h>
+#include <blockwise/persistence/SegmentConstraints.h>
+#include <blockwise/persistence/SegmentDescriptions.h>
 
 /**
  * Segment store interface definition.

@@ -1,5 +1,5 @@
-#ifndef SOPNET_CATMAID_BLOCKS_BLOCK_H__
-#define SOPNET_CATMAID_BLOCKS_BLOCK_H__
+#ifndef SOPNET_BLOCKWISE_BLOCKS_BLOCK_H__
+#define SOPNET_BLOCKWISE_BLOCKS_BLOCK_H__
 
 #include <util/point.hpp>
 
@@ -39,5 +39,5 @@ private:
 	util::point<unsigned int, 3> _coordinates;
 };
 
-#endif // SOPNET_CATMAID_BLOCKS_BLOCK_H__
+#endif // SOPNET_BLOCKWISE_BLOCKS_BLOCK_H__
 

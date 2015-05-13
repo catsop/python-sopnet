@@ -1,5 +1,5 @@
-#include <catmaid/guarantors/SegmentGuarantor.h>
-#include <catmaid/blocks/Blocks.h>
+#include <blockwise/guarantors/SegmentGuarantor.h>
+#include <blockwise/blocks/Blocks.h>
 #include <util/point.hpp>
 #include "SegmentGuarantor.h"
 #include "logging.h"

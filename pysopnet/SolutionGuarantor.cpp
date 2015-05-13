@@ -1,7 +1,7 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
-#include <catmaid/guarantors/SolutionGuarantor.h>
-#include <catmaid/blocks/Cores.h>
+#include <blockwise/guarantors/SolutionGuarantor.h>
+#include <blockwise/blocks/Cores.h>
 #include <util/point.hpp>
 #include "SolutionGuarantor.h"
 #include "logging.h"

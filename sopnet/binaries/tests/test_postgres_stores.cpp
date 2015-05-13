@@ -1,7 +1,7 @@
 #include <iostream>
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/postgresql/PostgreSqlSegmentStore.h>
-#include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/persistence/postgresql/PostgreSqlSegmentStore.h>
+#include <blockwise/persistence/postgresql/PostgreSqlSliceStore.h>
 #include <util/exceptions.h>
 #include <util/box.hpp>
 #include <util/Logger.h>

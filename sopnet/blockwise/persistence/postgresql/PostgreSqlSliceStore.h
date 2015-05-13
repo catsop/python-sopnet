@@ -4,10 +4,10 @@
 #include "config.h"
 #ifdef HAVE_PostgreSQL
 
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/blocks/Blocks.h>
-#include <catmaid/blocks/BlockUtils.h>
-#include <catmaid/persistence/SliceStore.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/blocks/Blocks.h>
+#include <blockwise/blocks/BlockUtils.h>
+#include <blockwise/persistence/SliceStore.h>
 #include <sopnet/slices/ConflictSets.h>
 #include <sopnet/slices/Slices.h>
 #include <libpq-fe.h>

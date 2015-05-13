@@ -1,10 +1,10 @@
-#ifndef SOPNET_CATMAIDSOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
-#define SOPNET_CATMAIDSOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
+#ifndef SOPNET_BLOCKWISESOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
+#define SOPNET_BLOCKWISESOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
 
 #include <boost/filesystem.hpp>
 #include <string>
 
-#include <catmaid/persistence/StackStore.h>
+#include <blockwise/persistence/StackStore.h>
 
 class LocalStackStore : public StackStore
 {
@@ -25,5 +25,5 @@ private:
 	std::vector<boost::filesystem::path> _imagePaths;
 };
 
-#endif // SOPNET_CATMAIDSOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
+#endif // SOPNET_BLOCKWISESOPNET_PERSISTENCE_LOCAL_STACK_STORE_H__
 

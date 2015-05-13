@@ -1,5 +1,5 @@
-#ifndef SOPNET_CATMAID_BLOCKS_CORES_H__
-#define SOPNET_CATMAID_BLOCKS_CORES_H__
+#ifndef SOPNET_BLOCKWISE_BLOCKS_CORES_H__
+#define SOPNET_BLOCKWISE_BLOCKS_CORES_H__
 
 #include <set>
 #include <util/foreach.h>
@@ -51,4 +51,4 @@ private:
 	blocks_type _cores;
 };
 
-#endif // SOPNET_CATMAID_BLOCKS_CORES_H__
+#endif // SOPNET_BLOCKWISE_BLOCKS_CORES_H__

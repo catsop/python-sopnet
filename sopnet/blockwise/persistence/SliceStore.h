@@ -6,7 +6,7 @@
 #include <sopnet/slices/Slice.h>
 #include <sopnet/slices/Slices.h>
 #include <sopnet/slices/ConflictSets.h>
-#include <catmaid/blocks/Blocks.h>
+#include <blockwise/blocks/Blocks.h>
 
 #include <util/exceptions.h>
 

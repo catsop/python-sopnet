@@ -1,7 +1,7 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
-#include <catmaid/guarantors/SliceGuarantor.h>
-#include <catmaid/blocks/Blocks.h>
+#include <blockwise/guarantors/SliceGuarantor.h>
+#include <blockwise/blocks/Blocks.h>
 #include <util/point.hpp>
 #include "SliceGuarantor.h"
 #include "logging.h"

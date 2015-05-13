@@ -1,9 +1,9 @@
 #ifndef CATMAID_STACK_STORE_H__
 #define CATMAID_STACK_STORE_H__
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/StackDescription.h>
-#include <catmaid/persistence/StackStore.h>
-#include <catmaid/persistence/StackType.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/persistence/StackDescription.h>
+#include <blockwise/persistence/StackStore.h>
+#include <blockwise/persistence/StackType.h>
 #include <util/httpclient.h>
 
 /*

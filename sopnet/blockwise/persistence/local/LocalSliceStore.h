@@ -2,7 +2,7 @@
 #define LOCAL_SLICE_STORE_H__
 
 #include <boost/shared_ptr.hpp>
-#include <catmaid/persistence/SliceStore.h>
+#include <blockwise/persistence/SliceStore.h>
 
 /**
  * A SliceStore implemented locally in RAM for testing purposes.

@@ -22,15 +22,15 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <imageprocessing/io/ImageBlockFileReader.h>
-#include <catmaid/guarantors/SegmentGuarantor.h>
-#include <catmaid/guarantors/SliceGuarantor.h>
-#include <catmaid/guarantors/SolutionGuarantor.h>
-#include <catmaid/blocks/Block.h>
-#include <catmaid/blocks/Blocks.h>
-#include <catmaid/persistence/SegmentDescriptions.h>
-#include <catmaid/persistence/local/LocalSegmentStore.h>
-#include <catmaid/persistence/local/LocalSliceStore.h>
-#include <catmaid/persistence/local/LocalStackStore.h>
+#include <blockwise/guarantors/SegmentGuarantor.h>
+#include <blockwise/guarantors/SliceGuarantor.h>
+#include <blockwise/guarantors/SolutionGuarantor.h>
+#include <blockwise/blocks/Block.h>
+#include <blockwise/blocks/Blocks.h>
+#include <blockwise/persistence/SegmentDescriptions.h>
+#include <blockwise/persistence/local/LocalSegmentStore.h>
+#include <blockwise/persistence/local/LocalSliceStore.h>
+#include <blockwise/persistence/local/LocalStackStore.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
 
 #include <vigra/impex.hxx>

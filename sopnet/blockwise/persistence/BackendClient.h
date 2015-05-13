@@ -1,11 +1,11 @@
 #ifndef SOPNET_PYTHON_BACKEND_CLIENT_H__
 #define SOPNET_PYTHON_BACKEND_CLIENT_H__
 
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/StackStore.h>
-#include <catmaid/persistence/StackType.h>
-#include <catmaid/persistence/SliceStore.h>
-#include <catmaid/persistence/SegmentStore.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/persistence/StackStore.h>
+#include <blockwise/persistence/StackType.h>
+#include <blockwise/persistence/SliceStore.h>
+#include <blockwise/persistence/SegmentStore.h>
 
 namespace python {
 

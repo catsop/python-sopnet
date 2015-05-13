@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 #include <util/point.hpp>
-#include <catmaid/persistence/StackType.h>
-#include <catmaid/persistence/StackDescription.h>
+#include <blockwise/persistence/StackType.h>
+#include <blockwise/persistence/StackDescription.h>
 
 /**
  * Project specific configuration to be passed to all the stateless python 

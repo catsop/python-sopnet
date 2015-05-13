@@ -6,11 +6,11 @@
 
 #include <libpq-fe.h>
 
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/blocks/Blocks.h>
-#include <catmaid/blocks/BlockUtils.h>
-#include <catmaid/persistence/SegmentDescription.h>
-#include <catmaid/persistence/SegmentStore.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/blocks/Blocks.h>
+#include <blockwise/blocks/BlockUtils.h>
+#include <blockwise/persistence/SegmentDescription.h>
+#include <blockwise/persistence/SegmentStore.h>
 
 class PostgreSqlSegmentStore : public SegmentStore {
 

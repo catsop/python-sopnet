@@ -1,8 +1,8 @@
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
-#include <catmaid/persistence/SegmentDescriptions.h>
-#include <catmaid/persistence/exceptions.h>
-#include <catmaid/blocks/Cores.h>
+#include <blockwise/persistence/SegmentDescriptions.h>
+#include <blockwise/persistence/exceptions.h>
+#include <blockwise/blocks/Cores.h>
 #include <inference/LinearSolver.h>
 #include <util/Logger.h>
 #include "SolutionGuarantor.h"

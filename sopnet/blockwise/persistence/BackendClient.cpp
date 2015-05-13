@@ -1,12 +1,12 @@
 #include "config.h"
-#include <catmaid/persistence/catmaid/CatmaidStackStore.h>
+#include <blockwise/persistence/catmaid/CatmaidStackStore.h>
 #ifdef HAVE_PostgreSQL
-#include <catmaid/persistence/postgresql/PostgreSqlSliceStore.h>
-#include <catmaid/persistence/postgresql/PostgreSqlSegmentStore.h>
+#include <blockwise/persistence/postgresql/PostgreSqlSliceStore.h>
+#include <blockwise/persistence/postgresql/PostgreSqlSegmentStore.h>
 #endif
-#include <catmaid/persistence/local/LocalStackStore.h>
-#include <catmaid/persistence/local/LocalSliceStore.h>
-#include <catmaid/persistence/local/LocalSegmentStore.h>
+#include <blockwise/persistence/local/LocalStackStore.h>
+#include <blockwise/persistence/local/LocalSliceStore.h>
+#include <blockwise/persistence/local/LocalSegmentStore.h>
 #include "BackendClient.h"
 #include "logging.h"
 

@@ -1,11 +1,11 @@
 #ifndef SEGMENT_GUARANTOR_H__
 #define SEGMENT_GUARANTOR_H__
 
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/blocks/BlockUtils.h>
-#include <catmaid/persistence/SegmentStore.h>
-#include <catmaid/persistence/SliceStore.h>
-#include <catmaid/persistence/StackStore.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/blocks/BlockUtils.h>
+#include <blockwise/persistence/SegmentStore.h>
+#include <blockwise/persistence/SliceStore.h>
+#include <blockwise/persistence/StackStore.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
 

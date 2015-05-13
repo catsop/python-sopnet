@@ -2,11 +2,11 @@
 #define LOCAL_SEGMENT_STORE_H__
 
 #include <boost/shared_ptr.hpp>
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/persistence/SegmentStore.h>
-#include <catmaid/blocks/Block.h>
-#include <catmaid/blocks/Core.h>
-#include <catmaid/blocks/Blocks.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/persistence/SegmentStore.h>
+#include <blockwise/blocks/Block.h>
+#include <blockwise/blocks/Core.h>
+#include <blockwise/blocks/Blocks.h>
 
 class LocalSegmentStore : public SegmentStore {
 

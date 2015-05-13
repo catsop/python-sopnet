@@ -4,10 +4,10 @@
 
 #include <util/exceptions.h>
 #include <util/point.hpp>
-#include <catmaid/ProjectConfiguration.h>
-#include <catmaid/blocks/Block.h>
-#include <catmaid/persistence/StackDescription.h>
-#include <catmaid/persistence/StackType.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/blocks/Block.h>
+#include <blockwise/persistence/StackDescription.h>
+#include <blockwise/persistence/StackType.h>
 #include <sopnet/segments/SegmentHash.h>
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"

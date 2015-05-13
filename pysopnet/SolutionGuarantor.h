@@ -1,9 +1,9 @@
 #ifndef SOPNET_PYTHON_SOLUTION_GUARANTOR_H__
 #define SOPNET_PYTHON_SOLUTION_GUARANTOR_H__
 
-#include <catmaid/ProjectConfiguration.h>
+#include <blockwise/ProjectConfiguration.h>
+#include <blockwise/BackendClient.h>
 #include "SolutionGuarantorParameters.h"
-#include "BackendClient.h"
 #include "Locations.h"
 
 namespace python {

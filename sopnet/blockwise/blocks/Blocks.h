@@ -1,5 +1,5 @@
-#ifndef SOPNET_CATMAID_BLOCKS_BLOCKS_H__
-#define SOPNET_CATMAID_BLOCKS_BLOCKS_H__
+#ifndef SOPNET_BLOCKWISE_BLOCKS_BLOCKS_H__
+#define SOPNET_BLOCKWISE_BLOCKS_BLOCKS_H__
 
 #include <set>
 #include <util/foreach.h>
@@ -59,5 +59,5 @@ private:
 std::ostream&
 operator<<(std::ostream& out, const Blocks& blocks);
 
-#endif // SOPNET_CATMAID_BLOCKS_BLOCKS_H__
+#endif // SOPNET_BLOCKWISE_BLOCKS_BLOCKS_H__
 
