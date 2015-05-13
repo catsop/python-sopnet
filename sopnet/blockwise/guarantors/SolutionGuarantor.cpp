@@ -3,7 +3,7 @@
 #include <blockwise/persistence/SegmentDescriptions.h>
 #include <blockwise/persistence/exceptions.h>
 #include <blockwise/blocks/Cores.h>
-#include <inference/LinearSolver.h>
+#include <solvers/LinearSolver.h>
 #include <util/Logger.h>
 #include "SolutionGuarantor.h"
 

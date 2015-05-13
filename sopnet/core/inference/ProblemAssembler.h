@@ -2,7 +2,7 @@
 #define CELLTRACKER_PROBLEM_ASSEMBLER_H__
 
 #include <pipeline/all.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearConstraints.h>
 #include <features/Overlap.h>
 #include <segments/Segments.h>
 #include "ProblemConfiguration.h"

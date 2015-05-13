@@ -2,7 +2,7 @@
 #define SOPNET_INFERENCE_SOLUTIONS_H__
 
 #include <pipeline/all.h>
-#include <inference/Solution.h>
+#include <solvers/Solution.h>
 
 /**
  * Collection of solutions for a set of problems.

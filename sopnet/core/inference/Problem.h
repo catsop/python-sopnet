@@ -2,8 +2,8 @@
 #define SOPNET_INFERENCE_PROBLEM_H__
 
 #include <pipeline/all.h>
-#include <inference/LinearObjective.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearObjective.h>
+#include <solvers/LinearConstraints.h>
 #include "ProblemConfiguration.h"
 
 class Problem : public pipeline::Data {

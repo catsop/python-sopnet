@@ -6,7 +6,7 @@
 
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/ImageStack.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearConstraints.h>
 #include <segments/Segments.h>
 #include <segments/SegmentExtractor.h>
 #include <pipeline/Output.h>

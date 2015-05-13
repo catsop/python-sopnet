@@ -1,5 +1,5 @@
 #include <pipeline/Value.h>
-#include <inference/LinearSolver.h>
+#include <solvers/LinearSolver.h>
 #include "ProblemsSolver.h"
 
 ProblemsSolver::ProblemsSolver() :

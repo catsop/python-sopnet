@@ -4,7 +4,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <pipeline/all.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearConstraints.h>
 #include <imageprocessing/ComponentTreeExtractor.h>
 #include "Slices.h"
 

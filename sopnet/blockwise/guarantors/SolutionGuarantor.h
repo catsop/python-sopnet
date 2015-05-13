@@ -10,8 +10,8 @@
 #include <blockwise/blocks/Core.h>
 
 #include <segments/SegmentHash.h>
-#include <inference/LinearConstraints.h>
-#include <inference/LinearObjective.h>
+#include <solvers/LinearConstraints.h>
+#include <solvers/LinearObjective.h>
 
 class SolutionGuarantor {
 

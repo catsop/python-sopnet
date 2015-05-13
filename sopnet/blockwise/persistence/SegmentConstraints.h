@@ -2,7 +2,7 @@
 #define SOPNET_BLOCKWISE_PERSISTENCE_SEGMENT_CONSTRAINTS_H__
 
 #include <map>
-#include <inference/Relation.h>
+#include <solvers/Relation.h>
 #include <segments/SegmentHash.h>
 
 class SegmentConstraint {

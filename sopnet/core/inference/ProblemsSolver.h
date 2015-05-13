@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <pipeline/Process.h>
-#include <inference/Solution.h>
+#include <solvers/Solution.h>
 #include "Problems.h"
 #include "Solutions.h"
 

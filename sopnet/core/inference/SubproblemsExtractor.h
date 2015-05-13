@@ -2,8 +2,8 @@
 #define SOPNET_INFERENCE_SUBPROBLEMS_EXTRACTOR_H__
 
 #include <pipeline/SimpleProcessNode.h>
-#include <inference/LinearObjective.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearObjective.h>
+#include <solvers/LinearConstraints.h>
 #include "ProblemConfiguration.h"
 #include "Subproblems.h"
 

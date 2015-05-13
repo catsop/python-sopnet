@@ -4,7 +4,7 @@
 #include <boost/function.hpp>
 
 #include <pipeline/all.h>
-#include <inference/LinearConstraints.h>
+#include <solvers/LinearConstraints.h>
 #include <slices/ConflictSets.h>
 #include <features/Overlap.h>
 #include <features/Distance.h>

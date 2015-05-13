@@ -2,7 +2,7 @@
 #define CELLTRACKER_RECONSTRUCTOR_H__
 
 #include <pipeline/all.h>
-#include <inference/Solution.h>
+#include <solvers/Solution.h>
 #include <segments/Segments.h>
 
 class Reconstructor : public pipeline::SimpleProcessNode<> {

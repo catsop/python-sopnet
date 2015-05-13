@@ -2,7 +2,7 @@
 #define SOPNET_SEGMENT_RANDOM_FOREST_EVALUATOR_H__
 
 #include <pipeline/all.h>
-#include <inference/RandomForest.h>
+#include <solvers/RandomForest.h>
 #include <features/Features.h>
 #include <segments/Segment.h>
 

@@ -3,12 +3,12 @@
 
 #include <pipeline/all.h>
 
-#include <inference/LinearConstraints.h>
-#include <inference/LinearConstraint.h>
-#include <inference/LinearObjective.h>
+#include <solvers/LinearConstraints.h>
+#include <solvers/LinearConstraint.h>
+#include <solvers/LinearObjective.h>
 #include <segments/Segments.h>
 #include <features/Features.h>
-#include <inference/ProblemConfiguration.h>
+#include <solvers/ProblemConfiguration.h>
 
 /**
  * A sink process node that dumps a problem (i.e., sets of Segments and

@@ -2,7 +2,7 @@
 #define CELLTRACKER_OBJECTIVE_GENERATOR_H__
 
 #include <pipeline/all.h>
-#include <inference/LinearObjective.h>
+#include <solvers/LinearObjective.h>
 #include <segments/Segments.h>
 
 class ObjectiveGenerator : public pipeline::SimpleProcessNode<> {
