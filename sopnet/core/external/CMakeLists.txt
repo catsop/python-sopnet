@@ -1,1 +1,1 @@
-define_module(sopnet_external OBJECT LINKS pipeline imageprocessing boost hdf5 gurobi cplex)
+define_module(sopnet_core_external HEADER INCLUDES ${CMAKE_CURRENT_SOURCE_DIR})
