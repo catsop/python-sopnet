@@ -20,7 +20,7 @@ boost::shared_ptr<SegmentDescriptions>
 LocalSegmentStore::getSegmentsByBlocks(
 		const Blocks& blocks,
 		Blocks&       missingBlocks,
-		bool          readCosts) { // readCosts is ignored.
+		bool          /*readCosts*/) { // readCosts is ignored.
 
 	boost::shared_ptr<SegmentDescriptions> _blocksSegments = boost::make_shared<SegmentDescriptions>();
 
@@ -39,7 +39,7 @@ LocalSegmentStore::getSegmentsByBlocks(
 
 boost::shared_ptr<SegmentConstraints>
 LocalSegmentStore::getConstraintsByBlocks(
-		const Blocks& blocks) {
+		const Blocks& /*blocks*/) {
 
 	return boost::make_shared<SegmentConstraints>();
 }
@@ -52,7 +52,7 @@ LocalSegmentStore::getFeatureWeights() {
 
 void
 LocalSegmentStore::storeSegmentCosts(
-		const std::map<SegmentHash, double>& costs) {
+		const std::map<SegmentHash, double>& /*costs*/) {
 
 	UTIL_THROW_EXCEPTION(
 			NotYetImplemented,
