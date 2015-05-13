@@ -3,7 +3,7 @@
 
 #include <string>
 #include <pipeline/SimpleProcessNode.h>
-#include <solvers/LinearCostFunctionParameters.h>
+#include <inference/LinearCostFunctionParameters.h>
 
 class LinearCostFunctionParametersReader : public pipeline::SimpleProcessNode<> {
 

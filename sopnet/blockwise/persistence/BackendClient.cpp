@@ -8,7 +8,9 @@
 #include <blockwise/persistence/local/LocalSliceStore.h>
 #include <blockwise/persistence/local/LocalSegmentStore.h>
 #include "BackendClient.h"
-#include "logging.h"
+#include <util/Logger.h>
+
+logger::LogChannel backendclientlog("backendclientlog", "[BackendClient] ");
 
 namespace python {
 
@@ -17,14 +19,14 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-		LOG_USER(pylog) << "[BackendClient] create local stack store for membranes" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create local stack store for membranes" << std::endl;
 
 		return boost::make_shared<LocalStackStore>(type == Raw ? "./raw" : "./membranes");
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
-		LOG_USER(pylog) << "[BackendClient] create catmaid stack store for membranes" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create catmaid stack store for membranes" << std::endl;
 
 		return boost::make_shared<CatmaidStackStore>(configuration, type);
 	}
@@ -37,7 +39,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-		LOG_USER(pylog) << "[BackendClient] create local slice store" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create local slice store" << std::endl;
 
 		return boost::make_shared<LocalSliceStore>();
 	}
@@ -45,7 +47,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 #ifdef HAVE_PostgreSQL
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
-		LOG_USER(pylog) << "[BackendClient] create postgresql slice store" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create postgresql slice store" << std::endl;
 
 		return boost::make_shared<PostgreSqlSliceStore>(configuration);
 	}
@@ -59,7 +61,7 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-		LOG_USER(pylog) << "[BackendClient] create local segment store" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create local segment store" << std::endl;
 
 		return boost::make_shared<LocalSegmentStore>(configuration);
 	}
@@ -67,7 +69,7 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 #ifdef HAVE_PostgreSQL
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
-		LOG_USER(pylog) << "[BackendClient] create postgresql segment store" << std::endl;
+		LOG_USER(backendclientlog) << "[BackendClient] create postgresql segment store" << std::endl;
 
 		return boost::make_shared<PostgreSqlSegmentStore>(configuration);
 	}

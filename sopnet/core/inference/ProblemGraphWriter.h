@@ -8,7 +8,7 @@
 #include <solvers/LinearObjective.h>
 #include <segments/Segments.h>
 #include <features/Features.h>
-#include <solvers/ProblemConfiguration.h>
+#include <inference/ProblemConfiguration.h>
 
 /**
  * A sink process node that dumps a problem (i.e., sets of Segments and

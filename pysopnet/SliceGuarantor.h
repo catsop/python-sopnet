@@ -2,7 +2,7 @@
 #define SOPNET_PYTHON_SLICE_GUARANTOR_H__
 
 #include <blockwise/ProjectConfiguration.h>
-#include <blockwise/BackendClient.h>
+#include <blockwise/persistence/BackendClient.h>
 #include "SliceGuarantorParameters.h"
 
 namespace python {
