@@ -465,7 +465,7 @@ PostgreSqlSegmentStore::storeSegmentCosts(const std::map<SegmentHash, double>& c
 			"SELECT 1 FROM segment s "
 			"JOIN segment_costs sc ON sc.id = s.id "
 			"ORDER BY s.id " // Ordering by id is crucial to prevent row-level deadlocks during SELECT .. FOR UPDATE
-			"FOR UPDATE OF s;"
+			"FOR NO KEY UPDATE OF s;"
 			"UPDATE segment SET cost=sc.cost "
 			"FROM segment_costs sc "
 			"WHERE sc.id = segment.id;COMMIT;";
