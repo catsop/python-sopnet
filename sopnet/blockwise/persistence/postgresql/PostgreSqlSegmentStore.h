@@ -90,6 +90,15 @@ public:
 	void storeSolution(const std::vector<std::set<SegmentHash> >& assemblies, const Core& core);
 
 	/**
+	 * Retrieve a solution as a list of sets of segment hashes for the given 
+	 * cores.
+	 *
+	 * @param cores
+	 *              The cores for which to retrieve the solution.
+	 */
+	std::vector<std::set<SegmentHash> > getSolutionByCores(const Cores& cores);
+
+	/**
 	 * Check whether the segments for the given block have already been 
 	 * extracted.
 	 */
