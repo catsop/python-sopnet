@@ -15,6 +15,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <volumes/io/Hdf5VolumeStore.h>
 #include <volumes/ExtractLabels.h>
+#include <sopnet/blockwise/blocks/BlockUtils.h>
 #include <sopnet/blockwise/persistence/BackendClient.h>
 
 util::ProgramOption optionIntensities(
@@ -78,6 +79,11 @@ int main(int argc, char** argv) {
 		pipeline::Value<ImageStack> intensityStack;
 		pipeline::Value<ImageStack> labelStack;
 
+		// create volumes from stacks
+
+		ExplicitVolume<float> intensities;
+		ExplicitVolume<int>   labels;
+
 		if (optionUseCatsopProject) {
 
 			StackDescription rawStackDescription;
@@ -106,8 +112,29 @@ int main(int argc, char** argv) {
 					util::point<unsigned int, 3>(0, 0, 0),
 					configuration.getVolumeSize());
 			LOG_USER(logger::out) << "reading raw images in " << volumeBox << "..." << std::flush;
-			intensityStack = stackStore->getImageStack(volumeBox);
+			//intensityStack = stackStore->getImageStack(volumeBox);
 			LOG_USER(logger::out) << " done." << std::endl;
+
+			// create a label stack of the same size
+
+			labels = ExplicitVolume<int>(intensityStack->width(), intensityStack->height(), intensityStack->size());
+
+			// get all assemblies
+
+			boost::shared_ptr<SegmentStore> segmentStore =
+					backendClient.createSegmentStore(configuration);
+
+			BlockUtils blockUtils(configuration);
+			Cores cores;
+			Core maxCore = blockUtils.getCoreAtLocation(configuration.getVolumeSize() - util::point<int, 3>(1, 1, 1));
+			for (unsigned int z = 0; z < maxCore.z(); z++)
+			for (unsigned int y = 0; y < maxCore.y(); y++)
+			for (unsigned int x = 0; x < maxCore.x(); x++)
+				cores.add(Core(x, y, z));
+
+			std::vector<std::set<SegmentHash>> assemblies = segmentStore->getSolutionByCores(cores);
+
+			LOG_USER(logger::out) << "found " << assemblies.size() << " assemblies" << std::endl;
 
 			// DEBUG
 			return 0;
@@ -119,6 +146,9 @@ int main(int argc, char** argv) {
 
 			intensityStack = intensityReader->getOutput();
 			labelStack = labelReader->getOutput();
+
+			intensities = ExplicitVolume<float>(*intensityStack);
+			labels      = ExplicitVolume<int>(*labelStack);
 		}
 
 		if (optionExtractLabels) {
@@ -140,11 +170,6 @@ int main(int argc, char** argv) {
 			UTIL_THROW_EXCEPTION(
 					UsageError,
 					"intensity and label stacks have different sizes");
-
-		// create volumes from stacks
-
-		ExplicitVolume<float> intensities(*intensityStack);
-		ExplicitVolume<int>   labels(*labelStack);
 
 		// store them in the project file
 
