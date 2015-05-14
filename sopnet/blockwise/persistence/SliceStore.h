@@ -6,6 +6,7 @@
 #include <slices/Slice.h>
 #include <slices/Slices.h>
 #include <slices/ConflictSets.h>
+#include <segments/SegmentHash.h>
 #include <blockwise/blocks/Blocks.h>
 
 #include <util/exceptions.h>
@@ -49,6 +50,17 @@ public:
 	virtual boost::shared_ptr<Slices> getSlicesByBlocks(
 			const Blocks& blocks,
 			Blocks&       missingBlocks) = 0;
+
+	/**
+	 * Get all slices that are used by the segments with the given hashes. This 
+	 * method does not check whether slices for all involved blocks have been 
+	 * extracted, yet.
+	 *
+	 * @param segmentHashes
+	 *              A set of segment hashes, for which to get the slices.
+	 */
+	virtual boost::shared_ptr<Slices> getSlicesBySegmentHashes(
+			const std::set<SegmentHash>& segmentHashes) = 0;
 
 	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 

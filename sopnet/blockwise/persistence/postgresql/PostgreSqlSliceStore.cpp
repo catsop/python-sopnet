@@ -281,42 +281,12 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 			"JOIN slice s on sbr.slice_id = s.id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
 			"GROUP BY s.id"; // Remove duplicates. GROUP BY is sometimes faster than DISTINCT.
-	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE };
 	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
-	int nSlices = PQntuples(result);
 
-	// Build SegmentDescription for each row
-	for (int i = 0; i < nSlices; ++i) {
-		char* cellStr;
-		cellStr = PQgetvalue(result, i, FIELD_ID);
-		std::string slicePostgreId(cellStr);
-		SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
-				boost::lexical_cast<PostgreSqlHash>(slicePostgreId));
-		cellStr = PQgetvalue(result, i, FIELD_SECTION);
-		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
-		cellStr = PQgetvalue(result, i, FIELD_VALUE);
-		double value = boost::lexical_cast<double>(cellStr);
-
-		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
-				ComponentTreeConverter::getNextSliceId(),
-				section,
-				loadConnectedComponent(slicePostgreId, value));
-
-		// Check that the loaded slice has the correct hash.
-		if (slice->hashValue() != sliceHash) {
-			std::ostringstream errorMsg;
-			errorMsg << "Retrieved slice has wrong hash. Original: " << sliceHash <<
-					" Retrieved: " << slice->hashValue();
-
-			LOG_ERROR(postgresqlslicestorelog) << errorMsg.str() << std::endl;
-			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
-		}
-
-		slices->add(slice);
-	}
+	slicesFromResult(result, slices);
 
 	PQclear(result);
 
@@ -326,6 +296,52 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 			<< (1e9 * slices->size()/totalElapsed.count()) << " segments/s (query: "
 			<< (queryElapsed.count() / 1e6) << "ms; "
 			<< (1e9 * slices->size()/queryElapsed.count()) << " segments/s)" << std::endl;
+
+	return slices;
+}
+
+boost::shared_ptr<Slices>
+PostgreSqlSliceStore::getSlicesBySegmentHashes(
+		const std::set<SegmentHash>& segmentHashes) {
+
+	boost::shared_ptr<Slices> slices = boost::make_shared<Slices>();
+
+	if (segmentHashes.size() == 0) {
+
+		LOG_ERROR(postgresqlslicestorelog)
+				<< "getSlicesBySegmentHashes() called with empty segment hash set"
+				<< std::endl;
+
+		return slices;
+	}
+
+	std::stringstream query;
+	query
+			<< "BEGIN;"
+			<< "CREATE TEMP TABLE segment_hash (id bigint NOT NULL) ON COMMIT DROP;"
+			<< "INSERT INTO segment_hash (id) VALUES ";
+	for (auto hash = segmentHashes.begin(); hash != segmentHashes.end(); hash++)
+		query
+				<< (hash == segmentHashes.begin() ? "" : ",")
+				<< "(" << PostgreSqlUtils::hashToPostgreSqlId(*hash) << ")";
+	query << ";";
+	query
+			<< "SELECT s.id, s.section, s.value "
+			<< "FROM segment_slice ss "
+			<< "JOIN slice s ON s.id = ss.slice_id "
+			<< "JOIN segment_hash ON segment_hash.id = ss.segment_id "
+			<< "GROUP BY s.id;";
+
+	PGresult* result = PQexec(_pgConnection, query.str().c_str());
+	PostgreSqlUtils::checkPostgreSqlError(result);
+
+	slicesFromResult(result, slices);
+
+	PQclear(result);
+
+	result = PQexec(_pgConnection, "COMMIT");
+	PostgreSqlUtils::checkPostgreSqlError(result, "COMMIT");
+	PQclear(result);
 
 	return slices;
 }
@@ -479,6 +495,44 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 			nNonzero);
 
 	return component;
+}
+
+void
+PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slices> slices) {
+
+	int nSlices = PQntuples(result);
+
+	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE };
+
+	// Build Slice for each row
+	for (int i = 0; i < nSlices; ++i) {
+		char* cellStr;
+		cellStr = PQgetvalue(result, i, FIELD_ID);
+		std::string slicePostgreId(cellStr);
+		SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
+				boost::lexical_cast<PostgreSqlHash>(slicePostgreId));
+		cellStr = PQgetvalue(result, i, FIELD_SECTION);
+		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
+		cellStr = PQgetvalue(result, i, FIELD_VALUE);
+		double value = boost::lexical_cast<double>(cellStr);
+
+		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
+				ComponentTreeConverter::getNextSliceId(),
+				section,
+				loadConnectedComponent(slicePostgreId, value));
+
+		// Check that the loaded slice has the correct hash.
+		if (slice->hashValue() != sliceHash) {
+			std::ostringstream errorMsg;
+			errorMsg << "Retrieved slice has wrong hash. Original: " << sliceHash <<
+					" Retrieved: " << slice->hashValue();
+
+			LOG_ERROR(postgresqlslicestorelog) << errorMsg.str() << std::endl;
+			UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
+		}
+
+		slices->add(slice);
+	}
 }
 
 #endif // HAVE_PostgreSQL
