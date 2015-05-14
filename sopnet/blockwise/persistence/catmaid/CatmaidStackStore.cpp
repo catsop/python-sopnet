@@ -9,6 +9,10 @@ logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackSt
 CatmaidStackStore::CatmaidStackStore(
 		const ProjectConfiguration& configuration,
 		StackType stackType) :
+	StackStore(util::point<float, 3>(
+			configuration.getCatmaidStack(stackType).resX,
+			configuration.getCatmaidStack(stackType).resY,
+			configuration.getCatmaidStack(stackType).resZ)),
 	_stack(configuration.getCatmaidStack(stackType)),
 	_treatMissingAsEmpty(stackType != Raw)
 {

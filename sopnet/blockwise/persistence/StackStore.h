@@ -16,6 +16,8 @@ class StackStore : public pipeline::Data
 {
 public:
 
+	StackStore(const util::point<float, 3>& resolution = util::point<float, 3>(1.0, 1.0, 1.0)) : _res(resolution) {}
+
 	/**
 	 * Return an ImageStack Value for the given Box by calling getImage for each 
 	 * section (z-coordinate) contained in the Box.
@@ -32,6 +34,8 @@ protected:
 	virtual boost::shared_ptr<Image> getImage(
 			const util::box<unsigned int, 2> bound,
 			const unsigned int section) = 0;
+
+	util::point<float, 3> _res;
 };
 
 #endif // SOPNET_BLOCKWISESOPNET_PERSISTENCE_STACK_STORE_H__
