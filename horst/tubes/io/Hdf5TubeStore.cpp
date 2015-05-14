@@ -142,7 +142,14 @@ Hdf5TubeStore::retrieveFeatures(const TubeIds&, Features&) {
 void
 Hdf5TubeStore::retrieveSkeletons(const TubeIds& ids, Skeletons& skeletons) {
 
-	_hdfFile.cd("/tubes/skeletons");
+	try {
+
+		_hdfFile.cd("/tubes/skeletons");
+
+	} catch (vigra::PreconditionViolation& e) {
+
+		return;
+	}
 
 	for (TubeId id : ids) {
 
@@ -150,7 +157,14 @@ Hdf5TubeStore::retrieveSkeletons(const TubeIds& ids, Skeletons& skeletons) {
 
 		std::string name = boost::lexical_cast<std::string>(id);
 
-		_hdfFile.cd(name);
+		try {
+
+			_hdfFile.cd(name);
+
+		} catch (vigra::PreconditionViolation& e) {
+
+			continue;
+		}
 
 		Skeleton skeleton;
 		readGraphVolume(skeleton);

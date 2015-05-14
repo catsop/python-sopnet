@@ -46,7 +46,9 @@ SkeletonViewController::addSkeleton(TubeId id) {
 
 	Skeletons skeletons;
 	_tubeStore->retrieveSkeletons(ids, skeletons);
-	_skeletons->insert(id, std::move(skeletons[id]));
+
+	if (skeletons.contains(id))
+		_skeletons->insert(id, std::move(skeletons[id]));
 }
 
 void
