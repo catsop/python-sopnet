@@ -27,9 +27,8 @@ public:
 	 *    user
 	 *    password
 	 *    database
-	 *    StackDescription:
-	 *      id
-	 *      segmentationId
+	 *    segmentationConfigurationId
+	 *    componentDirectory
 	 */
 	void fillProjectConfiguration(ProjectConfiguration& configuration);
 
