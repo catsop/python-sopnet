@@ -660,18 +660,18 @@ PostgreSqlSegmentStore::getSolutionByCores(const Cores& cores) {
 	// get all assemblies
 
 	std::stringstream query;
-	query << "SELECT hash FROM assembly WHERE ";
+	query << "SELECT id FROM assembly WHERE ";
 	for (unsigned int i = 0; i < coreIds.size(); i++)
 		query << "core_id=" << coreIds[i] << (i != coreIds.size() - 1 ? " OR " : "");
 	PGresult* queryResult = PQexec(_pgConnection, query.str().c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, query.str());
 
-	std::vector<PostgreSqlHash> assemblyHashes;
+	std::vector<int> assemblyIds;
 	int numAssemblies = PQntuples(queryResult);
 	for (int i = 0; i < numAssemblies; i++) {
 
-		size_t hash = boost::lexical_cast<PostgreSqlHash>(PQgetvalue(queryResult, i, 0));
-		assemblyHashes.push_back(hash);
+		int id = boost::lexical_cast<PostgreSqlHash>(PQgetvalue(queryResult, i, 0));
+		assemblyIds.push_back(id);
 	}
 
 	PQclear(queryResult);
@@ -680,10 +680,10 @@ PostgreSqlSegmentStore::getSolutionByCores(const Cores& cores) {
 
 	std::vector<std::set<SegmentHash> > solution;
 
-	for (const PostgreSqlHash hash : assemblyHashes) {
+	for (const int id : assemblyIds) {
 
 		std::string query("SELECT segment_id FROM assembly_segment WHERE assembly_id=");
-		query += boost::lexical_cast<std::string>(hash);
+		query += boost::lexical_cast<std::string>(id);
 
 		PGresult* queryResult = PQexec(_pgConnection, query.c_str());
 		PostgreSqlUtils::checkPostgreSqlError(queryResult, query);
@@ -698,6 +698,12 @@ PostgreSqlSegmentStore::getSolutionByCores(const Cores& cores) {
 							boost::lexical_cast<SegmentHash>(
 									PQgetvalue(queryResult, i, 0)));
 			segments.insert(segmentHash);
+		}
+
+		if (numSegments == 0) {
+
+			LOG_ERROR(postgresqlsegmentstorelog) << query << std::endl;
+			return solution;
 		}
 
 		solution.push_back(segments);
