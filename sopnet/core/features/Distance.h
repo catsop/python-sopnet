@@ -103,6 +103,8 @@ private:
 	double _maxDistance;
 
 	std::map<unsigned int, distance_map_type> _distanceMaps;
+
+	static const distance_map_type _EMPTY_DISTANCE_MAP;
 };
 
 #endif // SOPNET_FEATURES_DISTANCE_H__

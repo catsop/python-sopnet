@@ -117,6 +117,8 @@ Distance::distance(
 	const ConnectedComponent& c1 = *s1.getComponent();
 
 	const util::box<int, 2> s2dmbb = getDistanceMapBoundingBox(s2);
+	// Generate distance map only if there is potential overlap between slices.
+	const distance_map_type& s2Map = c1.getBoundingBox().intersects(s2dmbb) ? getDistanceMap(s2) : _EMPTY_DISTANCE_MAP;
 
 	double totalDistance = 0.0;
 
@@ -139,7 +141,7 @@ Distance::distance(
 		p1 -= util::point<int, 2>(s2dmbb.min().x(), s2dmbb.min().y());
 
 		// add up the value
-		double dist = getDistanceMap(s2)(p1.x(), p1.y());
+		double dist = s2Map(p1.x(), p1.y());
 		totalDistance += dist;
 		maxSliceDistance = std::max(maxSliceDistance, dist);
 	}
@@ -160,6 +162,9 @@ Distance::distance(
 
 	const util::box<int, 2> s2dmbba = getDistanceMapBoundingBox(s2a);
 	const util::box<int, 2> s2dmbbb = getDistanceMapBoundingBox(s2b);
+	// Generate distance maps only if there is potential overlap between slices.
+	const distance_map_type& s2aMap = c1.getBoundingBox().intersects(s2dmbba) ? getDistanceMap(s2a) : _EMPTY_DISTANCE_MAP;
+	const distance_map_type& s2bMap = c1.getBoundingBox().intersects(s2dmbbb) ? getDistanceMap(s2b) : _EMPTY_DISTANCE_MAP;
 
 	double totalDistance = 0.0;
 
@@ -186,7 +191,7 @@ Distance::distance(
 				p1a -= util::point<int, 2>(s2dmbba.min().x(), s2dmbba.min().y());
 
 				// add up the value
-				distancea = getDistanceMap(s2a)(p1a.x(), p1a.y());
+				distancea = s2aMap(p1a.x(), p1a.y());
 			}
 		}
 
@@ -206,7 +211,7 @@ Distance::distance(
 				p1b -= util::point<int, 2>(s2dmbbb.min().x(), s2dmbbb.min().y());
 
 				// add up the value
-				distanceb = getDistanceMap(s2b)(p1b.x(), p1b.y());
+				distanceb = s2bMap(p1b.x(), p1b.y());
 			}
 		}
 
@@ -238,11 +243,21 @@ Distance::getDistanceMapBoundingBox(const Slice& slice) {
 const Distance::distance_map_type&
 Distance::getDistanceMap(const Slice& slice) {
 
-	if (!_distanceMaps.count(slice.getId()))
-		_distanceMaps[slice.getId()] = computeDistanceMap(slice);
+	typedef std::map<unsigned int, distance_map_type> map_type;
 
-	return _distanceMaps[slice.getId()];
+	map_type::const_iterator mapIter = _distanceMaps.find(slice.getId());
+
+	if (mapIter == _distanceMaps.end()) {
+
+		std::pair<map_type::iterator, bool> newMap =
+				_distanceMaps.insert(map_type::value_type(slice.getId(), computeDistanceMap(slice)));
+		mapIter = newMap.first;
+	}
+
+	return mapIter->second;
 }
+
+const Distance::distance_map_type Distance::_EMPTY_DISTANCE_MAP = Distance::distance_map_type();
 
 Distance::distance_map_type
 Distance::computeDistanceMap(const Slice& slice) {
