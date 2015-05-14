@@ -28,6 +28,16 @@ ProjectConfiguration::getBackendType() const {
 }
 
 void
+ProjectConfiguration::setSegmentationConfigurationId(int id) {
+	_segmentationConfigurationId = id;
+}
+
+int
+ProjectConfiguration::getSegmentationConfigurationId() const {
+	return _segmentationConfigurationId;
+}
+
+void
 ProjectConfiguration::setCatmaidStack(const StackType stackType, const StackDescription stack) {
 
 	_stackTypes.at(stackType) = stack;

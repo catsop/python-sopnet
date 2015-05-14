@@ -20,7 +20,7 @@ public:
 
 private:
 
-	void fill(StackDescription& stackDescription, StackType stackType);
+	void fillStackDescriptions(ProjectConfiguration& config);
 
 	// database connection
 	PGconn* _pgConnection;

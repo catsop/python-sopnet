@@ -20,7 +20,7 @@ class cmake_lib(build_py):
         if not self.dry_run:
 
             # create our shared object file
-            call(["./compile_wrapper.sh", source_dir, build_dir, module_name, "-j"])
+            call(["./compile_wrapper.sh", source_dir, build_dir, module_name])
 
             target_dir = self.build_lib
 

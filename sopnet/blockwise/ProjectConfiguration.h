@@ -52,6 +52,18 @@ public:
 	 */
 	BackendType getBackendType() const;
 
+	/*
+	 * Set the ID of the CATSOP segmentation configuration used to fill other
+	 * configuration parameters.
+	 */
+	void setSegmentationConfigurationId(int id);
+
+	/*
+	 * Get the ID of the CATSOP segmentation configuration used to fill other
+	 * configuration parameters.
+	 */
+	int getSegmentationConfigurationId() const;
+
 	/**
 	 * Set the CATMAID stack description to be used.
 	 */
@@ -166,6 +178,8 @@ public:
 private:
 
 	BackendType _backendType;
+
+	int _segmentationConfigurationId;
 
 	std::vector<StackDescription> _stackTypes;
 
