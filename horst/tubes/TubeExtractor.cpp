@@ -19,35 +19,32 @@ TubeExtractor::extractFrom(ExplicitVolume<int>& labels, const std::set<TubeId>& 
 		bbs[id] += util::box<float,3>(x, y, z, x+1, y+1, z+1);
 	}
 
-	// extract the tube volumes
-	Volumes volumes;
-
 	for (auto& p : bbs) {
 
-		TubeId              id = p.first;
-		util::box<float,3>& bb = p.second;
+		TubeId                    id = p.first;
+		const util::box<float,3>& bb = p.second;
 
 		if (!ids.empty())
 			if (!ids.count(id))
 				continue;
 
+		ExplicitVolume<unsigned char> volume(bb.width(), bb.height(), bb.depth());
+
 		// set volume properties
-		volumes[id].setResolution(
+		volume.setResolution(
 				labels.getResolutionX(),
 				labels.getResolutionY(),
 				labels.getResolutionZ());
-		volumes[id].setOffset(labels.getOffset() + bb.min()*labels.getResolution());
-		volumes[id].data() = vigra::MultiArray<3, char>(vigra::Shape3(bb.width(), bb.height(), bb.depth()));
+		volume.setOffset(labels.getOffset() + bb.min()*labels.getResolution());
 
 		// copy data
 		vigra::transformMultiArray(
 				labels.data().subarray(
 						vigra::Shape3(bb.min().x(), bb.min().y(), bb.min().z()),
 						vigra::Shape3(bb.max().x(), bb.max().y(), bb.max().z())),
-				volumes[id].data(),
+				volume.data(),
 				(vigra::functor::Arg1() == vigra::functor::Param(id)));
-	}
 
-	// save them
-	_store->saveVolumes(volumes);
+		_store->saveVolume(id, volume);
+	}
 }

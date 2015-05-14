@@ -27,19 +27,24 @@ public:
 				vigra::HDF5File::OpenMode::ReadWrite) {}
 
 	/**
+	 * Store a tube volume.
+	 */
+	void saveVolume(TubeId id, const ExplicitVolume<unsigned char>& volume) override;
+
+	/**
 	 * Store the given tube volumes.
 	 */
-	 void saveVolumes(const Volumes& volumes) override;
+	void saveVolumes(const Volumes& volumes) override;
 
 	/**
 	 * Store the given tube features.
 	 */
-	 void saveFeatures(const Features& features) override;
+	void saveFeatures(const Features& features) override;
 
 	/**
 	 * Store the names of the features.
 	 */
-	 void saveFeatureNames(const std::vector<std::string>& names) override;
+	void saveFeatureNames(const std::vector<std::string>& names) override;
 
 	/**
 	 * Store the given tube skeletons.

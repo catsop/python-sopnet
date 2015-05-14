@@ -5,6 +5,18 @@
 logger::LogChannel hdf5storelog("hdf5storelog", "[Hdf5TubeStore] ");
 
 void
+Hdf5TubeStore::saveVolume(TubeId id, const ExplicitVolume<unsigned char>& volume) {
+
+	_hdfFile.root();
+	_hdfFile.cd_mk("tubes");
+	_hdfFile.cd_mk("volumes");
+
+	std::string name = boost::lexical_cast<std::string>(id);
+
+	writeVolume(volume, name);
+}
+
+void
 Hdf5TubeStore::saveVolumes(const Volumes& volumes) {
 
 	_hdfFile.root();

@@ -14,6 +14,11 @@ class TubeStore {
 public:
 
 	/**
+	 * Store a tube volume.
+	 */
+	virtual void saveVolume(TubeId id, const ExplicitVolume<unsigned char>& volume) = 0;
+
+	/**
 	 * Store the given tube volumes.
 	 */
 	virtual void saveVolumes(const Volumes& volumes) = 0;
