@@ -40,6 +40,20 @@ public:
 			Blocks&       missingBlocks);
 
 	/**
+	 * Get all slices that are used by the segments with the given hashes. This 
+	 * method does not check whether slices for all involved blocks have been 
+	 * extracted, yet.
+	 *
+	 * @param segmentHashes
+	 *              A set of segment hashes, for which to get the slices.
+	 */
+	boost::shared_ptr<Slices> getSlicesBySegmentHashes(
+			const std::set<SegmentHash>& /*segmentHashes*/) {
+
+		UTIL_THROW_EXCEPTION(NotYetImplemented, "");
+	}
+
+	/**
 	 * Get all the conflict sets that are associated to the given blocks. The 
 	 * conflict sets will contain the hashes of slices.
 	 */
