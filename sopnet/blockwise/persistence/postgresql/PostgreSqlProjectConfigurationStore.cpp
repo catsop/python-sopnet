@@ -10,11 +10,6 @@ PostgreSqlProjectConfigurationStore::PostgreSqlProjectConfigurationStore(const P
 			config.getPostgreSqlDatabase(),
 			config.getPostgreSqlUser(),
 			config.getPostgreSqlPassword());
-	std::ostringstream q;
-	q << "SET search_path TO segstack_"
-	  << config.getCatmaidStack(Raw).segmentationId
-	  << ",public;";
-	PQsendQuery(_pgConnection, q.str().c_str());
 }
 
 PostgreSqlProjectConfigurationStore::~PostgreSqlProjectConfigurationStore() {
