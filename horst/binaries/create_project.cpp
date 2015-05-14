@@ -10,6 +10,7 @@
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/exceptions.h>
+#include <util/timing.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
@@ -38,10 +39,15 @@ util::ProgramOption optionUseCatsopProject(
 		util::_description_text = "Read the intensities and labels from a CATSOP project. "
 		                          "Set the catsop options accordingly.");
 
-util::ProgramOption optionCatsopSegmentationId(
-		util::_long_name        = "catsopSegmentationId",
-		util::_description_text = "The segmentation id used by catsop to refer to a set of stacks and "
+util::ProgramOption optionCatsopSegmentationConfigurationId(
+		util::_long_name        = "catsopSegmentationConfigurationId",
+		util::_description_text = "The segmentation configuration id used by catsop to refer to a set of stacks and "
 		                          "extracted structures.");
+
+util::ProgramOption optionCatsopComponentDirectory(
+		util::_long_name        = "catsopComponentDirectory",
+		util::_description_text = "The local directory where the slice images are stored.",
+		util::_default_value    = "/tmp/catsop/");
 
 util::ProgramOption optionCatsopPgHost(
 		util::_long_name        = "catsopPgHost",
@@ -86,19 +92,14 @@ int main(int argc, char** argv) {
 
 		if (optionUseCatsopProject) {
 
-			StackDescription rawStackDescription;
-			rawStackDescription.segmentationId = optionCatsopSegmentationId;
-			StackDescription memStackDescription;
-			memStackDescription.segmentationId = optionCatsopSegmentationId;
-
 			ProjectConfiguration configuration;
 			configuration.setBackendType(ProjectConfiguration::PostgreSql);
 			configuration.setPostgreSqlHost(optionCatsopPgHost);
 			configuration.setPostgreSqlUser(optionCatsopPgUser);
 			configuration.setPostgreSqlPassword(optionCatsopPgPassword);
 			configuration.setPostgreSqlDatabase(optionCatsopPgDatabase);
-			configuration.setCatmaidStack(Raw, rawStackDescription);
-			configuration.setCatmaidStack(Membrane, memStackDescription);
+			configuration.setSegmentationConfigurationId(optionCatsopSegmentationConfigurationId);
+			configuration.setComponentDirectory(optionCatsopComponentDirectory);
 
 			BackendClient backendClient;
 			backendClient.fillProjectConfiguration(configuration);
@@ -112,12 +113,19 @@ int main(int argc, char** argv) {
 					util::point<unsigned int, 3>(0, 0, 0),
 					configuration.getVolumeSize());
 			LOG_USER(logger::out) << "reading raw images in " << volumeBox << "..." << std::flush;
-			//intensityStack = stackStore->getImageStack(volumeBox);
+			{
+				UTIL_TIME_SCOPE("read raw images");
+				intensityStack = stackStore->getImageStack(volumeBox);
+			}
 			LOG_USER(logger::out) << " done." << std::endl;
 
-			// create a label stack of the same size
-
+			// create a intensity and label stack of the same size
+			{
+				UTIL_TIME_SCOPE("convert raw stack");
+				intensities = ExplicitVolume<float>(*intensityStack);
+			}
 			labels = ExplicitVolume<int>(intensityStack->width(), intensityStack->height(), intensityStack->size());
+			labels.data() = 0;
 
 			// get all assemblies
 
@@ -127,17 +135,49 @@ int main(int argc, char** argv) {
 			BlockUtils blockUtils(configuration);
 			Cores cores;
 			Core maxCore = blockUtils.getCoreAtLocation(configuration.getVolumeSize() - util::point<int, 3>(1, 1, 1));
-			for (unsigned int z = 0; z < maxCore.z(); z++)
-			for (unsigned int y = 0; y < maxCore.y(); y++)
-			for (unsigned int x = 0; x < maxCore.x(); x++)
+			for (unsigned int z = 0; z <= maxCore.z(); z++)
+			for (unsigned int y = 0; y <= maxCore.y(); y++)
+			for (unsigned int x = 0; x <= maxCore.x(); x++)
 				cores.add(Core(x, y, z));
 
-			std::vector<std::set<SegmentHash>> assemblies = segmentStore->getSolutionByCores(cores);
+			std::vector<std::set<SegmentHash>> assemblies;
+
+			{
+				UTIL_TIME_SCOPE("get assemblies");
+				assemblies = segmentStore->getSolutionByCores(cores);
+			}
 
 			LOG_USER(logger::out) << "found " << assemblies.size() << " assemblies" << std::endl;
 
-			// DEBUG
-			return 0;
+			// draw assemblies in labels volume
+
+			LOG_USER(logger::out) << "creating label volume..." << std::flush;
+
+			{
+				UTIL_TIME_SCOPE("create label volume");
+
+				unsigned int tubeId = 1;
+				#pragma omp parallel for
+				for (unsigned int i = 0; i < assemblies.size(); i++) {
+
+					boost::shared_ptr<SliceStore> sliceStore = backendClient.createSliceStore(configuration);
+
+					// get slices
+					boost::shared_ptr<Slices> slices = sliceStore->getSlicesBySegmentHashes(assemblies[i]);
+
+					// draw slices
+					for (boost::shared_ptr<Slice> slice : *slices) {
+
+						int z = slice->getSection();
+						for (const util::point<unsigned int, 2>& p : slice->getComponent()->getPixels())
+							labels(p.x(), p.y(), z) = tubeId;
+					}
+
+					tubeId++;
+				}
+			}
+
+			LOG_USER(logger::out) << " done." << std::endl;
 
 		} else {
 
@@ -160,16 +200,16 @@ int main(int argc, char** argv) {
 			labelStack = extractLabels->getOutput();
 		}
 
-		unsigned int width  = labelStack->width();
-		unsigned int height = labelStack->height();
-		unsigned int depth  = labelStack->size();
+		unsigned int width  = labels.width();
+		unsigned int height = labels.height();
+		unsigned int depth  = labels.depth();
 
-		if (width  != intensityStack->width() ||
-			height != intensityStack->height() ||
-			depth  != intensityStack->size())
+		if (width  != intensities.width() ||
+			height != intensities.height() ||
+			depth  != intensities.depth())
 			UTIL_THROW_EXCEPTION(
 					UsageError,
-					"intensity and label stacks have different sizes");
+					"intensity and label volumes have different sizes");
 
 		// store them in the project file
 
