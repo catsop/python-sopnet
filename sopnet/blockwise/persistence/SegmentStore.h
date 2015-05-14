@@ -6,6 +6,7 @@
 #include <blockwise/blocks/Block.h>
 #include <blockwise/blocks/Blocks.h>
 #include <blockwise/blocks/Core.h>
+#include <blockwise/blocks/Cores.h>
 #include <blockwise/persistence/SegmentConstraints.h>
 #include <blockwise/persistence/SegmentDescriptions.h>
 
@@ -83,6 +84,15 @@ public:
 	 *              The core for which the solution was generated.
 	 */
 	virtual void storeSolution(const std::vector<std::set<SegmentHash> >& assemblies, const Core& core) = 0;
+
+	/**
+	 * Retrieve a solution as a list of sets of segment hashes for the given 
+	 * cores.
+	 *
+	 * @param cores
+	 *              The cores for which to retrieve the solution.
+	 */
+	virtual std::vector<std::set<SegmentHash> > getSolutionByCores(const Cores& cores) = 0;
 
 	/**
 	 * Check whether the segments for the given block have already been 

@@ -6,6 +6,7 @@
 #include <blockwise/persistence/SegmentStore.h>
 #include <blockwise/blocks/Block.h>
 #include <blockwise/blocks/Core.h>
+#include <blockwise/blocks/Cores.h>
 #include <blockwise/blocks/Blocks.h>
 
 class LocalSegmentStore : public SegmentStore {
@@ -84,6 +85,17 @@ public:
 	 */
 	void storeSolution(const std::vector<std::set<SegmentHash> >& assemblies, const Core& core);
 
+	/**
+	 * Retrieve a solution as a list of sets of segment hashes for the given 
+	 * cores.
+	 *
+	 * @param cores
+	 *              The cores for which to retrieve the solution.
+	 */
+	std::vector<std::set<SegmentHash> > getSolutionByCores(const Cores& /*cores*/) {
+
+		UTIL_THROW_EXCEPTION(NotYetImplemented, "");
+	};
 
 	/**
 	 * Check whether the segments for the given block have already been 
