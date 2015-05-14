@@ -93,6 +93,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
 			.def("setBackendType", &ProjectConfiguration::setBackendType)
 			.def("getBackendType", &ProjectConfiguration::getBackendType)
+			.def("setSegmentationConfigurationId", &ProjectConfiguration::setSegmentationConfigurationId)
+			.def("getSegmentationConfigurationId", &ProjectConfiguration::getSegmentationConfigurationId)
 			.def("setCatmaidStack", &ProjectConfiguration::setCatmaidStack)
 			.def("getCatmaidStack", &ProjectConfiguration::getCatmaidStack, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setBlockSize", &ProjectConfiguration::setBlockSize)

@@ -30,11 +30,7 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 
 	// fill stack descriptions for raw and membrane
 
-	StackDescription rawStackDescription = config.getCatmaidStack(Raw);
-	StackDescription memStackDescription = config.getCatmaidStack(Membrane);
-
-	fill(rawStackDescription);
-	fill(memStackDescription);
+	fillStackDescriptions(config);
 
 	// fill project configuration
 
@@ -44,8 +40,7 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 			"bi.block_dim_x, bi.block_dim_y, bi.block_dim_z, "
 			"bi.core_dim_x, bi.core_dim_y, bi.core_dim_z, bi.scale "
 			"FROM segmentation_block_info bi "
-			"JOIN segmentation_stack ss ON ss.configuration_id = bi.configuration_id "
-			"WHERE ss.id=" << rawStackDescription.segmentationId;
+			"WHERE bi.configuration_id=" << config.getSegmentationConfigurationId();
 	PGresult* result = PQexec(_pgConnection, q.str().c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result);
 
@@ -75,6 +70,10 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 			));
 
 	unsigned int scale = boost::lexical_cast<unsigned int>(PQgetvalue(result, 0, SCALE));
+
+	StackDescription rawStackDescription = config.getCatmaidStack(Raw);
+	StackDescription memStackDescription = config.getCatmaidStack(Membrane);
+
 	rawStackDescription.scale = scale;
 	memStackDescription.scale = scale;
 
@@ -85,47 +84,69 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 }
 
 void
-PostgreSqlProjectConfigurationStore::fill(StackDescription& stackDescription) {
+PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration& config) {
 
 	// get complete stack description
 
 	std::stringstream q;
 	q <<
-			"SELECT s.id, s.dimension, s.resolution, "
+			"SELECT ss.id, ss.type, s.id, s.dimension, s.resolution, "
 			"s.image_base, s.file_extension, "
 			"s.tile_width, s.tile_height, s.tile_source_type "
 			"FROM segmentation_stack ss "
 			"JOIN project_stack ps ON ps.id = ss.project_stack_id "
 			"JOIN stack s ON s.id = ps.stack_id "
-			"WHERE ss.id=" << stackDescription.segmentationId << ";";
+			"WHERE ss.configuration_id=" << config.getSegmentationConfigurationId();
 	PGresult* result = PQexec(_pgConnection, q.str().c_str());
 	PostgreSqlUtils::checkPostgreSqlError(result);
 
-	enum { ID, DIM, RES, IMAGE_BASE, FILE_EXTENSION, TILE_WIDTH, TILE_HEIGHT, TILE_SOURCE_TYPE};
+	enum {
+		SEGMENTATION_STACK_ID, TYPE, STACK_ID,
+		DIM, RES, IMAGE_BASE, FILE_EXTENSION,
+		TILE_WIDTH, TILE_HEIGHT, TILE_SOURCE_TYPE
+	};
 
-	std::stringstream dimss(PQgetvalue(result, 0, DIM));
-	char _;
-	dimss >> _;
-	dimss >> stackDescription.width;
-	dimss >> _;
-	dimss >> stackDescription.height;
-	dimss >> _;
-	dimss >> stackDescription.depth;
+	int nStacks = PQntuples(result);
 
-	std::stringstream resss(PQgetvalue(result, 0, RES));
-	resss >> _;
-	resss >> stackDescription.resX;
-	resss >> _;
-	resss >> stackDescription.resY;
-	resss >> _;
-	resss >> stackDescription.resZ;
+	for (int i = 0; i < nStacks; ++i) {
 
-	stackDescription.id             = boost::lexical_cast<int>(PQgetvalue(result, 0, ID));
-	stackDescription.imageBase      = PQgetvalue(result, 0, IMAGE_BASE);
-	stackDescription.fileExtension  = PQgetvalue(result, 0, FILE_EXTENSION);
-	stackDescription.tileWidth      = boost::lexical_cast<int>(PQgetvalue(result, 0, TILE_WIDTH));
-	stackDescription.tileHeight     = boost::lexical_cast<int>(PQgetvalue(result, 0, TILE_HEIGHT));
-	stackDescription.tileSourceType = boost::lexical_cast<int>(PQgetvalue(result, 0, TILE_SOURCE_TYPE));
+		StackDescription stackDescription;
+		StackType type;
+
+		std::string typeString = boost::lexical_cast<std::string>(PQgetvalue(result, i, TYPE));
+		if ("Raw" == typeString) type = Raw;
+		else if ("Membrane" == typeString) type = Membrane;
+		else {
+			UTIL_THROW_EXCEPTION(PostgreSqlException, "Unknown segmentation stack type: " + typeString);
+		}
+
+		std::stringstream dimss(PQgetvalue(result, i, DIM));
+		char _;
+		dimss >> _;
+		dimss >> stackDescription.width;
+		dimss >> _;
+		dimss >> stackDescription.height;
+		dimss >> _;
+		dimss >> stackDescription.depth;
+
+		std::stringstream resss(PQgetvalue(result, i, RES));
+		resss >> _;
+		resss >> stackDescription.resX;
+		resss >> _;
+		resss >> stackDescription.resY;
+		resss >> _;
+		resss >> stackDescription.resZ;
+
+		stackDescription.segmentationId = boost::lexical_cast<int>(PQgetvalue(result, i, SEGMENTATION_STACK_ID));
+		stackDescription.id             = boost::lexical_cast<int>(PQgetvalue(result, i, STACK_ID));
+		stackDescription.imageBase      = PQgetvalue(result, i, IMAGE_BASE);
+		stackDescription.fileExtension  = PQgetvalue(result, i, FILE_EXTENSION);
+		stackDescription.tileWidth      = boost::lexical_cast<int>(PQgetvalue(result, i, TILE_WIDTH));
+		stackDescription.tileHeight     = boost::lexical_cast<int>(PQgetvalue(result, i, TILE_HEIGHT));
+		stackDescription.tileSourceType = boost::lexical_cast<int>(PQgetvalue(result, i, TILE_SOURCE_TYPE));
+
+		config.setCatmaidStack(type, stackDescription);
+	}
 
 	PQclear(result);
 }
