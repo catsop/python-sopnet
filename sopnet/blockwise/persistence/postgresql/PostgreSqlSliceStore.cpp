@@ -458,33 +458,19 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 	// bounding box belong to the slice.
 	size_t nNonzero = bitmap.sum<size_t>();
 
-	// create a pixel list
-	boost::shared_ptr<ConnectedComponent::pixel_list_type> pixelList =
-			boost::make_shared<ConnectedComponent::pixel_list_type>(nNonzero);
+	if (!nNonzero) {
 
-	if (nNonzero) {
-
-		// fill it with white pixels from the bitmap
-		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
-			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
-				if (bitmap(x, y) == 1.0)
-					pixelList->add(util::point<unsigned int, 2>(offset.x + x, offset.y + y));
-
-	} else {
-
-		// fill it with all pixels from the bitmap
-		for (unsigned int x = 0; x < static_cast<unsigned int>(info.width()); x++)
-			for (unsigned int y = 0; y < static_cast<unsigned int>(info.height()); y++)
-				pixelList->add(util::point<unsigned int, 2>(offset.x + x, offset.y + y));
+		bitmap = true;
+		nNonzero = info.width() * info.height();
 	}
 
 	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
 			boost::shared_ptr<Image>(),
 			value,
-			pixelList,
-			pixelList->begin(),
-			pixelList->end());
+			util::point<int, 2>(offset.x, offset.y),
+			bitmap,
+			nNonzero);
 
 	return component;
 }
