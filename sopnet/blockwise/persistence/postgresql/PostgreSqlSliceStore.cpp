@@ -87,9 +87,6 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
 		util::point<double, 2> ctr = slice->getComponent()->getCenter();
 
-		// Store pixel data of slice
-		saveConnectedComponent(sliceId, *slice->getComponent());
-
 		// Bounding Box
 		const util::box<unsigned int, 2>& bb = slice->getComponent()->getBoundingBox();
 
@@ -142,6 +139,15 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
 			std::endl;
 		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
+
+	for (boost::shared_ptr<Slice> slice : slices) {
+
+		std::string sliceId = boost::lexical_cast<std::string>(
+				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
+
+		// Store pixel data of slice
+		saveConnectedComponent(sliceId, *slice->getComponent());
 	}
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
