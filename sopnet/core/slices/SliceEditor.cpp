@@ -1,5 +1,4 @@
 #include <boost/range/adaptors.hpp>
-#include <util/foreach.h>
 #include <pipeline/Value.h>
 #include <imageprocessing/ConnectedComponent.h>
 #include <imageprocessing/ComponentTreeExtractor.h>

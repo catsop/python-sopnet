@@ -38,7 +38,7 @@ hash_value(std::vector<SliceHash> sliceHashes) {
 	// which slices have been added
 	std::sort(sliceHashes.begin(), sliceHashes.end());
 
-	foreach(SliceHash sliceHash, sliceHashes)
+	for (SliceHash sliceHash : sliceHashes)
 		boost::hash_combine(hash, sliceHash);
 
 	return hash;

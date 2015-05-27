@@ -1,5 +1,4 @@
 #include <util/Logger.h>
-#include <util/foreach.h>
 #include "Reconstructor.h"
 
 static logger::LogChannel reconstructorlog("reconstructorlog", "[Reconstructor] ");

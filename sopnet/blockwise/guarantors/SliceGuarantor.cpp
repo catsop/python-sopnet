@@ -7,7 +7,6 @@
 #include <slices/Slice.h>
 #include <util/box.hpp>
 #include <util/Logger.h>
-#include <util/foreach.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 
@@ -161,7 +160,7 @@ SliceGuarantor::extractSlicesAndConflicts(
 		// expandedBlocks will grow, if required slices are still touching the 
 		// boundary of expansionBlocks
 		Blocks expandedBlocks = expansionBlocks;
-		foreach(boost::shared_ptr<Slice> slice, requiredSlices)
+		for (boost::shared_ptr<Slice> slice : requiredSlices)
 			checkWhole(*slice, expandedBlocks);
 
 		LOG_ALL(sliceguarantorlog) << "Extracted in: " << expansionBlocks << ", have to grow to at least: " << expandedBlocks << std::endl; 

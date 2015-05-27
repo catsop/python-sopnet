@@ -1,7 +1,6 @@
 #include <boost/function.hpp>
 
 #include <imageprocessing/ConnectedComponent.h>
-#include <util/foreach.h>
 #include <util/ProgramOptions.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"

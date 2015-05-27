@@ -81,8 +81,8 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 				"ctr_y, value, size) VALUES";
 
 	char separator = ' ';
-	foreach (boost::shared_ptr<Slice> slice, slices)
-	{
+	for (boost::shared_ptr<Slice> slice : slices) {
+
 		std::string sliceId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
 		util::point<double, 2> ctr = slice->getComponent()->getCenter();
@@ -165,13 +165,13 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 	char separator = ' ';
 
 	// Find all conflicting slice pairs
-	foreach (const ConflictSet& conflictSet, conflictSets)
+	for (const ConflictSet& conflictSet : conflictSets)
 	{
 		std::string conflictSetId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(hash_value(conflictSet)));
-		foreach (SliceHash hash1, conflictSet.getSlices())
+		for (SliceHash hash1 : conflictSet.getSlices())
 		{
-			foreach (SliceHash hash2, conflictSet.getSlices())
+			for (SliceHash hash2 : conflictSet.getSlices())
 			{
 				if (hash1 < hash2)
 				{
@@ -373,7 +373,7 @@ PostgreSqlSliceStore::getConflictSetsByBlocks(
 		boost::char_separator<char> separator("{}()\", \t");
 		boost::tokenizer<boost::char_separator<char> > sliceTokens(sliceIds, separator);
 
-		foreach (const std::string& sliceId, sliceTokens) {
+		for (const std::string& sliceId : sliceTokens) {
 			SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
 					boost::lexical_cast<PostgreSqlHash>(sliceId));
 			conflictSet.addSlice(sliceHash);

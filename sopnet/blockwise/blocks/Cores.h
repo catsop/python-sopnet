@@ -2,7 +2,6 @@
 #define SOPNET_BLOCKWISE_BLOCKS_CORES_H__
 
 #include <set>
-#include <util/foreach.h>
 #include "Core.h"
 
 class Cores {

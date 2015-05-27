@@ -2,7 +2,6 @@
 #define SOPNET_BLOCKWISE_BLOCKS_BLOCKS_H__
 
 #include <set>
-#include <util/foreach.h>
 #include "Block.h"
 
 class Blocks {

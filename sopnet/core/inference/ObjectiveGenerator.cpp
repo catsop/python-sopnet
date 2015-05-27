@@ -1,4 +1,3 @@
-#include <util/foreach.h>
 #include "ObjectiveGenerator.h"
 
 static logger::LogChannel objectivegeneratorlog("objectivegeneratorlog", "[ObjectiveGenerator] ");

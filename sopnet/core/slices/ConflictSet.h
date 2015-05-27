@@ -1,7 +1,6 @@
 #ifndef SOPNET_SLICES_CONFLICT_SET_H__
 #define SOPNET_SLICES_CONFLICT_SET_H__
 
-#include <util/foreach.h>
 #include <boost/functional/hash.hpp>
 #include <slices/SliceHash.h>
 

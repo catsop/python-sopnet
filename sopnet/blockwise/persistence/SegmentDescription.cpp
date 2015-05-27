@@ -1,5 +1,4 @@
 #include "SegmentDescription.h"
-#include <util/foreach.h>
 #include <imageprocessing/ConnectedComponent.h>
 
 

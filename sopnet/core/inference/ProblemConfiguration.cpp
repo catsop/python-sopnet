@@ -72,8 +72,11 @@ ProblemConfiguration::getVariables() {
 
 	std::set<unsigned int> variables;
 
-	foreach (boost::tie(variable, segmentId), _segmentIds)
+	for (const auto& pair : _segmentIds) {
+
+		std::tie(variable, segmentId) = pair;
 		variables.insert(variable);
+	}
 
 	return variables;
 }

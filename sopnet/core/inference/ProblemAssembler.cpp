@@ -1,4 +1,3 @@
-#include <util/foreach.h>
 #include <util/ProgramOptions.h>
 #include <segments/EndSegment.h>
 #include <segments/ContinuationSegment.h>
@@ -283,8 +282,11 @@ ProblemAssembler::mapConstraints(boost::shared_ptr<LinearConstraints> linearCons
 		unsigned int id;
 		double value;
 
-		foreach(boost::tie(id, value), linearConstraint.getCoefficients())
+		for (const auto& pair : linearConstraint.getCoefficients()) {
+
+			std::tie(id, value) = pair;
 			mappedConstraint.setCoefficient(_problemConfiguration->getVariable(id), value);
+		}
 
 		mappedConstraint.setRelation(linearConstraint.getRelation());
 

@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <pipeline/Data.h>
-#include <util/foreach.h>
 
 #include "ConflictSet.h"
 
