@@ -18,9 +18,13 @@ public:
 
 	void saveIntensities(const ExplicitVolume<float>& intensities) override;
 
+	void saveMembranes(const ExplicitVolume<float>& membranes) override;
+
 	void saveLabels(const ExplicitVolume<int>& labels) override;
 
 	void retrieveIntensities(ExplicitVolume<float>& intensities) override;
+
+	void retrieveMembranes(ExplicitVolume<float>& membranes) override;
 
 	void retrieveLabels(ExplicitVolume<int>& labels) override;
 

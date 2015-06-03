@@ -24,6 +24,11 @@ util::ProgramOption optionIntensities(
 		util::_description_text = "A directory containing the intensity volume.",
 		util::_default_value    = "intensities");
 
+util::ProgramOption optionMembranes(
+		util::_long_name        = "membranes",
+		util::_description_text = "A directory containing the membrane prediction volume.",
+		util::_default_value    = "membranes");
+
 util::ProgramOption optionLabels(
 		util::_long_name        = "labels",
 		util::_description_text = "A directory containing the labeled volume.",
@@ -36,7 +41,7 @@ util::ProgramOption optionExtractLabels(
 
 util::ProgramOption optionUseCatsopProject(
 		util::_long_name        = "useCatsopProject",
-		util::_description_text = "Read the intensities and labels from a CATSOP project. "
+		util::_description_text = "Read the intensities, membranes, and labels from a CATSOP project. "
 		                          "Set the catsop options accordingly.");
 
 util::ProgramOption optionCatsopSegmentationConfigurationId(
@@ -72,7 +77,7 @@ util::ProgramOption optionCatsopPgDatabase(
 util::ProgramOption optionProjectFile(
 		util::_long_name        = "projectFile",
 		util::_short_name       = "p",
-		util::_description_text = "The project file to store the label and intensity volumes.",
+		util::_description_text = "The project file to store the label, intensity, and membrane volumes.",
 		util::_default_value    = "project.hdf");
 
 int main(int argc, char** argv) {
@@ -83,11 +88,13 @@ int main(int argc, char** argv) {
 		logger::LogManager::init();
 
 		pipeline::Value<ImageStack> intensityStack;
+		pipeline::Value<ImageStack> membraneStack;
 		pipeline::Value<ImageStack> labelStack;
 
 		// create volumes from stacks
 
 		ExplicitVolume<float> intensities;
+		ExplicitVolume<float> membranes;
 		ExplicitVolume<int>   labels;
 
 		if (optionUseCatsopProject) {
@@ -104,10 +111,12 @@ int main(int argc, char** argv) {
 			BackendClient backendClient;
 			backendClient.fillProjectConfiguration(configuration);
 
-			// get the complete raw stack
+			// get the complete raw and membrane stack
 
-			boost::shared_ptr<StackStore> stackStore =
+			boost::shared_ptr<StackStore> rawStackStore =
 					backendClient.createStackStore(configuration, Raw);
+			boost::shared_ptr<StackStore> membraneStackStore =
+					backendClient.createStackStore(configuration, Membrane);
 
 			util::box<unsigned int, 3> volumeBox(
 					util::point<unsigned int, 3>(0, 0, 0),
@@ -115,14 +124,25 @@ int main(int argc, char** argv) {
 			LOG_USER(logger::out) << "reading raw images in " << volumeBox << "..." << std::flush;
 			{
 				UTIL_TIME_SCOPE("read raw images");
-				intensityStack = stackStore->getImageStack(volumeBox);
+				intensityStack = rawStackStore->getImageStack(volumeBox);
 			}
 			LOG_USER(logger::out) << " done." << std::endl;
 
-			// create a intensity and label stack of the same size
+			LOG_USER(logger::out) << "reading membrane images in " << volumeBox << "..." << std::flush;
+			{
+				UTIL_TIME_SCOPE("read membrane images");
+				membraneStack = membraneStackStore->getImageStack(volumeBox);
+			}
+			LOG_USER(logger::out) << " done." << std::endl;
+
+			// create an intensity, membrane, and label stack of the same size
 			{
 				UTIL_TIME_SCOPE("convert raw stack");
 				intensities = ExplicitVolume<float>(*intensityStack);
+			}
+			{
+				UTIL_TIME_SCOPE("convert membrane stack");
+				membranes = ExplicitVolume<float>(*membraneStack);
 			}
 			labels = ExplicitVolume<int>(intensityStack->width(), intensityStack->height(), intensityStack->size());
 			labels.data() = 0;
@@ -182,12 +202,15 @@ int main(int argc, char** argv) {
 		} else {
 
 			pipeline::Process<ImageStackDirectoryReader> intensityReader(optionIntensities.as<std::string>());
+			pipeline::Process<ImageStackDirectoryReader> membraneReader(optionIntensities.as<std::string>());
 			pipeline::Process<ImageStackDirectoryReader> labelReader(optionLabels.as<std::string>());
 
 			intensityStack = intensityReader->getOutput();
-			labelStack = labelReader->getOutput();
+			membraneStack  = membraneReader->getOutput();
+			labelStack     = labelReader->getOutput();
 
 			intensities = ExplicitVolume<float>(*intensityStack);
+			membranes   = ExplicitVolume<int>(*membraneStack);
 			labels      = ExplicitVolume<int>(*labelStack);
 		}
 
@@ -213,11 +236,18 @@ int main(int argc, char** argv) {
 
 		// store them in the project file
 
-		boost::filesystem::remove(optionProjectFile.as<std::string>());
-		Hdf5VolumeStore volumeStore(optionProjectFile.as<std::string>());
+		LOG_USER(logger::out) << "storing intensity and label volumes..." << std::flush;
+		{
+			UTIL_TIME_SCOPE("storing volumes");
 
-		volumeStore.saveIntensities(intensities);
-		volumeStore.saveLabels(labels);
+			boost::filesystem::remove(optionProjectFile.as<std::string>());
+			Hdf5VolumeStore volumeStore(optionProjectFile.as<std::string>());
+
+			volumeStore.saveIntensities(intensities);
+			volumeStore.saveMembranes(membranes);
+			volumeStore.saveLabels(labels);
+		}
+		LOG_USER(logger::out) << " done." << std::endl;
 
 	} catch (boost::exception& e) {
 

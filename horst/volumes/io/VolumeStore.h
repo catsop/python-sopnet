@@ -16,6 +16,11 @@ public:
 	virtual void saveIntensities(const ExplicitVolume<float>& intensities) = 0;
 
 	/**
+	 * Store the given membrane prediction volume.
+	 */
+	virtual void saveMembranes(const ExplicitVolume<float>& membranes) = 0;
+
+	/**
 	 * Store the given label volume.
 	 */
 	virtual void saveLabels(const ExplicitVolume<int>& labels) = 0;
@@ -24,6 +29,11 @@ public:
 	 * Get the intensity volume.
 	 */
 	virtual void retrieveIntensities(ExplicitVolume<float>& intensities) = 0;
+
+	/**
+	 * Get the membrane prediction volume.
+	 */
+	virtual void retrieveMembranes(ExplicitVolume<float>& membranes) = 0;
 
 	/**
 	 * Get the label volume.
