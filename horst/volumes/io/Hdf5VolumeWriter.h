@@ -17,10 +17,20 @@ protected:
 	template <typename ValueType>
 	void writeVolume(const ExplicitVolume<ValueType>& volume, std::string dataset) {
 
-		// the volume
+		vigra::TinyVector<int, 3> chunkSize(
+				std::min(volume.width(),  (unsigned int)256),
+				std::min(volume.height(), (unsigned int)256),
+				std::min(volume.depth(),  (unsigned int)256));
+
+		// 0 (none) ... 9 (most)
+		int compressionLevel = 3;
+
+		// the volume (compressed)
 		_hdfFile.write(
 				dataset,
-				volume.data());
+				volume.data(),
+				chunkSize,
+				compressionLevel);
 
 		vigra::MultiArray<1, float> p(3);
 
