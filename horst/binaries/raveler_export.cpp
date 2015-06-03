@@ -6,12 +6,16 @@
  */
 
 #include <iostream>
+#include <fstream>
 
-#include <vigra/impex.hxx>
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/exceptions.h>
+#include <util/assert.h>
 #include <volumes/io/Hdf5VolumeStore.h>
+#include <vigra/impex.hxx>
+#include <vigra/slic.hxx>
+#include <vigra/multi_watersheds.hxx>
 
 util::ProgramOption optionProjectFile(
 		util::_long_name        = "projectFile",
@@ -25,44 +29,173 @@ util::ProgramOption optionOutputDirectory(
 		util::_description_text = "A directory to store the raveler label files.",
 		util::_default_value    = "labels");
 
+util::ProgramOption optionSlicSuperpixels(
+		util::_long_name        = "slicSuperpixels",
+		util::_description_text = "Use SLIC superpixels instead of watersheds to obtain raveler superpixels.");
+
+util::ProgramOption optionSlicIntensityScaling(
+		util::_long_name        = "slicIntensityScaling",
+		util::_description_text = "How to scale the image intensity for comparison to spatial distance. Default is 1.0.",
+		util::_default_value    = 1.0);
+
+util::ProgramOption optionSliceSize(
+		util::_long_name        = "slicSize",
+		util::_description_text = "An upper limit on the SLIC superpixel size. Default is 10.",
+		util::_default_value    = 10);
+
 int main(int argc, char** argv) {
 
 	try {
 
+		typedef int Label;
+		typedef int SpId;
+		typedef int SegmentId;
+		typedef int BodyId;
+
 		util::ProgramOptions::init(argc, argv);
 		logger::LogManager::init();
 
-		// read the label volume
+		// read the label and membrane volume
 
-		ExplicitVolume<int> labels;
+		ExplicitVolume<Label> labels;
+		ExplicitVolume<float> membranes;
+
+		LOG_USER(logger::out) << "reading labels and membranes..." << std::endl;
 
 		Hdf5VolumeStore volumeStore(optionProjectFile.as<std::string>());
 		volumeStore.retrieveLabels(labels);
+		volumeStore.retrieveMembranes(membranes);
 
-		// convert z-slices into RGBA images
+		// map from reconstruction label to segment ids
+		std::map<Label, std::vector<SegmentId>> bodies;
 
-		vigra::MultiArray<2, vigra::RGBValue<unsigned char>> slice(vigra::Shape2(labels.width(), labels.height()));
-
+		// superpixel id image
+		vigra::MultiArray<2, vigra::RGBValue<unsigned char>> section(vigra::Shape2(labels.width(), labels.height()));
 		std::string outDir = optionOutputDirectory;
 
+		// output files
+		std::ofstream segmentfile(optionOutputDirectory.as<std::string>() + "/superpixel_to_segment_map.txt");
+		std::ofstream bodyfile(optionOutputDirectory.as<std::string>() + "/segment_to_body_map.txt");
+
+		int nextSegmentId = 1;
+
+		// for each section...
 		for (unsigned int z = 0; z < labels.depth(); z++) {
+
+			LOG_USER(logger::out) << "processing section " << z << "..." << std::endl;
+
+			// extract superpixels
+			vigra::MultiArray<2, int> superpixels(labels.width(), labels.height());
+
+			if (optionSlicSuperpixels) {
+
+				vigra::slicSuperpixels(
+						membranes.data().bind<2>(z),
+						superpixels,
+						optionSlicIntensityScaling.as<double>(),
+						optionSliceSize.as<double>(),
+						vigra::SlicOptions().iterations(100));
+
+			} else {
+
+				vigra::watershedsMultiArray(
+						membranes.data().bind<2>(z),
+						superpixels,
+						vigra::IndirectNeighborhood,
+						vigra::WatershedOptions().seedOptions(vigra::SeedOptions().extendedMinima()));
+			}
+
+			// find superpixel overlaps with labels, and create raveler id map 
+			// on the fly
+
+			std::map<SpId, std::map<Label, int>> superpixelOverlaps;
 
 			for (unsigned int y = 0; y < labels.height(); y++)
 			for (unsigned int x = 0; x < labels.width(); x++) {
 
-				int id = labels(x, y, z);
-				slice(x, y) = vigra::RGBValue<unsigned char>(
-						id,
-						id >> 8,
-						id >> 16);
+				Label label = labels(x, y, z);
+				SpId  sp    = superpixels(x, y);
+
+				superpixelOverlaps[sp][label]++;
+
+				// superpixel ids are supposed to be stored in RGB as 24 bit 
+				// integers: most significant bits in R, least in B
+				section(x, y) = vigra::RGBValue<unsigned char>(
+						/* R */ sp >> 16,
+						/* G */ sp >> 8,
+						/* B */ sp);
+
+				SpId test =
+						section(x, y)[0]*256*256 +
+						section(x, y)[1]*256 +
+						section(x, y)[2];
+				UTIL_ASSERT_REL(test, ==, sp);
 			}
+
+			// hysterical raisins
+			section(0, 0) = 0;
 
 			std::stringstream filename;
 			filename << outDir << "/labels" << std::setw(8) << std::setfill('0') << z << ".png";
 
 			vigra::exportImage(
-					slice,
+					section,
 					vigra::ImageExportInfo(filename.str().c_str()));
+
+			// match superpixels to reconstruction label -> segments
+
+			std::map<Label, std::vector<SpId>> segments;
+
+			for (const auto& spOverlap : superpixelOverlaps) {
+
+				SpId  spId       = spOverlap.first;
+				int   maxOverlap = 0;
+				Label bestLabel  = 0;
+
+				for (const auto& labelOverlap : spOverlap.second) {
+
+					Label label   = labelOverlap.first;
+					int   overlap = labelOverlap.second;
+
+					if (overlap > maxOverlap) {
+
+						maxOverlap = overlap;
+						bestLabel  = label;
+					}
+				}
+
+				segments[bestLabel].push_back(spId);
+			}
+
+			// translate matches' labels to volume unique segment ids
+
+			// hysterical raisins
+			segmentfile << z << "\t" << 0 << "\t" << 0 << std::endl;;
+
+			for (const auto& segment : segments) {
+
+				Label     label     = segment.first;
+				SegmentId segmentId = (label == 0 ? 0 : nextSegmentId++);
+
+				for (SpId spId : segment.second)
+					segmentfile << z << "\t" << spId << "\t" << segmentId << std::endl;;
+
+				bodies[label].push_back(segmentId);
+			}
+		}
+
+		// store body associations
+
+		// hysterical raisins
+		bodyfile << 0 << "\t" << 0 << std::endl;
+
+		for (const auto& body : bodies) {
+
+			// body id = label id
+			BodyId bodyId = body.first;
+
+			for (SegmentId segmentId : body.second)
+				bodyfile << segmentId << "\t" << bodyId << std::endl;
 		}
 
 	} catch (boost::exception& e) {
