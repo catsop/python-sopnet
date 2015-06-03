@@ -180,7 +180,8 @@ int main(int argc, char** argv) {
 				for (SpId spId : segment.second)
 					segmentfile << z << "\t" << spId << "\t" << segmentId << std::endl;;
 
-				bodies[label].push_back(segmentId);
+				if (label != 0)
+					bodies[label].push_back(segmentId);
 			}
 		}
 
