@@ -55,7 +55,6 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 		boost::lexical_cast<unsigned int>(PQgetvalue(result, 0, NUM_Y)),
 		boost::lexical_cast<unsigned int>(PQgetvalue(result, 0, NUM_Z))
 	);
-	config.setVolumeSize(numBlocks*blockSize);
 	config.setBlockSize(blockSize);
 	config.setCoreSize(
 			util::point<unsigned int, 3>(
@@ -68,6 +67,10 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 
 	StackDescription rawStackDescription = config.getCatmaidStack(Raw);
 	StackDescription memStackDescription = config.getCatmaidStack(Membrane);
+
+	util::point<unsigned int, 3> volumeSize = numBlocks*blockSize;
+	volumeSize.z() = std::min(volumeSize.z(), rawStackDescription.depth);
+	config.setVolumeSize(volumeSize);
 
 	rawStackDescription.scale = scale;
 	memStackDescription.scale = scale;
