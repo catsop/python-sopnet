@@ -116,35 +116,31 @@ int main(int argc, char** argv) {
 				Label label = labels(x, y, z);
 				SpId  sp    = superpixels(x, y);
 
+				if (x == 1276 && y == 1602)
+					std::cout << z << ": label is " << label << std::endl;
+
 				superpixelOverlaps[sp][label]++;
 
 				// superpixel ids are supposed to be stored in RGB as 24 bit 
 				// integers: most significant bits in R, least in B
 				section(x, y) = vigra::RGBValue<unsigned char>(
-						/* R */ sp >> 16,
+						/* R */ sp,
 						/* G */ sp >> 8,
-						/* B */ sp);
+						/* B */ sp >> 16);
 
 				SpId test =
-						section(x, y)[0]*256*256 +
+						section(x, y)[0] +
 						section(x, y)[1]*256 +
-						section(x, y)[2];
+						section(x, y)[2]*256*256;
 				UTIL_ASSERT_REL(test, ==, sp);
 			}
 
 			// hysterical raisins
 			section(0, 0) = 0;
 
-			std::stringstream filename;
-			filename << outDir << "/labels" << std::setw(8) << std::setfill('0') << z << ".png";
-
-			vigra::exportImage(
-					section,
-					vigra::ImageExportInfo(filename.str().c_str()));
-
 			// match superpixels to reconstruction label -> segments
 
-			std::map<Label, std::vector<SpId>> segments;
+			std::map<Label, std::set<SpId>> segments;
 
 			for (const auto& spOverlap : superpixelOverlaps) {
 
@@ -164,8 +160,25 @@ int main(int argc, char** argv) {
 					}
 				}
 
-				segments[bestLabel].push_back(spId);
+				segments[bestLabel].insert(spId);
 			}
+
+			// draw all superpixels that overlap mostly with background as 0
+			for (unsigned int y = 0; y < labels.height(); y++)
+			for (unsigned int x = 0; x < labels.width(); x++) {
+
+				SpId sp = superpixels(x, y);
+
+				if (segments[0].count(sp))
+					section(x, y) = 0;
+			}
+
+			std::stringstream filename;
+			filename << outDir << "/labels" << std::setw(8) << std::setfill('0') << z << ".png";
+
+			vigra::exportImage(
+					section,
+					vigra::ImageExportInfo(filename.str().c_str()));
 
 			// translate matches' labels to volume unique segment ids
 
@@ -174,8 +187,12 @@ int main(int argc, char** argv) {
 
 			for (const auto& segment : segments) {
 
-				Label     label     = segment.first;
-				SegmentId segmentId = (label == 0 ? 0 : nextSegmentId++);
+				Label label = segment.first;
+
+				if (label == 0)
+					continue;
+
+				SegmentId segmentId = nextSegmentId++;
 
 				for (SpId spId : segment.second)
 					segmentfile << z << "\t" << spId << "\t" << segmentId << std::endl;;
