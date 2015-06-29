@@ -176,7 +176,6 @@ int main(int argc, char** argv) {
 			{
 				UTIL_TIME_SCOPE("create label volume");
 
-				unsigned int tubeId = 1;
 				#pragma omp parallel for
 				for (unsigned int i = 0; i < assemblies.size(); i++) {
 
@@ -190,10 +189,8 @@ int main(int argc, char** argv) {
 
 						int z = slice->getSection();
 						for (const util::point<unsigned int, 2>& p : slice->getComponent()->getPixels())
-							labels(p.x(), p.y(), z) = tubeId;
+							labels(p.x(), p.y(), z) = i+1; // labels should start with 1
 					}
-
-					tubeId++;
 				}
 			}
 
