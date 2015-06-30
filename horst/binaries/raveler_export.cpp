@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 				superpixelOverlaps[sp][label]++;
 
 				// superpixel ids are supposed to be stored in RGB as 24 bit 
-				// integers: most significant bits in R, least in B
+				// integers: least significant bits in R, most in B
 				section(x, y) = vigra::RGBValue<unsigned char>(
 						/* R */ sp,
 						/* G */ sp >> 8,
