@@ -9,6 +9,7 @@ addons:
 before_install:
   - travis_retry sudo add-apt-repository --yes ppa:purplekarrot/cmake # precise PPA for cmake > 3
   - travis_retry sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test # precise PPA for GCC >= 4.8
+  - travis_retry sudo add-apt-repository --yes ppa:boost-latest/ppa # precise PPA for Boost >= 1.49
   - travis_retry sudo apt-get update -y -qq
   - travis_retry sudo apt-get install cmake cmake-data
   - if [ "$CXX" = "g++" ]; then travis_retry sudo apt-get install -qq g++-4.8; fi

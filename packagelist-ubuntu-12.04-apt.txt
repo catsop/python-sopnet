@@ -1,4 +1,4 @@
-libboost1.48-all-dev
+libboost1.55-all-dev
 liblapack-dev
 libx11-dev
 libx11-xcb-dev
@@ -13,6 +13,5 @@ libmagick++-dev
 libcurl4-openssl-dev
 libtiff4-dev
 libhdf5-serial-dev
-libboost-python1.48-dev
 python-dev
 mercurial
