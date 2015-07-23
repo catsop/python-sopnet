@@ -13,6 +13,8 @@ before_install:
   - travis_retry sudo apt-get install cmake cmake-data
   - if [ "$CXX" = "g++" ]; then travis_retry sudo apt-get install -qq g++-4.8; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  # GCC crashes with more than one job because of travis memory limits.
+  - sed -i 's/make -j`[^`]*`/make -j1/g' compile_wrapper.sh
 install:
   - travis_retry sudo apt-get install -y -qq $(< packagelist-ubuntu-12.04-apt.txt)
 script:
