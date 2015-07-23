@@ -21,4 +21,4 @@ install:
 script:
   - python setup.py build
   - mkdir -p build && cd build && cmake .. && make
-  - cd ../test/slices && ./coresolvertest --disableSolution
+  - cd ../test/slices && ../../build/sopnet/binaries/coresolvertest --disableSolution
