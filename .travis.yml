@@ -12,7 +12,7 @@ before_install:
   - travis_retry sudo add-apt-repository --yes ppa:boost-latest/ppa # precise PPA for Boost >= 1.49
   - travis_retry sudo apt-get update -y -qq
   - travis_retry sudo apt-get install cmake cmake-data
-  - if [ "$CXX" = "g++" ]; then travis_retry sudo apt-get install -qq g++-4.8; fi
+  - travis_retry sudo apt-get install -qq g++-4.8
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
   # GCC crashes with more than one job because of travis memory limits.
   - sed -i 's/make -j`[^`]*`/make -j1/g' compile_wrapper.sh
