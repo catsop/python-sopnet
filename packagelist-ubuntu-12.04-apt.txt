@@ -1,4 +1,4 @@
-libboost1.55-all-dev
+libboost1.54-all-dev
 liblapack-dev
 libx11-dev
 libx11-xcb-dev
