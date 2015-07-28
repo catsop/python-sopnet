@@ -10,10 +10,13 @@ before_install:
   - travis_retry sudo add-apt-repository --yes ppa:purplekarrot/cmake # precise PPA for cmake > 3
   - travis_retry sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test # precise PPA for GCC >= 4.8
   - travis_retry sudo add-apt-repository --yes ppa:boost-latest/ppa # precise PPA for Boost >= 1.49
+  - travis_retry sudo add-apt-repository --yes 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main' # Repo for clang backports
+  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
   - travis_retry sudo apt-get update -y -qq
   - travis_retry sudo apt-get install cmake cmake-data
   - travis_retry sudo apt-get install -qq g++-4.8
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - travis_retry sudo apt-get install -qq clang-3.5
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; else export CXX="clang++-3.5" CC="clang-3.5"; fi
   # GCC crashes with more than one job because of travis memory limits.
   - sed -i 's/make -j`[^`]*`/make -j1/g' compile_wrapper.sh
 install:
