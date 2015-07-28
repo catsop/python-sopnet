@@ -67,6 +67,21 @@ LocalSegmentStore::storeSolution(
 	_solutions[core] = assemblies;
 }
 
+std::vector<std::set<SegmentHash> >
+LocalSegmentStore::getSolutionByCores(
+		const Cores& cores) {
+
+	std::vector<std::set<SegmentHash> > solution;
+
+	for (const Core& core : cores) {
+
+		std::vector<std::set<SegmentHash> >& assemblies = _solutions[core];
+		solution.insert(solution.end(), assemblies.begin(), assemblies.end());
+	}
+
+	return solution;
+}
+
 bool
 LocalSegmentStore::getSegmentsFlag(
 		const Block& block) {

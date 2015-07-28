@@ -92,10 +92,7 @@ public:
 	 * @param cores
 	 *              The cores for which to retrieve the solution.
 	 */
-	std::vector<std::set<SegmentHash> > getSolutionByCores(const Cores& /*cores*/) {
-
-		UTIL_THROW_EXCEPTION(NotYetImplemented, "");
-	};
+	std::vector<std::set<SegmentHash> > getSolutionByCores(const Cores& cores);
 
 	/**
 	 * Check whether the segments for the given block have already been 
