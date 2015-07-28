@@ -6,8 +6,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/filesystem.hpp>
 
-#include <imageprocessing/ImageStack.h>
+#include <vigra/impex.hxx>
 
+#include <util/exceptions.h>
+#include <util/Logger.h>
 #include <util/point.hpp>
 #include <util/ProgramOptions.h>
 #include <pipeline/all.h>
@@ -15,13 +17,12 @@
 #include <pipeline/Process.h>
 #include <inference/PriorCostFunctionParameters.h>
 #include <inference/SegmentationCostFunctionParameters.h>
-#include <inference/Reconstructor.h>
 #include <slices/ComponentTreeConverter.h>
+#include <slices/SliceExtractor.h>
 #include <segments/Segments.h>
 #include <segments/SegmentExtractor.h>
+#include <imageprocessing/ImageStack.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
-#include <imageprocessing/io/ImageBlockFactory.h>
-#include <imageprocessing/io/ImageBlockFileReader.h>
 #include <blockwise/guarantors/SegmentGuarantor.h>
 #include <blockwise/guarantors/SliceGuarantor.h>
 #include <blockwise/guarantors/SolutionGuarantor.h>
@@ -33,14 +34,6 @@
 #include <blockwise/persistence/local/LocalStackStore.h>
 #include <features/SegmentFeaturesExtractor.h>
 
-#include <vigra/impex.hxx>
-#include <slices/SliceExtractor.h>
-
-#include <util/Logger.h>
-
-using namespace logger;
-
-//logger::LogChannel coretestlog("coretestlog", "[CoreTest] ");
 
 util::ProgramOption optionCoreTestMembranesPath(
 	util::_module = 			"core",
@@ -118,27 +111,6 @@ util::ProgramOption optionCorePadding(
 std::string sopnetOutputPath = "./out-sopnet";
 std::string blockwiseOutputPath = "./out-blockwise";
 
-int experiment = 0;
-
-
-void handleException(boost::exception& e) {
-
-	LOG_ERROR(out) << "caught exception: ";
-
-	if (boost::get_error_info<error_message>(e))
-		LOG_ERROR(out) << *boost::get_error_info<error_message>(e);
-
-	if (boost::get_error_info<stack_trace>(e))
-		LOG_ERROR(out) << *boost::get_error_info<stack_trace>(e);
-
-	LOG_ERROR(out) << std::endl;
-
-	LOG_ERROR(out) << "details: " << std::endl
-	               << boost::diagnostic_information(e)
-	               << std::endl;
-
-	exit(-1);
-}
 
 void mkdir(const std::string& path)
 {
@@ -218,16 +190,6 @@ void writeSlices(const boost::shared_ptr<Slices> slices,
 	{
 		sliceFile.close();
 	}
-}
-
-unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom)
-{
-	unsigned int result = m * num / denom;
-	if (result * denom < m * num)
-	{
-		result += 1;
-	}
-	return result;
 }
 
 void writeSegment(std::ofstream& file, const SegmentDescription& segment)
@@ -335,7 +297,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	pipeline::Value<Slices> sopnetSlices = pipeline::Value<Slices>();
 	pipeline::Value<ConflictSets> sopnetConflictSets = pipeline::Value<ConflictSets>();
 
-	LOG_USER(out) << "Read " << stack->size() << " images" << std::endl;
+	LOG_DEBUG(logger::out) << "Read " << stack->size() << " images" << std::endl;
 
 	// Extract Slices as in the original SOPNET pipeline.
 	for (boost::shared_ptr<Image> image : *stack)
@@ -350,10 +312,10 @@ bool testSlices(const ProjectConfiguration& configuration)
 
 		sopnetSlices->addAll(*slices);
 		sopnetConflictSets->addAll(*conflictSets);
-		LOG_USER(out) << "Read " << slices->size() << " slices" << std::endl;
+		LOG_DEBUG(logger::out) << "Read " << slices->size() << " slices" << std::endl;
 	}
 
-	LOG_USER(out) << "Read " << sopnetSlices->size() << " slices altogether" << std::endl;
+	LOG_DEBUG(logger::out) << "Read " << sopnetSlices->size() << " slices altogether" << std::endl;
 
 	// Blockwise variables
 	boost::shared_ptr<StackStore> membraneStackStore =
@@ -374,13 +336,13 @@ bool testSlices(const ProjectConfiguration& configuration)
 			Blocks singleBlock;
 			singleBlock.add(block);
 
-			LOG_USER(out) << "Extracting slices from block " << block << std::endl;
+			LOG_DEBUG(logger::out) << "Extracting slices from block " << block << std::endl;
 
 			missingBlocks = sliceGuarantor.guaranteeSlices(singleBlock);
 
 			if (!missingBlocks.empty())
 			{
-				LOG_USER(out) << "SliceGuarantor needs images for block " <<
+				LOG_DEBUG(logger::out) << "SliceGuarantor needs images for block " <<
 					block << std::endl;
 				return false;
 			}
@@ -390,17 +352,17 @@ bool testSlices(const ProjectConfiguration& configuration)
 	{
 		Blocks missingBlocks;
 
-		LOG_USER(out) << "Extracting slices from entire stack" << std::endl;
+		LOG_DEBUG(logger::out) << "Extracting slices from entire stack" << std::endl;
 
 		missingBlocks = sliceGuarantor.guaranteeSlices(blocks);
 
 		if (!missingBlocks.empty())
 		{
-			LOG_USER(out) << "SliceGuarantor needs images for " <<
+			LOG_DEBUG(logger::out) << "SliceGuarantor needs images for " <<
 				missingBlocks.size() << " blocks:" << std::endl;
 			for (const Block& block : missingBlocks)
 			{
-				LOG_USER(out) << "\t" << block << std::endl;
+				LOG_DEBUG(logger::out) << "\t" << block << std::endl;
 			}
 			return false;
 		}
@@ -411,7 +373,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	boost::shared_ptr<Slices> blockwiseSlices = sliceStore->getSlicesByBlocks(blocks, missingBlocks);
 	boost::shared_ptr<ConflictSets> blockwiseConflictSets = sliceStore->getConflictSetsByBlocks(blocks, missingBlocks);
 
-	LOG_USER(out) << "Read " << blockwiseSlices->size() << " slices block-wise" << std::endl;
+	LOG_DEBUG(logger::out) << "Read " << blockwiseSlices->size() << " slices block-wise" << std::endl;
 
 	// Compare outputs
 	bool ok = true;
@@ -439,25 +401,25 @@ bool testSlices(const ProjectConfiguration& configuration)
 
 	if (bsSlicesSetDiff.size() != 0)
 	{
-		LOG_USER(out) << bsSlicesSetDiff.size() <<
+		LOG_USER(logger::out) << bsSlicesSetDiff.size() <<
 			" slices were found in the blockwise output but not sopnet: " << std::endl;
 		for (boost::shared_ptr<Slice> slice : bsSlicesSetDiff)
 		{
-			LOG_USER(out) << slice->getId() << ", " << slice->hashValue() << std::endl;
+			LOG_USER(logger::out) << slice->getId() << ", " << slice->hashValue() << std::endl;
 		}
 	}
 
 	if (sbSlicesSetDiff.size() != 0)
 	{
-		LOG_USER(out) << sbSlicesSetDiff.size() <<
+		LOG_USER(logger::out) << sbSlicesSetDiff.size() <<
 			" slices were found in the sopnet output but not blockwise: " << std::endl;
 		for (boost::shared_ptr<Slice> slice : sbSlicesSetDiff)
 		{
-			LOG_USER(out) << slice->getId() << ", " << slice->hashValue() << std::endl;
+			LOG_USER(logger::out) << slice->getId() << ", " << slice->hashValue() << std::endl;
 		}
 	}
 
-	LOG_USER(out) << "Comparing " << blockwiseConflictSets->size()
+	LOG_DEBUG(logger::out) << "Comparing " << blockwiseConflictSets->size()
 			<< " blockwise conflict sets with "
 			<< sopnetConflictSets->size() << " sopnet conflict sets." << std::endl;
 
@@ -490,21 +452,21 @@ bool testSlices(const ProjectConfiguration& configuration)
 
 	if (bsConflictSetDiff.size() != 0)
 	{
-		LOG_USER(out) << bsConflictSetDiff.size() << '/' << blockwiseConflictSets->size() <<
+		LOG_USER(logger::out) << bsConflictSetDiff.size() << '/' << blockwiseConflictSets->size() <<
 			" ConflictSets were found in the blockwise output but not sopnet:" << std::endl;
 		for (const ConflictSet& conflictSet : bsConflictSetDiff)
 		{
-			LOG_USER(out) << conflictSet << std::endl;
+			LOG_USER(logger::out) << conflictSet << std::endl;
 		}
 	}
 
 	if (sbConflictSetDiff.size() != 0)
 	{
-		LOG_USER(out) << sbConflictSetDiff.size() << '/' << sopnetConflictSets->size() <<
+		LOG_USER(logger::out) << sbConflictSetDiff.size() << '/' << sopnetConflictSets->size() <<
 			" ConflictSets were found in the sopnet output but not blockwise:" << std::endl;
 		for (const ConflictSet& conflictSet : sbConflictSetDiff)
 		{
-			LOG_USER(out) << conflictSet << std::endl;
+			LOG_USER(logger::out) << conflictSet << std::endl;
 		}
 	}
 
@@ -517,30 +479,25 @@ bool testSlices(const ProjectConfiguration& configuration)
 		writeConflictSets(blockwiseConflictSets, blockwiseOutputPath);
 	}
 
-	if (!ok)
-	{
-		LOG_USER(out) << "Slice test failed" << std::endl;
-	}
-	else
-	{
-		LOG_USER(out) << "Slice test passed" << std::endl;
-	}
+
+	LOG_USER(logger::out) << "Slice test " << (ok ? "passed" : "failed") << std::endl;
 
 	return ok;
 }
 
-bool guaranteeSegments(const ProjectConfiguration& configuration,
-	const boost::shared_ptr<SliceStore> sliceStore,
-	const boost::shared_ptr<SegmentStore> segmentStore,
-	const boost::shared_ptr<StackStore> membraneStackStore,
-	const boost::shared_ptr<StackStore> rawStackStore)
+bool guaranteeSegments(
+		const ProjectConfiguration& configuration,
+		const boost::shared_ptr<SliceStore> sliceStore,
+		const boost::shared_ptr<SegmentStore> segmentStore,
+		const boost::shared_ptr<StackStore> membraneStackStore,
+		const boost::shared_ptr<StackStore> rawStackStore)
 {
 	BlockUtils blockUtils(configuration);
 	Blocks blocks = blockUtils.getBlocksInBox(blockUtils.getVolumeBoundingBox());
 	SliceGuarantor sliceGuarantor(configuration, sliceStore, membraneStackStore);
 	SegmentGuarantor segmentGuarantor(configuration, segmentStore, sliceStore, rawStackStore);
 
-	LOG_USER(out) << "Begin extracting segments" << std::endl;
+	LOG_DEBUG(logger::out) << "Begin extracting segments" << std::endl;
 
 	// Now, do it blockwise
 	if (optionCoreTestSequential)
@@ -553,7 +510,7 @@ bool guaranteeSegments(const ProjectConfiguration& configuration,
 			Blocks singleBlock;
 			singleBlock.add(block);
 
-			LOG_USER(out) << "Extracting slices from block " << block << std::endl;
+			LOG_DEBUG(logger::out) << "Extracting slices from block " << block << std::endl;
 
 			do
 			{
@@ -568,7 +525,7 @@ bool guaranteeSegments(const ProjectConfiguration& configuration,
 				// is definitely something wrong.
 				if (count > (int)(blocks.size() + 2))
 				{
-					LOG_USER(out) << "SegmentGuarantor test: too many iterations" << std::endl;
+					LOG_USER(logger::out) << "SegmentGuarantor test: too many iterations" << std::endl;
 					return false;
 				}
 			} while (!missingBlocks.empty());
@@ -578,41 +535,41 @@ bool guaranteeSegments(const ProjectConfiguration& configuration,
 	{
 		Blocks missingBlocks;
 
-		LOG_USER(out) << "Extracting slices from entire stack" << std::endl;
+		LOG_DEBUG(logger::out) << "Extracting slices from entire stack" << std::endl;
 
 		sliceGuarantor.guaranteeSlices(blocks);
 		missingBlocks = segmentGuarantor.guaranteeSegments(blocks);
 
 		if (!missingBlocks.empty())
 		{
-			LOG_USER(out) << "SegmentGuarantor says it needs slices for " <<
+			LOG_DEBUG(logger::out) << "SegmentGuarantor says it needs slices for " <<
 				missingBlocks.size() << ", but we extracted slices for all of them" << std::endl;
 			for (const Block& block : missingBlocks)
 			{
-				LOG_USER(out) << "\t" << block << std::endl;
+				LOG_DEBUG(logger::out) << "\t" << block << std::endl;
 			}
 			return false;
 		}
 	}
 
-	LOG_USER(out) << "Done extracting segments" << std::endl;
+	LOG_DEBUG(logger::out) << "Done extracting segments" << std::endl;
 
 	return true;
 }
 
 void logSegment(const SegmentDescription& segment)
 {
-	LOG_USER(out) << "Section: " << segment.getSection() << " "
+	LOG_DEBUG(logger::out) << "Section: " << segment.getSection() << " "
 			<< Segment::typeString(segment.getType()) << " ";
 
 	// Use hash values rather than ids because we want to cross-reference later
 	// hash values are consistent across equality, whereas slice ids can vary.
 	for (SliceHash sliceHash : segment.getLeftSlices())
-		LOG_USER(out) << 'L' << sliceHash << " ";
+		LOG_DEBUG(logger::out) << 'L' << sliceHash << " ";
 	for (SliceHash sliceHash : segment.getRightSlices())
-		LOG_USER(out) << 'R' << sliceHash << " ";
+		LOG_DEBUG(logger::out) << 'R' << sliceHash << " ";
 
-	LOG_USER(out) << std::endl;
+	LOG_DEBUG(logger::out) << std::endl;
 }
 
 bool testSegments(const ProjectConfiguration& configuration)
@@ -681,12 +638,12 @@ bool testSegments(const ProjectConfiguration& configuration)
 	}
 
 	// Collect Features
-	LOG_USER(out) << "Collecting segment features for sopnet pipeline" << std::endl;
+	LOG_DEBUG(logger::out) << "Collecting segment features for sopnet pipeline" << std::endl;
 	featureExtractor->setInput("segments", sopnetSegments);
 	featureExtractor->setInput("raw sections", rawImageStackReader->getOutput());
 	sopnetFeatures = featureExtractor->getOutput("all features");
 
-	LOG_USER(out) << "Extracted " << sopnetFeatures->size() << " sopnet features for " <<
+	LOG_DEBUG(logger::out) << "Extracted " << sopnetFeatures->size() << " sopnet features for " <<
 		sopnetSegments->size() << " segments" << std::endl;
 
 	// Blockwise variables
@@ -702,14 +659,14 @@ bool testSegments(const ProjectConfiguration& configuration)
 		return false;
 	}
 
-	LOG_USER(out) << "Segment test: segments extracted successfully" << std::endl;
+	LOG_DEBUG(logger::out) << "Segment test: segments extracted successfully" << std::endl;
 
 	BlockUtils blockUtils(configuration);
 	Blocks missingBlocks;
 	Blocks blocks = blockUtils.getBlocksInBox(blockUtils.getVolumeBoundingBox());
 	boost::shared_ptr<SegmentDescriptions> blockwiseDescriptions = segmentStore->getSegmentsByBlocks(blocks, missingBlocks, false);
 
-	LOG_USER(out) << "read back " << blockwiseDescriptions->size() << " blockwise segments" <<
+	LOG_DEBUG(logger::out) << "read back " << blockwiseDescriptions->size() << " blockwise segments" <<
 		std::endl;
 
 	// Now, check for differences
@@ -729,7 +686,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	// vice-versa
 	SegmentDescriptions::segments_type sbSegmentSetDiff;
 
-	LOG_USER(out) << "Checking for segment equality" << std::endl;
+	LOG_DEBUG(logger::out) << "Checking for segment equality" << std::endl;
 
 	SegmentDescriptions::SegmentDescriptionComparator segmentComparator;
 	std::set_difference(
@@ -744,12 +701,12 @@ bool testSegments(const ProjectConfiguration& configuration)
 
 	if (bsSegmentSetDiff.size() == 0 && sbSegmentSetDiff.size() == 0)
 	{
-		LOG_USER(out) << "Segments are consistent" << std::endl;
+		LOG_USER(logger::out) << "Segments are consistent" << std::endl;
 	}
 
 	if (bsSegmentSetDiff.size() != 0)
 	{
-		LOG_USER(out) << bsSegmentSetDiff.size() << '/' << blockwiseDescriptions->size() <<
+		LOG_USER(logger::out) << bsSegmentSetDiff.size() << '/' << blockwiseDescriptions->size() <<
 			" segments were found in the blockwise output but not sopnet: " << std::endl;
 		int ignored = 0;
 		for (const SegmentDescription& segment : bsSegmentSetDiff)
@@ -766,13 +723,13 @@ bool testSegments(const ProjectConfiguration& configuration)
 			}
 		}
 
-		LOG_USER(out) << '(' << ignored << " were ignored ends at volume bounds)" << std::endl;
+		LOG_USER(logger::out) << '(' << ignored << " were ignored ends at volume bounds)" << std::endl;
 	}
 
 	if (sbSegmentSetDiff.size() != 0)
 	{
 		ok = false;
-		LOG_USER(out) << sbSegmentSetDiff.size() << '/' << sopnetDescriptions.size() <<
+		LOG_USER(logger::out) << sbSegmentSetDiff.size() << '/' << sopnetDescriptions.size() <<
 			" segments were found in the sopnet output but not blockwise: " << std::endl;
 		for (const SegmentDescription& segment : sbSegmentSetDiff)
 		{
@@ -797,7 +754,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 			std::inserter(sbSegmentSetInt, sbSegmentSetInt.begin()), segmentComparator);
 
 	// For those segment common to both, check for equality in Features
-	LOG_USER(out) << "Testing features for equality for " << bsSegmentSetInt.size()
+	LOG_DEBUG(logger::out) << "Testing features for equality for " << bsSegmentSetInt.size()
 			<< " segments" << std::endl;
 
 	for (SegmentDescriptions::iterator si = sbSegmentSetInt.begin(),
@@ -810,7 +767,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 
 		if (sopnetSegment.getFeatures() != blockwiseSegment.getFeatures()) {
 
-			LOG_USER(out) << "Features are unequal for segment hashes ("
+			LOG_USER(logger::out) << "Features are unequal for segment hashes ("
 					<< sopnetSegment.getHash() << "," << blockwiseSegment.getHash() << ")" << std::endl;
 			ok = false;
 		}
@@ -824,14 +781,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	}
 
 
-	if (ok)
-	{
-		LOG_USER(out) << "Segment test passed" << std::endl;
-	}
-	else
-	{
-		LOG_USER(out) << "Segment test failed" << std::endl;
-	}
+	LOG_USER(logger::out) << "Segment test " << (ok ? "passed" : "failed") << std::endl;
 
 	return ok;
 }
@@ -850,13 +800,9 @@ bool coreSolver(
 	bool bfe = optionCoreTestForceExplanation;
 	unsigned int padding = optionCorePadding.as<unsigned int>();
 
-	LOG_USER(out) << "HERE" << std::endl;
-
 	Blocks missingBlocks;
 	BlockUtils blockUtils(configuration);
 	Core core = blockUtils.getCoreAtLocation(util::point<unsigned int, 3>(0, 0, 0));
-
-	LOG_USER(out) << "HERE" << std::endl;
 
 	SolutionGuarantor solutionGuarantor(
 			configuration,
@@ -869,11 +815,11 @@ bool coreSolver(
 
 	do
 	{
-		LOG_USER(out) << "Attempting to guarantee a solution" << std::endl;
+		LOG_DEBUG(logger::out) << "Attempting to guarantee a solution" << std::endl;
 
 		missingBlocks = solutionGuarantor.guaranteeSolution(core);
 
-		LOG_USER(out) << "Need segments for " << missingBlocks.size() << " blocks" << std::endl;
+		LOG_DEBUG(logger::out) << "Need segments for " << missingBlocks.size() << " blocks" << std::endl;
 
 		if (!missingBlocks.empty() &&
 			!guaranteeSegments(configuration, sliceStore, segmentStore,
@@ -881,7 +827,7 @@ bool coreSolver(
 		{
 			return false;
 		}
-		LOG_USER(out) << "end of do block" << std::endl;
+
 		if (++count > 3)
 		{
 			return false;
@@ -896,7 +842,7 @@ bool testSolutions(const ProjectConfiguration& configuration)
 {
 	bool ok = true;
 
-	LOG_USER(out) << "Testing solutions" << std::endl;
+	LOG_DEBUG(logger::out) << "Testing solutions" << std::endl;
 
 
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
@@ -907,58 +853,52 @@ bool testSolutions(const ProjectConfiguration& configuration)
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>(configuration);
 
-
-	LOG_USER(out) << "Test core solver" << std::endl;
-
 	ok &= coreSolver(configuration,
 						sliceStore, segmentStore, membraneStackStore, rawStackStore);
 
 
-	if (ok)
-	{
-		LOG_USER(out) << "Neuron solutions passed" << std::endl;
-	}
-	else
-	{
-		LOG_USER(out) << "Neuron solutions failed" << std::endl;
-		return false;
-	}
+	LOG_USER(logger::out) << "Solution test " << (ok ? "passed" : "failed") << std::endl;
 
-	return true;
+	return ok;
 }
 
 
+unsigned int fractionCeiling(unsigned int m, unsigned int num, unsigned int denom) {
+
+	return (m * num + denom - 1) / denom;
+}
+
 util::point<unsigned int, 3> parseBlockSize(
 		std::string blockSizeFraction,
-		const util::point<unsigned int, 3> stackSize)
-{
-    std::string item;
+		const util::point<unsigned int, 3> stackSize) {
+
+	std::string item;
 	util::point<unsigned int, 3> blockSize;
 	int num, denom;
 
 	std::size_t slashPos = blockSizeFraction.find("/");
 
-	if (slashPos == std::string::npos)
-	{
-		LOG_USER(out) << "Got no fraction in block size parameter, setting to stack size" <<
+	if (slashPos == std::string::npos) {
+
+		LOG_DEBUG(logger::out) << "Got no fraction in block size parameter, setting to stack size" <<
 			std::endl;
 		blockSize = stackSize;
-	}
-	else
-	{
+	} else {
+
 		std::string numStr = blockSizeFraction.substr(0, slashPos);
 		std::string denomStr = blockSizeFraction.substr(slashPos + 1, std::string::npos);
 
-		LOG_USER(out) << "Got numerator " << numStr << ", denominator " << denomStr << std::endl;
+		LOG_DEBUG(logger::out) << "Got numerator " << numStr << ", denominator " << denomStr << std::endl;
 		num = boost::lexical_cast<int>(numStr);
 		denom = boost::lexical_cast<int>(denomStr);
 
-		blockSize = util::point<unsigned int, 3>(fractionCeiling(stackSize.x(), num, denom),
-										fractionCeiling(stackSize.y(), num, denom),
-										stackSize.z() / 2 + 1);
+		blockSize = util::point<unsigned int, 3>(
+				fractionCeiling(stackSize.x(), num, denom),
+				fractionCeiling(stackSize.y(), num, denom),
+				stackSize.z() / 2 + 1);
 	}
 
-	LOG_USER(out) << "Stack size: " << stackSize << ", block size: " << blockSize << std::endl;
+	LOG_DEBUG(logger::out) << "Stack size: " << stackSize << ", block size: " << blockSize << std::endl;
 
 	return blockSize;
 }
@@ -967,8 +907,7 @@ util::point<unsigned int, 3> parseBlockSize(
 int main(int optionc, char** optionv)
 {
 	util::ProgramOptions::init(optionc, optionv);
-	LogManager::init();
-	logger::LogManager::setGlobalLogLevel(logger::Debug);
+	logger::LogManager::init();
 
 	try
 	{
@@ -1011,7 +950,7 @@ int main(int optionc, char** optionv)
 
 		if (optionCoreTestWriteSliceImages || optionCoreTestWriteDebugFiles)
 		{
-			LOG_USER(out) << "Creating output directories" << std::endl;
+			LOG_USER(logger::out) << "Creating output directories" << std::endl;
 			blockwiseOutputPath = blockwiseOutputPath + "_" +
 				boost::lexical_cast<std::string>(stackSize.x()) + "x" +
 				boost::lexical_cast<std::string>(stackSize.y()) + "_" +
@@ -1047,8 +986,8 @@ int main(int optionc, char** optionv)
 
 		return 0;
 	}
-	catch (Exception& e)
+	catch (boost::exception& e)
 	{
-		handleException(e);
+		handleException(e, std::cerr);
 	}
 }
