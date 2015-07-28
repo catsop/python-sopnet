@@ -110,9 +110,6 @@ Slices::find(const util::point<double, 2>& center, double distance) {
 	_kdTree->radiusSearch(&query[0], distance, results, params);
 
 	// fill result vector
-	size_t index;
-	double dist;
-
 	std::vector<boost::shared_ptr<Slice> > found;
 
 	for (const auto& pair : results)
