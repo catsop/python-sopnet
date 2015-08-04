@@ -1,3 +1,6 @@
+#include "config.h"
+#ifdef HAVE_PostgreSQL
+
 #include <boost/lexical_cast.hpp>
 #include "PostgreSqlProjectConfigurationStore.h"
 #include "PostgreSqlUtils.h"
@@ -148,3 +151,5 @@ PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration&
 
 	PQclear(result);
 }
+
+#endif //HAVE_PostgreSQL
