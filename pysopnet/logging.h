@@ -8,15 +8,14 @@ namespace python {
 extern logger::LogChannel pylog;
 
 /**
- * Set the log level of the python wrappers:
- *
- * 0	quiet
- * 1	errors
- * 2	user
- * 3	debug
- * 4	all
+ * Get the log level of the python wrappers.
  */
-void setLogLevel(unsigned int level);
+logger::LogLevel getLogLevel();
+
+/**
+ * Set the log level of the python wrappers.
+ */
+void setLogLevel(logger::LogLevel logLevel);
 
 } // namespace python
 

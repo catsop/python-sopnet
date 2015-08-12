@@ -54,8 +54,15 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	boost::python::register_exception_translator<GRBException>(&translateGRBException);
 #endif
 
-	// setLogLevel
+	// Logging
+	boost::python::enum_<logger::LogLevel>("LogLevel")
+			.value("Quiet", logger::Quiet)
+			.value("Error", logger::Error)
+			.value("Debug", logger::Debug)
+			.value("All", logger::All)
+			.value("User", logger::User);
 	boost::python::def("setLogLevel", setLogLevel);
+	boost::python::def("getLogLevel", getLogLevel);
 
 	// Segment hash_value (by slice hashes)
 	boost::python::class_<std::vector<SliceHash> >("SliceHashVector")
@@ -116,7 +123,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setPostgreSqlPassword", &ProjectConfiguration::setPostgreSqlPassword)
 			.def("getPostgreSqlPassword", &ProjectConfiguration::getPostgreSqlPassword, boost::python::return_value_policy<boost::python::copy_const_reference>())
 			.def("setPostgreSqlDatabase", &ProjectConfiguration::setPostgreSqlDatabase)
-			.def("getPostgreSqlDatabase", &ProjectConfiguration::getPostgreSqlDatabase, boost::python::return_value_policy<boost::python::copy_const_reference>());
+			.def("getPostgreSqlDatabase", &ProjectConfiguration::getPostgreSqlDatabase, boost::python::return_value_policy<boost::python::copy_const_reference>())
+			.enable_pickling();
 
 	// BackendType
 	boost::python::enum_<ProjectConfiguration::BackendType>("BackendType")
@@ -140,6 +148,9 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def_readwrite("height", &StackDescription::height)
 			.def_readwrite("depth", &StackDescription::depth)
 			.def_readwrite("scale", &StackDescription::scale)
+			.def_readwrite("resX", &StackDescription::resX)
+			.def_readwrite("resY", &StackDescription::resY)
+			.def_readwrite("resZ", &StackDescription::resZ)
 			.def_readwrite("id", &StackDescription::id)
 			.def_readwrite("segmentationId", &StackDescription::segmentationId);
 
