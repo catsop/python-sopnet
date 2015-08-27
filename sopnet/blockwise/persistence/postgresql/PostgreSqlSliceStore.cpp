@@ -85,7 +85,7 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 		std::string sliceId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
-		util::point<double, 2> ctr = slice->getComponent()->getCenter();
+		util::point<double, 2> ctr = slice->getComponent()->getInteriorPoint();
 
 		// Bounding Box
 		const util::box<unsigned int, 2>& bb = slice->getComponent()->getBoundingBox();
