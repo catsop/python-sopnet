@@ -25,7 +25,7 @@ LinearCostFunction::updateOutputs() {
 
 	if (_features->numFeatures() != _parameters->getWeights().size()) {
 
-		std::stringstream message;
+		std::ostringstream message;
 		message
 				<< "number of features (" << _features->numFeatures()
 				<< ") does not match number of weights (" << _parameters->getWeights().size()

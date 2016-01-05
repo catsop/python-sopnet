@@ -153,7 +153,7 @@ CatmaidStackStore::copyImageInto(const Image& tile,
 std::string
 CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, const unsigned int section)
 {
-	std::stringstream url;
+	std::ostringstream url;
 
 	switch (_stack.tileSourceType) {
 		case 1:

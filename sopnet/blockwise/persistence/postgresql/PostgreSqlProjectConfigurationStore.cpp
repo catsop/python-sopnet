@@ -32,7 +32,7 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 
 	// fill project configuration
 
-	std::stringstream q;
+	std::ostringstream q;
 	q <<
 			"SELECT bi.num_x, bi.num_y, bi.num_z, "
 			"bi.block_dim_x, bi.block_dim_y, bi.block_dim_z, "
@@ -89,7 +89,7 @@ PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration&
 
 	// get complete stack description
 
-	std::stringstream q;
+	std::ostringstream q;
 	q <<
 			"SELECT ss.id, ss.type, s.id, s.dimension, s.resolution, "
 			"s.image_base, s.file_extension, "
@@ -121,7 +121,7 @@ PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration&
 			UTIL_THROW_EXCEPTION(PostgreSqlException, "Unknown segmentation stack type: " + typeString);
 		}
 
-		std::stringstream dimss(PQgetvalue(result, i, DIM));
+		std::istringstream dimss(PQgetvalue(result, i, DIM));
 		char _;
 		dimss >> _;
 		dimss >> stackDescription.width;
@@ -130,7 +130,7 @@ PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration&
 		dimss >> _;
 		dimss >> stackDescription.depth;
 
-		std::stringstream resss(PQgetvalue(result, i, RES));
+		std::istringstream resss(PQgetvalue(result, i, RES));
 		resss >> _;
 		resss >> stackDescription.resX;
 		resss >> _;

@@ -315,7 +315,7 @@ PostgreSqlSliceStore::getSlicesBySegmentHashes(
 		return slices;
 	}
 
-	std::stringstream query;
+	std::ostringstream query;
 	query
 			<< "BEGIN;"
 			<< "CREATE TEMP TABLE segment_hash (id bigint NOT NULL) ON COMMIT DROP;"

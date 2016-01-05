@@ -659,7 +659,7 @@ PostgreSqlSegmentStore::getSolutionByCores(const Cores& cores) {
 
 	// get all assemblies
 
-	std::stringstream query;
+	std::ostringstream query;
 	query << "SELECT id FROM assembly WHERE ";
 	for (unsigned int i = 0; i < coreIds.size(); i++)
 		query << "core_id=" << coreIds[i] << (i != coreIds.size() - 1 ? " OR " : "");
