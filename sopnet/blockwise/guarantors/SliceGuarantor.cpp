@@ -2,6 +2,7 @@
 
 #include <map>
 #include <set>
+#include <unordered_set>
 #include <imageprocessing/ImageExtractor.h>
 #include <slices/SliceExtractor.h>
 #include <slices/Slice.h>
@@ -298,9 +299,19 @@ SliceGuarantor::collectConflictsBySlices(const ConflictSets& conflictSets, const
 
 	boost::shared_ptr<ConflictSets> sliceConflictSets = boost::make_shared<ConflictSets>();
 
-	for (ConflictSet conflictSet : conflictSets)
-		if (containsAny(conflictSet, slices))
-			sliceConflictSets->add(conflictSet);
+	std::unordered_set<SliceHash> sliceHashes;
+	sliceHashes.reserve(slices.size());
+	for (const boost::shared_ptr<Slice> slice : slices)
+			sliceHashes.insert(slice->hashValue());
+
+	for (ConflictSet conflictSet : conflictSets) {
+			for (const SliceHash slice : conflictSet.getSlices()) {
+					if (sliceHashes.count(slice)) {
+							sliceConflictSets->add(conflictSet);
+							break;
+					}
+			}
+	}
 
 	return sliceConflictSets;
 }
