@@ -211,35 +211,27 @@ PostgreSqlSliceStore::associateConflictSetsToBlock(
 				"(slice_a_id bigint, slice_b_id bigint, clique_id bigint) ON COMMIT DROP;"
 			"INSERT INTO " << tmpTable << " VALUES" << idSetsStr << ';';
 	// Insert new conflict sets from the temporary table.
-	q << "LOCK TABLE slice_conflict IN EXCLUSIVE MODE;";
 	q << "INSERT INTO slice_conflict (slice_a_id, slice_b_id) "
 			"SELECT DISTINCT t.slice_a_id, t.slice_b_id "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN slice_conflict s "
-			"ON (s.slice_a_id, s.slice_b_id) = (t.slice_a_id, t.slice_b_id) "
-			"WHERE s.slice_a_id IS NULL;";
+			"ORDER BY t.slice_a_id ASC, t.slice_b_id ASC "
+			"ON CONFLICT DO NOTHING;";
 	q << "INSERT INTO conflict_clique (id, maximal_clique) "
 			"SELECT DISTINCT t.clique_id, TRUE "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN conflict_clique c "
-			"ON c.id = t.clique_id "
-			"WHERE c.id IS NULL;";
+			"ON CONFLICT DO NOTHING;";
 	q << "INSERT INTO conflict_clique_edge (conflict_clique_id, slice_conflict_id) "
 			"SELECT t.clique_id, sc.id "
 			"FROM " << tmpTable << " AS t "
 			"JOIN slice_conflict sc "
 			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
-			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM conflict_clique_edge cce WHERE "
-			"(cce.conflict_clique_id,cce.slice_conflict_id) = (t.clique_id, sc.id));";
+			"ON CONFLICT DO NOTHING;";
 	q << "INSERT INTO block_conflict_relation (block_id,slice_conflict_id) "
 			"SELECT DISTINCT b.id, sc.id "
 			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
 			"JOIN slice_conflict sc "
 			"ON (sc.slice_a_id=t.slice_a_id AND sc.slice_b_id=t.slice_b_id) "
-			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM block_conflict_relation bc WHERE "
-			"(bc.block_id, bc.slice_conflict_id) = (b.id, sc.id));";
+			"ON CONFLICT DO NOTHING;";
 	q << "COMMIT;";
 
 	std::string query = q.str();
