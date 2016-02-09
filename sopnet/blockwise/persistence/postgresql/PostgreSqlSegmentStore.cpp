@@ -87,9 +87,7 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 			"INSERT INTO segment_block_relation (block_id, segment_id) "
 			"SELECT b.id, t.id FROM (" << blockQuery << ") AS b, "
 			"segment" << tmpTable << " AS t "
-			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM segment_block_relation s WHERE "
-			"(s.block_id, s.segment_id) = (b.id, t.id));";
+			"ON CONFLICT DO NOTHING;";
 
 	char separator = ' ';
 	char sliceSeparator = ' ';
@@ -141,23 +139,19 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		separator = ',';
 	}
 
-	segmentQuery << ";LOCK TABLE segment IN EXCLUSIVE MODE;";
 	segmentQuery <<
-			"INSERT INTO segment "
+			";INSERT INTO segment "
 			"(id, section_sup, "
 			"min_x, min_y, max_x, max_y, type) "
 			"SELECT "
 			"t.id, t.section_sup, "
 			"t.min_x, t.min_y, t.max_x, t.max_y, t.type "
 			"FROM segment" << tmpTable << " AS t "
-			"LEFT OUTER JOIN segment s "
-			"ON (s.id = t.id) WHERE s.id IS NULL;";
-	sliceQuery << " ) AS t (segment_id, slice_id, direction) WHERE NOT EXISTS "
-			"(SELECT 1 FROM segment_slice ss "
-			"WHERE (ss.segment_id, ss.slice_id) = (t.segment_id, t.slice_id));";
-	segmentFeatureQuery << " ) AS t (segment_id, features) WHERE NOT EXISTS "
-			"(SELECT 1 FROM segment_features sf "
-			"WHERE sf.segment_id = t.segment_id);";
+			"ON CONFLICT DO NOTHING;";
+	sliceQuery << " ) AS t (segment_id, slice_id, direction) "
+			"ON CONFLICT DO NOTHING;";
+	segmentFeatureQuery << " ) AS t (segment_id, features) "
+			"ON CONFLICT DO NOTHING;";
 
 	segmentQuery << sliceQuery.str() << segmentFeatureQuery.str()
 			<< clearBlockQuery.str() << blockSegmentQuery.str();
