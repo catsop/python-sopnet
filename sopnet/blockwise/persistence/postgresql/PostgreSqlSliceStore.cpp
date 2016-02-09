@@ -101,31 +101,20 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	}
 
 	// Insert new slices from the temporary table.
-	q << ";LOCK TABLE slice IN EXCLUSIVE MODE;";
 	// Since slices with identical hashes are assumed to be identical, existing
-	// slices are not updated. If needed, that update would be:
-	/* "UPDATE slice "
-		"SET (section, min_x, min_y, max_x, max_y, "
-		"ctr_x, ctr_y, value, size)="
-		"(t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
-		"t.ctr_x, t.ctr_y, t.value, t.size) "
-		"FROM " << tmpTable << " AS t "
-		"WHERE t.id = slice.id;" */
-	q << "INSERT INTO slice "
+	// slices are not updated.
+	q << ";INSERT INTO slice "
 			"(id, section, min_x, min_y, max_x, max_y, "
 			"ctr_x, ctr_y, value, size) "
 			"SELECT "
 			"t.id, t.section, t.min_x, t.min_y, t.max_x, t.max_y, "
 			"t.ctr_x, t.ctr_y, t.value, t.size "
 			"FROM " << tmpTable << " AS t "
-			"LEFT OUTER JOIN slice s "
-			"ON (s.id = t.id) WHERE s.id IS NULL;";
+			"ON CONFLICT DO NOTHING;";
 	q << "INSERT INTO slice_block_relation (block_id, slice_id) "
 			"SELECT b.id, t.id "
 			"FROM (" << blockQuery << ") AS b, " << tmpTable << " AS t "
-			"WHERE NOT EXISTS "
-			"(SELECT 1 FROM slice_block_relation s WHERE "
-			"(s.block_id, s.slice_id) = (b.id, t.id));";
+			"ON CONFLICT DO NOTHING;";
 
 	if (doneWithBlock)
 		q << "UPDATE block SET slices_flag = TRUE WHERE id = (" << blockQuery << ");";
