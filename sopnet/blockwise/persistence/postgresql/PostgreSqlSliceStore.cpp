@@ -419,7 +419,7 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 void
 PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component)
 {
-	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
+	std::string imageFilename  = "/dev/shm/catsop" + slicePostgreId + ".png";
 
 	// If the image file already exists, do nothing.
 	struct stat buffer;
@@ -432,6 +432,37 @@ PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, 
 	vigra::exportImage(
 			vigra::srcImageRange(bitmap),
 			vigra::ImageExportInfo(imageFilename.c_str()).setPosition(offset));
+
+	std::ostringstream q;
+	q
+			<< "INSERT INTO slice_component (slice_id, component) VALUES ("
+			<< slicePostgreId << ", E'\\\\x";
+
+	unsigned char x;
+	std::ifstream input(imageFilename, std::ios::binary);
+	input >> std::noskipws;
+	while (input >> x) {
+		q << std::hex << std::setw(2) << std::setfill('0')
+				<< (int)x;
+	}
+	q << "') ON CONFLICT (slice_id) DO NOTHING;";
+
+	std::string query = q.str();
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
+
+	input.close();
+	bool removeFailed = 0 != std::remove(imageFilename.c_str());
+	if (removeFailed) {
+		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
+	}
 }
 
 boost::shared_ptr<ConnectedComponent>
