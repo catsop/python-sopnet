@@ -166,7 +166,7 @@ CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, co
 			break;
 		case 6: // DVID imageblk
 			url << _stack.imageBase
-				<< _stack.tileWidth << '_' << _stack.tileHeight
+				<< _stack.tileWidth << '_' << _stack.tileHeight << '/'
 				<< column *  _stack.tileWidth  << '_'
 				<< row    *  _stack.tileHeight << '_'
 				<< section << '/' << _stack.fileExtension;
