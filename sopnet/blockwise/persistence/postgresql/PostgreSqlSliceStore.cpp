@@ -274,9 +274,9 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 	boost::chrono::nanoseconds totalElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Retrieved " << slices->size() << " slices in "
 			<< (totalElapsed.count() / 1e6) << " ms (wall) "
-			<< (1e9 * slices->size()/totalElapsed.count()) << " segments/s (query: "
+			<< (1e9 * slices->size()/totalElapsed.count()) << " slices/s (query: "
 			<< (queryElapsed.count() / 1e6) << "ms; "
-			<< (1e9 * slices->size()/queryElapsed.count()) << " segments/s)" << std::endl;
+			<< (1e9 * slices->size()/queryElapsed.count()) << " slices/s)" << std::endl;
 
 	return slices;
 }
