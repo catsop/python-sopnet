@@ -668,6 +668,7 @@ void
 PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slices> slices) {
 
 	int nSlices = PQntuples(result);
+	if (0 == nSlices) return;
 
 	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE, FIELD_SCID_UNUSED, FIELD_COMPONENT };
 
@@ -705,7 +706,7 @@ PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slice
 
 	bool removeFailed = 0 != std::remove(imageFilename.c_str());
 	if (removeFailed) {
-		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
+		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << " (" << std::strerror(errno) << ")" << std::endl;
 		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
 	}
 }
