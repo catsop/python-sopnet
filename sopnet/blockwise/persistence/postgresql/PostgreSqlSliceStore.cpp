@@ -3,7 +3,38 @@
 
 #include "PostgreSqlUtils.h"
 #include <boost/tokenizer.hpp>
+#include <arpa/inet.h>
+
+#ifdef __APPLE__
+#include <machine/endian.h>
+#include <libkern/OSByteOrder.h>
+
+#define htobe16(x) OSSwapHostToBigInt16(x)
+#define htole16(x) OSSwapHostToLittleInt16(x)
+#define be16toh(x) OSSwapBigToHostInt16(x)
+#define le16toh(x) OSSwapLittleToHostInt16(x)
+
+#define htobe32(x) OSSwapHostToBigInt32(x)
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#define be32toh(x) OSSwapBigToHostInt32(x)
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+
+#define htobe64(x) OSSwapHostToBigInt64(x)
+#define htole64(x) OSSwapHostToLittleInt64(x)
+#define be64toh(x) OSSwapBigToHostInt64(x)
+#define le64toh(x) OSSwapLittleToHostInt64(x)
+
+#define __BIG_ENDIAN    BIG_ENDIAN
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
+#define __BYTE_ORDER    BYTE_ORDER
+#else
+#include <endian.h>
+#endif
+
 #include <boost/timer/timer.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <fstream>
 #include <sys/stat.h>
 #include <vigra/impex.hxx>
@@ -130,14 +161,19 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
 	}
 
+
+	std::vector<std::pair<const std::string, const ConnectedComponent&> > components;
+	components.reserve(slices.size());
+
 	for (boost::shared_ptr<Slice> slice : slices) {
 
 		std::string sliceId = boost::lexical_cast<std::string>(
 				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
 
-		// Store pixel data of slice
-		saveConnectedComponent(sliceId, *slice->getComponent());
+		components.emplace_back(sliceId, *slice->getComponent());
 	}
+
+	saveConnectedComponents(components);
 
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
 	LOG_DEBUG(postgresqlslicestorelog) << "Stored " << slices.size() << " slices in "
@@ -257,12 +293,13 @@ PostgreSqlSliceStore::getSlicesByBlocks(const Blocks& blocks, Blocks& missingBlo
 
 	// Query slices for this set of blocks
 	std::string blockSlicesQuery =
-			"SELECT s.id, s.section, s.value "
+			"SELECT s.id, s.section, s.value, sc.slice_id, sc.component "
 			"FROM slice_block_relation sbr "
 			"JOIN slice s on sbr.slice_id = s.id "
+			"JOIN slice_component sc ON sc.slice_id = s.id "
 			"WHERE sbr.block_id IN (" + blockIdsStr + ")"
-			"GROUP BY s.id"; // Remove duplicates. GROUP BY is sometimes faster than DISTINCT.
-	PGresult* result = PQexec(_pgConnection, blockSlicesQuery.c_str());
+			"GROUP BY s.id, sc.slice_id"; // Remove duplicates. GROUP BY is sometimes faster than DISTINCT.
+	PGresult* result = PQexecParams(_pgConnection, blockSlicesQuery.c_str(), 0, NULL, NULL, NULL, NULL, 1);
 
 	PostgreSqlUtils::checkPostgreSqlError(result, blockSlicesQuery);
 	boost::chrono::nanoseconds queryElapsed(queryTimer.elapsed().wall);
@@ -307,13 +344,14 @@ PostgreSqlSliceStore::getSlicesBySegmentHashes(
 				<< "(" << PostgreSqlUtils::hashToPostgreSqlId(*hash) << ")";
 	query << ";";
 	query
-			<< "SELECT s.id, s.section, s.value "
+			<< "SELECT s.id, s.section, s.value, sc.slice_id, sc.component "
 			<< "FROM segment_slice ss "
 			<< "JOIN slice s ON s.id = ss.slice_id "
+			<< "JOIN slice_component sc ON sc.slice_id = s.id "
 			<< "JOIN segment_hash ON segment_hash.id = ss.segment_id "
-			<< "GROUP BY s.id;";
+			<< "GROUP BY s.id, sc.slice_id;";
 
-	PGresult* result = PQexec(_pgConnection, query.str().c_str());
+	PGresult* result = PQexecParams(_pgConnection, query.str().c_str(), 0, NULL, NULL, NULL, NULL, 1);
 	PostgreSqlUtils::checkPostgreSqlError(result);
 
 	slicesFromResult(result, slices);
@@ -417,37 +455,74 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 }
 
 void
-PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component)
-{
-	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
+PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const std::string, const ConnectedComponent&> >& components) {
+	std::ostringstream q;
+	q << "INSERT INTO slice_component (slice_id, component) VALUES";
+	char separator = ' ';
 
-	// If the image file already exists, do nothing.
-	struct stat buffer;
-	if (stat (imageFilename.c_str(), &buffer) == 0) return;
+	boost::uuids::uuid uuid = boost::uuids::random_generator()();
+	std::string imageFilename  = _config.getComponentDirectory() + "/catsop" + boost::uuids::to_string(uuid) + ".png";
 
-	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
-	const vigra::Diff2D offset(component.getBoundingBox().min().x(), component.getBoundingBox().min().y());
+	for (const std::pair<const std::string, const ConnectedComponent&>& compPair : components) {
+		const std::string& slicePostgreId = compPair.first;
+		const ConnectedComponent& component = compPair.second;
 
-	// store the image
-	vigra::exportImage(
-			vigra::srcImageRange(bitmap),
-			vigra::ImageExportInfo(imageFilename.c_str()).setPosition(offset));
+		const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
+		const vigra::Diff2D offset(component.getBoundingBox().min().x(), component.getBoundingBox().min().y());
+
+		// store the image
+		vigra::exportImage(
+				vigra::srcImageRange(bitmap),
+				vigra::ImageExportInfo(imageFilename.c_str()).setPosition(offset));
+
+		q << separator << '(' << slicePostgreId << ", E'\\\\x";
+		separator = ',';
+
+		unsigned char x;
+		std::ifstream input(imageFilename, std::ios::binary);
+		input >> std::noskipws;
+		while (input >> x) {
+			q << std::hex << std::setw(2) << std::setfill('0')
+					<< (int)x;
+		}
+		q << "')";
+	}
+
+	q << " ON CONFLICT (slice_id) DO NOTHING;";
+
+	std::string query = q.str();
+	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
+	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
+	if (0 == asyncStatus) {
+		LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
+		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
+			std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
+	}
+
+	bool removeFailed = 0 != std::remove(imageFilename.c_str());
+	if (removeFailed) {
+		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
+	}
 }
 
 boost::shared_ptr<ConnectedComponent>
-PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, double value)
+PostgreSqlSliceStore::loadConnectedComponent(const std::string& tmpFilename, const char* bytes, const int size, double value)
 {
-	std::string imageFilename  = _config.getComponentDirectory() + "/" + slicePostgreId + ".png";
+	std::ofstream output(tmpFilename, std::ios::binary);
+	output.write(bytes, size);
+	output.close();
 
 	// get information about the image to read
-	vigra::ImageImportInfo info(imageFilename.c_str());
+	vigra::ImageImportInfo info(tmpFilename.c_str());
 
 	// abort if image is not grayscale
 	if (!info.isGrayscale()) {
 
 		UTIL_THROW_EXCEPTION(
 				IOError,
-				imageFilename << " is not a gray-scale image!");
+				tmpFilename << " is not a gray-scale image!");
 	}
 
 	// read the image
@@ -478,29 +553,50 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, 
 	return component;
 }
 
+void checkFieldLength(size_t expected, size_t found, const char* name) {
+	if (expected != found) {
+		std::ostringstream errorMsg;
+		errorMsg << "Retrieved field " << name  << "has wrong length. Expected: " << expected <<
+				" Retrieved: " << found;
+
+		LOG_ERROR(postgresqlslicestorelog) << errorMsg.str() << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, errorMsg.str());
+	}
+}
+
+template <typename T>
+void swapEndian(T& value) {
+
+	char& raw = reinterpret_cast<char&>(value);
+	std::reverse(&raw, &raw + sizeof(T));
+}
+
 void
 PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slices> slices) {
 
 	int nSlices = PQntuples(result);
+	if (0 == nSlices) return;
 
-	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE };
+	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE, FIELD_SCID_UNUSED, FIELD_COMPONENT };
+
+	boost::uuids::uuid uuid = boost::uuids::random_generator()();
+	std::string imageFilename  = _config.getComponentDirectory() + "/catsop" + boost::uuids::to_string(uuid) + ".png";
 
 	// Build Slice for each row
 	for (int i = 0; i < nSlices; ++i) {
-		char* cellStr;
-		cellStr = PQgetvalue(result, i, FIELD_ID);
-		std::string slicePostgreId(cellStr);
+		checkFieldLength(sizeof(PostgreSqlHash), PQgetlength(result, i, FIELD_ID), "ID");
 		SliceHash sliceHash = PostgreSqlUtils::postgreSqlIdToHash(
-				boost::lexical_cast<PostgreSqlHash>(slicePostgreId));
-		cellStr = PQgetvalue(result, i, FIELD_SECTION);
-		unsigned int section = boost::lexical_cast<unsigned int>(cellStr);
-		cellStr = PQgetvalue(result, i, FIELD_VALUE);
-		double value = boost::lexical_cast<double>(cellStr);
+			be64toh(*((SliceHash *)PQgetvalue(result, i, FIELD_ID))));
+		checkFieldLength(sizeof(unsigned int), PQgetlength(result, i, FIELD_SECTION), "SECTION");
+		unsigned int section = ntohl(*((unsigned int *)PQgetvalue(result, i, FIELD_SECTION)));
+		checkFieldLength(sizeof(double), PQgetlength(result, i, FIELD_VALUE), "VALUE");
+		double value = *((double *)PQgetvalue(result, i, FIELD_VALUE));
+		swapEndian(value);
 
 		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
 				ComponentTreeConverter::getNextSliceId(),
 				section,
-				loadConnectedComponent(slicePostgreId, value));
+				loadConnectedComponent(imageFilename, PQgetvalue(result, i, FIELD_COMPONENT), PQgetlength(result, i, FIELD_COMPONENT), value));
 
 		// Check that the loaded slice has the correct hash.
 		if (slice->hashValue() != sliceHash) {
@@ -513,6 +609,12 @@ PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slice
 		}
 
 		slices->add(slice);
+	}
+
+	bool removeFailed = 0 != std::remove(imageFilename.c_str());
+	if (removeFailed) {
+		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << " (" << std::strerror(errno) << ")" << std::endl;
+		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
 	}
 }
 

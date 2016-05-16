@@ -105,12 +105,14 @@ public:
 	const util::point<unsigned int, 3>& getCoreSize() const;
 
 	/**
-	 * Set a local directory to store the connected components of slices.
+	 * Set a local directory for temporary storage of connected components of
+	 * slices.
 	 */
 	void setComponentDirectory(const std::string& componentDirectory);
 
 	/**
-	 * Get the local directory to store the connected components of slices.
+	 * Get the local directory for temporary storage of connected components of
+	 * slices.
 	 */
 	const std::string& getComponentDirectory() const;
 
