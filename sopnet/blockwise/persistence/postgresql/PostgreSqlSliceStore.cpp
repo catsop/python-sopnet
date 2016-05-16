@@ -429,62 +429,13 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 }
 
 void
-PostgreSqlSliceStore::saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component)
-{
-	std::string imageFilename  = "/dev/shm/catsop" + slicePostgreId + ".png";
-
-	// If the image file already exists, do nothing.
-	struct stat buffer;
-	if (stat (imageFilename.c_str(), &buffer) == 0) return;
-
-	const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
-	const vigra::Diff2D offset(component.getBoundingBox().min().x(), component.getBoundingBox().min().y());
-
-	// store the image
-	vigra::exportImage(
-			vigra::srcImageRange(bitmap),
-			vigra::ImageExportInfo(imageFilename.c_str()).setPosition(offset));
-
-	std::ostringstream q;
-	q
-			<< "INSERT INTO slice_component (slice_id, component) VALUES ("
-			<< slicePostgreId << ", E'\\\\x";
-
-	unsigned char x;
-	std::ifstream input(imageFilename, std::ios::binary);
-	input >> std::noskipws;
-	while (input >> x) {
-		q << std::hex << std::setw(2) << std::setfill('0')
-				<< (int)x;
-	}
-	q << "') ON CONFLICT (slice_id) DO NOTHING;";
-
-	std::string query = q.str();
-	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
-	int asyncStatus = PQsendQuery(_pgConnection, query.c_str());
-	if (0 == asyncStatus) {
-		LOG_ERROR(postgresqlslicestorelog) << "PQsendQuery returned 0" << std::endl;
-		LOG_ERROR(postgresqlslicestorelog) << "The used query was: " << query <<
-			std::endl;
-		UTIL_THROW_EXCEPTION(PostgreSqlException, "PQsendQuery returned 0");
-	}
-
-	input.close();
-	bool removeFailed = 0 != std::remove(imageFilename.c_str());
-	if (removeFailed) {
-		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
-		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
-	}
-}
-
-void
 PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const std::string, const ConnectedComponent&> >& components) {
 	std::ostringstream q;
 	q << "INSERT INTO slice_component (slice_id, component) VALUES";
 	char separator = ' ';
 
 	boost::uuids::uuid uuid = boost::uuids::random_generator()();
-	std::string imageFilename  = "/dev/shm/catsop" + boost::uuids::to_string(uuid) + ".png";
+	std::string imageFilename  = _config.getComponentDirectory() + "/catsop" + boost::uuids::to_string(uuid) + ".png";
 
 	for (const std::pair<const std::string, const ConnectedComponent&>& compPair : components) {
 		const std::string& slicePostgreId = compPair.first;
@@ -528,76 +479,6 @@ PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const 
 		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
 		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
 	}
-}
-
-boost::shared_ptr<ConnectedComponent>
-PostgreSqlSliceStore::loadConnectedComponent(const std::string& slicePostgreId, double value)
-{
-	boost::uuids::uuid uuid = boost::uuids::random_generator()();
-	std::string imageFilename  = "/dev/shm/catsop" + boost::uuids::to_string(uuid) + ".png";
-
-	std::string query("SELECT component FROM slice_component WHERE slice_id = " + slicePostgreId + ";");
-	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
-	PGresult* result = PQexecParams(_pgConnection, query.c_str(), 0, NULL, NULL, NULL, NULL, 1);
-
-	PostgreSqlUtils::checkPostgreSqlError(result, query);
-	int nComponents = PQntuples(result);
-	if (1 != nComponents) {
-		LOG_ERROR(postgresqlslicestorelog) << "Did not find single component: " << query <<
-			std::endl;
-		UTIL_THROW_EXCEPTION(PostgreSqlException, "Did not find single component");
-	}
-
-	int size = PQgetlength(result, 0, 0);
-	const char* bytes = PQgetvalue(result, 0, 0);
-
-	std::ofstream output(imageFilename, std::ios::binary);
-	output.write(bytes, size);
-	output.close();
-
-	// get information about the image to read
-	vigra::ImageImportInfo info(imageFilename.c_str());
-
-	// abort if image is not grayscale
-	if (!info.isGrayscale()) {
-
-		UTIL_THROW_EXCEPTION(
-				IOError,
-				imageFilename << " is not a gray-scale image!");
-	}
-
-	// read the image
-	ConnectedComponent::bitmap_type bitmap(ConnectedComponent::bitmap_type::difference_type(info.width(), info.height()));
-	importImage(info, vigra::destImage(bitmap));
-
-	bool removeFailed = 0 != std::remove(imageFilename.c_str());
-	if (removeFailed) {
-		LOG_ERROR(postgresqlslicestorelog) << "Failed to delete tmp component file: " << imageFilename << std::endl;
-		UTIL_THROW_EXCEPTION(PostgreSqlException, "Failed to delete tmp component file");
-	}
-
-	const vigra::Diff2D offset = info.getPosition();
-
-	// Vigra png normalization workaround: rectangular slices are stored as
-	// black only. Hence, if the sum of all pixels is zero, all pixels of the
-	// bounding box belong to the slice.
-	size_t nNonzero = bitmap.sum<size_t>();
-
-	if (!nNonzero) {
-
-		bitmap = true;
-		nNonzero = info.width() * info.height();
-	}
-
-	// create the component
-	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
-			boost::shared_ptr<Image>(),
-			value,
-			util::point<int, 2>(offset.x, offset.y),
-			bitmap,
-			nNonzero);
-
-	return component;
 }
 
 boost::shared_ptr<ConnectedComponent>
@@ -673,7 +554,7 @@ PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slice
 	enum { FIELD_ID, FIELD_SECTION, FIELD_VALUE, FIELD_SCID_UNUSED, FIELD_COMPONENT };
 
 	boost::uuids::uuid uuid = boost::uuids::random_generator()();
-	std::string imageFilename  = "/dev/shm/catsop" + boost::uuids::to_string(uuid) + ".png";
+	std::string imageFilename  = _config.getComponentDirectory() + "/catsop" + boost::uuids::to_string(uuid) + ".png";
 
 	// Build Slice for each row
 	for (int i = 0; i < nSlices; ++i) {
