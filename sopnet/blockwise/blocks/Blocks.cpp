@@ -3,12 +3,14 @@
 std::ostream&
 operator<<(std::ostream& out, const Blocks& blocks) {
 
-	out << "[";
+	char separator = '[';
 
-	for (const Block& block : blocks)
-		out << block;
+	for (const Block& block : blocks) {
+		out << separator << block;
+		separator = ',';
+	}
 
-	out << "]";
+	out << ']';
 
 	return out;
 }
