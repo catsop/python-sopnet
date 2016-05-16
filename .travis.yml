@@ -4,6 +4,10 @@ language: cpp
 compiler:
   - gcc
   - clang
+matrix:
+  fast_finish: true
+  allow_failures:
+    - compiler: clang
 addons:
   postgresql: 9.3
 before_install:
