@@ -162,13 +162,12 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 	}
 
 
-	std::vector<std::pair<const std::string, const ConnectedComponent&> > components;
+	std::vector<std::pair<const PostgreSqlHash, const ConnectedComponent&> > components;
 	components.reserve(slices.size());
 
 	for (boost::shared_ptr<Slice> slice : slices) {
 
-		std::string sliceId = boost::lexical_cast<std::string>(
-				PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue()));
+		PostgreSqlHash sliceId = PostgreSqlUtils::hashToPostgreSqlId(slice->hashValue());
 
 		components.emplace_back(sliceId, *slice->getComponent());
 	}
@@ -455,7 +454,7 @@ PostgreSqlSliceStore::getSlicesFlag(const Block& block) {
 }
 
 void
-PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const std::string, const ConnectedComponent&> >& components) {
+PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const PostgreSqlHash, const ConnectedComponent&> >& components) {
 	std::ostringstream q;
 	q << "INSERT INTO slice_component (slice_id, component) VALUES";
 	char separator = ' ';
@@ -463,8 +462,8 @@ PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const 
 	boost::uuids::uuid uuid = boost::uuids::random_generator()();
 	std::string imageFilename  = _config.getComponentDirectory() + "/catsop" + boost::uuids::to_string(uuid) + ".png";
 
-	for (const std::pair<const std::string, const ConnectedComponent&>& compPair : components) {
-		const std::string& slicePostgreId = compPair.first;
+	for (const std::pair<const PostgreSqlHash, const ConnectedComponent&>& compPair : components) {
+		const std::string slicePostgreId = boost::lexical_cast<std::string>(compPair.first);
 		const ConnectedComponent& component = compPair.second;
 
 		const ConnectedComponent::bitmap_type& bitmap = component.getBitmap();
@@ -508,7 +507,7 @@ PostgreSqlSliceStore::saveConnectedComponents(const std::vector<std::pair<const 
 }
 
 boost::shared_ptr<ConnectedComponent>
-PostgreSqlSliceStore::loadConnectedComponent(const std::string& tmpFilename, const char* bytes, const int size, double value)
+PostgreSqlSliceStore::loadConnectedComponent(const std::string& tmpFilename, const char* bytes, const int size, const double value)
 {
 	std::ofstream output(tmpFilename, std::ios::binary);
 	output.write(bytes, size);

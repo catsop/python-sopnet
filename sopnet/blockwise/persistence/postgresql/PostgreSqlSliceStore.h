@@ -97,21 +97,18 @@ private:
 	PGconn* _pgConnection;
 
 	/**
-	 * Store a connected component as a file in the component directory.
+	 * Store a set of connected components to the database.
 	 */
-	void saveConnectedComponent(const std::string& slicePostgreId, const ConnectedComponent& component);
+	void saveConnectedComponents(const std::vector<std::pair<const PostgreSqlHash, const ConnectedComponent&> >&);
 
 	/**
-	 * Store a connected component as a file in the component directory.
+	 * Retrieve a connected component from a binary image.
 	 */
-	void saveConnectedComponents(const std::vector<std::pair<const std::string, const ConnectedComponent&> >&);
-
-	/**
-	 * Load a connected component from a file in the component directory.
-	 */
-	boost::shared_ptr<ConnectedComponent> loadConnectedComponent(const std::string& slicePostgreId, double value);
-
-	boost::shared_ptr<ConnectedComponent> loadConnectedComponent(const std::string& tmpFilename, const char* bytes, const int size, double value);
+	boost::shared_ptr<ConnectedComponent> loadConnectedComponent(
+			const std::string& tmpFilename,
+			const char* bytes,
+			const int size,
+			const double value);
 };
 
 #endif // HAVE_PostgreSQL
