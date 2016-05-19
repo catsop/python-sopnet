@@ -179,7 +179,7 @@ SegmentGuarantor::discardNonRequestedSegments(
 
 	boost::shared_ptr<Segments> requestedSegments = boost::make_shared<Segments>();
 
-	for (boost::shared_ptr<Segment> segment : allSegments->getSegments()) {
+	for (const boost::shared_ptr<Segment> segment : allSegments->getSegments()) {
 
 		for (const Block& block : requestedBlocks) {
 
@@ -219,7 +219,7 @@ SegmentGuarantor::getSegmentDescriptions(
 
 	SegmentDescriptions segmentDescriptions;
 
-	for (boost::shared_ptr<Segment> segment : segments.getSegments()) {
+	for (const boost::shared_ptr<Segment>& segment : segments.getSegments()) {
 
 		// only if the segment overlaps with the current block
 		if (!overlaps(*segment, block))
@@ -252,7 +252,7 @@ SegmentGuarantor::overlaps(const Segment& segment, const Block& block) {
 
 	// test in x-y
 	util::box<unsigned int, 2> blockRect = blockBoundingBox.project<2>();
-	for (boost::shared_ptr<Slice> slice : segment.getSlices()) {
+	for (const boost::shared_ptr<Slice>& slice : segment.getSlices()) {
 
 		util::box<unsigned int, 2> sliceBoundingBox = slice->getComponent()->getBoundingBox();
 
@@ -270,7 +270,7 @@ SegmentGuarantor::collectSlicesByZ(
 {
 	boost::shared_ptr<Slices> zSlices = boost::make_shared<Slices>();
 
-	for (boost::shared_ptr<Slice> slice : slices)
+	for (const boost::shared_ptr<Slice>& slice : slices)
 	{
 		if (slice->getSection() == z)
 		{
