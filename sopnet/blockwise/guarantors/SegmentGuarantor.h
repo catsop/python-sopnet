@@ -63,6 +63,10 @@ private:
 			Slices& slices,
 			unsigned int z) const;
 
+	// compute the raster of blocks intersecting the bounding boxes of a set of
+	// slices
+	Blocks slicesBlocksRaster(const Slices& slices);
+
 	// compute the bounding box of a set of slices
 	util::box<unsigned int, 3> slicesBoundingBox(const Slices& slices);
 

@@ -135,7 +135,7 @@ SegmentGuarantor::getSlices(Blocks sliceBlocks, Blocks& missingBlocks) {
 		LOG_ALL(segmentguarantorlog) << "\t" << slice->getComponent()->getCenter() << ", " << slice->getSection() << std::endl;
 
 	// expand the request blocks
-	Blocks expandedSliceBlocks = _blockUtils.getBlocksInBox(slicesBoundingBox(*slices));
+	Blocks expandedSliceBlocks = slicesBlocksRaster(*slices);
 
 	LOG_DEBUG(segmentguarantorlog) << "Expanded blocks are " << expandedSliceBlocks << "." << std::endl;
 
@@ -282,6 +282,23 @@ SegmentGuarantor::collectSlicesByZ(
 	LOG_DEBUG(segmentguarantorlog) << "Collected " << zSlices->size() << " slices for z=" << z << std::endl;
 
 	return zSlices;
+}
+
+Blocks
+SegmentGuarantor::slicesBlocksRaster(const Slices& slices) {
+
+	Blocks blocks;
+
+	for (const boost::shared_ptr<Slice>& slice : slices) {
+
+		util::box<unsigned int, 2> bound = slice->getComponent()->getBoundingBox();
+		util::box<unsigned int, 3> bound3d(
+				bound.min().x(), bound.min().y(), slice->getSection(),
+				bound.max().x(), bound.max().y(), slice->getSection() + 1);
+		blocks.addAll(_blockUtils.getBlocksInBox(bound3d));
+	}
+
+	return blocks;
 }
 
 util::box<unsigned int, 3>
