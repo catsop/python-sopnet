@@ -16,7 +16,7 @@ SegmentExtractionPipeline::SegmentExtractionPipeline(
 }
 
 SegmentExtractionPipeline::SegmentExtractionPipeline(
-		boost::shared_ptr<ImageStack> imageStack,
+		boost::shared_ptr<ImageStack<IntensityImage> > imageStack,
 		pipeline::Value<bool> forceExplanation,
 		bool finishLastInterval) :
 	_slices(imageStack),
@@ -49,7 +49,7 @@ SegmentExtractionPipeline::create() {
 
 	unsigned int numSections = 0;
 
-	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
+	std::vector<boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > > stackSliceReaders;
 
 	if (_sliceStackDirectories) {
 
@@ -63,7 +63,7 @@ SegmentExtractionPipeline::create() {
 				LOG_DEBUG(segmentextractionpipelinelog) << "creating stack reader for " << directory << std::endl;
 
 				// create a new image stack reader
-				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory);
+				boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > reader = boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(directory);
 
 				stackSliceReaders.push_back(reader);
 			}
@@ -73,7 +73,7 @@ SegmentExtractionPipeline::create() {
 
 		numSections = _slices->size();
 
-		_sliceImageExtractor = boost::make_shared<ImageExtractor>();
+		_sliceImageExtractor = boost::make_shared<ImageExtractor<IntensityImage> >();
 
 		// let the internal image extractor know where to look for the image stack
 		_sliceImageExtractor->setInput(_slices);

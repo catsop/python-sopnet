@@ -134,7 +134,7 @@ HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
 	unsigned int section = slice.getSection() - offset.z();
 
-	Image& image = *(*_sections)[section];
+	IntensityImage& image = *(*_sections)[section];
 	
 	LOG_ALL(histogramfeaturelog) << "Offset:      " << offset << std::endl;
 	LOG_ALL(histogramfeaturelog) << "Image size:  " << image.width() << "x" << image.height() <<

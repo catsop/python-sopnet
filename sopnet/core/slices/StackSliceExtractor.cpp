@@ -20,7 +20,7 @@ util::ProgramOption optionSetDifferenceThreshold(
 
 StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	_section(section),
-	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
+	_sliceImageExtractor(boost::make_shared<ImageExtractor<IntensityImage> >()),
 	_cteParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
 	_sliceCollector(boost::make_shared<SliceCollector>()) {
 
@@ -38,7 +38,7 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 }
 
 void
-StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
+StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack<IntensityImage> >&) {
 
 	LOG_DEBUG(stacksliceextractorlog) << "image stack set" << std::endl;
 

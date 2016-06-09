@@ -61,7 +61,7 @@ private:
 
 	unsigned int computeBoundaryLength(const Slice& slice);
 
-	pipeline::Input<ImageStack> _membranes;
+	pipeline::Input<ImageStack<IntensityImage> > _membranes;
 
 	pipeline::Input<SegmentationCostFunctionParameters> _parameters;
 

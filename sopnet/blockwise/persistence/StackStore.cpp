@@ -1,13 +1,14 @@
 #include "StackStore.h"
 
-pipeline::Value<ImageStack>
-StackStore::getImageStack(const util::box<unsigned int, 3>& box)
+template <typename ImageType>
+pipeline::Value<ImageStack<ImageType> >
+StackStore<ImageType>::getImageStack(const util::box<unsigned int, 3>& box)
 {
-	pipeline::Value<ImageStack> stack = pipeline::Value<ImageStack>();
+	pipeline::Value<ImageStack<ImageType> > stack = pipeline::Value<ImageStack<ImageType> >();
 
 	for (unsigned int i = 0; i < box.depth(); ++i)
 	{
-		boost::shared_ptr<Image> image = getImage(box.project<2>(), box.min().z() + i);
+		boost::shared_ptr<ImageType> image = getImage(box.project<2>(), box.min().z() + i);
 
 		if (image->width()*image->height() == 0)
 			UTIL_THROW_EXCEPTION(
@@ -21,3 +22,5 @@ StackStore::getImageStack(const util::box<unsigned int, 3>& box)
 
 	return stack;
 }
+
+template class StackStore<IntensityImage>;

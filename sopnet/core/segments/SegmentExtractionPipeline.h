@@ -41,7 +41,7 @@ public:
 	 *             to avoid border effects.  This is the default in normal 
 	 *             operation, but can be disabled for problem dumps.
 	 */
-	SegmentExtractionPipeline(boost::shared_ptr<ImageStack> imageStack, pipeline::Value<bool> forceExplanation, bool finishLastInterval = false);
+	SegmentExtractionPipeline(boost::shared_ptr<ImageStack<IntensityImage> > imageStack, pipeline::Value<bool> forceExplanation, bool finishLastInterval = false);
 
 	/**
 	 * Get the extracted segments in the given interval.
@@ -63,7 +63,7 @@ private:
 	void create();
 
 	// an image stack to image converter for the slice images
-	boost::shared_ptr<ImageExtractor> _sliceImageExtractor;
+	boost::shared_ptr<ImageExtractor<IntensityImage> > _sliceImageExtractor;
 
 	// a slice extractor for each section
 	std::vector<boost::shared_ptr<pipeline::ProcessNode> > _sliceExtractors;
@@ -72,7 +72,7 @@ private:
 	boost::shared_ptr<std::vector<std::string> > _sliceStackDirectories;
 
 	// ...or a stack of images for component tree analysis
-	boost::shared_ptr<ImageStack> _slices;
+	boost::shared_ptr<ImageStack<IntensityImage> > _slices;
 
 	// the segment extractors for each interval
 	std::vector<boost::shared_ptr<SegmentExtractor> > _segmentExtractors;

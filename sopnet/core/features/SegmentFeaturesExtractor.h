@@ -53,7 +53,7 @@ private:
 
 	pipeline::Input<Segments> _segments;
 
-	pipeline::Input<ImageStack> _rawSections;
+	pipeline::Input<ImageStack<IntensityImage>> _rawSections;
 	
 	pipeline::Input<util::point<unsigned int, 3> > _cropOffset;
 

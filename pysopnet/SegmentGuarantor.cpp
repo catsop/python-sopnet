@@ -14,7 +14,7 @@ SegmentGuarantor::fill(
 
 	LOG_USER(pylog) << "[SegmentGuarantor] fill called for block at " << request << std::endl;
 
-	boost::shared_ptr<StackStore>   rawStackStore = createStackStore(configuration, Raw);
+	boost::shared_ptr<StackStore<IntensityImage> >   rawStackStore = createStackStore(configuration, Raw);
 	//boost::shared_ptr<BlockManager> blockManager = createBlockManager(configuration);
 	boost::shared_ptr<SliceStore>   sliceStore   = createSliceStore(configuration);
 	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);

@@ -12,6 +12,7 @@ struct NoImageException : virtual Exception {};
 /**
  * Database abstraction for image stacks.
  */
+template <typename ImageType>
 class StackStore : public pipeline::Data
 {
 public:
@@ -22,7 +23,7 @@ public:
 	 * Return an ImageStack Value for the given Box by calling getImage for each 
 	 * section (z-coordinate) contained in the Box.
 	 */
-	virtual pipeline::Value<ImageStack> getImageStack(const util::box<unsigned int, 3>& box);
+	virtual pipeline::Value<ImageStack<ImageType> > getImageStack(const util::box<unsigned int, 3>& box);
 	
 protected:
 	
@@ -31,7 +32,7 @@ protected:
 	 * image if this is impossible (for instance, if the section number is invalid, or the
 	 * bound does not overlap any image data in the section).
 	 */
-	virtual boost::shared_ptr<Image> getImage(
+	virtual boost::shared_ptr<ImageType> getImage(
 			const util::box<unsigned int, 2> bound,
 			const unsigned int section) = 0;
 

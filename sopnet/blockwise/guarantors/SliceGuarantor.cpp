@@ -16,7 +16,7 @@ logger::LogChannel sliceguarantorlog("sliceguarantorlog", "[SliceGuarantor] ");
 SliceGuarantor::SliceGuarantor(
 			const ProjectConfiguration&   projectConfiguration,
 			boost::shared_ptr<SliceStore> sliceStore,
-			boost::shared_ptr<StackStore> stackStore) :
+			boost::shared_ptr<StackStore<IntensityImage> > stackStore) :
 	_sliceStore(sliceStore),
 	_stackStore(stackStore),
 	_blockUtils(projectConfiguration) {}
@@ -114,7 +114,7 @@ SliceGuarantor::extractSlicesAndConflicts(
 		util::box<unsigned int, 3> sectionBox(bound.min().x(), bound.min().y(), z, bound.max().x(), bound.max().y(), z + 1);
 
 		// get the image for this box
-		boost::shared_ptr<Image> image = (*_stackStore->getImageStack(sectionBox))[0];
+		boost::shared_ptr<IntensityImage> image = (*_stackStore->getImageStack(sectionBox))[0];
 
 		LOG_ALL(sliceguarantorlog) << "Processing over " << bound << std::endl;
 

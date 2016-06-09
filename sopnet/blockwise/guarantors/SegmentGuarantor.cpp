@@ -11,7 +11,7 @@ SegmentGuarantor::SegmentGuarantor(
 		const ProjectConfiguration&     projectConfiguration,
 		boost::shared_ptr<SegmentStore> segmentStore,
 		boost::shared_ptr<SliceStore>   sliceStore,
-		boost::shared_ptr<StackStore>   rawStackStore) :
+		boost::shared_ptr<StackStore<IntensityImage> > rawStackStore) :
 	_segmentStore(segmentStore),
 	_sliceStore(sliceStore),
 	_rawStackStore(rawStackStore),

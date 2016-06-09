@@ -92,19 +92,19 @@ private:
 		pipeline::Output<ConflictSets> _conflictSets;
 	};
 
-	void onInputSet(const pipeline::InputSet<ImageStack>& signal);
+	void onInputSet(const pipeline::InputSet<ImageStack<IntensityImage> >& signal);
 
 	// the number of the section this extractor was build for
 	unsigned int _section;
 
 	// the input image stack
-	pipeline::Input<ImageStack>         _sliceImageStack;
+	pipeline::Input<ImageStack<IntensityImage> > _sliceImageStack;
 
 	// whether to force explanation of every part of the image
 	pipeline::Input<bool>               _forceExplanation;
 
 	// extractor to get the images in the input stack
-	boost::shared_ptr<ImageExtractor>   _sliceImageExtractor;
+	boost::shared_ptr<ImageExtractor<IntensityImage> >   _sliceImageExtractor;
 
 	// mser paramters to use to extract all white connected components
 	boost::shared_ptr<ComponentTreeExtractorParameters> _cteParameters;

@@ -9,7 +9,8 @@
 /*
  * Catmaid-backed stack store
  */
-class CatmaidStackStore : public StackStore
+template <typename ImageType>
+class CatmaidStackStore : public StackStore<ImageType>
 {
 public:
 
@@ -20,8 +21,8 @@ public:
 	CatmaidStackStore(const ProjectConfiguration& configuration, StackType stackType);
 
 private:
-	boost::shared_ptr<Image> getImage(const util::box<unsigned int, 2> bound,
-									  const unsigned int section);
+	boost::shared_ptr<ImageType> getImage(const util::box<unsigned int, 2> bound,
+									      const unsigned int section);
 
 	/**
 	 * Helper function to grab the URL for the tile at the given column, row,
@@ -41,8 +42,8 @@ private:
 	 * @param bound - a rect representing the bounding box for the requested Image in world
 	 *                (again, stack) coordinates.
 	 */
-	void copyImageInto(const Image& tile,
-					   const Image& request,
+	void copyImageInto(const ImageType& tile,
+					   const ImageType& request,
 					   const unsigned int tileWXmin,
 					   const unsigned int tileWYmin,
 					   const util::box<unsigned int, 2> bound);

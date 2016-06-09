@@ -39,7 +39,6 @@
 #include <sys/stat.h>
 #include <vigra/impex.hxx>
 #include <imageprocessing/ConnectedComponent.h>
-#include <imageprocessing/Image.h>
 #include <slices/ComponentTreeConverter.h>
 #include <util/ProgramOptions.h>
 #include <util/httpclient.h>
@@ -543,7 +542,6 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& tmpFilename, con
 
 	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
-			boost::shared_ptr<Image>(),
 			value,
 			util::point<int, 2>(offset.x, offset.y),
 			bitmap,

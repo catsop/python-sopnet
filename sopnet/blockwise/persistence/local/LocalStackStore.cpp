@@ -7,7 +7,8 @@
 static logger::LogChannel localstackstorelog("localstackstorelog", "[LocalStackStore] ");
 
 
-LocalStackStore::LocalStackStore(std::string directory) 
+template <typename ImageType>
+LocalStackStore<ImageType>::LocalStackStore(std::string directory) 
 {
 	LOG_DEBUG(localstackstorelog) << "reading from directory " << directory << std::endl;
 
@@ -34,15 +35,16 @@ LocalStackStore::LocalStackStore(std::string directory)
 
 }
 
-boost::shared_ptr<Image> LocalStackStore::getImage(util::box<unsigned int, 2> bound,
-												   unsigned int section)
+template <typename ImageType>
+boost::shared_ptr<ImageType> LocalStackStore<ImageType>::getImage(util::box<unsigned int, 2> bound,
+												                  unsigned int section)
 {
 	if (section < _imagePaths.size())
 	{
 		boost::filesystem::path file = _imagePaths[section];
-		boost::shared_ptr<ImageFileReader> reader = boost::make_shared<ImageFileReader>(file.c_str());
-		boost::shared_ptr<ImageCrop> cropper = boost::make_shared<ImageCrop>();
-		pipeline::Value<Image> croppedImage, image;
+		boost::shared_ptr<ImageFileReader<ImageType> > reader = boost::make_shared<ImageFileReader<ImageType> >(file.c_str());
+		boost::shared_ptr<ImageCrop<ImageType> > cropper = boost::make_shared<ImageCrop<ImageType> >();
+		pipeline::Value<ImageType> croppedImage, image;
 		pipeline::Value<int> x(bound.min().x()), y(bound.min().y()),
 							 w(bound.max().x() - bound.min().x()), h(bound.max().y() - bound.min().y());
 
@@ -54,7 +56,7 @@ boost::shared_ptr<Image> LocalStackStore::getImage(util::box<unsigned int, 2> bo
 		{
 			LOG_DEBUG(localstackstorelog) << "Image does not overlap block. Image of size " <<
 				image->width() << "x" << image->height() << ", bound: " << bound << std::endl;
-			return boost::make_shared<Image>();
+			return boost::make_shared<ImageType>();
 		}
 		
 		if (image->width() < *x + *w || image->height() < *y + *h)
@@ -84,6 +86,8 @@ boost::shared_ptr<Image> LocalStackStore::getImage(util::box<unsigned int, 2> bo
 	{
 		LOG_DEBUG(localstackstorelog) << "Requested section " << section <<
 			" does not have a corresponding image." << std::endl;
-		return boost::make_shared<Image>();
+		return boost::make_shared<ImageType>();
 	}
 }
+
+template class LocalStackStore<IntensityImage>;

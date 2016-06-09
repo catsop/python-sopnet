@@ -27,7 +27,7 @@ private:
 
 	pipeline::Input<Segments> _segments;
 
-	pipeline::Input<ImageStack> _sections;
+	pipeline::Input<ImageStack<IntensityImage> > _sections;
 	
 	pipeline::Input<util::point<unsigned int, 3> > _cropOffset;
 

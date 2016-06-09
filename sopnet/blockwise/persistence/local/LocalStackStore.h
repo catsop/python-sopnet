@@ -6,7 +6,8 @@
 
 #include <blockwise/persistence/StackStore.h>
 
-class LocalStackStore : public StackStore
+template <typename ImageType>
+class LocalStackStore : public StackStore<ImageType>
 {
 
 public:
@@ -16,8 +17,8 @@ public:
 	LocalStackStore(std::string directory);
 
 private:
-	boost::shared_ptr<Image> getImage(util::box<unsigned int, 2> bound,
-									  unsigned int section);
+	boost::shared_ptr<ImageType> getImage(util::box<unsigned int, 2> bound,
+									      unsigned int section);
 	
 	/**
 	 * A vector containing the image paths, instantiated on construction.

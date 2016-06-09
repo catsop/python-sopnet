@@ -12,7 +12,7 @@ SliceEditor::SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSl
 	_initialSlices(initialSlices.begin(), initialSlices.end()),
 	_section(section),
 	_region(region),
-	_sliceImage(boost::make_shared<Image>()) {
+	_sliceImage(boost::make_shared<IntensityImage>()) {
 
 	// allocate image
 	_sliceImage->reshape(region.width(), region.height());
@@ -23,7 +23,7 @@ SliceEditor::SliceEditor(const std::vector<boost::shared_ptr<Slice> >& initialSl
 		drawSlice(slice);
 }
 
-boost::shared_ptr<Image>
+boost::shared_ptr<IntensityImage>
 SliceEditor::getSliceImage() {
 
 	return _sliceImage;

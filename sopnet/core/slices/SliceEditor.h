@@ -32,7 +32,7 @@ public:
 	/**
 	 * Get a shared pointer to the current b/w slice image.
 	 */
-	boost::shared_ptr<Image> getSliceImage();
+	boost::shared_ptr<IntensityImage> getSliceImage();
 
 	/**
 	 * Draw to the slice image.
@@ -60,7 +60,7 @@ private:
 	util::box<int, 2> _region;
 
 	// b/w image of the current slices
-	boost::shared_ptr<Image> _sliceImage;
+	boost::shared_ptr<IntensityImage> _sliceImage;
 };
 
 #endif // SOPNET_SLICES_SLICE_EDITOR_H__

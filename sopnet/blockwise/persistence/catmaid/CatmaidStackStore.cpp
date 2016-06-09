@@ -6,10 +6,11 @@
 logger::LogChannel catmaidstackstorelog("catmaidstackstorelog", "[CatmaidStackStore] ");
 
 
-CatmaidStackStore::CatmaidStackStore(
+template <typename ImageType>
+CatmaidStackStore<ImageType>::CatmaidStackStore(
 		const ProjectConfiguration& configuration,
 		StackType stackType) :
-	StackStore(util::point<float, 3>(
+	StackStore<ImageType>(util::point<float, 3>(
 			configuration.getCatmaidStack(stackType).resX,
 			configuration.getCatmaidStack(stackType).resY,
 			configuration.getCatmaidStack(stackType).resZ)),
@@ -38,8 +39,9 @@ CatmaidStackStore::CatmaidStackStore(
 }
 
 
-boost::shared_ptr<Image>
-CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
+template <typename ImageType>
+boost::shared_ptr<ImageType>
+CatmaidStackStore<ImageType>::getImage(const util::box<unsigned int, 2> bound,
 							const unsigned int section)
 {
 	/*
@@ -49,8 +51,8 @@ CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
 	Step 3) Crop the image to the correct boundary size
 	*/
 	unsigned int tileCMin, tileCMax, tileRMin, tileRMax;
-	std::vector<boost::shared_ptr<Image> > catImages;
-	boost::shared_ptr<Image> imageOut = boost::make_shared<Image>(bound.width(), bound.height());
+	std::vector<boost::shared_ptr<ImageType> > catImages;
+	boost::shared_ptr<ImageType> imageOut = boost::make_shared<ImageType>(bound.width(), bound.height());
 	
 	tileCMin = bound.min().x() / _stack.tileWidth;
 	tileRMin = bound.min().y() / _stack.tileHeight;
@@ -69,9 +71,9 @@ CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
 
 			try
 			{
-				boost::shared_ptr<ImageHttpReader> reader =
-					boost::make_shared<ImageHttpReader>(tileURL(c, r, section), _client);
-				pipeline::Value<Image> image = reader->getOutput();
+				boost::shared_ptr<ImageHttpReader<ImageType> > reader =
+					boost::make_shared<ImageHttpReader<ImageType> >(tileURL(c, r, section), _client);
+				pipeline::Value<ImageType> image = reader->getOutput();
 
 				// This must be in the try block as the exception is not thrown
 				// by pipeline until image is dereferenced.
@@ -81,7 +83,7 @@ CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
 			{
 				if (_treatMissingAsEmpty)
 				{
-					Image empty(_stack.tileWidth, _stack.tileHeight);
+					ImageType empty(_stack.tileWidth, _stack.tileHeight);
 					copyImageInto(empty, *imageOut, tileWXmin, tileWYmin, bound);
 				}
 				else throw;
@@ -95,16 +97,17 @@ CatmaidStackStore::getImage(const util::box<unsigned int, 2> bound,
 	return imageOut;
 }
 
+template <typename ImageType>
 void
-CatmaidStackStore::copyImageInto(const Image& tile,
-								 const Image& request,
+CatmaidStackStore<ImageType>::copyImageInto(const ImageType& tile,
+								 const ImageType& request,
 								 const unsigned int tileWXmin,
 								 const unsigned int tileWYmin,
 								 const util::box<unsigned int, 2> bound)
 {
 	// beg, end refer to source tile image, dst refers to destination request region,
 	// which belongs to the Image that we eventually return.
-	Image::difference_type beg, end, dst;
+	typename ImageType::difference_type beg, end, dst;
 	
 	if (tileWXmin >= bound.min().x())
 	{
@@ -150,8 +153,9 @@ CatmaidStackStore::copyImageInto(const Image& tile,
 }
 
 
+template <typename ImageType>
 std::string
-CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, const unsigned int section)
+CatmaidStackStore<ImageType>::tileURL(const unsigned int column, const unsigned int row, const unsigned int section)
 {
 	std::ostringstream url;
 
@@ -183,3 +187,5 @@ CatmaidStackStore::tileURL(const unsigned int column, const unsigned int row, co
 
 	return url.str();
 }
+
+template class CatmaidStackStore<IntensityImage>;

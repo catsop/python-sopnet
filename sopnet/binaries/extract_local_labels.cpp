@@ -81,8 +81,8 @@ bool guaranteeSegments(
 		const ProjectConfiguration& configuration,
 		const boost::shared_ptr<SliceStore> sliceStore,
 		const boost::shared_ptr<SegmentStore> segmentStore,
-		const boost::shared_ptr<StackStore> membraneStackStore,
-		const boost::shared_ptr<StackStore> rawStackStore) {
+		const boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore,
+		const boost::shared_ptr<StackStore<IntensityImage> > rawStackStore) {
 
 	BlockUtils blockUtils(configuration);
 	Blocks blocks = blockUtils.getBlocksInBox(blockUtils.getVolumeBoundingBox());
@@ -119,8 +119,8 @@ bool coreSolver(
 		const ProjectConfiguration& configuration,
 		const boost::shared_ptr<SliceStore> sliceStore,
 		const boost::shared_ptr<SegmentStore> segmentStore,
-		const boost::shared_ptr<StackStore> membraneStackStore,
-		const boost::shared_ptr<StackStore> rawStackStore) {
+		const boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore,
+		const boost::shared_ptr<StackStore<IntensityImage> > rawStackStore) {
 
 	// Block pipeline variables
 	bool bfe = optionForceExplanation;
@@ -313,12 +313,12 @@ int main(int optionc, char** optionv) {
 	try {
 
 		std::string membranePath = optionMembranesPath.as<std::string>();
-		pipeline::Value<ImageStack> testStack;
+		pipeline::Value<ImageStack<IntensityImage> > testStack;
 		unsigned int nx, ny, nz;
 		util::point<unsigned int, 3> stackSize, blockSize, coreSize;
 
-		boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
-			boost::make_shared<ImageStackDirectoryReader>(membranePath);
+		boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(membranePath);
 
 		testStack = directoryStackReader->getOutput();
 		nx = testStack->width();
@@ -355,8 +355,8 @@ int main(int optionc, char** optionv) {
 
 		// Create stores.
 		std::string rawPath = optionRawImagesPath.as<std::string>();
-		boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
-		boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+		boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(membranePath);
+		boost::shared_ptr<StackStore<IntensityImage> > rawStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(rawPath);
 
 		boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 		boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>(pc);

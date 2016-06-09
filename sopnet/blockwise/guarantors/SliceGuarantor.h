@@ -36,7 +36,7 @@ public:
 	SliceGuarantor(
 			const ProjectConfiguration&   projectConfiguration,
 			boost::shared_ptr<SliceStore> sliceStore,
-			boost::shared_ptr<StackStore> stackStore);
+			boost::shared_ptr<StackStore<IntensityImage> > stackStore);
 
 	/**
 	 * Set non-default parameters for the slice extraction.
@@ -97,7 +97,7 @@ private:
 	
 	boost::shared_ptr<ComponentTreeExtractorParameters> _parameters;
 	boost::shared_ptr<SliceStore>                       _sliceStore;
-	boost::shared_ptr<StackStore>                       _stackStore;
+	boost::shared_ptr<StackStore<IntensityImage> >      _stackStore;
 
 	BlockUtils _blockUtils;
 };

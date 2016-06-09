@@ -17,7 +17,7 @@ public:
 			const ProjectConfiguration&     projectConfiguration,
 			boost::shared_ptr<SegmentStore> segmentStore,
 			boost::shared_ptr<SliceStore>   sliceStore,
-			boost::shared_ptr<StackStore>   rawStackStore);
+			boost::shared_ptr<StackStore<IntensityImage> > rawStackStore);
 
 	/**
 	 * Guarantee segments in the given blocks. If the request can not be 
@@ -75,7 +75,7 @@ private:
 
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;
-	boost::shared_ptr<StackStore>   _rawStackStore;
+	boost::shared_ptr<StackStore<IntensityImage> > _rawStackStore;
 
 	BlockUtils _blockUtils;
 };

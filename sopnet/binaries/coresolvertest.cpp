@@ -290,9 +290,9 @@ bool testSlices(const ProjectConfiguration& configuration)
 	int i = 0;
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 
-	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
-			boost::make_shared<ImageStackDirectoryReader>(membranePath);
-	pipeline::Value<ImageStack> stack = directoryStackReader->getOutput();
+	boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(membranePath);
+	pipeline::Value<ImageStack<IntensityImage> > stack = directoryStackReader->getOutput();
 
 	pipeline::Value<Slices> sopnetSlices = pipeline::Value<Slices>();
 	pipeline::Value<ConflictSets> sopnetConflictSets = pipeline::Value<ConflictSets>();
@@ -300,7 +300,7 @@ bool testSlices(const ProjectConfiguration& configuration)
 	LOG_DEBUG(logger::out) << "Read " << stack->size() << " images" << std::endl;
 
 	// Extract Slices as in the original SOPNET pipeline.
-	for (boost::shared_ptr<Image> image : *stack)
+	for (boost::shared_ptr<IntensityImage> image : *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
 			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
@@ -318,8 +318,8 @@ bool testSlices(const ProjectConfiguration& configuration)
 	LOG_DEBUG(logger::out) << "Read " << sopnetSlices->size() << " slices altogether" << std::endl;
 
 	// Blockwise variables
-	boost::shared_ptr<StackStore> membraneStackStore =
-			boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore =
+			boost::make_shared<LocalStackStore<IntensityImage> >(membranePath);
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 
 	SliceGuarantor sliceGuarantor(configuration, sliceStore, membraneStackStore);
@@ -489,8 +489,8 @@ bool guaranteeSegments(
 		const ProjectConfiguration& configuration,
 		const boost::shared_ptr<SliceStore> sliceStore,
 		const boost::shared_ptr<SegmentStore> segmentStore,
-		const boost::shared_ptr<StackStore> membraneStackStore,
-		const boost::shared_ptr<StackStore> rawStackStore)
+		const boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore,
+		const boost::shared_ptr<StackStore<IntensityImage> > rawStackStore)
 {
 	BlockUtils blockUtils(configuration);
 	Blocks blocks = blockUtils.getBlocksInBox(blockUtils.getVolumeBoundingBox());
@@ -580,12 +580,12 @@ bool testSegments(const ProjectConfiguration& configuration)
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
 
-	boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
-			boost::make_shared<ImageStackDirectoryReader>(membranePath);
-	pipeline::Value<ImageStack> stack = directoryStackReader->getOutput();
+	boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(membranePath);
+	pipeline::Value<ImageStack<IntensityImage> > stack = directoryStackReader->getOutput();
 
-	boost::shared_ptr<ImageStackDirectoryReader> rawImageStackReader =
-			boost::make_shared<ImageStackDirectoryReader>(rawPath);
+	boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > rawImageStackReader =
+			boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(rawPath);
 	boost::shared_ptr<SegmentFeaturesExtractor> featureExtractor =
 		boost::make_shared<SegmentFeaturesExtractor>();
 
@@ -594,7 +594,7 @@ bool testSegments(const ProjectConfiguration& configuration)
 	pipeline::Value<Features> sopnetFeatures;
 
 	// Extract Segments as in the original SOPNET pipeline.
-	for (boost::shared_ptr<Image> image : *stack)
+	for (boost::shared_ptr<IntensityImage> image : *stack)
 	{
 		boost::shared_ptr<SliceExtractor<unsigned char> > extractor =
 			boost::make_shared<SliceExtractor<unsigned char> >(i++, true);
@@ -647,8 +647,8 @@ bool testSegments(const ProjectConfiguration& configuration)
 		sopnetSegments->size() << " segments" << std::endl;
 
 	// Blockwise variables
-	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
-	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
+	boost::shared_ptr<StackStore<IntensityImage> > rawStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(rawPath);
+	boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(membranePath);
 
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>(configuration);
@@ -791,8 +791,8 @@ bool coreSolver(
 		const ProjectConfiguration& configuration,
 		const boost::shared_ptr<SliceStore> sliceStore,
 		const boost::shared_ptr<SegmentStore> segmentStore,
-		const boost::shared_ptr<StackStore> membraneStackStore,
-		const boost::shared_ptr<StackStore> rawStackStore)
+		const boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore,
+		const boost::shared_ptr<StackStore<IntensityImage> > rawStackStore)
 {
 	unsigned int count = 0;
 
@@ -847,8 +847,8 @@ bool testSolutions(const ProjectConfiguration& configuration)
 
 	std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
 	std::string rawPath = optionCoreTestRawImagesPath.as<std::string>();
-	boost::shared_ptr<StackStore> membraneStackStore = boost::make_shared<LocalStackStore>(membranePath);
-	boost::shared_ptr<StackStore> rawStackStore = boost::make_shared<LocalStackStore>(rawPath);
+	boost::shared_ptr<StackStore<IntensityImage> > membraneStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(membranePath);
+	boost::shared_ptr<StackStore<IntensityImage> > rawStackStore = boost::make_shared<LocalStackStore<IntensityImage> >(rawPath);
 
 	boost::shared_ptr<SliceStore> sliceStore = boost::make_shared<LocalSliceStore>();
 	boost::shared_ptr<SegmentStore> segmentStore = boost::make_shared<LocalSegmentStore>(configuration);
@@ -912,12 +912,12 @@ int main(int optionc, char** optionv)
 	try
 	{
 		std::string membranePath = optionCoreTestMembranesPath.as<std::string>();
-		pipeline::Value<ImageStack> testStack;
+		pipeline::Value<ImageStack<IntensityImage> > testStack;
 		unsigned int nx, ny, nz;
 		util::point<unsigned int, 3> stackSize, blockSize, numBlocks, coreSize;
 
-		boost::shared_ptr<ImageStackDirectoryReader> directoryStackReader =
-			boost::make_shared<ImageStackDirectoryReader>(membranePath);
+		boost::shared_ptr<ImageStackDirectoryReader<IntensityImage> > directoryStackReader =
+			boost::make_shared<ImageStackDirectoryReader<IntensityImage> >(membranePath);
 
 		testStack = directoryStackReader->getOutput();
 		nx = testStack->width();
