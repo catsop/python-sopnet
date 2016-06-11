@@ -22,7 +22,8 @@ SliceGuarantor::SliceGuarantor(
 	_blockUtils(projectConfiguration) {}
 
 void
-SliceGuarantor::setComponentTreeExtractorParameters(const boost::shared_ptr<ComponentTreeExtractorParameters> parameters) {
+SliceGuarantor::setComponentTreeExtractorParameters(
+		const boost::shared_ptr<ComponentTreeExtractorParameters<IntensityImage::value_type> > parameters) {
 
 	_parameters = parameters;
 }

@@ -13,7 +13,7 @@ class ComponentTreeDownSampler;
 class ComponentTreePruner;
 class ComponentTreeConverter;
 
-template <typename Precision>
+template <typename Precision, typename ImageType = IntensityImage>
 class SliceExtractor : public pipeline::ProcessNode {
 
 public:
@@ -43,15 +43,15 @@ private:
 	void onInputSet(const pipeline::InputSetBase& signal);
 
 	// optional mser parameters to override the program options
-	pipeline::Input<ComponentTreeExtractorParameters> _parameters;
+	pipeline::Input<ComponentTreeExtractorParameters<typename ImageType::value_type> >_parameters;
 
 	void extractSlices();
 
-	boost::shared_ptr<ComponentTreeExtractor<Precision> > _componentExtractor;
-	boost::shared_ptr<ComponentTreeExtractorParameters>   _defaultParameters;
-	boost::shared_ptr<ComponentTreeDownSampler>           _downSampler;
-	boost::shared_ptr<ComponentTreePruner>                _pruner;
-	boost::shared_ptr<ComponentTreeConverter>             _converter;
+	boost::shared_ptr<ComponentTreeExtractor<Precision, ImageType> > _componentExtractor;
+	boost::shared_ptr<ComponentTreeExtractorParameters<typename ImageType::value_type> > _defaultParameters;
+	boost::shared_ptr<ComponentTreeDownSampler>                      _downSampler;
+	boost::shared_ptr<ComponentTreePruner>                           _pruner;
+	boost::shared_ptr<ComponentTreeConverter>                        _converter;
 };
 
 #endif // SOPNET_SLICE_EXTRACTOR_H__

@@ -21,7 +21,7 @@ util::ProgramOption optionSetDifferenceThreshold(
 StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	_section(section),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor<IntensityImage> >()),
-	_cteParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
+	_cteParameters(boost::make_shared<ComponentTreeExtractorParameters<IntensityImage::value_type> >()),
 	_sliceCollector(boost::make_shared<SliceCollector>()) {
 
 	registerInput(_sliceImageStack, "slices");

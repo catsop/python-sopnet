@@ -41,7 +41,8 @@ public:
 	/**
 	 * Set non-default parameters for the slice extraction.
 	 */
-	void setComponentTreeExtractorParameters(const boost::shared_ptr<ComponentTreeExtractorParameters> parameters);
+	void setComponentTreeExtractorParameters(
+			const boost::shared_ptr<ComponentTreeExtractorParameters<IntensityImage::value_type> > parameters);
 
 	/**
 	 * Extracts the slices for the requested blocks. Returns empty Blocks for 
@@ -95,7 +96,7 @@ private:
 	void checkWhole(const Slice& slice,
 					Blocks& nbdBlocks) const;
 	
-	boost::shared_ptr<ComponentTreeExtractorParameters> _parameters;
+	boost::shared_ptr<ComponentTreeExtractorParameters<IntensityImage::value_type> > _parameters;
 	boost::shared_ptr<SliceStore>                       _sliceStore;
 	boost::shared_ptr<StackStore<IntensityImage> >      _stackStore;
 

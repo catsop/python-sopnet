@@ -26,13 +26,13 @@ util::ProgramOption optionMaxSliceSize(
 		util::_description_text = "The maximal size of a neuron slice in pixels.",
 		util::_default_value    = 100*100);
 
-template <typename Precision>
-SliceExtractor<Precision>::SliceExtractor(
+template <typename Precision, typename ImageType>
+SliceExtractor<Precision, ImageType>::SliceExtractor(
 		unsigned int section,
 		bool downsample,
 		unsigned int maxSliceMerges) :
-	_componentExtractor(boost::make_shared<ComponentTreeExtractor<Precision> >()),
-	_defaultParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
+	_componentExtractor(boost::make_shared<ComponentTreeExtractor<Precision, ImageType> >()),
+	_defaultParameters(boost::make_shared<ComponentTreeExtractorParameters<typename ImageType::value_type> >()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_pruner(boost::make_shared<ComponentTreePruner>()),
 	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
@@ -42,7 +42,7 @@ SliceExtractor<Precision>::SliceExtractor(
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_converter->getOutput("conflict sets"), "conflict sets");
 
-	_parameters.registerCallback(&SliceExtractor<Precision>::onInputSet, this);
+	_parameters.registerCallback(&SliceExtractor<Precision, ImageType>::onInputSet, this);
 
 	// set default parameters from program options
 	_defaultParameters->darkToBright      =  optionInvertSliceMaps;
@@ -71,9 +71,9 @@ SliceExtractor<Precision>::SliceExtractor(
 	_converter->setInput(_pruner->getOutput());
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 void
-SliceExtractor<Precision>::onInputSet(const pipeline::InputSetBase&) {
+SliceExtractor<Precision, ImageType>::onInputSet(const pipeline::InputSetBase&) {
 
 	LOG_ALL(sliceextractorlog) << "using non-default parameters" << std::endl;
 
@@ -82,5 +82,5 @@ SliceExtractor<Precision>::onInputSet(const pipeline::InputSetBase&) {
 }
 
 // explicit template instantiations
-template class SliceExtractor<unsigned char>;
-template class SliceExtractor<unsigned short>;
+template class SliceExtractor<unsigned char, IntensityImage>;
+template class SliceExtractor<unsigned short, IntensityImage>;

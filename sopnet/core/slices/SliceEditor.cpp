@@ -48,7 +48,7 @@ SliceEditor::finish() {
 	SliceEdits edits;
 
 	// create parameters suitable to extract connected components
-	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	pipeline::Value<ComponentTreeExtractorParameters<IntensityImage::value_type> > cteParameters;
 	cteParameters->minSize      = 0;
 	cteParameters->maxSize      = 10000000;
 	cteParameters->darkToBright = false;

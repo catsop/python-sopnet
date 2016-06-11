@@ -107,7 +107,7 @@ private:
 	boost::shared_ptr<ImageExtractor<IntensityImage> >   _sliceImageExtractor;
 
 	// mser paramters to use to extract all white connected components
-	boost::shared_ptr<ComponentTreeExtractorParameters> _cteParameters;
+	boost::shared_ptr<ComponentTreeExtractorParameters<IntensityImage::value_type> > _cteParameters;
 
 	// converter from component trees to slices
 	boost::shared_ptr<ComponentTreeConverter>   _converter;

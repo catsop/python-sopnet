@@ -35,7 +35,7 @@ SliceGuarantor::fill(
 	::SliceGuarantor sliceGuarantor(configuration, sliceStore, membraneStackStore);
 
 	// slice extraction parameters
-	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	pipeline::Value<ComponentTreeExtractorParameters<IntensityImage::value_type> > cteParameters;
 	cteParameters->darkToBright =  parameters.membraneIsBright();
 	cteParameters->minSize      =  parameters.getMinSliceSize();
 	cteParameters->maxSize      =  parameters.getMaxSliceSize();
