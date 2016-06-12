@@ -1,7 +1,7 @@
 #include <pipeline/Value.h>
 #include <pipeline/Process.h>
 #include <imageprocessing/ImageExtractor.h>
-#include <sopnet/slices/SliceExtractor.h>
+#include <sopnet/core/slices/SliceExtractor.h>
 #include "GroundTruthExtractor.h"
 
 util::ProgramOption optionGroundTruthFromSkeletons(
@@ -12,7 +12,8 @@ util::ProgramOption optionGroundTruthFromSkeletons(
 util::ProgramOption optionGroundTruthAddIntensityBoundaries(
 		util::_module           = "sopnet.evaluation",
 		util::_long_name        = "groundTruthAddIntensityBoundaries",
-		util::_description_text = "Separate ground truth regions of different intensities with a black boundary, such that components of same intensity end up to be exactly one slice.");
+		util::_description_text = "Separate ground truth regions of different intensities with a black boundary, such that components of same intensity end up to be exactly one slice.",
+		util::_default_value    = true);
 
 logger::LogChannel groundtruthextractorlog("groundtruthextractorlog", "[GroundTruthExtractor] ");
 
@@ -45,17 +46,17 @@ std::vector<Slices>
 GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 
 	// find the maximal value in the ground truth images
-	float maxIntensity = 0;
-	foreach (boost::shared_ptr<Image> image, *_groundTruthSections) {
+	LabelImage::value_type maxIntensity = 0;
+	for (boost::shared_ptr<LabelImage> image : *_groundTruthSections) {
 
-		float min, max;
+		LabelImage::value_type min, max;
 		image->minmax(&min, &max);
 
 		maxIntensity = std::max(maxIntensity, max);
 	}
 
 	// create parameters suitable to extract ground-truth connected components
-	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	pipeline::Value<ComponentTreeExtractorParameters<LabelImage::value_type> > cteParameters;
 	if (optionGroundTruthFromSkeletons)
 		cteParameters->minSize  = 0; // skeletons are small
 	else
@@ -67,22 +68,18 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 	cteParameters->maxIntensity = maxIntensity;
 
 	// create a section extractor to access the sections in the stack
-	pipeline::Process<ImageExtractor> sectionExtractor;
+	pipeline::Process<ImageExtractor<LabelImage> > sectionExtractor;
 	sectionExtractor->setInput(_groundTruthSections);
 
 	// list of all slices for each section
 	std::vector<Slices> slices;
-
-	float resX = _groundTruthSections->getResolutionX();
-	float resY = _groundTruthSections->getResolutionY();
-	float resZ = _groundTruthSections->getResolutionZ();
 
 	for (int section = firstSection; section <= lastSection; section++) {
 
 		LOG_DEBUG(groundtruthextractorlog) << "extracting slices in section " << section << std::endl;
 
 		// create a SliceExtractor
-		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, resX, resY, resZ, false /* don't downsample */);
+		pipeline::Process<SliceExtractor<LabelImage::value_type, LabelImage> > sliceExtractor(section, false /* don't downsample */);
 
 		// give it the section it has to process and our parameters
 		sliceExtractor->setInput("membrane", sectionExtractor->getOutput(section));
@@ -104,13 +101,8 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 	// tree segments of all found neurons
 	Segments segments;
 
-	segments.setResolution(
-			_groundTruthSections->getResolutionX(),
-			_groundTruthSections->getResolutionY(),
-			_groundTruthSections->getResolutionZ());
-
 	// all possible continuation segments by neuron label
-	std::map<float, std::vector<ContinuationSegment> > links;
+	std::map<LabelImage::value_type, std::vector<ContinuationSegment> > links;
 
 	// number of links to left and right for each slice
 	std::map<unsigned int, unsigned int> linksLeft;
@@ -122,10 +114,10 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 	// for each neuron label
 	if (!_endSegmentsOnly) {
 
-		typedef std::map<float, std::vector<ContinuationSegment> >::value_type pair_t;
-		foreach (pair_t& pair, links) {
+		typedef std::map<LabelImage::value_type, std::vector<ContinuationSegment> >::value_type pair_t;
+		for (pair_t& pair : links) {
 
-			float label = pair.first;
+			LabelImage::value_type label = pair.first;
 			std::vector<ContinuationSegment>& continuations = pair.second;
 
 			findLabelTree(label, continuations, linksLeft, linksRight, segments);
@@ -138,7 +130,7 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 
 	// postprocessing, for each slice
 	for (unsigned int i = 0; i < slices.size(); i++)
-		foreach (boost::shared_ptr<Slice> slice, slices[i]) {
+		for (boost::shared_ptr<Slice> slice : slices[i]) {
 
 			// if slice is used from one side only, add an end segment
 			if (linksLeft[slice->getId()] == 0)
@@ -152,7 +144,7 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 
 void
 GroundTruthExtractor::findLabelTree(
-		float label,
+		LabelImage::value_type label,
 		std::vector<ContinuationSegment>& continuations,
 		std::map<unsigned int, unsigned int>& linksLeft,
 		std::map<unsigned int, unsigned int>& linksRight,
@@ -254,22 +246,24 @@ GroundTruthExtractor::findLabelTree(
 	}
 }
 
-std::map<float, std::vector<ContinuationSegment> >
+std::map<LabelImage::value_type, std::vector<ContinuationSegment> >
 GroundTruthExtractor::extractContinuations(const std::vector<Slices>& slices) {
 
-	std::map<float, std::vector<ContinuationSegment> > continuations;
+	std::map<LabelImage::value_type, std::vector<ContinuationSegment> > continuations;
 
 	for (unsigned int i = 0; i < slices.size() - 1; i++) {
 
 		LOG_ALL(groundtruthextractorlog) << "extracting potential continuations between " << i << " and " << (i+1) << std::endl;
 
-		foreach (boost::shared_ptr<Slice> leftSlice, slices[i]) {
+		for (boost::shared_ptr<Slice> leftSlice : slices[i]) {
 
-			float leftValue = leftSlice->getComponent()->getValue();
+			LabelImage::value_type leftValue;
+			memcpy(&leftValue, leftSlice->getComponent()->getValue().data(), sizeof(leftValue));
 
-			foreach (boost::shared_ptr<Slice> rightSlice, slices[i+1]) {
+			for (boost::shared_ptr<Slice> rightSlice : slices[i+1]) {
 
-				float rightValue = rightSlice->getComponent()->getValue();
+				LabelImage::value_type rightValue;
+				memcpy(&rightValue, rightSlice->getComponent()->getValue().data(), sizeof(rightValue));
 
 				if (leftValue == rightValue) {
 
