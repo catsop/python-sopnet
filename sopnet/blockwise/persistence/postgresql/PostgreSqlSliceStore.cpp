@@ -541,13 +541,6 @@ void checkFieldLength(size_t expected, size_t found, const char* name) {
 	}
 }
 
-template <typename T>
-void swapEndian(T& value) {
-
-	char& raw = reinterpret_cast<char&>(value);
-	std::reverse(&raw, &raw + sizeof(T));
-}
-
 void
 PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slices> slices) {
 
@@ -568,7 +561,7 @@ PostgreSqlSliceStore::slicesFromResult(PGresult* result, boost::shared_ptr<Slice
 		unsigned int section = ntohl(*((unsigned int *)PQgetvalue(result, i, FIELD_SECTION)));
 		checkFieldLength(sizeof(double), PQgetlength(result, i, FIELD_VALUE), "VALUE");
 		double value = *((double *)PQgetvalue(result, i, FIELD_VALUE));
-		swapEndian(value);
+		value = be64toh(value);
 
 		boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(
 				ComponentTreeConverter::getNextSliceId(),
