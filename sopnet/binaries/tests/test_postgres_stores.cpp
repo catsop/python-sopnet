@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 		pc.setPostgreSqlPassword(pg_pass);
 		pc.setPostgreSqlDatabase(pg_dbase);
 
-		PostgreSqlSliceStore sliceStore(pc);
+		PostgreSqlSliceStore sliceStore(pc, Membrane);
 
 		// Add first set of slices
 		boost::shared_ptr<Slice> slice1 = createSlice(10, 0);
@@ -139,7 +139,7 @@ int main(int argc, char** argv)
 			std::cout << std::endl;
 		}
 
-		PostgreSqlSegmentStore segmentStore(pc);
+		PostgreSqlSegmentStore segmentStore(pc, Membrane);
 		util::box<unsigned int, 2> segmentBounds(0, 0, 0, 0);
 		std::vector<double> segmentFeatures;
 		segmentFeatures.push_back(0.0);

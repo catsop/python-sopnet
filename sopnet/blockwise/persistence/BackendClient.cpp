@@ -31,7 +31,7 @@ BackendClient::fillProjectConfiguration(ProjectConfiguration& configuration) {
 
 template <typename ImageType>
 boost::shared_ptr<StackStore<ImageType> >
-BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
+BackendClient::createStackStore(const ProjectConfiguration& configuration, const StackType type) {
 
 	const char* typeName = STACK_TYPE_NAME[type];
 
@@ -53,7 +53,7 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, Stack
 }
 
 boost::shared_ptr<SliceStore>
-BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
+BackendClient::createSliceStore(const ProjectConfiguration& configuration, const StackType type) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
@@ -67,7 +67,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 
 		LOG_DEBUG(backendclientlog) << "[BackendClient] create postgresql slice store" << std::endl;
 
-		return boost::make_shared<PostgreSqlSliceStore>(configuration);
+		return boost::make_shared<PostgreSqlSliceStore>(configuration, type);
 	}
 #endif // HAVE_PostgreSQL
 
@@ -75,7 +75,7 @@ BackendClient::createSliceStore(const ProjectConfiguration& configuration) {
 }
 
 boost::shared_ptr<SegmentStore>
-BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
+BackendClient::createSegmentStore(const ProjectConfiguration& configuration, const StackType type) {
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
@@ -89,7 +89,7 @@ BackendClient::createSegmentStore(const ProjectConfiguration& configuration) {
 
 		LOG_DEBUG(backendclientlog) << "[BackendClient] create postgresql segment store" << std::endl;
 
-		return boost::make_shared<PostgreSqlSegmentStore>(configuration);
+		return boost::make_shared<PostgreSqlSegmentStore>(configuration, type);
 	}
 #endif // HAVE_PostgreSQL
 

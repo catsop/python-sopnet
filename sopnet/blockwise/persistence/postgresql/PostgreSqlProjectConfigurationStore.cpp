@@ -26,7 +26,7 @@ PostgreSqlProjectConfigurationStore::~PostgreSqlProjectConfigurationStore() {
 void
 PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 
-	// fill stack descriptions for raw and membrane
+	// fill stack descriptions for raw, membrane and ground truth (if available)
 
 	fillStackDescriptions(config);
 
@@ -82,6 +82,12 @@ PostgreSqlProjectConfigurationStore::fill(ProjectConfiguration& config) {
 
 	config.setCatmaidStack(Raw, rawStackDescription);
 	config.setCatmaidStack(Membrane, memStackDescription);
+
+	try {
+		StackDescription gtStackDescription = config.getCatmaidStack(GroundTruth);
+		gtStackDescription.scale = scale;
+		config.setCatmaidStack(GroundTruth, gtStackDescription);
+	} catch (const std::out_of_range& oor) {}
 }
 
 void
@@ -117,6 +123,7 @@ PostgreSqlProjectConfigurationStore::fillStackDescriptions(ProjectConfiguration&
 		std::string typeString = boost::lexical_cast<std::string>(PQgetvalue(result, i, TYPE));
 		if ("Raw" == typeString) type = Raw;
 		else if ("Membrane" == typeString) type = Membrane;
+		else if ("Ground Truth" == typeString) type = GroundTruth;
 		else {
 			UTIL_THROW_EXCEPTION(PostgreSqlException, "Unknown segmentation stack type: " + typeString);
 		}

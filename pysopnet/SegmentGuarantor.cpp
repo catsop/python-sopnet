@@ -16,8 +16,8 @@ SegmentGuarantor::fill(
 
 	boost::shared_ptr<StackStore<IntensityImage> > rawStackStore = createStackStore<IntensityImage>(configuration, Raw);
 	//boost::shared_ptr<BlockManager> blockManager = createBlockManager(configuration);
-	boost::shared_ptr<SliceStore>   sliceStore   = createSliceStore(configuration);
-	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration);
+	boost::shared_ptr<SliceStore>   sliceStore   = createSliceStore(configuration, Membrane);
+	boost::shared_ptr<SegmentStore> segmentStore = createSegmentStore(configuration, Membrane);
 
 	// create a valid request block
 	Block requestBlock(request.x(), request.y(), request.z());

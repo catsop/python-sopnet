@@ -11,7 +11,8 @@
 logger::LogChannel postgresqlsegmentstorelog("postgresqlsegmentstorelog", "[PostgreSqlSegmentStore] ");
 
 PostgreSqlSegmentStore::PostgreSqlSegmentStore(
-		const ProjectConfiguration& config) : _config(config)
+		const ProjectConfiguration& config,
+		const StackType type) : _config(config), _type(type)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -21,7 +22,7 @@ PostgreSqlSegmentStore::PostgreSqlSegmentStore(
 			_config.getPostgreSqlPassword());
 	std::ostringstream q;
 	q << "SET search_path TO segstack_"
-	  << _config.getCatmaidStack(Membrane).segmentationId
+	  << _config.getCatmaidStack(_type).segmentationId
 	  << ",public;";
 	PQsendQuery(_pgConnection, q.str().c_str());
 }
@@ -200,7 +201,7 @@ PostgreSqlSegmentStore::getSegmentsByBlocks(
 	// results and create empty feature sets for user-created segments.
 	std::string numFeaturesQuery =
 			"SELECT size FROM segmentation_feature_info WHERE segmentation_stack_id = " +
-			boost::lexical_cast<std::string>(_config.getCatmaidStack(Membrane).segmentationId);
+			boost::lexical_cast<std::string>(_config.getCatmaidStack(_type).segmentationId);
 	PGresult* queryResult = PQexec(_pgConnection, numFeaturesQuery.c_str());
 
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, numFeaturesQuery);
@@ -406,7 +407,7 @@ PostgreSqlSegmentStore::getFeatureWeights() {
 
 	std::string query =
 			"SELECT weights FROM segmentation_feature_info WHERE segmentation_stack_id="
-			+ boost::lexical_cast<std::string>(_config.getCatmaidStack(Membrane).segmentationId);
+			+ boost::lexical_cast<std::string>(_config.getCatmaidStack(_type).segmentationId);
 	PostgreSqlUtils::waitForAsyncQuery(_pgConnection);
 	PGresult* queryResult = PQexec(_pgConnection, query.c_str());
 	PostgreSqlUtils::checkPostgreSqlError(queryResult, query);

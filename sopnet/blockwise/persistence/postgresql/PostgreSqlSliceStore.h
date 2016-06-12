@@ -28,8 +28,12 @@ public:
 	 *
 	 * @param config
 	 *             The project configuration with all required information.
+	 * @param type
+	 *             The stack type which these slices represent.
 	 */
-	PostgreSqlSliceStore(const ProjectConfiguration& config);
+	PostgreSqlSliceStore(
+			const ProjectConfiguration& config,
+			const StackType type);
 
 	~PostgreSqlSliceStore();
 

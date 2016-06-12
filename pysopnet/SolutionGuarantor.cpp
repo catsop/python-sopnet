@@ -17,8 +17,8 @@ SolutionGuarantor::fill(
 	LOG_USER(pylog) << "[SolutionGuarantor] fill called for core at " << request << std::endl;
 
 	//boost::shared_ptr<BlockManager> blockManager  = createBlockManager(configuration);
-	boost::shared_ptr<SliceStore>   sliceStore    = createSliceStore(configuration);
-	boost::shared_ptr<SegmentStore> segmentStore  = createSegmentStore(configuration);
+	boost::shared_ptr<SliceStore>   sliceStore    = createSliceStore(configuration, Membrane);
+	boost::shared_ptr<SegmentStore> segmentStore  = createSegmentStore(configuration, Membrane);
 
 	// create the SolutionGuarantor process node
 	::SolutionGuarantor solutionGuarantor(

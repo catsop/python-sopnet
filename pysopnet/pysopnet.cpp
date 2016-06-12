@@ -135,7 +135,8 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	// StackType
 	boost::python::enum_<StackType>("StackType")
 			.value("Raw", Raw)
-			.value("Membrane", Membrane);
+			.value("Membrane", Membrane)
+			.value("GroundTruth", GroundTruth);
 
 	// StackDescription
 	boost::python::class_<StackDescription>("StackDescription")

@@ -33,11 +33,11 @@ public:
 	void fillProjectConfiguration(ProjectConfiguration& configuration);
 
 	template <typename ImageType>
-	boost::shared_ptr<StackStore<ImageType> > createStackStore(const ProjectConfiguration& configuration, StackType type);
+	boost::shared_ptr<StackStore<ImageType> > createStackStore(const ProjectConfiguration& configuration, const StackType type);
 
-	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
+	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration, const StackType type);
 
-	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration);
+	boost::shared_ptr<SegmentStore> createSegmentStore(const ProjectConfiguration& configuration, const StackType type);
 };
 
 #endif // SOPNET_BLOCKWISE_PERSISTENCE_BACKEND_CLIENT_H__

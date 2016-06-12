@@ -24,7 +24,8 @@
 logger::LogChannel postgresqlslicestorelog("postgresqlslicestorelog", "[PostgreSqlSliceStore] ");
 
 PostgreSqlSliceStore::PostgreSqlSliceStore(
-        const ProjectConfiguration& config) : _config(config)
+        const ProjectConfiguration& config,
+        const StackType type) : _config(config)
 {
 	_pgConnection = PostgreSqlUtils::getConnection(
 			_config.getPostgreSqlHost(),
@@ -34,7 +35,7 @@ PostgreSqlSliceStore::PostgreSqlSliceStore(
 			_config.getPostgreSqlPassword());
 	std::ostringstream q;
 	q << "SET search_path TO segstack_"
-	  << _config.getCatmaidStack(Membrane).segmentationId
+	  << _config.getCatmaidStack(type).segmentationId
 	  << ",public;";
 	PQsendQuery(_pgConnection, q.str().c_str());
 }

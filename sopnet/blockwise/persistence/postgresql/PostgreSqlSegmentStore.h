@@ -21,8 +21,12 @@ public:
 	 *
 	 * @param config
 	 *             The project configuration with all required information.
+	 * @param type
+	 *             The stack type which these segments represent.
 	 */
-	PostgreSqlSegmentStore(const ProjectConfiguration& config);
+	PostgreSqlSegmentStore(
+			const ProjectConfiguration& config,
+			const StackType type);
 
 	~PostgreSqlSegmentStore();
 
@@ -107,6 +111,8 @@ public:
 private:
 	// general configuration
 	const ProjectConfiguration& _config;
+
+	const StackType _type;
 
 	// database connection
 	PGconn* _pgConnection;
