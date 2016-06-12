@@ -29,21 +29,24 @@ BackendClient::fillProjectConfiguration(ProjectConfiguration& configuration) {
 	UTIL_THROW_EXCEPTION(UsageError, "backend type " << configuration.getBackendType() << " not yet implemented");
 }
 
-boost::shared_ptr<StackStore<IntensityImage> >
+template <typename ImageType>
+boost::shared_ptr<StackStore<ImageType> >
 BackendClient::createStackStore(const ProjectConfiguration& configuration, StackType type) {
+
+	const char* typeName = STACK_TYPE_NAME[type];
 
 	if (configuration.getBackendType() == ProjectConfiguration::Local) {
 
-		LOG_DEBUG(backendclientlog) << "[BackendClient] create local stack store for " << (type == Raw ? "raw" : "membranes") << std::endl;
+		LOG_DEBUG(backendclientlog) << "[BackendClient] create local stack store for " << typeName << std::endl;
 
-		return boost::make_shared<LocalStackStore<IntensityImage> >(type == Raw ? "./raw" : "./membranes");
+		return boost::make_shared<LocalStackStore<ImageType> >(std::string("./") + typeName);
 	}
 
 	if (configuration.getBackendType() == ProjectConfiguration::PostgreSql) {
 
-		LOG_DEBUG(backendclientlog) << "[BackendClient] create catmaid stack store for " << (type == Raw ? "raw" : "membranes") << std::endl;
+		LOG_DEBUG(backendclientlog) << "[BackendClient] create catmaid stack store for " << typeName << std::endl;
 
-		return boost::make_shared<CatmaidStackStore<IntensityImage> >(configuration, type);
+		return boost::make_shared<CatmaidStackStore<ImageType> >(configuration, type);
 	}
 
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());

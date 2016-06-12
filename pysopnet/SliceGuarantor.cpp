@@ -19,7 +19,7 @@ SliceGuarantor::fill(
 	LOG_USER(pylog) << "[SliceGuarantor] fill called for block at " << request << std::endl;
 
 	//boost::shared_ptr<BlockManager> blockManager       = createBlockManager(configuration);
-	boost::shared_ptr<StackStore<IntensityImage> >   membraneStackStore = createStackStore(configuration, Membrane);
+	boost::shared_ptr<StackStore<IntensityImage> >   membraneStackStore = createStackStore<IntensityImage>(configuration, Membrane);
 	boost::shared_ptr<SliceStore>   sliceStore         = createSliceStore(configuration);
 
 	// create a valid request block

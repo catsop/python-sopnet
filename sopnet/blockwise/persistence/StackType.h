@@ -7,8 +7,11 @@
 enum StackType {
 
 	Raw,
-	Membrane
+	Membrane,
+	GroundTruth
 };
+
+static const char* const STACK_TYPE_NAME[] = {"raw", "membrane", "groundtruth"};
 
 #endif // SOPNET_BLOCKWISE_PERSISTENCE_STACK_TYPE_H__
 

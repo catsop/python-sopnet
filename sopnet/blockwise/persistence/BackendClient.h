@@ -32,7 +32,8 @@ public:
 	 */
 	void fillProjectConfiguration(ProjectConfiguration& configuration);
 
-	boost::shared_ptr<StackStore<IntensityImage> > createStackStore(const ProjectConfiguration& configuration, StackType type);
+	template <typename ImageType>
+	boost::shared_ptr<StackStore<ImageType> > createStackStore(const ProjectConfiguration& configuration, StackType type);
 
 	boost::shared_ptr<SliceStore>   createSliceStore(const ProjectConfiguration& configuration);
 
