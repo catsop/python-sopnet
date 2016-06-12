@@ -93,12 +93,14 @@ PostgreSqlSliceStore::associateSlicesToBlock(const Slices& slices, const Block& 
 
 		// Bounding Box
 		const util::box<unsigned int, 2>& bb = slice->getComponent()->getBoundingBox();
+		double value;
+		memcpy(&value, slice->getComponent()->getValue().data(), sizeof(value));
 
 		q << separator << "(" << sliceId << "," << slice->getSection() << ",";
 		q << bb.min().x() << "," << bb.min().y() << ",";
 		q << bb.max().x() << "," << bb.max().y() << ",";
 		q << ctr.x() << "," << ctr.y() << ",";
-		q << slice->getComponent()->getValue() << ",";
+		q << value << ",";
 		q << slice->getComponent()->getSize() << ")";
 
 		separator = ',';
@@ -514,9 +516,13 @@ PostgreSqlSliceStore::loadConnectedComponent(const std::string& tmpFilename, con
 		nNonzero = info.width() * info.height();
 	}
 
+	std::array<char, 8> ccValue;
+	ccValue.fill(0);
+	memcpy(ccValue.data(), &value, std::min(sizeof(value), ccValue.size()));
+
 	// create the component
 	boost::shared_ptr<ConnectedComponent> component = boost::make_shared<ConnectedComponent>(
-			value,
+			ccValue,
 			util::point<int, 2>(offset.x, offset.y),
 			bitmap,
 			nNonzero);

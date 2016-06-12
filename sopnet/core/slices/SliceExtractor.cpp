@@ -84,3 +84,4 @@ SliceExtractor<Precision, ImageType>::onInputSet(const pipeline::InputSetBase&) 
 // explicit template instantiations
 template class SliceExtractor<unsigned char, IntensityImage>;
 template class SliceExtractor<unsigned short, IntensityImage>;
+template class SliceExtractor<LabelImage::value_type, LabelImage>;

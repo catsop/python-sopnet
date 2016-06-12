@@ -183,7 +183,9 @@ ProblemGraphWriter::writeSlice(const Slice& slice, std::ofstream& out) {
 	out << slice.getComponent()->getBoundingBox().max().x() << " ";
 	out << slice.getComponent()->getBoundingBox().min().y() << " ";
 	out << slice.getComponent()->getBoundingBox().max().y() << " ";
-	out << slice.getComponent()->getValue() << " ";
+	std::copy(slice.getComponent()->getValue().begin(),
+		      slice.getComponent()->getValue().end(),
+		      std::ostream_iterator<char>(out));
 	out << slice.getComponent()->getCenter().x() << " ";
 	out << slice.getComponent()->getCenter().y() << " ";
 	out << slice.getComponent()->getSize() << " ";
