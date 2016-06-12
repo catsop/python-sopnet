@@ -23,4 +23,4 @@ StackStore<ImageType>::getImageStack(const util::box<unsigned int, 3>& box)
 	return stack;
 }
 
-template class StackStore<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(StackStore);

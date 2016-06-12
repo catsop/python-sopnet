@@ -90,4 +90,4 @@ boost::shared_ptr<ImageType> LocalStackStore<ImageType>::getImage(util::box<unsi
 	}
 }
 
-template class LocalStackStore<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(LocalStackStore);

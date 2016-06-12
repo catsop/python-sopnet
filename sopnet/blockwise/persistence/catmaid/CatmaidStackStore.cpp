@@ -188,4 +188,4 @@ CatmaidStackStore<ImageType>::tileURL(const unsigned int column, const unsigned 
 	return url.str();
 }
 
-template class CatmaidStackStore<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(CatmaidStackStore);
