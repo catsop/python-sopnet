@@ -126,8 +126,8 @@ PostgreSqlSegmentStore::associateSegmentsToBlock(
 		}
 
 		// Store segment features.
-		segmentFeatureQuery << separator << '(' << segmentId << ",'";
-		char featureSeparator = '{';
+		segmentFeatureQuery << separator << '(' << segmentId << ",'{";
+		char featureSeparator = ' ';
 		for (const double featVal : segment.getFeatures()) {
 			segmentFeatureQuery << featureSeparator << boost::lexical_cast<std::string>(featVal);
 			featureSeparator = ',';
