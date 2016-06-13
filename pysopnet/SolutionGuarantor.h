@@ -15,7 +15,7 @@ public:
 	/**
 	 * Request the extraction and storage of solutions in a block.
 	 *
-	 * @param blockLocation
+	 * @param coreLocation
 	 *             The location of the requested block.
 	 *
 	 * @param parameters
@@ -29,7 +29,7 @@ public:
 	 *             process the request. Empty on success.
 	 */
 	Locations fill(
-			const util::point<unsigned int, 3>& blockLocation,
+			const util::point<unsigned int, 3>& coreLocation,
 			const SolutionGuarantorParameters& parameters,
 			const ProjectConfiguration& configuration);
 };
