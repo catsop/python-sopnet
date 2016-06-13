@@ -52,6 +52,13 @@ BackendClient::createStackStore(const ProjectConfiguration& configuration, const
 	UTIL_THROW_EXCEPTION(UsageError, "unknown backend type " << configuration.getBackendType());
 }
 
+template
+boost::shared_ptr<StackStore<IntensityImage> >
+BackendClient::createStackStore<IntensityImage>(const ProjectConfiguration& configuration, const StackType type);
+template
+boost::shared_ptr<StackStore<LabelImage> >
+BackendClient::createStackStore<LabelImage>(const ProjectConfiguration& configuration, const StackType type);
+
 boost::shared_ptr<SliceStore>
 BackendClient::createSliceStore(const ProjectConfiguration& configuration, const StackType type) {
 

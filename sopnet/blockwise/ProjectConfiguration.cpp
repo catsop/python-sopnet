@@ -3,7 +3,7 @@
 ProjectConfiguration::ProjectConfiguration() :
 
 	_backendType(Django),
-	_stackTypes(Membrane + 1),
+	_stackTypes(GroundTruth + 1),
 	_blockSize(256, 256, 10),
 	_volumeSize(1024, 1024, 20),
 	_coreSizeInBlocks(1, 1, 1),
