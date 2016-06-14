@@ -52,6 +52,16 @@ public:
 	 */
 	Blocks guaranteeSlices(const Blocks& blocks);
 
+protected:
+
+	// associate the extracted slices and conflict sets to the given blocks 
+	// using slice store
+	void writeSlicesAndConflicts(
+			const Slices&       slices,
+			const ConflictSets& conflictSets,
+			const Blocks&       requestedBlocks,
+			const Blocks&       allBlocks);
+
 private:
 
 	// Checks whether slices have already been extracted for our Block request.
@@ -63,14 +73,6 @@ private:
 			ConflictSets&      conflictSets,
 			const Blocks&      requestedBlocks,
 			const unsigned int z);
-
-	// associate the extracted slices and conflict sets to the given blocks 
-	// using slice store
-	void writeSlicesAndConflicts(
-			const Slices&       slices,
-			const ConflictSets& conflictSets,
-			const Blocks&       requestedBlocks,
-			const Blocks&       allBlocks);
 
 	// find all slices that have to be extracted completely
 	void getRequiredSlicesAndConflicts(

@@ -26,6 +26,15 @@ public:
 	 */
 	Blocks guaranteeSegments(const Blocks& requestedBlocks);
 
+protected:
+
+	// use the provided segment store to save the extracted segments and 
+	// features for the requested blocks
+	void writeSegmentsAndFeatures(
+			const Segments& segments,
+			const Features& features,
+			const Blocks&   requestedBlocks);
+
 private:
 
 	// check whether segments are already present for the given blocks
@@ -47,13 +56,6 @@ private:
 	discardNonRequestedSegments(
 			boost::shared_ptr<Segments> allSegments,
 			const Blocks&               requestedBlocks);
-
-	// use the provided segment store to save the extracted segments and 
-	// features for the requested blocks
-	void writeSegmentsAndFeatures(
-			const Segments& segments,
-			const Features& features,
-			const Blocks&   requestedBlocks);
 
 	// check if a segment overlaps with a block
 	bool overlaps(const Segment& segment, const Block& block);

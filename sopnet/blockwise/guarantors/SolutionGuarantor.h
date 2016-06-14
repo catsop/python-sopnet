@@ -65,6 +65,12 @@ public:
 	 */
 	Blocks guaranteeSolution(const Core& core);
 
+protected:
+
+	std::vector<std::set<SegmentHash> > extractAssemblies(
+			const std::vector<SegmentHash>& solution,
+			const SegmentDescriptions& segments);
+
 private:
 
 	// get all blocks of the padded core
@@ -103,10 +109,6 @@ private:
 			const std::vector<SegmentHash>& solutions,
 			const SegmentDescriptions& segments,
 			const Core& core);
-
-	std::vector<std::set<SegmentHash> > extractAssemblies(
-			const std::vector<SegmentHash>& solution,
-			const SegmentDescriptions& segments);
 
 	boost::shared_ptr<SegmentStore> _segmentStore;
 	boost::shared_ptr<SliceStore>   _sliceStore;

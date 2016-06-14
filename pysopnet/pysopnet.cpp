@@ -12,6 +12,7 @@
 #include "SliceGuarantor.h"
 #include "SegmentGuarantor.h"
 #include "SolutionGuarantor.h"
+#include "GroundTruthGuarantor.h"
 #include "Locations.h"
 #include "logging.h"
 
@@ -96,6 +97,9 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 			.def("setReadCosts", &SolutionGuarantorParameters::setReadCosts)
 			.def("setStoreCosts", &SolutionGuarantorParameters::setStoreCosts);
 
+	// SegmentGuarantorParameters
+	boost::python::class_<GroundTruthGuarantorParameters>("GroundTruthGuarantorParameters");
+
 	// ProjectConfiguration
 	boost::python::class_<ProjectConfiguration>("ProjectConfiguration")
 			.def("setBackendType", &ProjectConfiguration::setBackendType)
@@ -170,6 +174,10 @@ BOOST_PYTHON_MODULE(libpysopnet) {
 	// SolutionGuarantor
 	boost::python::class_<SolutionGuarantor>("SolutionGuarantor")
 			.def("fill", &SolutionGuarantor::fill);
+
+	// SolutionGuarantor
+	boost::python::class_<GroundTruthGuarantor>("GroundTruthGuarantor")
+			.def("fill", &GroundTruthGuarantor::fill);
 }
 
 } // namespace python
