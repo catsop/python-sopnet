@@ -164,6 +164,10 @@ CatmaidStackStore<ImageType>::tileURL(const unsigned int column, const unsigned 
 			url << _stack.imageBase << section << "/" << row << "_" << column << "_"
 			    << _stack.scale << "." << _stack.fileExtension;
 			break;
+		case 4:
+			url << _stack.imageBase << section << '/' << _stack.scale << '/'
+			    << row << '_' << column << '.' << _stack.fileExtension;
+			break;
 		case 5:
 			url << _stack.imageBase << _stack.scale << '/' << section << '/'
 			    << row << '/' << column << '.' << _stack.fileExtension;
