@@ -78,6 +78,9 @@ private:
 	// the ground truth images
 	pipeline::Input<ImageStack<LabelImage> > _groundTruthSections;
 
+	// slices of the ground truth
+	pipeline::Output<Slices> _groundTruthSlices;
+
 	// continuation and end segments of the ground-truth
 	pipeline::Output<Segments> _groundTruthSegments;
 

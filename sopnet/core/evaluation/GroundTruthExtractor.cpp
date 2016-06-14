@@ -23,6 +23,7 @@ GroundTruthExtractor::GroundTruthExtractor(bool endSegmentsOnly) :
 	_endSegmentsOnly(endSegmentsOnly) {
 
 	registerInput(_groundTruthSections, "ground truth sections");
+	registerOutput(_groundTruthSlices, "ground truth slices");
 	registerOutput(_groundTruthSegments, "ground truth segments");
 }
 
@@ -37,9 +38,15 @@ GroundTruthExtractor::updateOutputs() {
 			<< firstSection << " - " << lastSection
 			<< std::endl;
 
-	std::vector<Slices> slices = extractSlices(firstSection, lastSection);
+	std::vector<Slices> sectionSlices = extractSlices(firstSection, lastSection);
 
-	*_groundTruthSegments = findMinimalTrees(slices);
+	boost::shared_ptr<Slices> combinedSlices = boost::make_shared<Slices>();
+	for (const Slices& slices : sectionSlices) {
+		combinedSlices->addAll(slices);
+	}
+	_groundTruthSlices = combinedSlices;
+
+	*_groundTruthSegments = findMinimalTrees(sectionSlices);
 }
 
 std::vector<Slices>
