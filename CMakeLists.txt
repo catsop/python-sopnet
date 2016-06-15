@@ -13,8 +13,8 @@ set(VERSION_MINOR 1)
 # compiler settings #
 #####################
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -fomit-frame-pointer -fPIC -std=c++11 -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG   "-g -DDEBUG -Wall -Wextra -fPIC -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -fomit-frame-pointer -fPIC -std=c++11 -march=native -D_GLIBCXX_USE_CXX11_ABI=0")
+set(CMAKE_CXX_FLAGS_DEBUG   "-g -DDEBUG -Wall -Wextra -fPIC -std=c++11 -D_GLIBCXX_USE_CXX11_ABI=0")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -xHOST -ipo -no-prec-div")
   #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast")
